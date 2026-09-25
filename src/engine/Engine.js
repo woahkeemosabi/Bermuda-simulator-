@@ -81,9 +81,7 @@ export class Engine {
 
 		const loop = ( t ) => {
 
-			// Schedule the next frame before running game/render code. On mobile Safari a single
-			// transient WebGPU/render exception must not permanently kill the RAF loop and freeze
-			// the last rendered frame. The old loop scheduled RAF only after update() returned.
+			// Schedule first so one thrown frame cannot kill the animation loop.
 			this._raf = requestAnimationFrame( loop );
 
 			try {
@@ -98,6 +96,15 @@ export class Engine {
 
 				this.lastFrameError = e;
 				window.__bermudaFrameError = e;
+				window.__bermudaFrameErrorCount = ( window.__bermudaFrameErrorCount || 0 ) + 1;
+
+				// IMPORTANT: App._frame() creates a WebGPU command encoder at the start of every
+				// frame and normally clears it in GPU.submit(). If anything throws before submit,
+				// leaving that half-recorded encoder around poisons every following frame on Safari.
+				// Drop the incomplete frame and any readback hooks so the next RAF starts clean.
+				GPU.encoder = null;
+				GPU._submitHooks = [];
+
 				const now = performance.now();
 				if ( ! this._lastFrameErrorLog || now - this._lastFrameErrorLog > 1000 ) {
 
