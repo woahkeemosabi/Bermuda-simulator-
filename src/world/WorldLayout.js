@@ -4,9 +4,10 @@ import * as THREE from '../engine/index.js';
 // The open ocean lies to the south (+z); the island to the north (-z).
 // Sun rises in the east (+x) and sets in the west (-x).
 //
-// Bermuda v0.1 keeps Tidewater's compact authored world, but stretches the waterfront into a
-// more convincing small harbour: a longer pier, a broader pier head, and a reef destination far
-// enough away that taking the boat out feels like an actual trip instead of crossing a pond.
+// Bermuda v0.1 still keeps Tidewater's authored terrain and legacy village available while the
+// replacement world is built. The initial player/boat placement now uses the separate Bermuda
+// harbour blockout on the west side of the bay, so the first experience no longer depends on the
+// long Tidewater pier.
 export const WORLD = {
 	terrainSize: 2048, // heightmap domain, centered at origin
 	terrainRes: 2048,
@@ -14,27 +15,32 @@ export const WORLD = {
 	// Central sandy beach inside the bay, shoreline near z ≈ -42 at x = 0.
 	beach: { xMin: - 150, xMax: 170 },
 
+	// Legacy authored pier. Kept intact for existing gameplay / interaction references during the
+	// blockout phase; it will be removed only after its dependencies have been migrated.
 	pier: {
 		x: 55,
-		zStart: - 64, // on dry sand
-		zEnd: 60, // longer harbour pier into ~5–6 m water
-		deckHeight: 2.3, // deck surface above sea level
+		zStart: - 64,
+		zEnd: 60,
+		deckHeight: 2.3,
 		width: 2.8,
-		headWidth: 16, // T-shaped platform at the end
+		headWidth: 16,
 		headDepth: 9,
 	},
 
-	// Where the boat is moored: east side of the enlarged pier head, bow pointing south.
-	boatDock: { position: new THREE.Vector3( 65.5, 0, 55.5 ), heading: 0 },
+	// Bermuda blockout: the boat sits immediately beside the short west-bay landing, bow south toward
+	// open water. The existing BoatController reads this at construction, so its mooring/physics remain
+	// unchanged apart from location.
+	boatDock: { position: new THREE.Vector3( - 61.5, 0, - 13.0 ), heading: 0 },
 
 	village: { center: new THREE.Vector3( 40, 0, - 118 ), radius: 95 },
 
 	// First Harbour Run destination: a larger shallow reef/cove target farther across the bay.
 	reef: { center: new THREE.Vector3( - 108, 0, 92 ), radius: 78 },
 
-	spawn: { position: new THREE.Vector3( 18, 0, - 60 ), yaw: Math.PI }, // kept clear of rocks, plants and debris
-	// where the player starts: on the boardwalk up from the pier foot, looking down it toward the pier
-	start: { position: new THREE.Vector3( 53.6, 0, - 77 ), yaw: Math.PI },
+	// Safe dry-land fallback used during App.init. BermudaBlockout moves the player onto the landing
+	// before the loader is dismissed, after its collider exists.
+	spawn: { position: new THREE.Vector3( - 64, 0, - 47 ), yaw: Math.PI },
+	start: { position: new THREE.Vector3( - 64, 0, - 47 ), yaw: Math.PI },
 
 	// Incoming swell direction (unit, travel direction)
 	swellDir: new THREE.Vector2( - 0.12, - 1 ).normalize(),
