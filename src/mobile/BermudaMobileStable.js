@@ -12,8 +12,8 @@ export function installStableMobileControls( app ) {
 	style.textContent = `
 		html,body,#app,#app canvas{touch-action:none!important;overscroll-behavior:none}
 		#bm-touch-stable{position:fixed;inset:0;z-index:70;pointer-events:none;user-select:none;-webkit-user-select:none;font-family:system-ui,-apple-system,sans-serif}
-		#bm-touch-stable .bm-stick{position:absolute;left:24px;bottom:max(24px,env(safe-area-inset-bottom));width:126px;height:126px;border-radius:50%;border:1px solid rgba(137,245,235,.45);background:rgba(5,22,31,.31);box-shadow:inset 0 0 26px rgba(66,238,221,.08),0 8px 28px rgba(0,0,0,.18);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);opacity:.9}
-		#bm-touch-stable .bm-nub{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px;border-radius:50%;background:rgba(119,240,228,.86);border:1px solid rgba(255,255,255,.78);box-shadow:0 4px 18px rgba(0,0,0,.25);transform:translate(0,0);transition:transform 70ms linear}
+		#bm-touch-stable .bm-stick{position:absolute;left:24px;bottom:max(24px,env(safe-area-inset-bottom));width:126px;height:126px;border-radius:50%;border:1px solid rgba(137,245,235,.45);background:rgba(5,22,31,.31);box-shadow:inset 0 0 26px rgba(66,238,221,.08),0 8px 28px rgba(0,0,0,.18);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);opacity:.9;pointer-events:auto;touch-action:none}
+		#bm-touch-stable .bm-nub{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px;border-radius:50%;background:rgba(119,240,228,.86);border:1px solid rgba(255,255,255,.78);box-shadow:0 4px 18px rgba(0,0,0,.25);transform:translate(0,0);transition:transform 70ms linear;pointer-events:none}
 		#bm-touch-stable .bm-stick.is-active .bm-nub{transition:none}
 		#bm-touch-stable .bm-actions{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom));display:grid;grid-template-columns:58px 58px;gap:10px;pointer-events:auto}
 		#bm-touch-stable button{width:58px;height:58px;border-radius:50%;border:1px solid rgba(139,243,234,.5);background:rgba(5,22,31,.58);color:#eaffff;font-weight:750;font-size:10px;letter-spacing:.08em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);touch-action:none;-webkit-tap-highlight-color:transparent;padding:0 3px}
@@ -43,6 +43,24 @@ export function installStableMobileControls( app ) {
 	const nub = root.querySelector( '.bm-nub' );
 	const fishBtn = root.querySelector( '[data-fish]' );
 	const moveCodes = [ 'KeyW', 'KeyA', 'KeyS', 'KeyD' ];
+
+	let audioStarted = false;
+	const unlockAudio = () => {
+
+		if ( audioStarted ) return;
+		audioStarted = true;
+		try {
+
+			const r = app.audio?.resume?.();
+			r?.catch?.( () => { audioStarted = false; } );
+
+		} catch ( e ) {
+
+			audioStarted = false;
+
+		}
+
+	};
 
 	const down = ( code ) => {
 
@@ -138,6 +156,7 @@ export function installStableMobileControls( app ) {
 	const onPointerDown = ( e ) => {
 
 		if ( e.pointerType === 'mouse' && e.button !== 0 ) return;
+		unlockAudio();
 		const btn = buttonAt( e.clientX, e.clientY );
 		if ( btn ) {
 
@@ -145,7 +164,7 @@ export function installStableMobileControls( app ) {
 			const active = beginAction( d );
 			actionPointers.set( e.pointerId, { active, btn } );
 			btn.classList.add( 'is-on' );
-			btn.setPointerCapture?.( e.pointerId );
+			try { btn.setPointerCapture?.( e.pointerId ); } catch ( err ) {}
 			e.preventDefault();
 			return;
 
@@ -161,7 +180,6 @@ export function installStableMobileControls( app ) {
 			moveY = sg.y;
 			stick.classList.add( 'is-active' );
 			updateMove( e.clientX, e.clientY );
-			document.documentElement.setPointerCapture?.( e.pointerId );
 			e.preventDefault();
 			return;
 
@@ -172,7 +190,6 @@ export function installStableMobileControls( app ) {
 			lookPointer = e.pointerId;
 			lookX = e.clientX;
 			lookY = e.clientY;
-			document.documentElement.setPointerCapture?.( e.pointerId );
 			e.preventDefault();
 
 		}
