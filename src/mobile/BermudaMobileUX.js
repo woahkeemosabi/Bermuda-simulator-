@@ -1,5 +1,5 @@
 // Bermuda Simulator mobile UX layer.
-// Mobile is handled as a first-class input surface rather than pretending touches are mouse events.
+// Pointer Events are the single source of truth for mobile controls.
 
 export function applyBermudaBranding( mobile = false ) {
 
@@ -37,15 +37,13 @@ function tuneMobileImage( app ) {
 
 function disableLegacyMobileGuide( app ) {
 
-	// Mark the upstream desktop fishing tutorial as already seen before it gets a chance to own the
-	// screen. It is not part of the Bermuda mobile product.
 	try {
 
 		const seen = JSON.parse( localStorage.getItem( 'tidewater.guide' ) || '{}' ) || {};
 		seen.intro = true;
 		localStorage.setItem( 'tidewater.guide', JSON.stringify( seen ) );
 
-	} catch ( e ) { /* storage can be unavailable in private webviews */ }
+	} catch ( e ) { /* private webviews may block storage */ }
 
 	let attempts = 0;
 	const timer = setInterval( () => {
@@ -59,23 +57,15 @@ function disableLegacyMobileGuide( app ) {
 
 		}
 
-		try {
-
-			guide._wait = - 1;
-			guide.seen = guide.seen || {};
-			guide.seen.intro = true;
-			guide.close && guide.close();
-			guide.update = () => {};
-			guide.tip = () => {};
-			guide.replay = () => {};
-			guide.el && guide.el.remove();
-			guide.coach && guide.coach.remove();
-
-		} catch ( e ) {
-
-			console.warn( 'Bermuda mobile guide cleanup:', e );
-
-		}
+		guide._wait = - 1;
+		guide.seen = guide.seen || {};
+		guide.seen.intro = true;
+		guide.close && guide.close();
+		guide.update = () => {};
+		guide.tip = () => {};
+		guide.replay = () => {};
+		guide.el && guide.el.remove();
+		guide.coach && guide.coach.remove();
 		clearInterval( timer );
 
 	}, 40 );
@@ -87,15 +77,18 @@ export function installMobileControls( app ) {
 	if ( ! app || ! app.input || document.getElementById( 'bm-touch' ) ) return;
 	const input = app.input;
 	input.enabled = true;
-	const devUI = new URLSearchParams( location.search ).has( 'dev' );
+	const qs = new URLSearchParams( location.search );
+	const devUI = qs.has( 'dev' );
+	const navDebug = qs.has( 'navdebug' );
 	document.body.classList.add( 'bm-mobile' );
 	tuneMobileImage( app );
 	disableLegacyMobileGuide( app );
 
 	const style = document.createElement( 'style' );
 	style.textContent = `
+		html,body,#app,#app canvas{touch-action:none!important;overscroll-behavior:none}
 		#bm-touch{position:fixed;inset:0;z-index:60;pointer-events:none;user-select:none;-webkit-user-select:none;font-family:system-ui,-apple-system,sans-serif}
-		#bm-touch .bm-stick{position:absolute;left:24px;bottom:max(24px,env(safe-area-inset-bottom));width:126px;height:126px;border-radius:50%;border:1px solid rgba(137,245,235,.45);background:rgba(5,22,31,.31);box-shadow:inset 0 0 26px rgba(66,238,221,.08),0 8px 28px rgba(0,0,0,.18);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);transition:opacity .12s;opacity:.9}
+		#bm-touch .bm-stick{position:absolute;left:24px;bottom:max(24px,env(safe-area-inset-bottom));width:126px;height:126px;border-radius:50%;border:1px solid rgba(137,245,235,.45);background:rgba(5,22,31,.31);box-shadow:inset 0 0 26px rgba(66,238,221,.08),0 8px 28px rgba(0,0,0,.18);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);opacity:.9}
 		#bm-touch .bm-nub{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px;border-radius:50%;background:rgba(119,240,228,.86);border:1px solid rgba(255,255,255,.78);box-shadow:0 4px 18px rgba(0,0,0,.25);transform:translate(0,0)}
 		#bm-touch .bm-actions{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom));display:grid;grid-template-columns:58px 58px;gap:10px;pointer-events:auto}
 		#bm-touch button{width:58px;height:58px;border-radius:50%;border:1px solid rgba(139,243,234,.5);background:rgba(5,22,31,.58);color:#eaffff;font-weight:750;font-size:10px;letter-spacing:.08em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);touch-action:none;-webkit-tap-highlight-color:transparent}
@@ -104,14 +97,14 @@ export function installMobileControls( app ) {
 		body.bm-mobile .gm-guide,body.bm-mobile .gm-coach{display:none!important}
 		${ devUI ? '' : 'body.bm-mobile .tw-rail,body.bm-mobile .tw-panel,body.bm-mobile .tw-help,body.bm-mobile .tw-stats,body.bm-mobile .gm-purse{display:none!important}' }
 		@media (max-width:700px){body.bm-mobile .gm-map{width:102px;height:102px;right:15px;bottom:166px;opacity:.84}}
-		@media (max-height:680px){#bm-touch .bm-stick{width:108px;height:108px}#bm-touch .bm-actions{grid-template-columns:50px 50px}#bm-touch button{width:50px;height:50px}.bm-mobile .gm-map{display:none!important}}
+		#bm-navdebug{position:fixed;left:8px;top:72px;z-index:1000;min-width:190px;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.78);color:#8fffe9;font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;white-space:pre}
 	`;
 	document.head.appendChild( style );
 
 	const root = document.createElement( 'div' );
 	root.id = 'bm-touch';
 	root.innerHTML = `
-		<div class="bm-stick" aria-hidden="true"><div class="bm-nub"></div></div>
+		<div class="bm-stick"><div class="bm-nub"></div></div>
 		<div class="bm-actions">
 			<button type="button" data-key="KeyE">ACT</button>
 			<button type="button" data-key="Space">UP</button>
@@ -134,16 +127,10 @@ export function installMobileControls( app ) {
 	const up = ( code ) => input.keys.delete( code );
 	const clearMove = () => moveCodes.forEach( up );
 
-	let moveTouch = null, moveX = 0, moveY = 0;
-	let lookTouch = null, lookX = 0, lookY = 0;
-	const actionTouches = new Map();
-	const touchById = ( list, id ) => {
-
-		if ( id === null ) return null;
-		for ( let i = 0; i < list.length; i ++ ) if ( list[ i ].identifier === id ) return list[ i ];
-		return null;
-
-	};
+	let movePointer = null, moveX = 0, moveY = 0;
+	let lookPointer = null, lookX = 0, lookY = 0;
+	const actionPointers = new Map();
+	let lastEvent = 'none';
 
 	const setStickOrigin = ( x, y ) => {
 
@@ -153,9 +140,9 @@ export function installMobileControls( app ) {
 		stick.style.left = `${ left }px`;
 		stick.style.top = `${ top }px`;
 		stick.style.bottom = 'auto';
-		stick.style.opacity = '1';
 
 	};
+
 	const updateMove = ( x, y ) => {
 
 		let dx = ( x - moveX ) / 52;
@@ -171,161 +158,140 @@ export function installMobileControls( app ) {
 		if ( dx > dead ) down( 'KeyD' );
 
 	};
+
 	const resetMove = () => {
 
-		moveTouch = null;
+		movePointer = null;
 		clearMove();
 		nub.style.transform = 'translate(0,0)';
-		stick.style.opacity = '.9';
 
 	};
 
-	const buttonAt = ( x, y ) => {
+	const buttonAt = ( x, y ) => document.elementFromPoint( x, y )?.closest?.( '#bm-touch button[data-key]' ) || null;
+	const startOverlayAt = ( x, y ) => document.elementFromPoint( x, y )?.closest?.( '.tw-start-cta,.tw-start' ) || null;
 
-		const el = document.elementFromPoint( x, y );
-		return el && el.closest ? el.closest( '#bm-touch button[data-key]' ) : null;
+	// Pointer Events are supported by current iOS Safari/WKWebView. Using one event model avoids the
+	// previous bug where touch pointer events were explicitly ignored while some embedded webviews did
+	// not reliably deliver the separate Touch Events stream.
+	const onPointerDown = ( e ) => {
 
-	};
+		if ( e.pointerType === 'mouse' && e.button !== 0 ) return;
+		lastEvent = `down ${ e.pointerType } #${ e.pointerId }`;
+		const btn = buttonAt( e.clientX, e.clientY );
+		if ( btn ) {
 
-	// Capture at document level. This deliberately does not depend on Safari routing touch events to
-	// a particular overlay element: any touch in the lower-left play zone becomes movement and any
-	// other world touch becomes camera look. That removes the WebView/Safari hit-testing failure we
-	// saw with the first two joystick implementations.
-	const onTouchStart = ( e ) => {
-
-		let claimed = false;
-		for ( let i = 0; i < e.changedTouches.length; i ++ ) {
-
-			const t = e.changedTouches[ i ];
-			const btn = buttonAt( t.clientX, t.clientY );
-			if ( btn ) {
-
-				const code = btn.dataset.key;
-				actionTouches.set( t.identifier, { code, btn } );
-				down( code );
-				btn.classList.add( 'is-on' );
-				claimed = true;
-				continue;
-
-			}
-
-			const startCta = document.elementFromPoint( t.clientX, t.clientY )?.closest?.( '.tw-start-cta' );
-			if ( startCta ) continue;
-
-			if ( moveTouch === null && t.clientX < innerWidth * 0.52 && t.clientY > innerHeight * 0.30 ) {
-
-				moveTouch = t.identifier;
-				moveX = t.clientX; moveY = t.clientY;
-				setStickOrigin( moveX, moveY );
-				updateMove( t.clientX, t.clientY );
-				claimed = true;
-
-			} else if ( lookTouch === null ) {
-
-				lookTouch = t.identifier;
-				lookX = t.clientX; lookY = t.clientY;
-				claimed = true;
-
-			}
+			const code = btn.dataset.key;
+			actionPointers.set( e.pointerId, { code, btn } );
+			down( code );
+			btn.classList.add( 'is-on' );
+			btn.setPointerCapture?.( e.pointerId );
+			e.preventDefault();
+			return;
 
 		}
-		if ( claimed ) e.preventDefault();
+		if ( startOverlayAt( e.clientX, e.clientY ) ) return;
 
-	};
+		if ( movePointer === null && e.clientX < innerWidth * 0.54 && e.clientY > innerHeight * 0.28 ) {
 
-	const onTouchMove = ( e ) => {
-
-		let claimed = false;
-		const m = touchById( e.touches, moveTouch );
-		if ( m ) {
-
-			updateMove( m.clientX, m.clientY );
-			claimed = true;
-
-		}
-		const l = touchById( e.touches, lookTouch );
-		if ( l ) {
-
-			input.enabled = true;
-			input.look.x += ( l.clientX - lookX ) * 1.05;
-			input.look.y += ( l.clientY - lookY ) * 1.05;
-			lookX = l.clientX; lookY = l.clientY;
-			claimed = true;
+			movePointer = e.pointerId;
+			moveX = e.clientX; moveY = e.clientY;
+			setStickOrigin( moveX, moveY );
+			updateMove( e.clientX, e.clientY );
+			document.documentElement.setPointerCapture?.( e.pointerId );
+			e.preventDefault();
+			return;
 
 		}
-		if ( claimed || actionTouches.size ) e.preventDefault();
 
-	};
+		if ( lookPointer === null ) {
 
-	const onTouchEnd = ( e ) => {
-
-		let claimed = false;
-		if ( moveTouch !== null && ! touchById( e.touches, moveTouch ) ) {
-
-			resetMove();
-			claimed = true;
-
-		}
-		if ( lookTouch !== null && ! touchById( e.touches, lookTouch ) ) {
-
-			lookTouch = null;
-			claimed = true;
-
-		}
-		for ( const [ id, a ] of [ ...actionTouches ] ) {
-
-			if ( touchById( e.touches, id ) ) continue;
-			up( a.code );
-			a.btn.classList.remove( 'is-on' );
-			actionTouches.delete( id );
-			claimed = true;
-
-		}
-		if ( claimed ) e.preventDefault();
-
-	};
-
-	document.addEventListener( 'touchstart', onTouchStart, { passive: false, capture: true } );
-	document.addEventListener( 'touchmove', onTouchMove, { passive: false, capture: true } );
-	document.addEventListener( 'touchend', onTouchEnd, { passive: false, capture: true } );
-	document.addEventListener( 'touchcancel', onTouchEnd, { passive: false, capture: true } );
-
-	// Pointer fallback for touch-screen laptops / remote inspection. iPhone uses the document touch
-	// path above.
-	for ( const b of buttons ) {
-
-		b.addEventListener( 'pointerdown', ( e ) => {
-
-			if ( e.pointerType === 'touch' ) return;
-			down( b.dataset.key );
-			b.classList.add( 'is-on' );
+			lookPointer = e.pointerId;
+			lookX = e.clientX; lookY = e.clientY;
+			document.documentElement.setPointerCapture?.( e.pointerId );
 			e.preventDefault();
 
-		} );
-		const release = ( e ) => {
+		}
 
-			if ( e.pointerType === 'touch' ) return;
-			up( b.dataset.key );
-			b.classList.remove( 'is-on' );
+	};
 
-		};
-		b.addEventListener( 'pointerup', release );
-		b.addEventListener( 'pointercancel', release );
+	const onPointerMove = ( e ) => {
 
-	}
+		if ( e.pointerId === movePointer ) {
+
+			lastEvent = `move stick #${ e.pointerId }`;
+			updateMove( e.clientX, e.clientY );
+			e.preventDefault();
+			return;
+
+		}
+		if ( e.pointerId === lookPointer ) {
+
+			lastEvent = `move look #${ e.pointerId }`;
+			input.enabled = true;
+			input.look.x += ( e.clientX - lookX ) * 1.05;
+			input.look.y += ( e.clientY - lookY ) * 1.05;
+			lookX = e.clientX; lookY = e.clientY;
+			e.preventDefault();
+
+		}
+
+	};
+
+	const onPointerUp = ( e ) => {
+
+		lastEvent = `up ${ e.pointerType } #${ e.pointerId }`;
+		if ( e.pointerId === movePointer ) resetMove();
+		if ( e.pointerId === lookPointer ) lookPointer = null;
+		const a = actionPointers.get( e.pointerId );
+		if ( a ) {
+
+			up( a.code );
+			a.btn.classList.remove( 'is-on' );
+			actionPointers.delete( e.pointerId );
+
+		}
+
+	};
+
+	document.addEventListener( 'pointerdown', onPointerDown, { passive: false, capture: true } );
+	document.addEventListener( 'pointermove', onPointerMove, { passive: false, capture: true } );
+	document.addEventListener( 'pointerup', onPointerUp, { passive: false, capture: true } );
+	document.addEventListener( 'pointercancel', onPointerUp, { passive: false, capture: true } );
 
 	window.addEventListener( 'blur', () => {
 
 		resetMove();
-		lookTouch = null;
-		for ( const { code, btn } of actionTouches.values() ) {
+		lookPointer = null;
+		for ( const { code, btn } of actionPointers.values() ) {
 
 			up( code );
 			btn.classList.remove( 'is-on' );
 
 		}
-		actionTouches.clear();
+		actionPointers.clear();
 
 	} );
+
+	if ( navDebug ) {
+
+		const dbg = document.createElement( 'div' );
+		dbg.id = 'bm-navdebug';
+		document.body.appendChild( dbg );
+		setInterval( () => {
+
+			const p = app.player;
+			const keys = moveCodes.filter( ( k ) => input.keys.has( k ) ).map( ( k ) => k.slice( 3 ) ).join( '' ) || '-';
+			dbg.textContent = [
+				`event ${ lastEvent }`,
+				`input ${ input.enabled ? 'ON' : 'OFF' } keys ${ keys }`,
+				`movePtr ${ movePointer ?? '-' } lookPtr ${ lookPointer ?? '-' }`,
+				`mode ${ p?.mode || '-' } freeCam ${ app.freeCam ? 'Y' : 'N' }`,
+				`pos ${ p ? `${ p.position.x.toFixed( 2 ) }, ${ p.position.z.toFixed( 2 ) }` : '-' }`,
+				`vel ${ p ? `${ p.velocity.x.toFixed( 2 ) }, ${ p.velocity.z.toFixed( 2 ) }` : '-' }`,
+			].join( '\n' );
+
+		}, 100 );
+
+	}
 
 }
