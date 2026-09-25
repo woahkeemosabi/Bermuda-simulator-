@@ -15,7 +15,7 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
 const forceDesktop = initialParams.has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
-const mobileSafeGPU = mobileFastStart && initialParams.has( 'gpuSafe' );
+const mobileSafeLevel = mobileFastStart ? Math.max( 0, Number( initialParams.get( 'gpuSafe' ) || 0 ) ) : 0;
 
 if ( mobileFastStart ) {
 
@@ -26,13 +26,18 @@ if ( mobileFastStart ) {
 
 	}
 
-	// Normal mobile stays at the known-good 90% profile. If Safari's WebGPU queue actually stalls,
-	// the watchdog below reloads exactly once into a conservative recovery profile instead of leaving
-	// a frozen 3D canvas while the HTML controls/minimap continue responding.
-	if ( mobileSafeGPU ) {
+	// Normal mobile stays at the known-good 90% profile. Recovery is now tiered rather than dropping
+	// immediately to 72%: first device loss uses an 82% profile with the expensive shoreline simulation
+	// disabled; only a second device loss falls back to the old 72% emergency profile.
+	if ( mobileSafeLevel >= 2 ) {
 
 		url.searchParams.set( 'scale', '0.72' );
-		if ( ! url.searchParams.has( 'noSim' ) ) url.searchParams.set( 'noSim', '1' );
+		url.searchParams.set( 'noSim', '1' );
+
+	} else if ( mobileSafeLevel === 1 ) {
+
+		url.searchParams.set( 'scale', '0.82' );
+		url.searchParams.set( 'noSim', '1' );
 
 	} else if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) {
 
@@ -80,13 +85,14 @@ function installMobileGPUWatchdog() {
 		window.__bermudaGPUStall = reason;
 		const url = new URL( location.href );
 		const attempts = Number( url.searchParams.get( 'gpuRecovery' ) || 0 );
-		if ( attempts < 1 ) {
+		if ( attempts < 2 ) {
 
-			url.searchParams.set( 'gpuSafe', '1' );
-			url.searchParams.set( 'gpuRecovery', String( attempts + 1 ) );
-			url.searchParams.set( 'scale', '0.72' );
+			const next = attempts + 1;
+			url.searchParams.set( 'gpuSafe', String( next ) );
+			url.searchParams.set( 'gpuRecovery', String( next ) );
+			url.searchParams.set( 'scale', next === 1 ? '0.82' : '0.72' );
 			url.searchParams.set( 'noSim', '1' );
-			url.searchParams.set( 'v', 'gpu-recovery-1' );
+			url.searchParams.set( 'v', 'gpu-recovery-' + next );
 			location.replace( url.href );
 			return;
 
@@ -129,6 +135,33 @@ function installMobileGPUWatchdog() {
 
 }
 
+function installMobileAudioResume( app ) {
+
+	if ( ! mobileDevice || ! app.audio ) return;
+	const wakeAudio = () => {
+
+		if ( document.visibilityState === 'hidden' || ! app.audio ) return;
+		void app.audio.resume();
+
+	};
+
+	// iOS suspends Web Audio when Safari is backgrounded. Try immediately when the page becomes active,
+	// then again shortly after Safari has restored the page. If iOS still requires a fresh user gesture,
+	// the first touch anywhere in the game resumes it without changing the gameplay controls.
+	document.addEventListener( 'visibilitychange', () => {
+
+		if ( document.visibilityState !== 'visible' ) return;
+		setTimeout( wakeAudio, 60 );
+		setTimeout( wakeAudio, 450 );
+
+	} );
+	window.addEventListener( 'pageshow', wakeAudio );
+	window.addEventListener( 'focus', wakeAudio );
+	document.addEventListener( 'pointerdown', wakeAudio, { capture: true, passive: true } );
+	document.addEventListener( 'touchstart', wakeAudio, { capture: true, passive: true } );
+
+}
+
 // ?bench runs in background tabs too (automation): rAF does not fire in a hidden page
 if ( /[?&]bench\b/.test( location.search ) ) {
 
@@ -152,6 +185,11 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	if ( mobileDevice ) {
 
 		installStableMobileControls( app );
+		installMobileAudioResume( app );
+
+		// A little extra RCAS sharpening compensates for mobile render scaling without increasing the
+		// internal render resolution enough to recreate the WebGPU device-loss problem.
+		if ( app.post && app.post.params && app.post.params.sharpen ) app.post.params.sharpen.value = mobileSafeLevel ? 0.62 : 0.54;
 
 		// Keep the gameplay logic active, but hide the desktop prompt/widget layer on phones.
 		// Mobile interaction buttons send the same underlying E/R/C/V/Space/mouse inputs directly.
