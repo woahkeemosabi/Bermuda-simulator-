@@ -10,29 +10,40 @@ import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 // iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
 // Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
 // Add ?desktop to the URL to force the full desktop path on a mobile device for diagnostics.
+const initialParams = new URLSearchParams( location.search );
 const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
-const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
+const forceDesktop = initialParams.has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
+const mobileSafeGPU = mobileFastStart && initialParams.has( 'gpuSafe' );
 
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	// The 72/82% emergency scales proved the Safari startup path. The default is now 90% so the
-	// actual game is substantially sharper, while clouds/haze/caustics remain off until their shader
-	// startup cost is reduced. ?scale= can still be supplied explicitly for diagnostics.
 	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ] ] ) {
 
 		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
 
 	}
-	if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) url.searchParams.set( 'scale', '0.90' );
+
+	// Normal mobile stays at the known-good 90% profile. If Safari's WebGPU queue actually stalls,
+	// the watchdog below reloads exactly once into a conservative recovery profile instead of leaving
+	// a frozen 3D canvas while the HTML controls/minimap continue responding.
+	if ( mobileSafeGPU ) {
+
+		url.searchParams.set( 'scale', '0.72' );
+		if ( ! url.searchParams.has( 'noSim' ) ) url.searchParams.set( 'noSim', '1' );
+
+	} else if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) {
+
+		url.searchParams.set( 'scale', '0.90' );
+
+	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	// Keep all scene pipelines asynchronous on mobile. MeshRenderer explicitly supports this mode:
 	// a draw whose pipeline is still compiling is skipped for that frame instead of forcing a
-	// synchronous WebGPU compile. That is critical on iPhone Safari: equipping the rod, boarding the
-	// boat, or revealing a new material must never stall/fault the entire frame loop.
+	// synchronous WebGPU compile.
 	App.prototype.precompile = async function() {
 
 		await Promise.race( [
@@ -42,6 +53,79 @@ if ( mobileFastStart ) {
 		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;
 
 	};
+
+}
+
+function installMobileGPUWatchdog() {
+
+	if ( ! mobileFastStart || ! GPU.device || ! GPU.queue ) return;
+	let recovering = false;
+	let probeBusy = false;
+
+	const showRecoveryFailure = ( reason ) => {
+
+		if ( document.getElementById( 'bm-gpu-recovery' ) ) return;
+		const el = document.createElement( 'div' );
+		el.id = 'bm-gpu-recovery';
+		el.style.cssText = 'position:fixed;left:16px;right:16px;top:max(70px,env(safe-area-inset-top));z-index:9999;padding:13px 15px;border-radius:14px;background:rgba(4,18,27,.94);color:#eaffff;font:600 13px/1.35 system-ui,-apple-system,sans-serif;box-shadow:0 10px 35px rgba(0,0,0,.35);border:1px solid rgba(110,240,226,.35)';
+		el.textContent = 'Graphics stopped responding (' + reason + '). Close this tab and reopen the simulator.';
+		document.body.appendChild( el );
+
+	};
+
+	const recover = ( reason ) => {
+
+		if ( recovering ) return;
+		recovering = true;
+		window.__bermudaGPUStall = reason;
+		const url = new URL( location.href );
+		const attempts = Number( url.searchParams.get( 'gpuRecovery' ) || 0 );
+		if ( attempts < 1 ) {
+
+			url.searchParams.set( 'gpuSafe', '1' );
+			url.searchParams.set( 'gpuRecovery', String( attempts + 1 ) );
+			url.searchParams.set( 'scale', '0.72' );
+			url.searchParams.set( 'noSim', '1' );
+			url.searchParams.set( 'v', 'gpu-recovery-1' );
+			location.replace( url.href );
+			return;
+
+		}
+		showRecoveryFailure( reason );
+
+	};
+
+	GPU.device.lost.then( ( info ) => recover( 'device lost: ' + ( info && info.reason ? info.reason : 'unknown' ) ) );
+
+	// A live JS/touch layer with a frozen 3D image means the browser can still run JavaScript while
+	// WebGPU presentation has stopped. Probe submitted GPU work periodically; if the queue cannot
+	// complete for several seconds, recover instead of leaving the game permanently frozen.
+	window.__bermudaGPUWatchdog = setInterval( () => {
+
+		if ( recovering || probeBusy || document.visibilityState !== 'visible' ) return;
+		probeBusy = true;
+		let settled = false;
+		const timer = setTimeout( () => {
+
+			if ( ! settled ) recover( 'GPU queue stalled' );
+
+		}, 5000 );
+		GPU.queue.onSubmittedWorkDone().then( () => {
+
+			settled = true;
+			probeBusy = false;
+			clearTimeout( timer );
+
+		}, () => {
+
+			settled = true;
+			probeBusy = false;
+			clearTimeout( timer );
+			recover( 'GPU queue error' );
+
+		} );
+
+	}, 1800 );
 
 }
 
@@ -99,7 +183,12 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 		if ( app.qs.has( 'wdbg' ) && app.waterMaterial ) app.waterMaterial.debugMode.value = Number( app.qs.get( 'wdbg' ) );
 		if ( app.qs.has( 'shots' ) ) window.__job = window.__bench.shots( app.qs.get( 'shots' ).split( ',' ), { tag: app.qs.get( 'tag' ) || 'shot', dt: Number( app.qs.get( 'dt' ) ) || 0, seq: Number( app.qs.get( 'seq' ) ) || 1, every: Number( app.qs.get( 'every' ) ) || 1 } );
 
-	} else app.start();
+	} else {
+
+		app.start();
+		installMobileGPUWatchdog();
+
+	}
 	ui.showStartOverlay( () => {
 
 		if ( ! mobileDevice ) app.input.requestLock();
