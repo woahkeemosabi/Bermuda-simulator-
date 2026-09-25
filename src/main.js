@@ -4,6 +4,7 @@ import { GPU } from './engine/gpu/GPU.js';
 import { UI } from './ui/UI.js';
 import { AppUI } from './ui/AppUI.js';
 import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaIdentity.js';
+import { applyBermudaBranding, installMobileControls } from './mobile/BermudaMobileUX.js';
 
 // iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
 // Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
@@ -25,15 +26,17 @@ if ( mobileFastStart ) {
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
-	// Do not force Safari to compile every hidden/off-screen material variant before the first frame.
-	// Wait briefly for already-requested async pipelines, then let the two normal warm-up frames compile
-	// only what is actually visible. This prevents the loader sitting indefinitely at 94% on iPhone.
+	// Do not compile every hidden desktop material variant on Safari. Give already-requested async
+	// work a short window, then switch the scene renderer to synchronous *visible-only* compilation.
+	// The two normal warm-up frames immediately after this now build what the starting camera needs,
+	// preventing the sky-only / black-world frame seen on iPhone while still avoiding the 94% stall.
 	App.prototype.precompile = async function() {
 
 		await Promise.race( [
 			GPU.pipelinesReady(),
-			new Promise( ( resolve ) => setTimeout( resolve, 8000 ) ),
+			new Promise( ( resolve ) => setTimeout( resolve, 6500 ) ),
 		] );
+		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = true;
 
 	};
 
@@ -49,6 +52,7 @@ if ( /[?&]bench\b/.test( location.search ) ) {
 }
 
 const ui = new UI();
+applyBermudaBranding( mobileDevice );
 const app = new App();
 applyBermudaBootLook( app );
 window.__ui = ui;
@@ -57,6 +61,8 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 	applyBermudaRuntimeLook( app );
 	app.ui = new AppUI( app, ui );
+	applyBermudaBranding( mobileDevice );
+	if ( mobileDevice ) installMobileControls( app );
 	ui.setLoading( 1, 'Ready' );
 	await ui.hideLoader();
 	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
@@ -72,7 +78,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	} else app.start();
 	ui.showStartOverlay( () => {
 
-		app.input.requestLock();
+		if ( ! mobileDevice ) app.input.requestLock();
 		if ( app.audio ) app.audio.resume();
 
 	} );
