@@ -1,6 +1,7 @@
 import './core/BenchSeed.js';
 import { App } from './App.js';
 import { GPU } from './engine/gpu/GPU.js';
+import { ShadowUniforms } from './engine/render/wgsl/lighting.js';
 import { UI } from './ui/UI.js';
 import { AppUI } from './ui/AppUI.js';
 import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaIdentity.js';
@@ -32,10 +33,13 @@ if ( mobileFastStart ) {
 	if ( mobileSafeLevel >= 2 ) {
 
 		url.searchParams.set( 'scale', '0.72' );
+		url.searchParams.set( 'noVeg', '1' );
+		url.searchParams.set( 'G', '16' );
 
 	} else if ( mobileSafeLevel === 1 ) {
 
 		url.searchParams.set( 'scale', '0.82' );
+		url.searchParams.set( 'G', '16' );
 
 	} else if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) {
 
@@ -59,6 +63,91 @@ if ( mobileFastStart ) {
 
 }
 
+// App.init performs two hidden warm-up frames before the start overlay is shown. On iOS those frames
+// were enough to materialise every lazy GPU buffer (wake, spray, wildlife, shadows, etc.) at once.
+// Keep the scene-building work, but defer all actual frames until the user taps Explore and after
+// the mobile memory profile has disabled nonessential GPU systems.
+const normalAppFrame = App.prototype.frame;
+if ( mobileFastStart ) {
+
+	App.prototype.frame = function( ...args ) {
+
+		if ( ! this.__bermudaMobileReady ) return;
+		return normalAppFrame.apply( this, args );
+
+	};
+
+}
+
+function applyMobileMemoryProfile( app ) {
+
+	if ( ! mobileFastStart || ! app ) return;
+
+	// The 3-cascade 2048² depth array alone is about 48 MB. Resize the lazy texture before its first
+	// GPU allocation; 1024² keeps useful shadows while cutting that allocation to one quarter.
+	if ( app.shadows && app.shadows.texture && ! app.shadows.texture.gpu ) {
+
+		app.shadows.size = 1024;
+		app.shadows.texture.width = 1024;
+		app.shadows.texture.height = 1024;
+		if ( ShadowUniforms && ShadowUniforms.fields && ShadowUniforms.fields.mapSize ) ShadowUniforms.fields.mapSize.value = 1024;
+
+	}
+
+	// These are secondary visual systems, not gameplay dependencies. Their storage buffers are lazy,
+	// so disabling them before the first real frame avoids tens of megabytes of iOS WebGPU allocation
+	// while preserving walking, swimming/diving, fishing, boat physics, ocean FFT and interaction.
+	if ( app.wake ) {
+
+		if ( app.surface ) app.surface.wake = null;
+		app.wake.update = () => {};
+
+	}
+	if ( app.boatSpray ) app.boatSpray.update = () => {};
+	if ( app.spray ) {
+
+		app.spray.update = () => {};
+		if ( app.spray.mesh ) app.spray.mesh.visible = false;
+
+	}
+	if ( app.breakers ) {
+
+		app.breakers.update = () => {};
+		if ( app.breakers.mesh ) app.breakers.mesh.visible = false;
+
+	}
+	if ( app.marineSnow ) {
+
+		app.marineSnow.update = () => {};
+		if ( app.marineSnow.mesh ) app.marineSnow.mesh.visible = false;
+
+	}
+	if ( app.airMotes ) {
+
+		app.airMotes.update = () => {};
+		if ( app.airMotes.mesh ) app.airMotes.mesh.visible = false;
+
+	}
+	if ( app.whale ) {
+
+		app.whale.update = () => {};
+		if ( app.whale.group ) app.whale.group.visible = false;
+
+	}
+	if ( app.wildlife ) {
+
+		app.wildlife.update = () => {};
+		if ( app.wildlife.birdBatch && app.wildlife.birdBatch.mesh ) app.wildlife.birdBatch.mesh.visible = false;
+		if ( app.wildlife.critterBatch && app.wildlife.critterBatch.mesh ) app.wildlife.critterBatch.mesh.visible = false;
+		if ( app.wildlife.blobs && app.wildlife.blobs.mesh ) app.wildlife.blobs.mesh.visible = false;
+
+	}
+
+	app.__bermudaMobileReady = true;
+	window.__bermudaMobileMemoryProfile = 'core-gameplay-v1';
+
+}
+
 function mobileRecoveryURL( reason, prefix = 'gpu-recovery' ) {
 
 	if ( ! mobileFastStart ) return null;
@@ -70,6 +159,8 @@ function mobileRecoveryURL( reason, prefix = 'gpu-recovery' ) {
 	url.searchParams.set( 'gpuRecovery', String( next ) );
 	url.searchParams.set( 'scale', next === 1 ? '0.82' : '0.72' );
 	url.searchParams.set( 'noSim', '1' );
+	url.searchParams.set( 'G', '16' );
+	if ( next >= 2 ) url.searchParams.set( 'noVeg', '1' );
 	url.searchParams.set( 'v', prefix + '-' + next );
 	try { sessionStorage.setItem( 'bermudaLastGPUError', String( reason || 'unknown' ) ); } catch ( _ ) {}
 	return url;
@@ -199,6 +290,7 @@ window.__ui = ui;
 
 app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async () => {
 
+	if ( mobileFastStart ) applyMobileMemoryProfile( app );
 	applyBermudaRuntimeLook( app );
 	app.ui = new AppUI( app, ui );
 	applyBermudaBranding( mobileDevice );
@@ -243,9 +335,8 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 	} else if ( mobileDevice ) {
 
-		// Do not run the full WebGPU frame loop behind the mobile start overlay. The previous code started
-		// rendering continuously before the user tapped Explore, which could exhaust Safari's GPU budget
-		// while the phone was simply sitting on the start screen. Start exactly once from the user gesture.
+		// Do not run the full WebGPU frame loop behind the mobile start overlay. Start exactly once
+		// from the user gesture after the mobile memory profile is installed.
 		let started = false;
 		ui.showStartOverlay( () => {
 
