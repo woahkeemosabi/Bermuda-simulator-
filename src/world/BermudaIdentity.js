@@ -1,5 +1,6 @@
 import { G } from '../core/Globals.js';
 import { TerrainData } from './TerrainData.js';
+import { installBermudaBlockout } from './BermudaBlockout.js';
 
 // Bermuda Simulator visual/world identity tuning.
 //
@@ -156,6 +157,10 @@ export function applyBermudaRuntimeLook( app ) {
 		app.fft.foamAdd.value = look.water.foamAdd;
 
 	}
+
+	// Add the cheap first-pass Bermuda harbour scene only after core initialization has completed.
+	// The blockout is intentionally texture-free and leaves every gameplay/control system untouched.
+	installBermudaBlockout( app );
 
 	// Recompute sun/atmosphere-dependent lighting from the new daytime preset.
 	if ( app.updateSun ) app.updateSun();
