@@ -1,0 +1,1 @@
+Temporary note: mobile frame recovery now discards an interrupted WebGPU command encoder and submit hooks so a single Safari/WebGPU render exception cannot poison every subsequent frame. Remove this note later if desired.
