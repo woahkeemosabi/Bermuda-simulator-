@@ -32,9 +32,9 @@ export const WORLD = {
 	reef: { center: new THREE.Vector3( - 108, 0, 92 ), radius: 78 },
 
 	spawn: { position: new THREE.Vector3( 18, 0, - 60 ), yaw: Math.PI },
-	// Put the player beside the boarding point, facing the boat. This deliberately bypasses the long
-	// temporary pier so the first interaction is immediately about the boat, not Tidewater scenery.
-	start: { position: new THREE.Vector3( 61.5, 0, 55.5 ), yaw: - Math.PI / 2 },
+	// One short step from the boarding point, but outside the boat model/collider footprint.
+	// The temporary boat board point is roughly x=65.5,z=53.75.
+	start: { position: new THREE.Vector3( 60.75, 0, 53.75 ), yaw: - Math.PI / 2 },
 
 	// Incoming swell direction (unit, travel direction)
 	swellDir: new THREE.Vector2( - 0.12, - 1 ).normalize(),
