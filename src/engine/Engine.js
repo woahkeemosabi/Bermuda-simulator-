@@ -81,12 +81,32 @@ export class Engine {
 
 		const loop = ( t ) => {
 
-			this.clock.update( t );
-			let dt = this.clock.getDelta();
-			if ( dt > 0.1 ) dt = 0.1;
-			this.frame ++;
-			update( dt, this.clock.getElapsed() );
+			// Schedule the next frame before running game/render code. On mobile Safari a single
+			// transient WebGPU/render exception must not permanently kill the RAF loop and freeze
+			// the last rendered frame. The old loop scheduled RAF only after update() returned.
 			this._raf = requestAnimationFrame( loop );
+
+			try {
+
+				this.clock.update( t );
+				let dt = this.clock.getDelta();
+				if ( dt > 0.1 ) dt = 0.1;
+				this.frame ++;
+				update( dt, this.clock.getElapsed() );
+
+			} catch ( e ) {
+
+				this.lastFrameError = e;
+				window.__bermudaFrameError = e;
+				const now = performance.now();
+				if ( ! this._lastFrameErrorLog || now - this._lastFrameErrorLog > 1000 ) {
+
+					console.error( 'Bermuda frame recovered after error:', e );
+					this._lastFrameErrorLog = now;
+
+				}
+
+			}
 
 		};
 
