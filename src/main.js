@@ -29,16 +29,17 @@ if ( mobileFastStart ) {
 	if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) url.searchParams.set( 'scale', '0.90' );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
-	// Do not compile every hidden desktop material variant on Safari. Give already-requested async
-	// work a short window, then switch the scene renderer to synchronous *visible-only* compilation.
-	// The normal warm-up frames immediately after this build what the starting camera needs.
+	// Keep all scene pipelines asynchronous on mobile. MeshRenderer explicitly supports this mode:
+	// a draw whose pipeline is still compiling is skipped for that frame instead of forcing a
+	// synchronous WebGPU compile. That is critical on iPhone Safari: equipping the rod, boarding the
+	// boat, or revealing a new material must never stall/fault the entire frame loop.
 	App.prototype.precompile = async function() {
 
 		await Promise.race( [
 			GPU.pipelinesReady(),
 			new Promise( ( resolve ) => setTimeout( resolve, 6500 ) ),
 		] );
-		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = true;
+		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;
 
 	};
 
