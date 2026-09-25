@@ -2,6 +2,7 @@ import './core/BenchSeed.js';
 import { App } from './App.js';
 import { UI } from './ui/UI.js';
 import { AppUI } from './ui/AppUI.js';
+import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaIdentity.js';
 
 // ?bench runs in background tabs too (automation): rAF does not fire in a hidden page
 if ( /[?&]bench\b/.test( location.search ) ) {
@@ -14,10 +15,12 @@ if ( /[?&]bench\b/.test( location.search ) ) {
 
 const ui = new UI();
 const app = new App();
+applyBermudaBootLook( app );
 window.__ui = ui;
 
 app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async () => {
 
+	applyBermudaRuntimeLook( app );
 	app.ui = new AppUI( app, ui );
 	ui.setLoading( 1, 'Ready' );
 	await ui.hideLoader();
