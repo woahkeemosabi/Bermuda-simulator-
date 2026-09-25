@@ -7,6 +7,7 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobilePolish } from './mobile/BermudaMobilePolish.js';
+import { installBoatReset } from './mobile/BermudaBoatReset.js';
 
 // iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
 // Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
@@ -68,6 +69,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 		installStableMobileControls( app );
 		installMobilePolish( app );
+		installBoatReset( app );
 
 		// Keep the gameplay logic active, but hide the desktop prompt/widget layer on phones.
 		// Mobile interaction buttons send the same underlying E/R/C/V/Space/mouse inputs directly.
