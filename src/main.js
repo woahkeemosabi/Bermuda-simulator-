@@ -63,7 +63,32 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	applyBermudaRuntimeLook( app );
 	app.ui = new AppUI( app, ui );
 	applyBermudaBranding( mobileDevice );
-	if ( mobileDevice ) installMobileControls( app );
+	if ( mobileDevice ) {
+
+		installMobileControls( app );
+
+		// The upstream Tidewater HUD is desktop-first. Its contextual prompt appears over the left
+		// thumb zone on iPhone (for example "R · Take out the rod"). On touch devices that HUD element
+		// can become the pointer target instead of the canvas, allowing Safari/WKWebView gesture handling
+		// to cancel the active navigation pointer. Bermuda mobile uses its own ACT/UP/DIVE/CAM controls,
+		// so the legacy fishing prompt is removed and the non-interactive HUD is made touch-transparent.
+		if ( app.game ) app.game.prompt = () => null;
+		ui.setPrompt( null );
+		if ( ui.promptEl ) {
+
+			ui.promptEl.style.display = 'none';
+			ui.promptEl.style.pointerEvents = 'none';
+			ui.promptEl.style.touchAction = 'none';
+
+		}
+		if ( ui.hud ) {
+
+			ui.hud.style.pointerEvents = 'none';
+			ui.hud.style.touchAction = 'none';
+
+		}
+
+	}
 	ui.setLoading( 1, 'Ready' );
 	await ui.hideLoader();
 	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
