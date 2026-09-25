@@ -1,6 +1,6 @@
 {
-  "name": "tidewater",
-  "version": "1.0.0",
+  "name": "bermuda-simulator",
+  "version": "0.1.0",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5189",
     "build": "vite build",
