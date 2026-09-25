@@ -7,6 +7,7 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobilePolish } from './mobile/BermudaMobilePolish.js';
+import { installBoatReset } from './mobile/BermudaBoatReset.js';
 
 // iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
 // Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
@@ -19,8 +20,8 @@ const mobileFastStart = mobileDevice && ! forceDesktop;
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	// Stability first on iPhone. The 0.95 pass looked sharper but live testing showed stalls, so keep
-	// the expensive optional shader families off and return to the previously stable 0.90 render scale.
+	// Stability first on iPhone: keep the expensive optional shader families off and use the
+	// lower render scale while we rebuild the Bermuda world and profile the heavier effects.
 	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ] ] ) {
 
 		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
@@ -29,9 +30,6 @@ if ( mobileFastStart ) {
 	if ( ! url.searchParams.has( 'scale' ) ) url.searchParams.set( 'scale', '0.90' );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
-	// Do not compile every hidden desktop material variant on Safari. Give already-requested async
-	// work a short window, then switch the scene renderer to synchronous *visible-only* compilation.
-	// The normal warm-up frames immediately after this build what the starting camera needs.
 	App.prototype.precompile = async function() {
 
 		await Promise.race( [
@@ -44,7 +42,6 @@ if ( mobileFastStart ) {
 
 }
 
-// ?bench runs in background tabs too (automation): rAF does not fire in a hidden page
 if ( /[?&]bench\b/.test( location.search ) ) {
 
 	const raf = window.requestAnimationFrame.bind( window ), caf = window.cancelAnimationFrame.bind( window );
@@ -68,9 +65,8 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 		installStableMobileControls( app );
 		installMobilePolish( app );
+		installBoatReset( app );
 
-		// Keep the gameplay logic active, but hide the desktop prompt/widget layer on phones.
-		// Mobile interaction buttons send the same underlying E/R/C/V/Space/mouse inputs directly.
 		ui.setPrompt( null );
 		if ( ui.promptEl ) {
 
@@ -89,13 +85,10 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	}
 	ui.setLoading( 1, 'Ready' );
 	await ui.hideLoader();
-	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
 	if ( app.qs.has( 'bench' ) ) {
 
 		window.__bench = new ( await import( './core/Bench.js' ) ).Bench( app );
 		if ( app.qs.has( 'auto' ) ) window.__job = window.__bench.auto( app.qs.get( 'auto' ), { runs: Number( app.qs.get( 'runs' ) ) || 1 } );
-		// ?bench&shots=view1,view2[&tag=name][&dt=seconds][&seq=n&every=frames]: reference shots of the named views only (core/DebugViews.js; dt > 0: the clock runs, e.g. for the eased lens flare)
-		// &wdbg=N: the water shader's debug view (WaterMaterial debugMode) in the shots
 		if ( app.qs.has( 'wdbg' ) && app.waterMaterial ) app.waterMaterial.debugMode.value = Number( app.qs.get( 'wdbg' ) );
 		if ( app.qs.has( 'shots' ) ) window.__job = window.__bench.shots( app.qs.get( 'shots' ).split( ',' ), { tag: app.qs.get( 'tag' ) || 'shot', dt: Number( app.qs.get( 'dt' ) ) || 0, seq: Number( app.qs.get( 'seq' ) ) || 1, every: Number( app.qs.get( 'every' ) ) || 1 } );
 
