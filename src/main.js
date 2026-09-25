@@ -61,6 +61,35 @@ if ( mobileFastStart ) {
 
 }
 
+function mobileRecoveryURL( reason, prefix = 'gpu-recovery' ) {
+
+	if ( ! mobileFastStart ) return null;
+	const url = new URL( location.href );
+	const attempts = Number( url.searchParams.get( 'gpuRecovery' ) || 0 );
+	if ( attempts >= 2 ) return null;
+	const next = attempts + 1;
+	url.searchParams.set( 'gpuSafe', String( next ) );
+	url.searchParams.set( 'gpuRecovery', String( next ) );
+	url.searchParams.set( 'scale', next === 1 ? '0.82' : '0.72' );
+	url.searchParams.set( 'noSim', '1' );
+	url.searchParams.set( 'v', prefix + '-' + next );
+	try { sessionStorage.setItem( 'bermudaLastGPUError', String( reason || 'unknown' ) ); } catch ( _ ) {}
+	return url;
+
+}
+
+function recoverMobileInitGPUError( error ) {
+
+	if ( ! mobileFastStart ) return false;
+	const message = String( error && ( error.message || error ) || '' );
+	if ( ! /createBuffer|Unable to create buffer|GPUDevice|device lost|destroyed|out of memory|GPU queue/i.test( message ) ) return false;
+	const url = mobileRecoveryURL( message, 'gpu-init-recovery' );
+	if ( ! url ) return false;
+	location.replace( url.href );
+	return true;
+
+}
+
 function installMobileGPUWatchdog() {
 
 	if ( ! mobileFastStart || ! GPU.device || ! GPU.queue ) return;
@@ -83,16 +112,9 @@ function installMobileGPUWatchdog() {
 		if ( recovering ) return;
 		recovering = true;
 		window.__bermudaGPUStall = reason;
-		const url = new URL( location.href );
-		const attempts = Number( url.searchParams.get( 'gpuRecovery' ) || 0 );
-		if ( attempts < 2 ) {
+		const url = mobileRecoveryURL( reason );
+		if ( url ) {
 
-			const next = attempts + 1;
-			url.searchParams.set( 'gpuSafe', String( next ) );
-			url.searchParams.set( 'gpuRecovery', String( next ) );
-			url.searchParams.set( 'scale', next === 1 ? '0.82' : '0.72' );
-			url.searchParams.set( 'noSim', '1' );
-			url.searchParams.set( 'v', 'gpu-recovery-' + next );
 			location.replace( url.href );
 			return;
 
@@ -237,6 +259,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 } ).catch( ( e ) => {
 
 	console.error( e );
+	if ( recoverMobileInitGPUError( e ) ) return;
 	ui.setLoadingError( 'Something went wrong: ' + e.message );
 
 } );
