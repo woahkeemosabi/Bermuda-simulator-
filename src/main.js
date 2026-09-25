@@ -4,7 +4,8 @@ import { GPU } from './engine/gpu/GPU.js';
 import { UI } from './ui/UI.js';
 import { AppUI } from './ui/AppUI.js';
 import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaIdentity.js';
-import { applyBermudaBranding, installMobileControls } from './mobile/BermudaMobileUX.js';
+import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
+import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 
 // iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
 // Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
@@ -65,11 +66,10 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	applyBermudaBranding( mobileDevice );
 	if ( mobileDevice ) {
 
-		installMobileControls( app );
+		installStableMobileControls( app );
 
-		// Keep the game/player contextual prompt logic alive because the mobile control layer uses it
-		// to decide whether ACT means talk, board, take out the rod, cast, strike or reel. Only the
-		// upstream desktop prompt widget is hidden; it previously overlapped the thumb zone on iPhone.
+		// Keep the gameplay logic active, but hide the desktop prompt/widget layer on phones.
+		// Mobile interaction buttons send the same underlying E/R/C/V/Space/mouse inputs directly.
 		ui.setPrompt( null );
 		if ( ui.promptEl ) {
 
