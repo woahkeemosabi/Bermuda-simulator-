@@ -17,20 +17,20 @@ const mobileFastStart = mobileDevice && ! forceDesktop;
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	// Keep the three heaviest optional shader families disabled on phones for now, but render at a
-	// materially sharper 82% internal resolution. The first emergency pass used 72% only to prove
-	// that the iPhone path could boot reliably.
-	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ], [ 'scale', '0.82' ] ] ) {
+	// The 72/82% emergency scales proved the Safari startup path. The default is now 90% so the
+	// actual game is substantially sharper, while clouds/haze/caustics remain off until their shader
+	// startup cost is reduced. ?scale= can still be supplied explicitly for diagnostics.
+	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ] ] ) {
 
 		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
 
 	}
+	if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) url.searchParams.set( 'scale', '0.90' );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	// Do not compile every hidden desktop material variant on Safari. Give already-requested async
 	// work a short window, then switch the scene renderer to synchronous *visible-only* compilation.
-	// The two normal warm-up frames immediately after this now build what the starting camera needs,
-	// preventing the sky-only / black-world frame seen on iPhone while still avoiding the 94% stall.
+	// The normal warm-up frames immediately after this build what the starting camera needs.
 	App.prototype.precompile = async function() {
 
 		await Promise.race( [
