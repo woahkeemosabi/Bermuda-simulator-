@@ -72,6 +72,58 @@ function disableLegacyMobileGuide( app ) {
 
 }
 
+function friendlyPrompt( prompt ) {
+
+	if ( ! prompt || ! prompt.text ) return '';
+	let text = String( prompt.text );
+	text = text.replace( /left mouse/gi, 'CAST' );
+	text = text.replace( /right-click/gi, 'REEL' );
+	text = text.replace( /\s+·\s+R\s+put the rod away/gi, '' );
+	text = text.replace( /LMB/gi, 'CAST' ).replace( /RMB/gi, 'REEL' );
+	return text;
+
+}
+
+function contextDescriptor( app ) {
+
+	const prompt = app.player && app.player.prompt;
+	if ( ! prompt ) return { kind: 'key', code: 'KeyE', label: 'ACT', hint: '' };
+	const key = String( prompt.key || '' ).toUpperCase();
+	const text = friendlyPrompt( prompt );
+	if ( key === 'E' ) {
+
+		let label = 'USE';
+		if ( /^talk/i.test( text ) ) label = 'TALK';
+		else if ( /board/i.test( text ) ) label = 'BOARD';
+		else if ( /leave|ashore|stand up/i.test( text ) ) label = 'EXIT';
+		else if ( /wheel|helm/i.test( text ) ) label = 'DRIVE';
+		return { kind: 'key', code: 'KeyE', label, hint: text };
+
+	}
+	if ( key === 'R' ) return { kind: 'key', code: 'KeyR', label: 'ROD', hint: text };
+	if ( key === 'LMB' ) {
+
+		let label = 'CAST';
+		if ( /strike/i.test( text ) ) label = 'STRIKE';
+		else if ( /reel|tension/i.test( text ) ) label = 'REEL';
+		return { kind: 'lmb', label, hint: text };
+
+	}
+	if ( key === 'RMB' ) return { kind: 'rmb', label: 'REEL', hint: text };
+	if ( key === '…' || key === '...' ) return { kind: 'none', label: 'WAIT', hint: text };
+	return { kind: 'key', code: 'KeyE', label: 'ACT', hint: text };
+
+}
+
+function secondaryDescriptor( app ) {
+
+	const p = app.player;
+	if ( p && p.mode === 'swim' ) return { kind: 'key', code: 'KeyC', label: 'DIVE' };
+	if ( app.game && app.game.canFish ) return { kind: 'key', code: 'KeyR', label: 'ROD' };
+	return { kind: 'key', code: 'KeyC', label: 'DIVE' };
+
+}
+
 export function installMobileControls( app ) {
 
 	if ( ! app || ! app.input || document.getElementById( 'bm-touch' ) ) return;
@@ -92,8 +144,11 @@ export function installMobileControls( app ) {
 		#bm-touch .bm-nub{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px;border-radius:50%;background:rgba(119,240,228,.86);border:1px solid rgba(255,255,255,.78);box-shadow:0 4px 18px rgba(0,0,0,.25);transform:translate(0,0);transition:transform 70ms linear}
 		#bm-touch .bm-stick.is-active .bm-nub{transition:none}
 		#bm-touch .bm-actions{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom));display:grid;grid-template-columns:58px 58px;gap:10px;pointer-events:auto}
-		#bm-touch button{width:58px;height:58px;border-radius:50%;border:1px solid rgba(139,243,234,.5);background:rgba(5,22,31,.58);color:#eaffff;font-weight:750;font-size:10px;letter-spacing:.08em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);touch-action:none;-webkit-tap-highlight-color:transparent}
+		#bm-touch button{width:58px;height:58px;border-radius:50%;border:1px solid rgba(139,243,234,.5);background:rgba(5,22,31,.58);color:#eaffff;font-weight:750;font-size:10px;letter-spacing:.08em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);touch-action:none;-webkit-tap-highlight-color:transparent;padding:0 3px}
 		#bm-touch button:active,#bm-touch button.is-on{background:rgba(74,225,211,.78);color:#041619}
+		#bm-touch button.is-muted{opacity:.48}
+		#bm-context{position:absolute;left:50%;bottom:max(162px,calc(env(safe-area-inset-bottom) + 154px));transform:translateX(-50%);max-width:min(72vw,330px);padding:7px 11px;border:1px solid rgba(139,243,234,.24);border-radius:999px;background:rgba(4,18,26,.54);color:rgba(238,255,255,.92);font-size:11px;font-weight:600;line-height:1.25;text-align:center;letter-spacing:.01em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .14s;pointer-events:none}
+		#bm-context.is-on{opacity:1}
 		.tw-start-keys[hidden]{display:none!important}
 		body.bm-mobile .gm-guide,body.bm-mobile .gm-coach{display:none!important}
 		${ devUI ? '' : 'body.bm-mobile .tw-rail,body.bm-mobile .tw-panel,body.bm-mobile .tw-help,body.bm-mobile .tw-stats,body.bm-mobile .gm-purse{display:none!important}' }
@@ -106,16 +161,20 @@ export function installMobileControls( app ) {
 	root.id = 'bm-touch';
 	root.innerHTML = `
 		<div class="bm-stick"><div class="bm-nub"></div></div>
+		<div id="bm-context"></div>
 		<div class="bm-actions">
-			<button type="button" data-key="KeyE">ACT</button>
+			<button type="button" data-action="context">ACT</button>
 			<button type="button" data-key="Space">UP</button>
-			<button type="button" data-key="KeyC">DIVE</button>
+			<button type="button" data-action="secondary">DIVE</button>
 			<button type="button" data-key="KeyV">CAM</button>
 		</div>`;
 	document.body.appendChild( root );
 
 	const stick = root.querySelector( '.bm-stick' );
 	const nub = root.querySelector( '.bm-nub' );
+	const contextEl = root.querySelector( '#bm-context' );
+	const contextBtn = root.querySelector( '[data-action="context"]' );
+	const secondaryBtn = root.querySelector( '[data-action="secondary"]' );
 	const moveCodes = [ 'KeyW', 'KeyA', 'KeyS', 'KeyD' ];
 	const down = ( code ) => {
 
@@ -126,6 +185,48 @@ export function installMobileControls( app ) {
 	};
 	const up = ( code ) => input.keys.delete( code );
 	const clearMove = () => moveCodes.forEach( up );
+
+	const beginAction = ( d ) => {
+
+		if ( ! d || d.kind === 'none' ) return { kind: 'none' };
+		input.enabled = true;
+		if ( d.kind === 'key' ) down( d.code );
+		else if ( d.kind === 'lmb' ) input.mouseDown = true;
+		else if ( d.kind === 'rmb' ) input.rightDown = true;
+		return d;
+
+	};
+	const endAction = ( d ) => {
+
+		if ( ! d ) return;
+		if ( d.kind === 'key' ) up( d.code );
+		else if ( d.kind === 'lmb' ) input.mouseDown = false;
+		else if ( d.kind === 'rmb' ) input.rightDown = false;
+
+	};
+
+	const refreshContext = () => {
+
+		const d = contextDescriptor( app );
+		contextBtn.textContent = d.label;
+		contextBtn.classList.toggle( 'is-muted', d.kind === 'none' );
+		const s = secondaryDescriptor( app );
+		secondaryBtn.textContent = s.label;
+		if ( d.hint ) {
+
+			contextEl.textContent = d.hint;
+			contextEl.classList.add( 'is-on' );
+
+		} else {
+
+			contextEl.textContent = '';
+			contextEl.classList.remove( 'is-on' );
+
+		}
+
+	};
+	const contextTimer = setInterval( refreshContext, 90 );
+	refreshContext();
 
 	let movePointer = null, moveX = 0, moveY = 0;
 	let lookPointer = null, lookX = 0, lookY = 0;
@@ -168,8 +269,16 @@ export function installMobileControls( app ) {
 
 	};
 
-	const buttonAt = ( x, y ) => document.elementFromPoint( x, y )?.closest?.( '#bm-touch button[data-key]' ) || null;
+	const buttonAt = ( x, y ) => document.elementFromPoint( x, y )?.closest?.( '#bm-touch button' ) || null;
 	const startOverlayAt = ( x, y ) => document.elementFromPoint( x, y )?.closest?.( '.tw-start-cta,.tw-start' ) || null;
+	const descriptorForButton = ( btn ) => {
+
+		if ( btn.dataset.action === 'context' ) return contextDescriptor( app );
+		if ( btn.dataset.action === 'secondary' ) return secondaryDescriptor( app );
+		if ( btn.dataset.key ) return { kind: 'key', code: btn.dataset.key, label: btn.textContent };
+		return { kind: 'none' };
+
+	};
 
 	// Movement and camera look are deliberately separate on mobile:
 	// - movement starts only on the fixed visible joystick
@@ -182,9 +291,9 @@ export function installMobileControls( app ) {
 		const btn = buttonAt( e.clientX, e.clientY );
 		if ( btn ) {
 
-			const code = btn.dataset.key;
-			actionPointers.set( e.pointerId, { code, btn } );
-			down( code );
+			const descriptor = descriptorForButton( btn );
+			const active = beginAction( descriptor );
+			actionPointers.set( e.pointerId, { active, btn } );
 			btn.classList.add( 'is-on' );
 			btn.setPointerCapture?.( e.pointerId );
 			e.preventDefault();
@@ -253,7 +362,7 @@ export function installMobileControls( app ) {
 		const a = actionPointers.get( e.pointerId );
 		if ( a ) {
 
-			up( a.code );
+			endAction( a.active );
 			a.btn.classList.remove( 'is-on' );
 			actionPointers.delete( e.pointerId );
 
@@ -270,15 +379,19 @@ export function installMobileControls( app ) {
 
 		resetMove();
 		lookPointer = null;
-		for ( const { code, btn } of actionPointers.values() ) {
+		for ( const { active, btn } of actionPointers.values() ) {
 
-			up( code );
+			endAction( active );
 			btn.classList.remove( 'is-on' );
 
 		}
 		actionPointers.clear();
+		input.mouseDown = false;
+		input.rightDown = false;
 
 	} );
+
+	window.addEventListener( 'pagehide', () => clearInterval( contextTimer ), { once: true } );
 
 	if ( navDebug ) {
 
@@ -294,6 +407,7 @@ export function installMobileControls( app ) {
 				`input ${ input.enabled ? 'ON' : 'OFF' } keys ${ keys }`,
 				`movePtr ${ movePointer ?? '-' } lookPtr ${ lookPointer ?? '-' }`,
 				`mode ${ p?.mode || '-' } freeCam ${ app.freeCam ? 'Y' : 'N' }`,
+				`prompt ${ p?.prompt ? `${ p.prompt.key }: ${ p.prompt.text }` : '-' }`,
 				`pos ${ p ? `${ p.position.x.toFixed( 2 ) }, ${ p.position.z.toFixed( 2 ) }` : '-' }`,
 				`vel ${ p ? `${ p.velocity.x.toFixed( 2 ) }, ${ p.velocity.z.toFixed( 2 ) }` : '-' }`,
 			].join( '\n' );
