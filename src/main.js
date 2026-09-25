@@ -6,6 +6,7 @@ import { AppUI } from './ui/AppUI.js';
 import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaIdentity.js';
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
+import { installMobilePolish } from './mobile/BermudaMobilePolish.js';
 
 // iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
 // Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
@@ -18,15 +19,14 @@ const mobileFastStart = mobileDevice && ! forceDesktop;
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	// The 72/82% emergency scales proved the Safari startup path. The default is now 90% so the
-	// actual game is substantially sharper, while clouds/haze/caustics remain off until their shader
-	// startup cost is reduced. ?scale= can still be supplied explicitly for diagnostics.
+	// Keep the expensive optional shader families disabled on phone startup, but raise the default
+	// internal resolution now that the startup path and touch controls are stable.
 	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ] ] ) {
 
 		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
 
 	}
-	if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) url.searchParams.set( 'scale', '0.90' );
+	if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.95 ) url.searchParams.set( 'scale', '0.95' );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	// Do not compile every hidden desktop material variant on Safari. Give already-requested async
@@ -67,6 +67,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	if ( mobileDevice ) {
 
 		installStableMobileControls( app );
+		installMobilePolish( app );
 
 		// Keep the gameplay logic active, but hide the desktop prompt/widget layer on phones.
 		// Mobile interaction buttons send the same underlying E/R/C/V/Space/mouse inputs directly.
