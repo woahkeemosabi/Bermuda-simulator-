@@ -1,4 +1,4 @@
-// Keyboard / mouse input with pointer lock support.
+// Keyboard / mouse with pointer lock support.
 export class Input {
 
 	constructor( dom ) {
@@ -74,10 +74,13 @@ export class Input {
 
 	}
 
-	// true once per physical key press
+	// true exactly once per physical key press. Consume immediately so a frame that throws before
+	// endFrame() cannot replay the same action on every following RAF (important on mobile WebGPU).
 	hit( code ) {
 
-		return this.enabled && this.pressed.has( code );
+		if ( ! this.enabled || ! this.pressed.has( code ) ) return false;
+		this.pressed.delete( code );
+		return true;
 
 	}
 
