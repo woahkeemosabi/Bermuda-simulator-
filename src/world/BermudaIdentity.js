@@ -1,11 +1,12 @@
 import { G } from '../core/Globals.js';
+import { TerrainData } from './TerrainData.js';
 
-// Bermuda Simulator visual identity tuning.
+// Bermuda Simulator visual/world identity tuning.
 //
-// Keep the engine physically based and concentrate Bermuda-specific look decisions here so
-// they can be iterated without scattering magic numbers through the renderer. These values are
-// deliberately a restrained first pass: clear Atlantic air, bright shallow-water transmission,
-// less open-ocean whitecap clutter, and a calmer harbour presentation.
+// Keep the engine physically based and concentrate Bermuda-specific decisions here so they can
+// be iterated without scattering magic numbers through the renderer. v0.1 still uses Tidewater's
+// authored coastline topology; the temporary relief adapter below turns its volcanic high island
+// into low rolling oceanic terrain until the real Bermuda DEM/bathymetry pipeline replaces it.
 export const BERMUDA_LOOK = {
 	daylight: {
 		timeOfDay: 14.35,
@@ -28,7 +29,7 @@ export const BERMUDA_LOOK = {
 		foamAdd: 1.9,
 	},
 	atmosphere: {
-		// Bermuda often reads as exceptionally clear oceanic air rather than humid tropical haze.
+		// Bermuda reads as clear oceanic air rather than heavy tropical haze.
 		rayleighScale: 0.96,
 		mieScale: 0.72,
 		mieG: 0.78,
@@ -40,11 +41,63 @@ export const BERMUDA_LOOK = {
 		speed: 5.2,
 		direction: [ 0.28, 0.96 ],
 	},
+	terrain: {
+		coastalKeepHeight: 4,
+		midOriginalHeight: 60,
+		midReliefScale: 0.23,
+		highReliefScale: 0.12,
+		maxHeight: 38,
+		highlandRockScale: 0.52,
+	},
 };
+
+let terrainProfileInstalled = false;
+
+function installBermudaTerrainProfile() {
+
+	if ( terrainProfileInstalled ) return;
+	terrainProfileInstalled = true;
+
+	const originalGenerate = TerrainData.prototype.generate;
+	if ( typeof originalGenerate !== 'function' ) return;
+
+	TerrainData.prototype.generate = function bermudaGenerate( ...args ) {
+
+		const result = originalGenerate.apply( this, args );
+		const T = BERMUDA_LOOK.terrain;
+		const heights = this.heights;
+		const rock = this.rock;
+		const midOut = T.coastalKeepHeight + ( T.midOriginalHeight - T.coastalKeepHeight ) * T.midReliefScale;
+
+		// Preserve the surf zone and the first few metres of shoreline exactly: Tidewater's swash,
+		// pier and walking contacts are tuned there. Only the upland relief is compressed.
+		for ( let i = 0; i < heights.length; i ++ ) {
+
+			const h = heights[ i ];
+			if ( h <= T.coastalKeepHeight ) continue;
+
+			let out;
+			if ( h <= T.midOriginalHeight ) out = T.coastalKeepHeight + ( h - T.coastalKeepHeight ) * T.midReliefScale;
+			else out = midOut + ( h - T.midOriginalHeight ) * T.highReliefScale;
+			heights[ i ] = Math.min( T.maxHeight, out );
+
+			// The source island exposes a lot of volcanic rock on its high flanks. Keep enough variation
+			// for limestone/outcrop texture, but stop the uplands reading as a volcanic massif.
+			if ( rock ) rock[ i ] *= T.highlandRockScale;
+
+		}
+
+		return result;
+
+	};
+
+}
 
 export function applyBermudaBootLook( app ) {
 
 	const look = BERMUDA_LOOK;
+	installBermudaTerrainProfile();
+
 	app.settings.timeOfDay = look.daylight.timeOfDay;
 	app.settings.exposure = look.daylight.exposure;
 
