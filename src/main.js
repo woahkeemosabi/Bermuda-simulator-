@@ -17,9 +17,10 @@ const mobileFastStart = mobileDevice && ! forceDesktop;
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	// These are intentionally startup defaults, not permanent quality limits. They remove the three
-	// heaviest optional shader families on phones while keeping the ocean, terrain, boat, reef and game.
-	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ], [ 'scale', '0.72' ] ] ) {
+	// Keep the three heaviest optional shader families disabled on phones for now, but render at a
+	// materially sharper 82% internal resolution. The first emergency pass used 72% only to prove
+	// that the iPhone path could boot reliably.
+	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ], [ 'scale', '0.82' ] ] ) {
 
 		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
 
