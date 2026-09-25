@@ -67,12 +67,9 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 		installMobileControls( app );
 
-		// The upstream Tidewater HUD is desktop-first. Its contextual prompt appears over the left
-		// thumb zone on iPhone (for example "R · Take out the rod"). On touch devices that HUD element
-		// can become the pointer target instead of the canvas, allowing Safari/WKWebView gesture handling
-		// to cancel the active navigation pointer. Bermuda mobile uses its own ACT/UP/DIVE/CAM controls,
-		// so the legacy fishing prompt is removed and the non-interactive HUD is made touch-transparent.
-		if ( app.game ) app.game.prompt = () => null;
+		// Keep the game/player contextual prompt logic alive because the mobile control layer uses it
+		// to decide whether ACT means talk, board, take out the rod, cast, strike or reel. Only the
+		// upstream desktop prompt widget is hidden; it previously overlapped the thumb zone on iPhone.
 		ui.setPrompt( null );
 		if ( ui.promptEl ) {
 
