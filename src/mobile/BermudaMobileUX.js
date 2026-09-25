@@ -89,7 +89,8 @@ export function installMobileControls( app ) {
 		html,body,#app,#app canvas{touch-action:none!important;overscroll-behavior:none}
 		#bm-touch{position:fixed;inset:0;z-index:60;pointer-events:none;user-select:none;-webkit-user-select:none;font-family:system-ui,-apple-system,sans-serif}
 		#bm-touch .bm-stick{position:absolute;left:24px;bottom:max(24px,env(safe-area-inset-bottom));width:126px;height:126px;border-radius:50%;border:1px solid rgba(137,245,235,.45);background:rgba(5,22,31,.31);box-shadow:inset 0 0 26px rgba(66,238,221,.08),0 8px 28px rgba(0,0,0,.18);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);opacity:.9}
-		#bm-touch .bm-nub{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px;border-radius:50%;background:rgba(119,240,228,.86);border:1px solid rgba(255,255,255,.78);box-shadow:0 4px 18px rgba(0,0,0,.25);transform:translate(0,0)}
+		#bm-touch .bm-nub{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px;border-radius:50%;background:rgba(119,240,228,.86);border:1px solid rgba(255,255,255,.78);box-shadow:0 4px 18px rgba(0,0,0,.25);transform:translate(0,0);transition:transform 70ms linear}
+		#bm-touch .bm-stick.is-active .bm-nub{transition:none}
 		#bm-touch .bm-actions{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom));display:grid;grid-template-columns:58px 58px;gap:10px;pointer-events:auto}
 		#bm-touch button{width:58px;height:58px;border-radius:50%;border:1px solid rgba(139,243,234,.5);background:rgba(5,22,31,.58);color:#eaffff;font-weight:750;font-size:10px;letter-spacing:.08em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);touch-action:none;-webkit-tap-highlight-color:transparent}
 		#bm-touch button:active,#bm-touch button.is-on{background:rgba(74,225,211,.78);color:#041619}
@@ -115,7 +116,6 @@ export function installMobileControls( app ) {
 
 	const stick = root.querySelector( '.bm-stick' );
 	const nub = root.querySelector( '.bm-nub' );
-	const buttons = [ ...root.querySelectorAll( 'button[data-key]' ) ];
 	const moveCodes = [ 'KeyW', 'KeyA', 'KeyS', 'KeyD' ];
 	const down = ( code ) => {
 
@@ -132,14 +132,14 @@ export function installMobileControls( app ) {
 	const actionPointers = new Map();
 	let lastEvent = 'none';
 
-	const setStickOrigin = ( x, y ) => {
+	const stickGeometry = () => {
 
-		const r = 63;
-		const left = Math.max( 12, Math.min( innerWidth * 0.5 - 2 * r - 6, x - r ) );
-		const top = Math.max( innerHeight * 0.38, Math.min( innerHeight - 2 * r - 18, y - r ) );
-		stick.style.left = `${ left }px`;
-		stick.style.top = `${ top }px`;
-		stick.style.bottom = 'auto';
+		const r = stick.getBoundingClientRect();
+		return {
+			x: r.left + r.width * 0.5,
+			y: r.top + r.height * 0.5,
+			hit: Math.max( r.width, r.height ) * 0.64,
+		};
 
 	};
 
@@ -163,6 +163,7 @@ export function installMobileControls( app ) {
 
 		movePointer = null;
 		clearMove();
+		stick.classList.remove( 'is-active' );
 		nub.style.transform = 'translate(0,0)';
 
 	};
@@ -170,9 +171,10 @@ export function installMobileControls( app ) {
 	const buttonAt = ( x, y ) => document.elementFromPoint( x, y )?.closest?.( '#bm-touch button[data-key]' ) || null;
 	const startOverlayAt = ( x, y ) => document.elementFromPoint( x, y )?.closest?.( '.tw-start-cta,.tw-start' ) || null;
 
-	// Pointer Events are supported by current iOS Safari/WKWebView. Using one event model avoids the
-	// previous bug where touch pointer events were explicitly ignored while some embedded webviews did
-	// not reliably deliver the separate Touch Events stream.
+	// Movement and camera look are deliberately separate on mobile:
+	// - movement starts only on the fixed visible joystick
+	// - every other gameplay drag is camera look
+	// This prevents a left/right camera swipe from relocating the joystick and stealing the gesture.
 	const onPointerDown = ( e ) => {
 
 		if ( e.pointerType === 'mouse' && e.button !== 0 ) return;
@@ -191,11 +193,14 @@ export function installMobileControls( app ) {
 		}
 		if ( startOverlayAt( e.clientX, e.clientY ) ) return;
 
-		if ( movePointer === null && e.clientX < innerWidth * 0.54 && e.clientY > innerHeight * 0.28 ) {
+		const sg = stickGeometry();
+		const onStick = Math.hypot( e.clientX - sg.x, e.clientY - sg.y ) <= sg.hit;
+		if ( movePointer === null && onStick ) {
 
 			movePointer = e.pointerId;
-			moveX = e.clientX; moveY = e.clientY;
-			setStickOrigin( moveX, moveY );
+			moveX = sg.x;
+			moveY = sg.y;
+			stick.classList.add( 'is-active' );
 			updateMove( e.clientX, e.clientY );
 			document.documentElement.setPointerCapture?.( e.pointerId );
 			e.preventDefault();
@@ -228,8 +233,11 @@ export function installMobileControls( app ) {
 
 			lastEvent = `move look #${ e.pointerId }`;
 			input.enabled = true;
-			input.look.x += ( e.clientX - lookX ) * 1.05;
-			input.look.y += ( e.clientY - lookY ) * 1.05;
+			// Clamp large webview deltas and use a lower sensitivity for smoother camera pans.
+			const dx = Math.max( - 32, Math.min( 32, e.clientX - lookX ) );
+			const dy = Math.max( - 32, Math.min( 32, e.clientY - lookY ) );
+			input.look.x += dx * 0.72;
+			input.look.y += dy * 0.72;
 			lookX = e.clientX; lookY = e.clientY;
 			e.preventDefault();
 
