@@ -20,24 +20,22 @@ const mobileSafeLevel = mobileFastStart ? Math.max( 0, Number( initialParams.get
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ] ] ) {
+	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ], [ 'noSim', '1' ] ] ) {
 
 		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
 
 	}
 
-	// Normal mobile stays at the known-good 90% profile. Recovery is now tiered rather than dropping
-	// immediately to 72%: first device loss uses an 82% profile with the expensive shoreline simulation
-	// disabled; only a second device loss falls back to the old 72% emergency profile.
+	// Keep the normal phone image at 90% rather than globally lowering quality. The expensive shoreline
+	// simulation is disabled on mobile because it adds GPU allocations that are not worth risking a
+	// WebGPU device loss on iOS. Recovery only lowers resolution after an actual device failure.
 	if ( mobileSafeLevel >= 2 ) {
 
 		url.searchParams.set( 'scale', '0.72' );
-		url.searchParams.set( 'noSim', '1' );
 
 	} else if ( mobileSafeLevel === 1 ) {
 
 		url.searchParams.set( 'scale', '0.82' );
-		url.searchParams.set( 'noSim', '1' );
 
 	} else if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) {
 
@@ -243,10 +241,26 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 		if ( app.qs.has( 'wdbg' ) && app.waterMaterial ) app.waterMaterial.debugMode.value = Number( app.qs.get( 'wdbg' ) );
 		if ( app.qs.has( 'shots' ) ) window.__job = window.__bench.shots( app.qs.get( 'shots' ).split( ',' ), { tag: app.qs.get( 'tag' ) || 'shot', dt: Number( app.qs.get( 'dt' ) ) || 0, seq: Number( app.qs.get( 'seq' ) ) || 1, every: Number( app.qs.get( 'every' ) ) || 1 } );
 
+	} else if ( mobileDevice ) {
+
+		// Do not run the full WebGPU frame loop behind the mobile start overlay. The previous code started
+		// rendering continuously before the user tapped Explore, which could exhaust Safari's GPU budget
+		// while the phone was simply sitting on the start screen. Start exactly once from the user gesture.
+		let started = false;
+		ui.showStartOverlay( () => {
+
+			if ( started ) return;
+			started = true;
+			if ( app.audio ) app.audio.resume();
+			installMobileGPUWatchdog();
+			app.start();
+
+		} );
+		return;
+
 	} else {
 
 		app.start();
-		installMobileGPUWatchdog();
 
 	}
 	ui.showStartOverlay( () => {
