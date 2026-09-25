@@ -50,7 +50,7 @@ export function installMobilePolish( app ) {
 
 	const objective = document.createElement( 'div' );
 	objective.id = 'bm-mobile-objective';
-	objective.textContent = 'BOAT • Follow the pier • ACT to board';
+	objective.textContent = 'BOAT • ACT to board';
 	document.body.appendChild( objective );
 
 	const input = app.input;
@@ -61,8 +61,7 @@ export function installMobilePolish( app ) {
 		const p = app.player;
 		if ( ! p ) return;
 
-		// Mobile has no dedicated sprint key. Full-stick movement should feel like a game controller,
-		// so walking automatically uses the engine's existing sprint speed while the stick is engaged.
+		// Full-stick walking uses the existing sprint speed on mobile so traversing the world never feels slow.
 		if ( p.mode === 'walk' && moving() ) input.keys.add( 'ShiftLeft' );
 		else input.keys.delete( 'ShiftLeft' );
 
@@ -90,7 +89,7 @@ export function installMobilePolish( app ) {
 		const b = WORLD.boatDock.position;
 		const d = Math.hypot( p.position.x - b.x, p.position.z - b.z );
 		if ( d < 8 ) objective.textContent = 'BOAT • ACT to board';
-		else objective.textContent = `BOAT • ${ Math.round( d ) } m • Follow the pier • ACT to board`;
+		else objective.textContent = `BOAT • ${ Math.round( d ) } m • Head to the boat • ACT to board`;
 
 	}, 160 );
 

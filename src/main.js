@@ -19,14 +19,14 @@ const mobileFastStart = mobileDevice && ! forceDesktop;
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	// Keep the expensive optional shader families disabled on phone startup, but raise the default
-	// internal resolution now that the startup path and touch controls are stable.
+	// Stability first on iPhone. The 0.95 pass looked sharper but live testing showed stalls, so keep
+	// the expensive optional shader families off and return to the previously stable 0.90 render scale.
 	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ] ] ) {
 
 		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
 
 	}
-	if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.95 ) url.searchParams.set( 'scale', '0.95' );
+	if ( ! url.searchParams.has( 'scale' ) ) url.searchParams.set( 'scale', '0.90' );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	// Do not compile every hidden desktop material variant on Safari. Give already-requested async
