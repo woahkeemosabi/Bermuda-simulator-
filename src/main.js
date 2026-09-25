@@ -7,9 +7,9 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 
-// iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
-// Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
-// Add ?desktop to the URL to force the full desktop path on a mobile device for diagnostics.
+// iPhone/iPad WebGPU can spend several minutes compiling desktop pipeline variants up front.
+// Keep desktop unchanged; on touch/mobile compile asynchronously and never block the loader on
+// synchronous hidden warm-up frames.
 const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
 const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
@@ -18,9 +18,6 @@ const mobileFastStart = mobileDevice && ! forceDesktop;
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	// The 72/82% emergency scales proved the Safari startup path. The default is now 90% so the
-	// actual game is substantially sharper, while clouds/haze/caustics remain off until their shader
-	// startup cost is reduced. ?scale= can still be supplied explicitly for diagnostics.
 	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ] ] ) {
 
 		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
@@ -29,16 +26,40 @@ if ( mobileFastStart ) {
 	if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) url.searchParams.set( 'scale', '0.90' );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
-	// Do not compile every hidden desktop material variant on Safari. Give already-requested async
-	// work a short window, then switch the scene renderer to synchronous *visible-only* compilation.
-	// The normal warm-up frames immediately after this build what the starting camera needs.
 	App.prototype.precompile = async function() {
 
+		const mr = this.engine && this.engine.meshRenderer;
+		if ( mr ) {
+
+			mr.precompiling = false;
+			mr.syncPipelines = false;
+
+		}
+
+		// Give already-requested async pipelines a short chance to finish, but never make startup
+		// depend on Safari completing every pipeline immediately.
 		await Promise.race( [
 			GPU.pipelinesReady(),
-			new Promise( ( resolve ) => setTimeout( resolve, 6500 ) ),
+			new Promise( ( resolve ) => setTimeout( resolve, 1800 ) ),
 		] );
-		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = true;
+
+		// App.init() normally renders two hidden warm-up frames and waits for the GPU after each.
+		// On iPhone those frames can synchronously compile the visible world and pin the loader at 99%.
+		// Skip only those two hidden calls. The real frame method is restored before app.start().
+		const realFrame = this.frame.bind( this );
+		let hiddenWarmups = 2;
+		this.frame = ( ...args ) => {
+
+			if ( hiddenWarmups > 0 ) {
+
+				hiddenWarmups --;
+				if ( hiddenWarmups === 0 ) this.frame = realFrame;
+				return;
+
+			}
+			return realFrame( ...args );
+
+		};
 
 	};
 
@@ -68,8 +89,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 		installStableMobileControls( app );
 
-		// Keep the gameplay logic active, but hide the desktop prompt/widget layer on phones.
-		// Mobile interaction buttons send the same underlying E/R/C/V/Space/mouse inputs directly.
+		// Keep gameplay logic active, but hide the desktop prompt/widget layer on phones.
 		ui.setPrompt( null );
 		if ( ui.promptEl ) {
 
@@ -93,8 +113,6 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 		window.__bench = new ( await import( './core/Bench.js' ) ).Bench( app );
 		if ( app.qs.has( 'auto' ) ) window.__job = window.__bench.auto( app.qs.get( 'auto' ), { runs: Number( app.qs.get( 'runs' ) ) || 1 } );
-		// ?bench&shots=view1,view2[&tag=name][&dt=seconds][&seq=n&every=frames]: reference shots of the named views only (core/DebugViews.js; dt > 0: the clock runs, e.g. for the eased lens flare)
-		// &wdbg=N: the water shader's debug view (WaterMaterial debugMode) in the shots
 		if ( app.qs.has( 'wdbg' ) && app.waterMaterial ) app.waterMaterial.debugMode.value = Number( app.qs.get( 'wdbg' ) );
 		if ( app.qs.has( 'shots' ) ) window.__job = window.__bench.shots( app.qs.get( 'shots' ).split( ',' ), { tag: app.qs.get( 'tag' ) || 'shot', dt: Number( app.qs.get( 'dt' ) ) || 0, seq: Number( app.qs.get( 'seq' ) ) || 1, every: Number( app.qs.get( 'every' ) ) || 1 } );
 
