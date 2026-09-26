@@ -1,0 +1,46 @@
+name: Audit Bermuda GLBs
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'public/models/bermuda/mobile/*.glb'
+      - 'public/models/bermuda/desktop/*.glb'
+      - '.github/workflows/audit-bermuda-glb.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit optimized GLBs for custom loader compatibility
+        run: |
+          node <<'NODE'
+          const fs=require('fs'), path=require('path');
+          const dirs=['public/models/bermuda/mobile','public/models/bermuda/desktop'];
+          let bad=false;
+          for(const dir of dirs){
+            if(!fs.existsSync(dir)) continue;
+            for(const name of fs.readdirSync(dir).filter(x=>x.endsWith('.glb'))){
+              const p=path.join(dir,name), b=fs.readFileSync(p);
+              const dv=new DataView(b.buffer,b.byteOffset,b.byteLength);
+              let o=12,json=null;
+              while(o<dv.getUint32(8,true)){
+                const len=dv.getUint32(o,true),type=dv.getUint32(o+4,true);
+                if(type===0x4E4F534A) json=JSON.parse(b.subarray(o+8,o+8+len).toString('utf8'));
+                o+=8+len;
+              }
+              if(!json){console.error('NO_JSON',p);bad=true;continue;}
+              const req=json.extensionsRequired||[];
+              const unsupported=req.filter(x=>x==='EXT_meshopt_compression'||x==='KHR_draco_mesh_compression');
+              let tris=0, prims=0;
+              for(const mesh of json.meshes||[]) for(const prim of mesh.primitives||[]){prims++; const a=json.accessors?.[prim.indices]; if(a) tris+=Math.floor(a.count/3);}
+              console.log(`${p}: ${(b.length/1048576).toFixed(2)} MiB, ${prims} primitives, ~${tris.toLocaleString()} indexed triangles, required=[${req.join(',')}]`);
+              if(unsupported.length){console.error('UNSUPPORTED',p,unsupported.join(','));bad=true;}
+            }
+          }
+          if(bad) process.exit(1);
+          NODE
