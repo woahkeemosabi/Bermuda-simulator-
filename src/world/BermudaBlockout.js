@@ -7,7 +7,9 @@ import { Material } from '../engine/render/Material.js';
 // layout before we spend Meshy credits on production GLBs. It also keeps the known-good iPhone
 // GPU profile intact: no new textures, simulations, post effects or large buffers.
 
-const START = { x: - 64.3, z: - 17.0, yaw: Math.PI };
+// Keep the player well inside the landing footprint, not on its seaward edge. The Player controller
+// treats position.y as the feet height, so this point must resolve to a walkable collider top.
+const START = { x: - 64.5, z: - 20.0, yaw: Math.PI };
 
 function makeMaterial( name, color, roughness = 0.86 ) {
 
@@ -60,10 +62,10 @@ export function installBermudaBlockout( app ) {
 
 	};
 
-	const box = ( mat, x, y, z, w, h, d, ry = 0, collide = false, tag = 'bermuda' ) => {
+	const box = ( mat, x, y, z, w, h, d, ry = 0, collide = false, tag = 'bermuda', walkable = false ) => {
 
 		const mesh = addMesh( new BoxGeometry( w, h, d ), mat, x, y, z, ry );
-		if ( collide ) colliders.addBox( new Vector3( x, y, z ), new Vector3( w * 0.5, h * 0.5, d * 0.5 ), ry, { tag } );
+		if ( collide ) colliders.addBox( new Vector3( x, y, z ), new Vector3( w * 0.5, h * 0.5, d * 0.5 ), ry, { tag, walkable } );
 		return mesh;
 
 	};
@@ -79,12 +81,12 @@ export function installBermudaBlockout( app ) {
 	const sphere = ( mat, x, y, z, r ) => addMesh( new SphereGeometry( r, 10, 7 ), mat, x, y, z );
 
 	// ---------------------------------------------------------------- waterfront
-	// Low limestone seawall + a short working landing. The player begins at the water end, beside the
-	// existing physics boat, rather than walking down Tidewater's long pier.
-	box( M.limestone, - 66.5, 0.55, - 45.2, 27, 1.8, 3.2, 0, true, 'bermuda-seawall' );
-	box( M.asphalt, - 68.0, 1.43, - 49.2, 34, 0.18, 5.0, 0, true, 'bermuda-road' );
-	box( M.wood, - 65.0, 0.55, - 30.0, 5.2, 0.9, 34.0, 0, true, 'bermuda-landing' );
-	box( M.wood, - 63.7, 0.58, - 14.4, 8.0, 0.96, 5.5, 0, true, 'bermuda-landing-head' );
+	// Low limestone seawall + a short working landing. The player begins safely on the landing beside
+	// the existing physics boat, rather than walking down Tidewater's long pier.
+	box( M.limestone, - 66.5, 0.55, - 45.2, 27, 1.8, 3.2, 0, true, 'bermuda-seawall', true );
+	box( M.asphalt, - 68.0, 1.43, - 49.2, 34, 0.18, 5.0, 0, true, 'bermuda-road', true );
+	box( M.wood, - 65.0, 0.55, - 30.0, 5.2, 0.9, 34.0, 0, true, 'bermuda-landing', true );
+	box( M.wood, - 63.7, 0.58, - 14.4, 8.0, 0.96, 5.5, 0, true, 'bermuda-landing-head', true );
 
 	// Cleats / bollards. Geometry only; the landing collider is enough for walking.
 	for ( const z of [ - 42, - 33, - 24, - 16 ] ) {
@@ -110,7 +112,7 @@ export function installBermudaBlockout( app ) {
 
 		const ground = terrain.heightAt( x, z );
 		const slabY = ground + 0.22;
-		box( M.limestone, x, slabY, z, w + 0.8, 0.44, d + 0.8, ry, true, 'bermuda-house-pad' );
+		box( M.limestone, x, slabY, z, w + 0.8, 0.44, d + 0.8, ry, true, 'bermuda-house-pad', true );
 		box( mat, x, ground + 0.44 + h * 0.5, z, w, h, d, ry, true, 'bermuda-house' );
 		steppedRoof( x, ground + h + 0.58, z, w, d, ry );
 
@@ -169,14 +171,15 @@ export function installBermudaBlockout( app ) {
 	if ( app.player ) {
 
 		const p = app.player;
+		const landingY = colliders.groundHeightAt( START.x, START.z, 50 );
 		p.mode = 'walk';
-		p.position.set( START.x, 0, START.z );
-		p.position.y = Math.max( terrain.heightAt( START.x, START.z ), colliders.groundHeightAt( START.x, START.z, 50 ) );
+		p.position.set( START.x, Number.isFinite( landingY ) ? landingY + 0.02 : 1.02, START.z );
 		p.velocity.set( 0, 0, 0 );
 		p.yaw = START.yaw;
 		p.pitch = - 0.045;
 		p.grounded = true;
 		p.waterMean = null;
+		p.waterH = 0;
 		p.camInit = false;
 
 	}
