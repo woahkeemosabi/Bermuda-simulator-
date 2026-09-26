@@ -1,6 +1,7 @@
 import { G } from '../core/Globals.js';
 import { TerrainData } from './TerrainData.js';
 import { installBermudaBlockout } from './BermudaBlockout.js';
+import { Whale } from './marine/Whale.js';
 
 // Bermuda Simulator visual/world identity tuning.
 //
@@ -53,6 +54,7 @@ export const BERMUDA_LOOK = {
 };
 
 let terrainProfileInstalled = false;
+let mobileWhaleBypassInstalled = false;
 
 function installBermudaTerrainProfile() {
 
@@ -94,10 +96,33 @@ function installBermudaTerrainProfile() {
 
 }
 
+function installMobileWhaleBypass() {
+
+	if ( mobileWhaleBypassInstalled || typeof navigator === 'undefined' || typeof location === 'undefined' ) return;
+	const params = new URLSearchParams( location.search );
+	const mobile = ( /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
+		( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 ) ) && ! params.has( 'desktop' );
+	if ( ! mobile ) return;
+	mobileWhaleBypassInstalled = true;
+
+	// The whale is disabled by the known-good iPhone memory profile before the first gameplay frame,
+	// but App.init previously downloaded its ~20 MB model/texture package anyway. On a phone/network
+	// transition that left the loader sitting at "Simulating the ocean…" for minutes. Keep the object
+	// available so existing references remain valid, but make its mobile load stage a no-op.
+	Whale.prototype.load = async function bermudaMobileWhaleLoad() {
+
+		this.ready = false;
+		if ( this.group ) this.group.visible = false;
+
+	};
+
+}
+
 export function applyBermudaBootLook( app ) {
 
 	const look = BERMUDA_LOOK;
 	installBermudaTerrainProfile();
+	installMobileWhaleBypass();
 
 	app.settings.timeOfDay = look.daylight.timeOfDay;
 	app.settings.exposure = look.daylight.exposure;
