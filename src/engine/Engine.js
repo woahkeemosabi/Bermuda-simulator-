@@ -13,6 +13,7 @@ export class Engine {
 		this.container = container;
 		const params = typeof location !== 'undefined' ? new URLSearchParams( location.search ) : null;
 		this.composeMode = !! ( params && params.has( 'compose' ) );
+		this.benchmarkMode = !! ( params && params.has( 'benchmark' ) );
 		// Compose mode is deliberately a low-load development view. The app's mobile post scale still
 		// applies inside this output size, so ?compose=1&gpuSafe=2 lands at roughly 58% effective linear
 		// resolution while keeping the CSS/camera viewport unchanged for layout decisions.
@@ -21,6 +22,8 @@ export class Engine {
 		this.frame = 0;
 		this.onResize = [];
 		this._composeLast = 0;
+		this._benchmarkLast = 0;
+		this._benchmarkSamples = [];
 
 	}
 
@@ -38,6 +41,17 @@ export class Engine {
 		this.scene = new Scene();
 		window.addEventListener( 'resize', () => this.resize() );
 		this.resize();
+
+		if ( this.benchmarkMode && typeof window !== 'undefined' ) {
+
+			window.__bermudaBenchmark = {
+				active: true,
+				samples: this._benchmarkSamples,
+				latest: null,
+				note: 'Renderer totals include every mesh pass accumulated during the sampled frame; use as a relative Tidewater/Bermuda workload baseline.'
+			};
+
+		}
 
 	}
 
@@ -76,7 +90,29 @@ export class Engine {
 
 	}
 
-	// the canvas texture of this frame (render target of the final post pass)
+	// output a low-frequency, read-only workload sample without touching gameplay or render decisions
+	_sampleBenchmark( t ) {
+
+		if ( ! this.benchmarkMode || ! this.meshRenderer || t - this._benchmarkLast < 1000 ) return;
+		this._benchmarkLast = t;
+		const stats = this.meshRenderer.stats || {};
+		const sample = {
+			time: Math.round( t ),
+			frame: this.frame,
+			draws: stats.draws || 0,
+			triangles: stats.triangles || 0,
+			pipelines: stats.pipelines || 0,
+			width: this.width,
+			height: this.height,
+			compose: this.composeMode
+		};
+		this._benchmarkSamples.push( sample );
+		if ( this._benchmarkSamples.length > 120 ) this._benchmarkSamples.shift();
+		window.__bermudaBenchmark.latest = sample;
+
+	}
+
+	// output (canvas) texture of this frame (render target of the final post pass)
 	currentTexture() {
 
 		return GPU.context.getCurrentTexture();
@@ -102,6 +138,7 @@ export class Engine {
 				if ( dt > 0.1 ) dt = 0.1;
 				this.frame ++;
 				update( dt, this.clock.getElapsed() );
+				this._sampleBenchmark( t );
 
 			} catch ( e ) {
 
