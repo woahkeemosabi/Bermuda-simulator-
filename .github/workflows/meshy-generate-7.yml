@@ -37,15 +37,40 @@ jobs:
           M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
           $M balance --output-schema v1 --format json --no-update-check
 
-      - name: Generate, download and commit seven GLBs
+      - name: Recover dock, generate remaining six, and commit GLBs
         shell: bash
         run: |
           set -euo pipefail
           M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
-          mkdir -p public/models/bermuda .meshy-results
+          mkdir -p public/models/bermuda .meshy-results .meshy-previews .meshy-downloads
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          commit_asset () {
+            local out="$1"
+            local name="$2"
+            test -s "$out"
+            git add "$out"
+            git commit -m "asset: add ${name} Meshy GLB"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          }
+
+          # Dock generation already succeeded in the prior run; only its local download failed.
+          # Reuse that paid task exactly. Do not regenerate it.
+          DOCK_TASK="01a0def8-3f75-72ec-8973-3ca5976cae36"
+          echo "===== RECOVERING bermuda-dock from ${DOCK_TASK} ====="
+          $M text-to-3d get "$DOCK_TASK" --output-schema v1 --format json --no-update-check | tee .meshy-results/bermuda-dock.json
+          $M download --resource text-to-3d --task-id "$DOCK_TASK" --model-format glb \
+            --output public/models/bermuda/bermuda-dock.glb \
+            --output-schema v1 --format json --no-update-check
+          $M download --resource text-to-3d --task-id "$DOCK_TASK" --asset thumbnail.primary \
+            --output .meshy-previews/bermuda-dock.png \
+            --output-schema v1 --format json --no-update-check
+          commit_asset public/models/bermuda/bermuda-dock.glb bermuda-dock
 
           names=(
-            bermuda-dock
             bermuda-house-a
             bermuda-house-b
             bermuda-boathouse
@@ -55,7 +80,6 @@ jobs:
           )
 
           prompts=(
-            "Bermuda waterfront landing dock module, short pale limestone and concrete harbour landing, seawall edge, metal ladder, marine cleats, black rubber fenders, clean stylized-realistic mobile game asset, isolated object, no water, no people, no long fishing pier"
             "Compact Bermuda waterfront house, pastel pink rendered masonry walls, authentic white stepped Bermuda roof, simple rectangular island architecture, clean doors and windows, stylized-realistic mobile game asset, isolated building, no terrain, no people"
             "Distinct compact Bermuda waterfront house, pale yellow rendered masonry walls, authentic white stepped Bermuda roof, different silhouette from first house, stylized-realistic mobile game asset, isolated building, no terrain, no people"
             "Small Bermuda harbour boathouse and waterfront utility building, pale rendered masonry, white stepped Bermuda roof, simple marine service doors and details, stylized-realistic mobile game asset, isolated building, no water, no people"
@@ -64,32 +88,32 @@ jobs:
             "Bermuda harbour channel navigation marker, compact red or green marine channel marker buoy with simple post and topmark, weathered but clean, stylized-realistic mobile game asset, isolated, no water, no people"
           )
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           for i in "${!names[@]}"; do
             name="${names[$i]}"
             prompt="${prompts[$i]}"
-            out="public/models/bermuda/${name}.glb"
+            dl=".meshy-downloads/${name}"
             log=".meshy-results/${name}.json"
+            out="public/models/bermuda/${name}.glb"
 
             echo "===== GENERATING ${name} ====="
-            # Each text chain was dry-run estimated at 30 credits. Hard-stop if Meshy plans more.
+            mkdir -p "$dl"
             $M make "$prompt" \
               --max-credits 30 \
               --timeout 900 \
-              -o "$out" \
+              -o "$dl" \
               --output-schema v1 \
               --format json \
               --no-update-check | tee "$log"
 
-            test -s "$out"
-            echo "Generated ${out} ($(stat -c%s "$out") bytes)"
+            glb=$(find "$dl" -type f -name '*.glb' | head -n 1)
+            test -n "$glb"
+            cp "$glb" "$out"
 
-            git add "$out"
-            git commit -m "asset: add ${name} Meshy GLB"
-            git pull --rebase origin main
-            git push origin HEAD:main
+            preview=$(find "$dl" -type f \( -name 'preview.png' -o -name '*thumbnail*.png' \) | head -n 1 || true)
+            if [ -n "$preview" ]; then cp "$preview" ".meshy-previews/${name}.png"; fi
+
+            echo "Generated ${out} ($(stat -c%s "$out") bytes)"
+            commit_asset "$out" "$name"
           done
 
       - name: Final Meshy balance
@@ -99,11 +123,14 @@ jobs:
           M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
           $M balance --output-schema v1 --format json --no-update-check || true
 
-      - name: Upload generation metadata
+      - name: Upload previews and generation metadata
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: meshy-bermuda-7-results
-          path: .meshy-results/
+          path: |
+            .meshy-results/
+            .meshy-previews/
+          include-hidden-files: true
           if-no-files-found: warn
           retention-days: 7
