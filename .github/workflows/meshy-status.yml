@@ -1,0 +1,26 @@
+name: Meshy Read-Only Status
+
+on:
+  push:
+    paths:
+      - '.github/workflows/meshy-status.yml'
+  workflow_dispatch:
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    env:
+      MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Latest Meshy tasks and balance
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+          echo '=== BALANCE ==='
+          $M balance --output-schema v1 --format json --no-update-check
+          echo '=== TEXT TO 3D LIST ==='
+          $M text-to-3d list --output-schema v1 --format json --no-update-check
