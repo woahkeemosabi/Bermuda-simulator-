@@ -1,0 +1,57 @@
+name: Meshy 7 Asset Estimate
+
+on:
+  push:
+    paths:
+      - '.github/workflows/meshy-estimate.yml'
+  workflow_dispatch:
+
+jobs:
+  estimate:
+    runs-on: ubuntu-latest
+    env:
+      MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+    steps:
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Estimate 7 Bermuda assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          MESHY="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+
+          prompts=(
+            "Bermuda waterfront landing dock module, short pale limestone and concrete harbour landing, seawall edge, metal ladder, marine cleats, black rubber fenders, clean stylized-realistic mobile game asset, isolated object, no water, no people, no long fishing pier"
+            "Compact Bermuda waterfront house, pastel pink rendered masonry walls, authentic white stepped Bermuda roof, simple rectangular island architecture, clean doors and windows, stylized-realistic mobile game asset, isolated building, no terrain, no people"
+            "Distinct compact Bermuda waterfront house, pale yellow rendered masonry walls, authentic white stepped Bermuda roof, different silhouette from first house, stylized-realistic mobile game asset, isolated building, no terrain, no people"
+            "Small Bermuda harbour boathouse and waterfront utility building, pale rendered masonry, white stepped Bermuda roof, simple marine service doors and details, stylized-realistic mobile game asset, isolated building, no water, no people"
+            "Bermuda palmetto tree, Sabal bermudana inspired fan palm, natural trunk and broad fan-shaped fronds, stylized-realistic mobile game vegetation asset, isolated, no ground plane, no coconuts"
+            "Bermuda harbour props collection arranged as separate objects in one asset: white mooring buoy, dock bollard, timber dock post, black marine fender, compact dock utility box, clean stylized-realistic mobile game props, isolated, no water, no people"
+            "Bermuda harbour channel navigation marker, compact red or green marine channel marker buoy with simple post and topmark, weathered but clean, stylized-realistic mobile game asset, isolated, no water, no people"
+          )
+
+          names=(dock house_a house_b boathouse palmetto harbour_props channel_marker)
+          total=0
+
+          for i in "${!prompts[@]}"; do
+            echo "===== ${names[$i]} ====="
+            $MESHY make "${prompts[$i]}" --dry-run --output-schema v1 --format json --no-update-check | tee "estimate-${names[$i]}.json"
+          done
+
+          python - <<'PY'
+          import json, glob
+          total = 0
+          print("\n=== SUMMARY ===")
+          for p in sorted(glob.glob('estimate-*.json')):
+              with open(p, encoding='utf-8') as f:
+                  d = json.load(f)
+              result = d.get('result') or d
+              credits = result.get('estimated_credits')
+              print(f"{p}: {credits}")
+              if isinstance(credits, (int, float)):
+                  total += credits
+          print(f"TOTAL_ESTIMATED_CREDITS={total}")
+          PY
