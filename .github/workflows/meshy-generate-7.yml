@@ -1,0 +1,109 @@
+name: Generate Bermuda 7 Assets
+
+on:
+  push:
+    paths:
+      - '.github/workflows/meshy-generate-7.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: meshy-bermuda-7-assets
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify Meshy balance
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+          $M balance --output-schema v1 --format json --no-update-check
+
+      - name: Generate, download and commit seven GLBs
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+          mkdir -p public/models/bermuda .meshy-results
+
+          names=(
+            bermuda-dock
+            bermuda-house-a
+            bermuda-house-b
+            bermuda-boathouse
+            bermuda-palmetto
+            bermuda-harbour-props
+            bermuda-channel-marker
+          )
+
+          prompts=(
+            "Bermuda waterfront landing dock module, short pale limestone and concrete harbour landing, seawall edge, metal ladder, marine cleats, black rubber fenders, clean stylized-realistic mobile game asset, isolated object, no water, no people, no long fishing pier"
+            "Compact Bermuda waterfront house, pastel pink rendered masonry walls, authentic white stepped Bermuda roof, simple rectangular island architecture, clean doors and windows, stylized-realistic mobile game asset, isolated building, no terrain, no people"
+            "Distinct compact Bermuda waterfront house, pale yellow rendered masonry walls, authentic white stepped Bermuda roof, different silhouette from first house, stylized-realistic mobile game asset, isolated building, no terrain, no people"
+            "Small Bermuda harbour boathouse and waterfront utility building, pale rendered masonry, white stepped Bermuda roof, simple marine service doors and details, stylized-realistic mobile game asset, isolated building, no water, no people"
+            "Bermuda palmetto tree, Sabal bermudana inspired fan palm, natural trunk and broad fan-shaped fronds, stylized-realistic mobile game vegetation asset, isolated, no ground plane, no coconuts"
+            "Bermuda harbour props collection arranged as separate objects in one asset: white mooring buoy, dock bollard, timber dock post, black marine fender, compact dock utility box, clean stylized-realistic mobile game props, isolated, no water, no people"
+            "Bermuda harbour channel navigation marker, compact red or green marine channel marker buoy with simple post and topmark, weathered but clean, stylized-realistic mobile game asset, isolated, no water, no people"
+          )
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for i in "${!names[@]}"; do
+            name="${names[$i]}"
+            prompt="${prompts[$i]}"
+            out="public/models/bermuda/${name}.glb"
+            log=".meshy-results/${name}.json"
+
+            echo "===== GENERATING ${name} ====="
+            # Each text chain was dry-run estimated at 30 credits. Hard-stop if Meshy plans more.
+            $M make "$prompt" \
+              --max-credits 30 \
+              --timeout 900 \
+              -o "$out" \
+              --output-schema v1 \
+              --format json \
+              --no-update-check | tee "$log"
+
+            test -s "$out"
+            echo "Generated ${out} ($(stat -c%s "$out") bytes)"
+
+            git add "$out"
+            git commit -m "asset: add ${name} Meshy GLB"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          done
+
+      - name: Final Meshy balance
+        if: always()
+        shell: bash
+        run: |
+          M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+          $M balance --output-schema v1 --format json --no-update-check || true
+
+      - name: Upload generation metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meshy-bermuda-7-results
+          path: .meshy-results/
+          if-no-files-found: warn
+          retention-days: 7
