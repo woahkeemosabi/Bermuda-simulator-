@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "status": "awaiting-meshy-authorization",
+  "baselineCommit": "f37336e44184b31573a7f74d3b4751a04c0b63b4",
+  "outputDirectory": "public/models/bermuda",
+  "creditEstimate": {
+    "checkedOn": "2026-09-26",
+    "geometryPerAsset": 20,
+    "texturePerAsset": 10,
+    "remeshPerAsset": 5,
+    "total": 245,
+    "source": "Meshy CLI 0.4.0 make --dry-run and https://docs.meshy.ai/en/api/pricing",
+    "paidSubmissions": 0,
+    "consumedCredits": 0
+  },
+  "generation": {
+    "resource": "text-to-3d",
+    "textureResolution": "2k",
+    "enablePbr": false,
+    "removeLighting": true,
+    "remeshTopology": "triangle",
+    "format": "glb"
+  },
+  "assets": [
+    {
+      "id": "waterfront-landing",
+      "file": "waterfront-landing.glb",
+      "targetTriangles": 4000,
+      "maxTextureSize": 1024,
+      "prompt": "One compact Bermuda waterfront landing module, isolated reusable game asset. A low solid pale limestone seawall platform with a broad flat walkable stone top, short concrete boat landing apron and two low inland steps. Roughly square, 6 metres wide and 6 metres deep; open seaward boarding edge. Subtle salt weathering, clean believable stylized realism, Hamilton Harbour Bermuda character. No water, boat, people, trees, buildings or surrounding scene. No long wooden pier, hut, fishing village, tall railings or American marina.",
+      "texturePrompt": "Warm ivory Bermuda limestone, pale sand coloured concrete walking surface, subtle salt marks on the seawall base, restrained clean coastal weathering. Diffuse natural material colour without baked directional lighting or shadows. No text or logos."
+    },
+    {
+      "id": "house-a",
+      "file": "house-a.glb",
+      "targetTriangles": 4000,
+      "maxTextureSize": 1024,
+      "prompt": "One compact single-storey Bermuda waterfront cottage, isolated reusable game asset, stylized realistic. Coral pink plaster masonry walls, authentic bright white Bermuda limestone hip roof with many shallow overlapping horizontal stepped courses and raised rainwater collection edges, small square chimney. Deep green wooden shutters, white window trim, solid front door, short limestone entry steps. Rectangular footprint, about 8 by 6 metres. Complete exterior on all sides, closed roof, no interior. No base diorama, people, palms, water, thatch, rusty metal roof or tropical hut.",
+      "texturePrompt": "Soft coral pink limewashed plaster walls, clean white stepped limestone rainwater roof, deep muted green shutters, white painted window surrounds, dark closed windows and a pale limestone foundation. Bermuda coastal daylight palette. No baked sunlight or strong shadows, no text."
+    },
+    {
+      "id": "house-b",
+      "file": "house-b.glb",
+      "targetTriangles": 4000,
+      "maxTextureSize": 1024,
+      "prompt": "One distinctive small Bermuda coastal house, isolated reusable stylized-realistic game asset. Butter-yellow plaster masonry walls, compact L-shaped single-storey footprint, authentic white Bermuda limestone roof built from shallow horizontal stepped courses with raised rainwater edges. Two intersecting hip roofs, small white chimney, powder blue shutters, white window trim, inset front doorway and three limestone entrance steps. Complete closed exterior, about 7 by 6 metres. No surrounding landscape, base diorama, people, water, vegetation, wooden stilts, thatch or metal roofing.",
+      "texturePrompt": "Pastel butter-yellow painted masonry, chalk white Bermuda stepped roof, powder blue shutters, white trim, dark closed window panes, pale limestone steps. Same restrained stylized-realistic finish as the coral pink Bermuda cottage. No baked lighting, signs or text."
+    },
+    {
+      "id": "boathouse",
+      "file": "boathouse.glb",
+      "targetTriangles": 3000,
+      "maxTextureSize": 512,
+      "prompt": "One small Bermuda harbour utility boathouse, isolated reusable mobile game asset, stylized realistic. Simple squat rectangular masonry building about 5 by 4 metres. Seafoam mint plaster walls, authentic white stepped limestone hipped Bermuda roof, broad closed navy blue double doors facing the quay, one small side window with white trim, modest limestone foundation and plain wall-mounted utility box. Complete solid exterior. Clean believable coastal service building. No boats, water, ground scene, people, trees, wooden fishing shack, thatch or rusted corrugated roof.",
+      "texturePrompt": "Pale seafoam mint plaster, bright white stepped limestone roof, navy painted double doors, small off-white utility box, light limestone foundation. Very subtle salt wear, clean Bermuda harbour palette. Natural diffuse colours with no baked directional lighting or lettering."
+    },
+    {
+      "id": "palmetto",
+      "file": "palmetto.glb",
+      "targetTriangles": 1500,
+      "maxTextureSize": 512,
+      "prompt": "One Bermuda palmetto palm tree, Sabal bermudana character, isolated reusable low-poly game asset for repeated instancing. Short sturdy grey-brown trunk, compact rounded crown of broad radial fan-shaped green fronds with distinct pointed segments. About 5 metres tall. Economical solid leaf geometry and clean silhouette, stylized realistic, believable Bermuda waterfront vegetation. One tree only, roots terminate at ground level. No coconut fruit, feather-leaf coconut palm, pot, ground disc, surrounding plants, scenery or tiny scattered leaves.",
+      "texturePrompt": "Natural olive and fresh green fan-shaped palmetto leaves with slightly paler undersides, muted grey-brown fibrous trunk. Clean diffuse base colours with gentle variation. No baked sunlight, cast shadows or transparent background painted into leaves."
+    },
+    {
+      "id": "harbour-props",
+      "file": "harbour-props.glb",
+      "targetTriangles": 2000,
+      "maxTextureSize": 512,
+      "prompt": "One lightweight harbour props pack for a Bermuda waterfront game. Five clearly separated objects arranged side by side on the same ground plane: one small white spherical mooring buoy with blue band and top eye, one short weathered timber mooring post, one dark metal double-horn bollard, one white cylindrical boat fender with navy ends, one small cream dock utility pedestal. Simple robust geometry, stylized realistic, each item complete and reusable. No connecting base or ground slab, no dock, water, boats, buildings, lettering, extra scenery or tangled ropes.",
+      "texturePrompt": "White painted mooring buoy with blue band; grey-brown weathered timber post; dark charcoal metal bollard; white rubber cylindrical fender with navy ends; cream dock utility pedestal. Clean restrained salt wear, opaque materials, no baked lights, logos or text."
+    },
+    {
+      "id": "channel-marker",
+      "file": "channel-marker.glb",
+      "targetTriangles": 600,
+      "maxTextureSize": 512,
+      "prompt": "One simple red harbour channel navigation marker for a Bermuda coastal game, isolated reusable low-poly asset. Slender white cylindrical fixed post, red triangular daymark near the top, small dark cap. About 3 metres tall, bottom continues straight to the waterline without a large base. Strong readable silhouette, simple closed surfaces, clean stylized realism. The triangle is the main identifying shape. No water, scene, islands, boats, railings, lettering, numbers, complex light machinery or large offshore buoy.",
+      "texturePrompt": "Clean opaque red triangular daymark on a white painted post with a small dark cap, restrained salt staining close to the base. Flat readable marine colours, no numbers, text, logos, baked sunlight or shadows."
+    }
+  ]
+}
