@@ -11,10 +11,16 @@ export class Engine {
 	constructor( container ) {
 
 		this.container = container;
-		this.renderScale = 1;
+		const params = typeof location !== 'undefined' ? new URLSearchParams( location.search ) : null;
+		this.composeMode = !! ( params && params.has( 'compose' ) );
+		// Compose mode is deliberately a low-load development view. The app's mobile post scale still
+		// applies inside this output size, so ?compose=1&gpuSafe=2 lands at roughly 58% effective linear
+		// resolution while keeping the CSS/camera viewport unchanged for layout decisions.
+		this.renderScale = this.composeMode ? 0.8 : 1;
 		this.clock = new Timer();
 		this.frame = 0;
 		this.onResize = [];
+		this._composeLast = 0;
 
 	}
 
@@ -85,6 +91,11 @@ export class Engine {
 			this._raf = requestAnimationFrame( loop );
 
 			try {
+
+				// World composition does not need 60 fps. Capping the heavy WebGPU frame to ~30 fps cuts
+				// sustained iPhone GPU pressure substantially while touch/DOM events continue at full rate.
+				if ( this.composeMode && this._composeLast && t - this._composeLast < 31 ) return;
+				if ( this.composeMode ) this._composeLast = t;
 
 				this.clock.update( t );
 				let dt = this.clock.getDelta();
