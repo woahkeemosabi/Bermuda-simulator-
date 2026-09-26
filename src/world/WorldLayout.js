@@ -27,10 +27,10 @@ export const WORLD = {
 		headDepth: 9,
 	},
 
-	// Bermuda blockout: the boat sits immediately beside the short west-bay landing, bow south toward
-	// open water. The existing BoatController reads this at construction, so its mooring/physics remain
-	// unchanged apart from location.
-	boatDock: { position: new THREE.Vector3( - 61.5, 0, - 13.0 ), heading: 0 },
+	// Bermuda blockout: keep the 8.2 m boat alongside the eastern face of the landing with real
+	// clearance between the hull and dock. The previous x=-61.5 put the hull directly inside the
+	// landing-head footprint.
+	boatDock: { position: new THREE.Vector3( - 57.7, 0, - 13.0 ), heading: 0 },
 
 	village: { center: new THREE.Vector3( 40, 0, - 118 ), radius: 95 },
 
