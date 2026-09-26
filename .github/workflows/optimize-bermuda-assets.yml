@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'public/models/bermuda/*.glb'
+      - '.github/workflows/optimize-bermuda-assets.yml'
 
 permissions:
   contents: write
@@ -30,10 +31,8 @@ jobs:
           for src in "${files[@]}"; do
             base=$(basename "$src")
             echo "Optimizing $base"
-            # Desktop: retain source geometry, deduplicate/prune and compress textures.
             npx gltf-transform optimize "$src" "public/models/bermuda/desktop/$base" \
               --compress meshopt --texture-compress webp --texture-size 2048
-            # Mobile: simplify geometry aggressively enough for Safari/WebGPU, cap textures at 1K.
             npx gltf-transform optimize "$src" "public/models/bermuda/mobile/$base" \
               --simplify true --simplify-ratio 0.35 --simplify-error 0.001 \
               --compress meshopt --texture-compress webp --texture-size 1024
