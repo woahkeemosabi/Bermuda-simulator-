@@ -1,0 +1,38 @@
+name: Meshy Connection Check
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/meshy-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check-meshy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Meshy API connection
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${MESHY_API_KEY:-}" ]; then
+            echo "MESHY_API_KEY secret is missing"
+            exit 2
+          fi
+          HTTP_CODE=$(curl -sS -o meshy-balance.json -w "%{http_code}" \
+            https://api.meshy.ai/openapi/v1/balance \
+            -H "Authorization: Bearer ${MESHY_API_KEY}")
+          echo "Meshy HTTP status: ${HTTP_CODE}"
+          if [ "${HTTP_CODE}" != "200" ]; then
+            cat meshy-balance.json
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          with open('meshy-balance.json', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+          print(f"Meshy connected. Credit balance: {data.get('balance', 'unknown')}")
+          PY
