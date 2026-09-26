@@ -1,0 +1,26 @@
+name: GLTF Transform Help
+
+on:
+  push:
+    paths:
+      - '.github/workflows/gltf-help.yml'
+  workflow_dispatch:
+
+jobs:
+  help:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspect glTF Transform commands
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes @gltf-transform/cli@4.2.1 --help
+          echo '=== RESIZE ==='
+          npx --yes @gltf-transform/cli@4.2.1 resize --help || true
+          echo '=== OPTIMIZE ==='
+          npx --yes @gltf-transform/cli@4.2.1 optimize --help || true
+          echo '=== PRUNE ==='
+          npx --yes @gltf-transform/cli@4.2.1 prune --help || true
