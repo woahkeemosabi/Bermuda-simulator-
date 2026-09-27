@@ -2,9 +2,9 @@ import { Group } from '../engine/index.js';
 import { createVillageMaterials } from './village/VillageMaterials.js';
 import { VillageTextures } from './village/TextureBaker.js';
 
-// Minimal compatibility shell for the removed legacy Tidewater village.
-// Keep the shared material API because other world systems still reference
-// village.materials.*, but do not construct any of the non-Bermudian village geometry.
+// Compatibility shell for the removed legacy Tidewater village.
+// Preserve the runtime API used by the rest of the world while constructing
+// none of the non-Bermudian village/stilt-house/pier geometry.
 export class Village {
 
 	constructor( { scene } ) {
@@ -13,6 +13,7 @@ export class Village {
 		this.group = new Group();
 		this.group.name = 'Village';
 		this.lights = [];
+		this.lightSources = [];
 		this.footprints = [];
 		this.foundationChecks = [];
 		this.buildings = [];
@@ -20,8 +21,6 @@ export class Village {
 		this.path = null;
 		this.pierInfo = null;
 
-		// Compatibility resources only. These preserve consumers of materials.wood,
-		// materials.hard, etc. while leaving all legacy village meshes unbuilt.
 		this.textures = new VillageTextures();
 		this.materials = createVillageMaterials( this.textures );
 
@@ -38,6 +37,8 @@ export class Village {
 	getBuildings() { return this.buildings; }
 	getSidePaths() { return this.sidePaths; }
 	getPierInfo() { return this.pierInfo; }
+	getLightSources() { return this.lightSources; }
+	getLights() { return this.lights; }
 	update() {}
 
 }
