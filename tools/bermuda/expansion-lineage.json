@@ -123,6 +123,13 @@
       "status": "SUBMITTED",
       "parent_task_id": "01a0e4c3-fc01-7018-ae42-14b706a39a96",
       "consumed_credits": null
+    },
+    "bermuda-bougainvillea-cluster-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4e3-0fdf-7600-bf17-dff0f12ad8af",
+      "status": "SUBMITTED",
+      "parent_task_id": "01a0e4c7-e6ef-733e-8d5b-5b7a5105d66a",
+      "consumed_credits": null
     }
   },
   "assets": {},
