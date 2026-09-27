@@ -25,8 +25,9 @@
     "bermuda-boathouse-remesh": {
       "resource": "remesh",
       "task_id": "01a0e2af-0ecd-7431-b813-a635ed26320c",
-      "status": "SUBMITTED",
-      "parent_task_id": "01a0df01-52a2-7057-abfd-c9e21a77d49c"
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0df01-52a2-7057-abfd-c9e21a77d49c",
+      "consumed_credits": 5
     },
     "bermuda-palmetto-remesh": {
       "resource": "remesh",
