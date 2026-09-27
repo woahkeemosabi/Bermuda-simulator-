@@ -312,6 +312,22 @@
       "task_id": "01a0e4e3-0fdf-7600-bf17-dff0f12ad8af",
       "resource": "remesh",
       "parent_task_id": "01a0e4c7-e6ef-733e-8d5b-5b7a5105d66a"
+    },
+    "bermuda-rocky-shoreline": {
+      "file": "bermuda-rocky-shoreline.glb",
+      "bytes": 559856,
+      "sha256": "135a0038b6d5f7c9433d4beca90bcb3c088f8e25acdeb7f55dcecaa9bce1eff0",
+      "triangles": 3632,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4fc-768a-7247-af7f-752f6542c334",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4fa-295f-7693-bb1a-1cdb3182d455"
     }
   },
   "preflight": {
