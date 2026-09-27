@@ -1,4 +1,4 @@
-name: Recover verified Bermuda waterfront assets
+name: Finish verified Bermuda waterfront assets
 on:
   push:
     branches: [bermuda-waterfront-verified-v2]

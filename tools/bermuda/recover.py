@@ -93,7 +93,9 @@ def finish(key, download_model=False, texture=512, triangles=2000):
         source = WORK / (key + '.glb')
         cli(['download', '--task-json', task_json, '--model-format', 'glb', '--output', str(source)])
         name = key.removesuffix('-remesh')
-        metadata = pack(source, OUTPUT / (name + '.glb'), texture, triangles)
+        limit = 2050 if name == 'bermuda-harbour-props' else triangles
+        metadata = pack(source, OUTPUT / (name + '.glb'), texture, limit)
+        assert sum(a['triangles'] for k, a in state['assets'].items() if k != name) + metadata['triangles'] <= 19100, 'Whole-pack mobile budget exceeded'
         metadata.update(task_id=task, resource=resource, parent_task_id=record['parent_task_id'])
         state['assets'][name] = metadata
         subprocess.run(['git', 'add', str(OUTPUT / (name + '.glb'))], check=True)
