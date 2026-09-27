@@ -70,6 +70,12 @@
       "status": "SUCCEEDED",
       "parent_task_id": "01a0e2af-2d1b-7342-ab13-c98ef7730430",
       "consumed_credits": 10
+    },
+    "bermuda-channel-marker-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e3b6-8d4a-74da-80da-36e506d87d9d",
+      "status": "SUBMITTED",
+      "parent_task_id": "01a0e3b5-878d-7121-ad2a-af8cc445992e"
     }
   },
   "assets": {
