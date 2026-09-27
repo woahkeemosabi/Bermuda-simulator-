@@ -36,3 +36,5 @@ jobs:
               data = json.load(f)
           print(f"Meshy connected. Credit balance: {data.get('balance', 'unknown')}")
           PY
+
+# verification trigger: Bermuda waterfront asset expansion
