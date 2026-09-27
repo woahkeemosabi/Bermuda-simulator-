@@ -144,6 +144,13 @@
       "status": "SUBMITTED",
       "parent_task_id": null,
       "consumed_credits": null
+    },
+    "bermuda-fish-market-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4e3-358e-7485-af8e-5d3362efb5b2",
+      "status": "SUBMITTED",
+      "parent_task_id": null,
+      "consumed_credits": null
     }
   },
   "assets": {},
