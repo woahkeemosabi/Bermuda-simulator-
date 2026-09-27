@@ -113,9 +113,9 @@
     "bermuda-hillside-cluster-remesh": {
       "resource": "remesh",
       "task_id": "01a0e4e2-fea5-7383-8a75-1622b8b96964",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": "01a0e4c1-9827-706b-a171-f5a7fbb9aaee",
-      "consumed_credits": null
+      "consumed_credits": 5
     },
     "bermuda-hilltop-landmark-remesh": {
       "resource": "remesh",
