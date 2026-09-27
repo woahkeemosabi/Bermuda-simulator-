@@ -134,30 +134,30 @@
     "bermuda-rocky-shoreline-preview": {
       "resource": "text-to-3d",
       "task_id": "01a0e4e3-1812-7038-a10c-db0629f7a019",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": null,
-      "consumed_credits": null
+      "consumed_credits": 20
     },
     "bermuda-marina-kit-preview": {
       "resource": "text-to-3d",
       "task_id": "01a0e4e3-2672-7793-b13d-2f4044c53ff7",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": null,
-      "consumed_credits": null
+      "consumed_credits": 20
     },
     "bermuda-fish-market-preview": {
       "resource": "text-to-3d",
       "task_id": "01a0e4e3-358e-7485-af8e-5d3362efb5b2",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": null,
-      "consumed_credits": null
+      "consumed_credits": 20
     },
     "bermuda-bait-tackle-preview": {
       "resource": "text-to-3d",
       "task_id": "01a0e4e3-45dd-75d7-a7db-5291445cb8aa",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": null,
-      "consumed_credits": null
+      "consumed_credits": 20
     }
   },
   "assets": {},
