@@ -39,8 +39,9 @@
     "bermuda-harbour-props-preview": {
       "resource": "text-to-3d",
       "task_id": "01a0e2af-1f77-73b3-b1ce-cf6c15d1d072",
-      "status": "SUBMITTED",
-      "parent_task_id": null
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
     },
     "bermuda-channel-marker-preview": {
       "resource": "text-to-3d",
