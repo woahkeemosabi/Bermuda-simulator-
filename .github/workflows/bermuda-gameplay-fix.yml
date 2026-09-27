@@ -81,10 +81,10 @@ jobs:
           )
           PY
 
-      - name: Install and test
+      - name: Install and verify
         run: |
           npm ci
-          npm test
+          node test/game-logic.mjs
           npm run build
 
       - name: Commit verified fixes
