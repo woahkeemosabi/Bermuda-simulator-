@@ -162,8 +162,8 @@
   },
   "assets": {},
   "preflight": {
-    "balance": 675,
-    "estimated_remaining_credits": 170,
+    "balance": 565,
+    "estimated_remaining_credits": 60,
     "generation_estimates": {
       "rocky-shoreline": 30,
       "marina-kit": 30,
