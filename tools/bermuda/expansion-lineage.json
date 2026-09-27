@@ -192,6 +192,22 @@
       "task_id": "01a0e4e2-ee70-7530-aa8d-d7c2dddab850",
       "resource": "remesh",
       "parent_task_id": "01a0e4bc-4d30-7794-bde9-ef86bbd91685"
+    },
+    "bermuda-house-d": {
+      "file": "bermuda-house-d.glb",
+      "bytes": 1783808,
+      "sha256": "91f8ab31a509f8dce5840e08ab06e083b800dc4850d278163909c4b156004bdc",
+      "triangles": 5163,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4e2-f6a1-77ac-9f39-bf0939915524",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4be-f1bf-7485-8415-5de461964ef0"
     }
   },
   "preflight": {
