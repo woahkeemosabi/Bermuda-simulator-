@@ -162,9 +162,9 @@
     "bermuda-rocky-shoreline-refine": {
       "resource": "text-to-3d",
       "task_id": "01a0e4fa-295f-7693-bb1a-1cdb3182d455",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": "01a0e4e3-1812-7038-a10c-db0629f7a019",
-      "consumed_credits": null
+      "consumed_credits": 10
     },
     "bermuda-marina-kit-refine": {
       "resource": "text-to-3d",
