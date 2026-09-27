@@ -99,7 +99,8 @@ export function applyBermudaRuntimeLook( app ) {
 	// Preserve the known-good collision/start layout, then replace its primitive visual shell with
 	// the optimized Meshy reference assets as soon as they finish loading.
 	installBermudaBlockout( app );
-	void installBermudaModels( app );
+	const waterfrontReady = installBermudaModels( app );
 
 	if ( app.updateSun ) app.updateSun();
+    return waterfrontReady;
 }

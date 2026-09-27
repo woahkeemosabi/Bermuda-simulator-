@@ -5,7 +5,12 @@ import { WATERFRONT_ASSETS, fitPlacement } from './bermuda/AssetLayout.js';
 
 const BASE = ( ( import.meta.env && import.meta.env.BASE_URL ) || '/' ) + 'models/bermuda/mobile-v2/';
 
-export async function installBermudaModels( app ) {
+export function installBermudaModels( app ) {
+    if ( ! app ) return Promise.resolve( null );
+    return app.bermudaModelsPromise ||= loadWaterfront( app );
+}
+
+async function loadWaterfront( app ) {
 	if ( ! app?.scene || ! app.terrainData || ! app.bermudaBlockout ) return null;
 	if ( app.bermudaModels ) return app.bermudaModels;
 	const group = new Group();
@@ -18,6 +23,7 @@ export async function installBermudaModels( app ) {
 		let asset;
 		try {
 			const file = 'bermuda-' + entry.id + '.glb';
+            app.onWaterfrontProgress?.( state.loaded.length, WATERFRONT_ASSETS.length, entry.id );
 			asset = await loadStaticAsset( BASE + file, { id: entry.id, maxTriangles: entry.triangles, maxTextureSize: entry.texture } );
 			const placements = entry.placements.filter( p => ! p.desktopOnly || ! app.bermudaBlockout.mobileLite )
 				.map( p => fitPlacement( asset, p, app.terrainData ) );
@@ -46,5 +52,6 @@ export async function installBermudaModels( app ) {
 		}
 	}
 	state.ready = state.loaded.length === WATERFRONT_ASSETS.length;
+    app.onWaterfrontProgress?.( state.loaded.length, WATERFRONT_ASSETS.length, null );
 	return state;
 }

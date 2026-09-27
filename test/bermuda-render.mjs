@@ -15,7 +15,12 @@ H.GPU.device.pushErrorScope('validation');
 // Isolated native-engine waterfront render; flat ground deliberately isolates asset placement.
 const app = {scene:H.scene, terrainData:{heightAt:()=>1.45}, colliders:new Colliders()};
 installBermudaBlockout(app);
-const state = await installBermudaModels(app);
+const progress = [];
+app.onWaterfrontProgress = done => progress.push(done);
+const pending = installBermudaModels(app);
+assert.equal(installBermudaModels(app), pending);
+const state = await pending;
+assert.deepEqual(progress, [0,1,2,3,4,5,6,7]);
 assert.deepEqual(state.errors,[]); assert.equal(state.loaded.length,7); assert(state.ready);
 const {E}=H;
 const ground = new E.Mesh(new E.BoxGeometry(100,1,65),new Material({name:'test-ground',color:0xb2b292,roughness:1}));

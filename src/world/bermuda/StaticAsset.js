@@ -1,5 +1,6 @@
 import { Box3, BufferAttribute, BufferGeometry, Color, Group, InstancedMesh, Matrix4, Mesh, Quaternion, Vector3 } from '../../engine/index.js';
 import { loadGLB, decodeImage } from '../../engine/loaders/GLTF.js';
+import { GPU } from '../../engine/gpu/GPU.js';
 import { Texture } from '../../engine/gpu/Texture.js';
 import { generateMipmaps } from '../../engine/gpu/Mipmaps.js';
 import { Material } from '../../engine/render/Material.js';
@@ -114,7 +115,11 @@ export async function loadStaticAsset( url, { id, maxTriangles = 6000, maxTextur
 							format: 'rgba8unorm-srgb', data: px.data, mips: true, sampler: 'linearRepeat' } );
 						textures.set( imageIndex, map );
 						map.getGPU();
-						generateMipmaps( map );
+						// Upload and finish this asset before the interactive frame loop begins.
+                        const encoder = GPU.device.createCommandEncoder( { label: id + '-mips' } );
+                        generateMipmaps( map, encoder );
+                        GPU.queue.submit( [ encoder.finish() ] );
+                        await GPU.queue.onSubmittedWorkDone();
 
 					}
 					texture = textures.get( imageIndex );

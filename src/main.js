@@ -154,14 +154,15 @@ function mobileRecoveryURL( reason, prefix = 'gpu-recovery' ) {
 	const url = new URL( location.href );
 	const attempts = Number( url.searchParams.get( 'gpuRecovery' ) || 0 );
 	if ( attempts >= 2 ) return null;
-	const next = attempts + 1;
+	const next = Math.min( 2, Math.max( attempts + 1, Number( url.searchParams.get( 'gpuSafe' ) || 0 ) ) );
 	url.searchParams.set( 'gpuSafe', String( next ) );
 	url.searchParams.set( 'gpuRecovery', String( next ) );
 	url.searchParams.set( 'scale', next === 1 ? '0.82' : '0.72' );
 	url.searchParams.set( 'noSim', '1' );
 	url.searchParams.set( 'G', '16' );
 	if ( next >= 2 ) url.searchParams.set( 'noVeg', '1' );
-	url.searchParams.set( 'v', prefix + '-' + next );
+	// Keep the deployed build identifier across recovery.
+	url.searchParams.set( 'recoveryReason', prefix );
 	try { sessionStorage.setItem( 'bermudaLastGPUError', String( reason || 'unknown' ) ); } catch ( _ ) {}
 	return url;
 
@@ -291,7 +292,15 @@ window.__ui = ui;
 app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async () => {
 
 	if ( mobileFastStart ) applyMobileMemoryProfile( app );
-	applyBermudaRuntimeLook( app );
+	app.onWaterfrontProgress = ( done, total, id ) => {
+        // Exact completed asset count; do not simulate progress during asset loading.
+        ui.setLoading( 0.99, `Waterfront ${ done }/${ total }${ id ? ': ' + id : '' }`, 0.99 );
+    };
+    const waterfront = await applyBermudaRuntimeLook( app );
+    if ( ! waterfront?.ready ) {
+        const details = waterfront?.errors.map( e => e.id + ': ' + e.message ).join( '; ' );
+        throw new Error( 'Waterfront failed to load: ' + ( details || 'scene unavailable' ) );
+    }
 	app.ui = new AppUI( app, ui );
 	applyBermudaBranding( mobileDevice );
 	if ( mobileDevice ) {
