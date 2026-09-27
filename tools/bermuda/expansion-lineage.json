@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "recovered_from": {
+    "run_id": 36351012281,
+    "artifact_id": 10942663382
+  },
+  "tasks": {
+    "bermuda-bougainvillea-cluster-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c5-b52f-7352-bc89-526c9fc3f5bc",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": null
+    },
+    "bermuda-bougainvillea-cluster-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c7-e6ef-733e-8d5b-5b7a5105d66a",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4c5-b52f-7352-bc89-526c9fc3f5bc",
+      "consumed_credits": 10
+    },
+    "bermuda-hillside-cluster-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c0-a2fa-7133-87c6-ac586d4d1b08",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": null
+    },
+    "bermuda-hillside-cluster-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c1-9827-706b-a171-f5a7fbb9aaee",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4c0-a2fa-7133-87c6-ac586d4d1b08",
+      "consumed_credits": 10
+    },
+    "bermuda-hilltop-landmark-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c3-5167-766b-9bdb-f83ba5aa91c2",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": null
+    },
+    "bermuda-hilltop-landmark-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c3-fc01-7018-ae42-14b706a39a96",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4c3-5167-766b-9bdb-f83ba5aa91c2",
+      "consumed_credits": 10
+    },
+    "bermuda-house-c-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4bb-57d1-74bf-9698-eaa6ffb59ea5",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": null
+    },
+    "bermuda-house-c-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4bc-4d30-7794-bde9-ef86bbd91685",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4bb-57d1-74bf-9698-eaa6ffb59ea5",
+      "consumed_credits": 10
+    },
+    "bermuda-house-d-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4bd-fd76-77df-9633-3c79a77f9831",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": null
+    },
+    "bermuda-house-d-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4be-f1bf-7485-8415-5de461964ef0",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4bd-fd76-77df-9633-3c79a77f9831",
+      "consumed_credits": 10
+    },
+    "bermuda-limestone-seawall-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4b8-fb39-74fb-a4eb-ec4db49ee360",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": null
+    },
+    "bermuda-limestone-seawall-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4b9-f00e-72e7-b40d-76e2c78e8d87",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4b8-fb39-74fb-a4eb-ec4db49ee360",
+      "consumed_credits": 10
+    }
+  },
+  "assets": {}
+}
