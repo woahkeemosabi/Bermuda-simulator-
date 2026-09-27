@@ -390,5 +390,6 @@
     "remesh_estimate_each": 5,
     "remesh_price_source": "https://docs.meshy.ai/en/api/pricing",
     "price_checked": "2026-09-27"
-  }
+  },
+  "balance_after": 505
 }
