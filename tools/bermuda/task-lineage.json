@@ -67,8 +67,9 @@
     "bermuda-channel-marker-refine": {
       "resource": "text-to-3d",
       "task_id": "01a0e3b5-878d-7121-ad2a-af8cc445992e",
-      "status": "SUBMITTED",
-      "parent_task_id": "01a0e2af-2d1b-7342-ab13-c98ef7730430"
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e2af-2d1b-7342-ab13-c98ef7730430",
+      "consumed_credits": 10
     }
   },
   "assets": {
