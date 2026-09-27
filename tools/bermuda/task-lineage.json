@@ -18,8 +18,9 @@
     "bermuda-house-b-remesh": {
       "resource": "remesh",
       "task_id": "01a0e2af-05a7-7124-b4b0-f83e0ddc648a",
-      "status": "SUBMITTED",
-      "parent_task_id": "01a0defe-b314-720a-8374-6e859ca76b35"
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0defe-b314-720a-8374-6e859ca76b35",
+      "consumed_credits": 5
     },
     "bermuda-boathouse-remesh": {
       "resource": "remesh",
