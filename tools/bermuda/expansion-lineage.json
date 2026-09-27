@@ -99,9 +99,9 @@
     "bermuda-house-c-remesh": {
       "resource": "remesh",
       "task_id": "01a0e4e2-ee70-7530-aa8d-d7c2dddab850",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": "01a0e4bc-4d30-7794-bde9-ef86bbd91685",
-      "consumed_credits": null
+      "consumed_credits": 5
     },
     "bermuda-house-d-remesh": {
       "resource": "remesh",
