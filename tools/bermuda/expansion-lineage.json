@@ -120,9 +120,9 @@
     "bermuda-hilltop-landmark-remesh": {
       "resource": "remesh",
       "task_id": "01a0e4e3-0722-741b-8497-db27af7f0136",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": "01a0e4c3-fc01-7018-ae42-14b706a39a96",
-      "consumed_credits": null
+      "consumed_credits": 5
     },
     "bermuda-bougainvillea-cluster-remesh": {
       "resource": "remesh",
