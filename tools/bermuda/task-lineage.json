@@ -45,5 +45,22 @@
       "parent_task_id": null
     }
   },
-  "assets": {}
+  "assets": {
+    "bermuda-dock": {
+      "file": "bermuda-dock.glb",
+      "bytes": 1884480,
+      "sha256": "bf57cd58e5528584436cee3ae17a407085031bb7c4f42caf71f62ca65dda30da",
+      "triangles": 3623,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e2ae-f1b8-7258-a0a2-f81b1f204476",
+      "resource": "remesh",
+      "parent_task_id": "01a0def8-3f75-72ec-8973-3ca5976cae36"
+    }
+  }
 }
