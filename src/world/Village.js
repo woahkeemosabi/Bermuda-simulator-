@@ -1,8 +1,10 @@
 import { Group } from '../engine/index.js';
+import { createVillageMaterials } from './village/VillageMaterials.js';
+import { VillageTextures } from './village/TextureBaker.js';
 
-// Minimal compatibility shell for the legacy Tidewater village.
-// The Bermuda build no longer constructs the non-Bermudian stilt houses, cottages,
-// boathouse or long wooden pier. Preserve the API expected by terrain/rocks/lights.
+// Minimal compatibility shell for the removed legacy Tidewater village.
+// Keep the shared material API because other world systems still reference
+// village.materials.*, but do not construct any of the non-Bermudian village geometry.
 export class Village {
 
 	constructor( { scene } ) {
@@ -17,8 +19,12 @@ export class Village {
 		this.sidePaths = [];
 		this.path = null;
 		this.pierInfo = null;
-		this.textures = null;
-		this.materials = null;
+
+		// Compatibility resources only. These preserve consumers of materials.wood,
+		// materials.hard, etc. while leaving all legacy village meshes unbuilt.
+		this.textures = new VillageTextures();
+		this.materials = createVillageMaterials( this.textures );
+
 		this.B = null;
 		this.harbor = null;
 		this.town = null;
@@ -27,27 +33,11 @@ export class Village {
 
 	}
 
-	// Compatibility API used during world construction.
-	getFootprints() {
-		return this.footprints;
-	}
-
-	getFoundationChecks() {
-		return this.foundationChecks;
-	}
-
-	getBuildings() {
-		return this.buildings;
-	}
-
-	getSidePaths() {
-		return this.sidePaths;
-	}
-
-	getPierInfo() {
-		return this.pierInfo;
-	}
-
+	getFootprints() { return this.footprints; }
+	getFoundationChecks() { return this.foundationChecks; }
+	getBuildings() { return this.buildings; }
+	getSidePaths() { return this.sidePaths; }
+	getPierInfo() { return this.pierInfo; }
 	update() {}
 
 }
