@@ -193,6 +193,13 @@
       "status": "SUBMITTED",
       "parent_task_id": "01a0e4fa-295f-7693-bb1a-1cdb3182d455",
       "consumed_credits": null
+    },
+    "bermuda-marina-kit-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4fc-7eed-7401-bf6a-a0f44b557027",
+      "status": "SUBMITTED",
+      "parent_task_id": "01a0e4fa-3839-73d3-bc29-86ac710136bc",
+      "consumed_credits": null
     }
   },
   "assets": {
