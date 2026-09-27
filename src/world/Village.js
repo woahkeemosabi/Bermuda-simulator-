@@ -2,7 +2,7 @@ import { Group } from '../engine/index.js';
 
 // Minimal compatibility shell for the legacy Tidewater village.
 // The Bermuda build no longer constructs the non-Bermudian stilt houses, cottages,
-// boathouse or long wooden pier. Keep the object shape that terrain/rocks/lights expect.
+// boathouse or long wooden pier. Preserve the API expected by terrain/rocks/lights.
 export class Village {
 
 	constructor( { scene } ) {
@@ -25,6 +25,27 @@ export class Village {
 		this.inst = null;
 		scene.add( this.group );
 
+	}
+
+	// Compatibility API used during world construction.
+	getFootprints() {
+		return this.footprints;
+	}
+
+	getFoundationChecks() {
+		return this.foundationChecks;
+	}
+
+	getBuildings() {
+		return this.buildings;
+	}
+
+	getSidePaths() {
+		return this.sidePaths;
+	}
+
+	getPierInfo() {
+		return this.pierInfo;
 	}
 
 	update() {}
