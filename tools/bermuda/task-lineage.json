@@ -145,6 +145,22 @@
       "task_id": "01a0e2af-16e4-750d-a4e9-6d029fd98d61",
       "resource": "remesh",
       "parent_task_id": "01a0df05-3758-7606-b700-74387dbe2e84"
+    },
+    "bermuda-harbour-props": {
+      "file": "bermuda-harbour-props.glb",
+      "bytes": 524400,
+      "sha256": "b33eddf1d4fa6dca5196eb629e5cc1d3338173731d7232e00f9ebdd6dc85311c",
+      "triangles": 2023,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e2b8-2467-701c-ab00-c4ce7d1f9349",
+      "resource": "remesh",
+      "parent_task_id": "01a0e2b6-7b1e-7452-a0d3-36423acbcbfe"
     }
   }
 }
