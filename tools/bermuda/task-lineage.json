@@ -36,6 +36,12 @@
       "task_id": "01a0e2af-1f77-73b3-b1ce-cf6c15d1d072",
       "status": "SUBMITTED",
       "parent_task_id": null
+    },
+    "bermuda-channel-marker-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e2af-2d1b-7342-ab13-c98ef7730430",
+      "status": "SUBMITTED",
+      "parent_task_id": null
     }
   },
   "assets": {}
