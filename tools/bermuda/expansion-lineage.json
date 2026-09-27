@@ -179,6 +179,13 @@
       "status": "SUBMITTED",
       "parent_task_id": "01a0e4e3-358e-7485-af8e-5d3362efb5b2",
       "consumed_credits": null
+    },
+    "bermuda-bait-tackle-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4fa-55a9-7022-a2ee-4306beefa62c",
+      "status": "SUBMITTED",
+      "parent_task_id": "01a0e4e3-45dd-75d7-a7db-5291445cb8aa",
+      "consumed_credits": null
     }
   },
   "assets": {
