@@ -102,6 +102,13 @@
       "status": "SUBMITTED",
       "parent_task_id": "01a0e4bc-4d30-7794-bde9-ef86bbd91685",
       "consumed_credits": null
+    },
+    "bermuda-house-d-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4e2-f6a1-77ac-9f39-bf0939915524",
+      "status": "SUBMITTED",
+      "parent_task_id": "01a0e4be-f1bf-7485-8415-5de461964ef0",
+      "consumed_credits": null
     }
   },
   "assets": {},
