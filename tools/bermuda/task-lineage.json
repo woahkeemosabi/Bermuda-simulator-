@@ -56,6 +56,12 @@
       "status": "SUCCEEDED",
       "parent_task_id": "01a0e2af-1f77-73b3-b1ce-cf6c15d1d072",
       "consumed_credits": 10
+    },
+    "bermuda-harbour-props-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e2b8-2467-701c-ab00-c4ce7d1f9349",
+      "status": "SUBMITTED",
+      "parent_task_id": "01a0e2b6-7b1e-7452-a0d3-36423acbcbfe"
     }
   },
   "assets": {
