@@ -127,9 +127,9 @@
     "bermuda-bougainvillea-cluster-remesh": {
       "resource": "remesh",
       "task_id": "01a0e4e3-0fdf-7600-bf17-dff0f12ad8af",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": "01a0e4c7-e6ef-733e-8d5b-5b7a5105d66a",
-      "consumed_credits": null
+      "consumed_credits": 5
     },
     "bermuda-rocky-shoreline-preview": {
       "resource": "text-to-3d",
