@@ -208,6 +208,22 @@
       "task_id": "01a0e4e2-f6a1-77ac-9f39-bf0939915524",
       "resource": "remesh",
       "parent_task_id": "01a0e4be-f1bf-7485-8415-5de461964ef0"
+    },
+    "bermuda-hillside-cluster": {
+      "file": "bermuda-hillside-cluster.glb",
+      "bytes": 800600,
+      "sha256": "aa7779a4642c225034fb554e9d304310065948184bb8dbc1f06a77c81cae141c",
+      "triangles": 4248,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4e2-fea5-7383-8a75-1622b8b96964",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4c1-9827-706b-a171-f5a7fbb9aaee"
     }
   },
   "preflight": {
