@@ -18,6 +18,12 @@
       "task_id": "01a0e2af-05a7-7124-b4b0-f83e0ddc648a",
       "status": "SUBMITTED",
       "parent_task_id": "01a0defe-b314-720a-8374-6e859ca76b35"
+    },
+    "bermuda-boathouse-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e2af-0ecd-7431-b813-a635ed26320c",
+      "status": "SUBMITTED",
+      "parent_task_id": "01a0df01-52a2-7057-abfd-c9e21a77d49c"
     }
   },
   "assets": {}
