@@ -113,6 +113,22 @@
       "task_id": "01a0e2af-0ecd-7431-b813-a635ed26320c",
       "resource": "remesh",
       "parent_task_id": "01a0df01-52a2-7057-abfd-c9e21a77d49c"
+    },
+    "bermuda-palmetto": {
+      "file": "bermuda-palmetto.glb",
+      "bytes": 584068,
+      "sha256": "a1667a6b2ad3f9dc835c18ef26e6d0d34b5ba7d9f570ad6443d63d7f8fa75bc0",
+      "triangles": 1237,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e2af-16e4-750d-a4e9-6d029fd98d61",
+      "resource": "remesh",
+      "parent_task_id": "01a0df05-3758-7606-b700-74387dbe2e84"
     }
   }
 }
