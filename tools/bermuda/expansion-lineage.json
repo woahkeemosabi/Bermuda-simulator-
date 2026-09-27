@@ -328,6 +328,22 @@
       "task_id": "01a0e4fc-768a-7247-af7f-752f6542c334",
       "resource": "remesh",
       "parent_task_id": "01a0e4fa-295f-7693-bb1a-1cdb3182d455"
+    },
+    "bermuda-marina-kit": {
+      "file": "bermuda-marina-kit.glb",
+      "bytes": 676236,
+      "sha256": "119d44c7af2f4ba620b31c14c66c0b1a8113f6f8b57c0816b5c561606d3613f1",
+      "triangles": 2978,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4fc-7eed-7401-bf6a-a0f44b557027",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4fa-3839-73d3-bc29-86ac710136bc"
     }
   },
   "preflight": {
