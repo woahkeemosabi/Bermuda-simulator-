@@ -39,6 +39,8 @@ export function installBermudaBlockout( app ) {
 	const mobileLite = isMobileProfile();
 	const group = new Group();
 	group.name = 'BermudaWorldBlockout';
+	const visuals = {};
+	let visualKey = 'quay';
 
 	const M = {
 		limestone: makeMaterial( 'limestone', 0xe8e3d6, 0.96 ),
@@ -71,6 +73,7 @@ export function installBermudaBlockout( app ) {
 		mesh.rotation.y = ry;
 		mesh.castShadow = false;
 		mesh.receiveShadow = false;
+		( visuals[ visualKey ] ||= [] ).push( mesh );
 		group.add( mesh );
 		return mesh;
 
@@ -97,10 +100,13 @@ export function installBermudaBlockout( app ) {
 	// ---------------------------------------------------------------- waterfront
 	box( M.limestone, - 66.5, 0.55, - 45.2, 27, 1.8, 3.2, 0, true, 'bermuda-seawall', true );
 	box( M.asphalt, - 68.0, 1.43, - 49.2, 34, 0.18, 5.0, 0, true, 'bermuda-road', true );
-	box( M.wood, - 65.0, 0.55, - 30.0, 5.2, 0.9, 34.0, 0, true, 'bermuda-landing', true );
+	visualKey = 'approach';
+	box( M.limestone, - 65.0, 0.55, - 30.0, 5.2, 0.9, 34.0, 0, true, 'bermuda-landing', true );
 
 	// Keep the landing head compact. The old 8 m-wide head physically intersected the 8.2 m boat.
+	visualKey = 'dock';
 	box( M.wood, - 64.0, 0.58, - 14.5, 5.4, 0.96, 4.8, 0, true, 'bermuda-landing-head', true );
+	visualKey = 'quay';
 
 	for ( const [ x, z ] of [ [ - 67.0, - 34 ], [ - 63.0, - 34 ], [ - 67.0, - 19 ], [ - 63.0, - 19 ] ] ) {
 
@@ -123,23 +129,25 @@ export function installBermudaBlockout( app ) {
 
 	};
 
-	const house = ( { x, z, w, d, h, mat, ry = 0 } ) => {
+	const house = ( { x, z, w, d, h, mat, ry = 0, id } ) => {
 
+		visualKey = id;
 		const ground = terrain.heightAt( x, z );
 		box( mat, x, ground + h * 0.5, z, w, h, d, ry, true, 'bermuda-house' );
 		steppedRoof( x, ground + h + 0.14, z, w, d, ry );
 
 	};
 
-	house( { x: - 80.0, z: - 69.0, w: 10.0, d: 7.0, h: 4.6, mat: M.pink, ry: 0.06 } );
-	house( { x: - 61.0, z: - 73.5, w: 8.4, d: 6.4, h: 4.0, mat: M.yellow, ry: - 0.05 } );
+	house( { x: - 80.0, z: - 69.0, w: 10.0, d: 7.0, h: 4.6, mat: M.pink, ry: 0.06, id: 'house-a' } );
+	house( { x: - 61.0, z: - 73.5, w: 8.4, d: 6.4, h: 4.0, mat: M.yellow, ry: - 0.05, id: 'house-b' } );
 	if ( ! mobileLite ) {
 
-		house( { x: - 92.0, z: - 82.0, w: 8.0, d: 6.0, h: 4.2, mat: M.blue, ry: 0.1 } );
-		house( { x: - 46.0, z: - 87.0, w: 9.0, d: 6.8, h: 4.4, mat: M.mint, ry: - 0.12 } );
+		house( { x: - 92.0, z: - 82.0, w: 8.0, d: 6.0, h: 4.2, mat: M.blue, ry: 0.1, id: 'house-a' } );
+		house( { x: - 46.0, z: - 87.0, w: 9.0, d: 6.8, h: 4.4, mat: M.mint, ry: - 0.12, id: 'house-b' } );
 
 	}
 
+	visualKey = 'quay';
 	box( M.limestone, - 74.0, terrain.heightAt( - 74, - 59 ) + 0.6, - 59.0, 26, 1.15, 0.55, 0.02, true, 'bermuda-wall' );
 	if ( ! mobileLite ) box( M.limestone, - 48.5, terrain.heightAt( - 48.5, - 66 ) + 0.55, - 66.0, 19, 1.05, 0.5, - 0.08, true, 'bermuda-wall' );
 
@@ -156,9 +164,11 @@ export function installBermudaBlockout( app ) {
 
 	if ( ! mobileLite ) {
 
+		visualKey = 'channel-marker';
 		cyl( M.limestone, - 91, 1.35, 20, 0.22, 2.7 );
 		cyl( M.red, - 91, 2.85, 20, 0.38, 0.45 );
 
+		visualKey = 'palmetto';
 		const palm = ( x, z, height = 5.8 ) => {
 
 			const y = terrain.heightAt( x, z );
@@ -196,7 +206,7 @@ export function installBermudaBlockout( app ) {
 
 	}
 
-	app.bermudaBlockout = { group, materials: M, start: START, mobileLite };
+	app.bermudaBlockout = { group, materials: M, start: START, mobileLite, visuals };
 	return app.bermudaBlockout;
 
 }

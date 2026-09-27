@@ -1,83 +1,50 @@
-import { Group, Mesh } from '../engine/index.js';
+import { BufferAttribute, BufferGeometry, Group, Mesh } from '../engine/index.js';
 import { Material } from '../engine/render/Material.js';
-import { parseGLB } from './debris/GLB.js';
+import { loadStaticAsset, placeStaticAsset } from './bermuda/StaticAsset.js';
+import { WATERFRONT_ASSETS, fitPlacement } from './bermuda/AssetLayout.js';
 
-const BASE = ( ( import.meta.env && import.meta.env.BASE_URL ) || '/' ) + 'models/bermuda/';
-
-function isMobileProfile() {
-	if ( typeof navigator === 'undefined' ) return false;
-	return /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
-		( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
-}
-
-async function loadBytes( url ) {
-	const res = await fetch( url );
-	if ( ! res.ok ) throw new Error( 'BermudaModels: ' + url + ' ' + res.status );
-	return res.arrayBuffer();
-}
-
-function material( name, color ) {
-	return new Material( {
-		name: 'bermuda-model-' + name,
-		color,
-		roughness: 0.82,
-		metalness: 0,
-		underwaterLighting: 'lite',
-		localLightsCheap: true,
-		receiveShadows: true,
-	} );
-}
-
-// Placement is intentionally concentrated around the existing Bermuda landing. The primitive
-// blockout remains as invisible collision geometry after the detailed meshes are ready.
-const PLACEMENTS = [
-	{ file: 'bermuda-dock.glb', name: 'ReferenceDock', x: -65.0, y: 0.98, z: -30.0, yaw: 0, scale: 1.0, color: 0x8d765d },
-	{ file: 'bermuda-house-a.glb', name: 'ReferenceHouseA', x: -80.0, y: 1.45, z: -69.0, yaw: 0.06, scale: 1.0, color: 0xe8a6aa },
-	{ file: 'bermuda-house-b.glb', name: 'ReferenceHouseB', x: -61.0, y: 1.45, z: -73.5, yaw: -0.05, scale: 1.0, color: 0xe4cc7b },
-	{ file: 'bermuda-boathouse.glb', name: 'ReferenceBoathouse', x: -52.5, y: 0.95, z: -43.8, yaw: 0, scale: 1.0, color: 0xf0eee5 },
-];
+const BASE = ( ( import.meta.env && import.meta.env.BASE_URL ) || '/' ) + 'models/bermuda/mobile-v2/';
 
 export async function installBermudaModels( app ) {
-	if ( ! app || ! app.scene ) return null;
+	if ( ! app?.scene || ! app.terrainData || ! app.bermudaBlockout ) return null;
 	if ( app.bermudaModels ) return app.bermudaModels;
-
-	const mobile = isMobileProfile() && !( app.qs && app.qs.has( 'desktop' ) );
-	const tier = mobile ? 'mobile/' : 'desktop/';
 	const group = new Group();
-	group.name = 'BermudaReferenceModels-' + ( mobile ? 'mobile' : 'desktop' );
+	group.name = 'BermudaMeshyWaterfront';
 	app.scene.add( group );
-	app.bermudaModels = { group, tier, ready: false, loaded: [], errors: [] };
-
-	for ( const p of PLACEMENTS ) {
+	const state = app.bermudaModels = { group, ready: false, loaded: [], errors: [], metrics: {}, assets: [] };
+	if ( typeof window !== 'undefined' ) window.__bermudaReferenceModels = state;
+	// Sequential loads bound image-decoding and GPU-upload memory on iPhone.
+	for ( const entry of WATERFRONT_ASSETS ) {
+		let asset;
 		try {
-			const parsed = parseGLB( await loadBytes( BASE + tier + p.file ) );
-			const mat = material( p.name, p.color );
-			const asset = new Group();
-			asset.name = p.name;
-			asset.position.set( p.x, p.y, p.z );
-			asset.rotation.y = p.yaw;
-			asset.scale.set( p.scale, p.scale, p.scale );
-			for ( const part of parsed.meshes ) {
-				const mesh = new Mesh( part.geometry, mat );
-				mesh.name = p.name + ':' + part.name;
-				mesh.castShadow = ! mobile;
-				mesh.receiveShadow = true;
-				asset.add( mesh );
+			const file = 'bermuda-' + entry.id + '.glb';
+			asset = await loadStaticAsset( BASE + file, { id: entry.id, maxTriangles: entry.triangles, maxTextureSize: entry.texture } );
+			const placements = entry.placements.filter( p => ! p.desktopOnly || ! app.bermudaBlockout.mobileLite )
+				.map( p => fitPlacement( asset, p, app.terrainData ) );
+			group.add( placeStaticAsset( asset, placements ) );
+			if ( entry.id === 'channel-marker' ) {
+                const geometry = new BufferGeometry();
+                geometry.setAttribute( 'position', new BufferAttribute( new Float32Array( [ -0.6, 0, 0, 0.6, 0, 0, 0, 0.9, 0 ] ), 3 ) );
+                geometry.computeVertexNormals();
+                const sign = new Mesh( geometry, new Material( { name: 'channel-daymark', color: 0xdc3028, roughness: 0.9, side: 'double', receiveShadows: false } ) );
+                sign.position.set( placements[0].x, 2.45, placements[0].z );
+                group.add( sign );
+            }
+            state.assets.push( asset );
+			state.loaded.push( file );
+			state.metrics[ entry.id ] = { triangles: asset.triangles, instances: placements.length, textures: asset.textures.size,
+				bounds: [ asset.size.x, asset.size.y, asset.size.z ], placements };
+			for ( const mesh of app.bermudaBlockout.visuals[ entry.id ] || [] ) mesh.visible = false;
+			if ( entry.id === 'dock' ) {
+				// Meet the landing head visually while preserving existing collision surfaces.
+				for ( const mesh of app.bermudaBlockout.visuals.approach || [] ) { mesh.scale.z = 30.1; mesh.position.z = -31.95; }
 			}
-			group.add( asset );
-			app.bermudaModels.loaded.push( p.file );
 		} catch ( error ) {
-			console.error( 'BermudaModels: failed', p.file, error );
-			app.bermudaModels.errors.push( { file: p.file, message: String( error && ( error.message || error ) ) } );
+			asset?.dispose();
+			state.errors.push( { id: entry.id, message: String( error.message || error ) } );
+			console.error( 'Bermuda waterfront asset failed:', entry.id, error );
 		}
 	}
-
-	app.bermudaModels.ready = app.bermudaModels.loaded.length > 0;
-	if ( app.bermudaModels.ready && app.bermudaBlockout && app.bermudaBlockout.group ) {
-		// Keep all blockout colliders registered, but remove the placeholder boxes from the image so
-		// the generated reference meshes can be judged without primitive geometry covering them.
-		app.bermudaBlockout.group.visible = false;
-	}
-	window.__bermudaReferenceModels = app.bermudaModels;
-	return app.bermudaModels;
+	state.ready = state.loaded.length === WATERFRONT_ASSETS.length;
+	return state;
 }
