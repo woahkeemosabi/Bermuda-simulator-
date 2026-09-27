@@ -11,8 +11,9 @@
     "bermuda-house-a-remesh": {
       "resource": "remesh",
       "task_id": "01a0e2ae-fd79-7047-a737-2a87b2d2a536",
-      "status": "SUBMITTED",
-      "parent_task_id": "01a0defc-1335-7017-983e-b4bf3ec7f275"
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0defc-1335-7017-983e-b4bf3ec7f275",
+      "consumed_credits": 5
     },
     "bermuda-house-b-remesh": {
       "resource": "remesh",
