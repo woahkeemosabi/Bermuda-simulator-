@@ -160,7 +160,24 @@
       "consumed_credits": 20
     }
   },
-  "assets": {},
+  "assets": {
+    "bermuda-limestone-seawall": {
+      "file": "bermuda-limestone-seawall.glb",
+      "bytes": 1988424,
+      "sha256": "979632ebcee919c1bfd59cbe9e93c4089e251d1ac4047feacbbdf8587a1a3517",
+      "triangles": 3855,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4e2-e5c5-752e-8d9a-154475f7faa7",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4b9-f00e-72e7-b40d-76e2c78e8d87"
+    }
+  },
   "preflight": {
     "balance": 565,
     "estimated_remaining_credits": 60,
