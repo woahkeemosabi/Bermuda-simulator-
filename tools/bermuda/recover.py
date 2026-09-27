@@ -117,6 +117,7 @@ elif phase == 2:
         source = state['tasks'][name + '-preview']['task_id']
         key = submit(name + '-refine', 'text-to-3d', ['--mode', 'refine', '--preview-task-id', source,
                     '--enable-pbr', 'false', '--texture-resolution', '2k', '--remove-lighting', 'true',
+                    '--texture-prompt', ('White painted marine post, red upper cap, restrained salt wear, opaque diffuse materials, no lettering.' if name.endswith('marker') else 'Charcoal metal mooring bollard, cream rope, white rubber fender with navy end caps and cream dock utility pedestal. Opaque diffuse colour, subtle salt wear, no text or logos.'),
                     '--target-formats', 'glb'], source)
         finish(key)
         refined = state['tasks'][key]['task_id']
