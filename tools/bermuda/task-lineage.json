@@ -53,8 +53,9 @@
     "bermuda-harbour-props-refine": {
       "resource": "text-to-3d",
       "task_id": "01a0e2b6-7b1e-7452-a0d3-36423acbcbfe",
-      "status": "SUBMITTED",
-      "parent_task_id": "01a0e2af-1f77-73b3-b1ce-cf6c15d1d072"
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e2af-1f77-73b3-b1ce-cf6c15d1d072",
+      "consumed_credits": 10
     }
   },
   "assets": {
