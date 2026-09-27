@@ -8,7 +8,7 @@ import { FishProps } from '../world/fish/FishProps.js';
 import { FISH } from './FishTable.js';
 
 // Fish market relocated to the Bermuda harbour, immediately beside the hero dock.
-export const STAND = { x: - 69.2, z: - 18.8, yaw: Math.PI * 0.5 };
+export const STAND = { x: - 69.0, z: - 22.5, yaw: Math.PI * 0.5 };
 
 const STALL_FLOOR = 0.06;
 const ICE_TOP = 1.27;
@@ -24,19 +24,23 @@ export class FishStand {
 		this.group.position.set( STAND.x, y, STAND.z );
 		this.group.rotation.y = STAND.yaw;
 		scene.add( this.group );
+		// Put a lightweight procedural market on screen immediately so the selling point is never
+		// invisible while the richer stall asset downloads on mobile. Replace it only after success.
+		const fallback = new Mesh( buildStall(), this.material );
+		fallback.name = 'FishStandFallback';
+		fallback.castShadow = true;
+		this.group.add( fallback );
 		this.ready = loadStallAssets().then( ( a ) => {
 
 			const mesh = new Mesh( buildStallKit( a ), a.material );
 			mesh.name = 'FishStandStall';
 			mesh.castShadow = true;
+			this.group.remove( fallback );
 			this.group.add( mesh );
 
 		} ).catch( ( e ) => {
 
-			console.error( 'FishStand: stall assets failed, using the plain stall', e );
-			const mesh = new Mesh( buildStall(), this.material );
-			mesh.castShadow = true;
-			this.group.add( mesh );
+			console.error( 'FishStand: stall assets failed, keeping the plain stall', e );
 
 		} );
 

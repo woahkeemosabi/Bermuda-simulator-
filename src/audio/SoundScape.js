@@ -211,7 +211,7 @@ export class SoundScape {
 
 		try {
 
-			if ( this.ctx.state === 'suspended' ) await Promise.race( [ this.ctx.resume(), new Promise( ( r ) => setTimeout( r, 1500 ) ) ] );
+			if ( this.ctx.state !== 'running' && this.ctx.state !== 'closed' ) await Promise.race( [ this.ctx.resume(), new Promise( ( r ) => setTimeout( r, 1500 ) ) ] );
 
 		} catch ( e ) {
 

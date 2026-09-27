@@ -249,7 +249,7 @@ function installMobileGPUWatchdog() {
 
 function installMobileAudioResume( app ) {
 
-	if ( ! mobileDevice || ! app.audio ) return;
+	if ( ! app.audio ) return;
 	const wakeAudio = () => {
 
 		if ( document.visibilityState === 'hidden' || ! app.audio ) return;
@@ -270,7 +270,10 @@ function installMobileAudioResume( app ) {
 	window.addEventListener( 'pageshow', wakeAudio );
 	window.addEventListener( 'focus', wakeAudio );
 	document.addEventListener( 'pointerdown', wakeAudio, { capture: true, passive: true } );
+	document.addEventListener( 'pointerup', wakeAudio, { capture: true, passive: true } );
 	document.addEventListener( 'touchstart', wakeAudio, { capture: true, passive: true } );
+	document.addEventListener( 'touchend', wakeAudio, { capture: true, passive: true } );
+	document.addEventListener( 'click', wakeAudio, { capture: true, passive: true } );
 
 }
 

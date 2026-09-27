@@ -154,8 +154,10 @@ export class App {
 		// terrain and rocks apply the heightfield sun shadow (long hill shadows) in their own lighting
 		this.terrain = new Terrain( { scene, terrainData: this.terrainData, terrainGPU: this.terrainGPU, renderer } );
 		this.rocks = new Rocks( { scene, terrain: this.terrain, village: this.village, colliders: this.colliders } );
-		// driftwood (CC0 photoscans), wrack, pebbles and village clutter
-		this.debris = new Debris( { scene, terrain: this.terrain, village: this.village, vegetation: this.vegetation, rocks: this.rocks, colliders: this.colliders } );
+		// Bermuda rebuild: the legacy Tidewater debris field (wheelbarrows, crate stacks,
+		// barrels, beached skiffs and village yard clutter) is deliberately disabled.
+		// Keep this slot for compatibility; Bermuda-specific harbour props are loaded separately.
+		this.debris = null;
 		// these apply the heightfield sun shadow in their own lighting model (see UnderwaterLighting)
 		this.terrain.mesh.material.appliesHillShadow = true;
 		this.rocks.material.appliesHillShadow = true;
@@ -663,7 +665,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.oceanLOD.update( this.camera );
 		this.terrain.update( this.camera );
 		this.rocks.update( this.camera );
-		this.debris.update( this.camera );
+		if ( this.debris ) this.debris.update( this.camera );
 		this.reef.update( dt, this.camera.position );
 		this.village.update( dt );
 		if ( this.vegetation ) this.vegetation.update( dt, this.camera );
