@@ -360,6 +360,22 @@
       "task_id": "01a0e4fc-876f-77ec-b7c7-002923d93789",
       "resource": "remesh",
       "parent_task_id": "01a0e4fa-4756-71b3-afe8-820bbd22eef1"
+    },
+    "bermuda-bait-tackle": {
+      "file": "bermuda-bait-tackle.glb",
+      "bytes": 1824768,
+      "sha256": "de0b246b69ccadcc49ccc218ae47cb979e3ce6e89973c0c1fbaccf9992240209",
+      "triangles": 5654,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4fc-8f71-7381-8b8f-2d2c7119de59",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4fa-55a9-7022-a2ee-4306beefa62c"
     }
   },
   "preflight": {
