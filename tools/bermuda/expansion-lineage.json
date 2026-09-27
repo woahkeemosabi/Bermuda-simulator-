@@ -130,6 +130,13 @@
       "status": "SUBMITTED",
       "parent_task_id": "01a0e4c7-e6ef-733e-8d5b-5b7a5105d66a",
       "consumed_credits": null
+    },
+    "bermuda-rocky-shoreline-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4e3-1812-7038-a10c-db0629f7a019",
+      "status": "SUBMITTED",
+      "parent_task_id": null,
+      "consumed_credits": null
     }
   },
   "assets": {},
