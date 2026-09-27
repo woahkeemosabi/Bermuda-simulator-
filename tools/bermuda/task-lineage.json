@@ -74,8 +74,9 @@
     "bermuda-channel-marker-remesh": {
       "resource": "remesh",
       "task_id": "01a0e3b6-8d4a-74da-80da-36e506d87d9d",
-      "status": "SUBMITTED",
-      "parent_task_id": "01a0e3b5-878d-7121-ad2a-af8cc445992e"
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e3b5-878d-7121-ad2a-af8cc445992e",
+      "consumed_credits": 5
     }
   },
   "assets": {
