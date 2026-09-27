@@ -344,6 +344,22 @@
       "task_id": "01a0e4fc-7eed-7401-bf6a-a0f44b557027",
       "resource": "remesh",
       "parent_task_id": "01a0e4fa-3839-73d3-bc29-86ac710136bc"
+    },
+    "bermuda-fish-market": {
+      "file": "bermuda-fish-market.glb",
+      "bytes": 1805204,
+      "sha256": "03381c1073f5cae4f7d7b081cd822681c319c332836962657d36be716c0248d6",
+      "triangles": 4733,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4fc-876f-77ec-b7c7-002923d93789",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4fa-4756-71b3-afe8-820bbd22eef1"
     }
   },
   "preflight": {
