@@ -1,0 +1,103 @@
+name: Apply Bermuda Waterfront Gameplay Fixes
+
+on:
+  push:
+    paths:
+      - '.github/workflows/bermuda-gameplay-fix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fixes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Apply waterfront gameplay fixes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              s = p.read_text()
+              if old not in s:
+                  raise SystemExit(f'expected block not found in {path}')
+              p.write_text(s.replace(old, new))
+
+          replace(
+              'src/audio/SoundScape.js',
+              "if ( this.ctx.state === 'suspended' ) await Promise.race( [ this.ctx.resume(), new Promise( ( r ) => setTimeout( r, 1500 ) ) ] );",
+              "if ( this.ctx.state !== 'running' && this.ctx.state !== 'closed' ) await Promise.race( [ this.ctx.resume(), new Promise( ( r ) => setTimeout( r, 1500 ) ) ] );"
+          )
+
+          replace('src/main.js', "\tif ( ! mobileDevice || ! app.audio ) return;", "\tif ( ! app.audio ) return;")
+          replace(
+              'src/main.js',
+              "\tdocument.addEventListener( 'pointerdown', wakeAudio, { capture: true, passive: true } );\n\tdocument.addEventListener( 'touchstart', wakeAudio, { capture: true, passive: true } );",
+              "\tdocument.addEventListener( 'pointerdown', wakeAudio, { capture: true, passive: true } );\n\tdocument.addEventListener( 'pointerup', wakeAudio, { capture: true, passive: true } );\n\tdocument.addEventListener( 'touchstart', wakeAudio, { capture: true, passive: true } );\n\tdocument.addEventListener( 'touchend', wakeAudio, { capture: true, passive: true } );\n\tdocument.addEventListener( 'click', wakeAudio, { capture: true, passive: true } );"
+          )
+
+          replace(
+              'src/App.js',
+              "\t\t// driftwood (CC0 photoscans), wrack, pebbles and village clutter\n\t\tthis.debris = new Debris( { scene, terrain: this.terrain, village: this.village, vegetation: this.vegetation, rocks: this.rocks, colliders: this.colliders } );",
+              "\t\t// Bermuda rebuild: the legacy Tidewater debris field (wheelbarrows, crate stacks,\n\t\t// barrels, beached skiffs and village yard clutter) is deliberately disabled.\n\t\t// Keep this slot for compatibility; Bermuda-specific harbour props are loaded separately.\n\t\tthis.debris = null;"
+          )
+          replace('src/App.js', "\t\tthis.debris.update( this.camera );", "\t\tif ( this.debris ) this.debris.update( this.camera );")
+
+          replace(
+              'src/game/FishStand.js',
+              "export const STAND = { x: - 69.2, z: - 18.8, yaw: Math.PI * 0.5 };",
+              "export const STAND = { x: - 69.0, z: - 22.5, yaw: Math.PI * 0.5 };"
+          )
+          replace(
+              'src/game/FishStand.js',
+              """\t\tthis.ready = loadStallAssets().then( ( a ) => {\n\n\t\t\tconst mesh = new Mesh( buildStallKit( a ), a.material );\n\t\t\tmesh.name = 'FishStandStall';\n\t\t\tmesh.castShadow = true;\n\t\t\tthis.group.add( mesh );\n\n\t\t} ).catch( ( e ) => {\n\n\t\t\tconsole.error( 'FishStand: stall assets failed, using the plain stall', e );\n\t\t\tconst mesh = new Mesh( buildStall(), this.material );\n\t\t\tmesh.castShadow = true;\n\t\t\tthis.group.add( mesh );\n\n\t\t} );""",
+              """\t\t// Put a lightweight procedural market on screen immediately so the selling point is never\n\t\t// invisible while the richer stall asset downloads on mobile. Replace it only after success.\n\t\tconst fallback = new Mesh( buildStall(), this.material );\n\t\tfallback.name = 'FishStandFallback';\n\t\tfallback.castShadow = true;\n\t\tthis.group.add( fallback );\n\t\tthis.ready = loadStallAssets().then( ( a ) => {\n\n\t\t\tconst mesh = new Mesh( buildStallKit( a ), a.material );\n\t\t\tmesh.name = 'FishStandStall';\n\t\t\tmesh.castShadow = true;\n\t\t\tthis.group.remove( fallback );\n\t\t\tthis.group.add( mesh );\n\n\t\t} ).catch( ( e ) => {\n\n\t\t\tconsole.error( 'FishStand: stall assets failed, keeping the plain stall', e );\n\n\t\t} );"""
+          )
+
+          replace(
+              'src/game/Chandlery.js',
+              "export const CHANDLERY = { x: 85.5, z: - 60.5, yaw: - 1.9 }; // faces the beach and the pier",
+              "export const CHANDLERY = { x: - 59.0, z: - 25.5, yaw: - Math.PI * 0.5 }; // beside the Bermuda dock cluster"
+          )
+          replace('src/game/Chandlery.js', "name: 'Marta · Chandlery',", "name: 'Martha · Bait & Tackle',")
+          replace(
+              'src/game/Chandlery.js',
+              "greeting: 'Line, reels, a bigger hold, diesel. What do you need?',",
+              "greeting: 'Bait, line, reels, upgrades and diesel. What do you need?',"
+          )
+          PY
+
+      - name: Install and test
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Commit verified fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/App.js src/audio/SoundScape.js src/main.js src/game/FishStand.js src/game/Chandlery.js
+          if git diff --cached --quiet; then
+            echo "No code changes to commit"
+            exit 0
+          fi
+          git commit -m "fix: restore waterfront gameplay and mobile audio"
+          git pull --rebase origin main
+          git push origin HEAD:main
