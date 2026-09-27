@@ -137,6 +137,13 @@
       "status": "SUBMITTED",
       "parent_task_id": null,
       "consumed_credits": null
+    },
+    "bermuda-marina-kit-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4e3-2672-7793-b13d-2f4044c53ff7",
+      "status": "SUBMITTED",
+      "parent_task_id": null,
+      "consumed_credits": null
     }
   },
   "assets": {},
