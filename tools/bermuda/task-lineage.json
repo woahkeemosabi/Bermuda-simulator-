@@ -4,8 +4,9 @@
     "bermuda-dock-remesh": {
       "resource": "remesh",
       "task_id": "01a0e2ae-f1b8-7258-a0a2-f81b1f204476",
-      "status": "SUBMITTED",
-      "parent_task_id": "01a0def8-3f75-72ec-8973-3ca5976cae36"
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0def8-3f75-72ec-8973-3ca5976cae36",
+      "consumed_credits": 5
     },
     "bermuda-house-a-remesh": {
       "resource": "remesh",
