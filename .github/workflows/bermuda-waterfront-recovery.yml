@@ -1,0 +1,42 @@
+name: Recover verified Bermuda waterfront assets
+on:
+  push:
+    branches: [bermuda-waterfront-verified-v2]
+    paths: ['.github/workflows/bermuda-waterfront-recovery.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: meshy-bermuda-recovery
+  cancel-in-progress: false
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bermuda-waterfront-verified-v2
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install Pillow
+      - name: Recover approved assets and record every accepted task
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python tools/bermuda/recover.py 1
+      - name: Preserve previews and task snapshots even after failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bermuda-waterfront-recovery-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/bermuda-meshy-recovery/projects/
+            ${{ runner.temp }}/bermuda-meshy-recovery/previews/
+            tools/bermuda/task-lineage.json
+          retention-days: 7
+          if-no-files-found: warn
