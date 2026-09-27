@@ -1,0 +1,40 @@
+name: Recover preserved expansion records
+on:
+  push:
+    branches: [bermuda-waterfront-expansion-recovery]
+    paths: ['.github/workflows/bermuda-expansion-records.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  records:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: meshy-bermuda-expansion-records
+          run-id: 36351012281
+          github-token: ${{ github.token }}
+          path: original
+      - name: Extract records and inventory without generation
+        run: |
+          python - <<'PY'
+          import pathlib, shutil, json
+          source=pathlib.Path('original'); dest=pathlib.Path('records'); dest.mkdir()
+          inventory=[]
+          for p in source.rglob('*'):
+              if not p.is_file(): continue
+              rel=p.relative_to(source)
+              inventory.append({'path':str(rel),'bytes':p.stat().st_size})
+              if p.suffix in ('.json','.jsonl','.log'):
+                  q=dest/rel; q.parent.mkdir(parents=True,exist_ok=True); shutil.copyfile(p,q)
+          (dest/'inventory.json').write_text(json.dumps(inventory,indent=2))
+          print('Preserved',len(inventory),'file records')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: expansion-records-only
+          path: records/
+          include-hidden-files: true
+          retention-days: 30
