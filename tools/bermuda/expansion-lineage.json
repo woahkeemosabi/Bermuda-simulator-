@@ -204,9 +204,9 @@
     "bermuda-fish-market-remesh": {
       "resource": "remesh",
       "task_id": "01a0e4fc-876f-77ec-b7c7-002923d93789",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": "01a0e4fa-4756-71b3-afe8-820bbd22eef1",
-      "consumed_credits": null
+      "consumed_credits": 5
     },
     "bermuda-bait-tackle-remesh": {
       "resource": "remesh",
