@@ -90,5 +90,18 @@
       "consumed_credits": 10
     }
   },
-  "assets": {}
+  "assets": {},
+  "preflight": {
+    "balance": 675,
+    "estimated_remaining_credits": 170,
+    "generation_estimates": {
+      "rocky-shoreline": 30,
+      "marina-kit": 30,
+      "fish-market": 30,
+      "bait-tackle": 30
+    },
+    "remesh_estimate_each": 5,
+    "remesh_price_source": "https://docs.meshy.ai/en/api/pricing",
+    "price_checked": "2026-09-27"
+  }
 }
