@@ -224,6 +224,22 @@
       "task_id": "01a0e4e2-fea5-7383-8a75-1622b8b96964",
       "resource": "remesh",
       "parent_task_id": "01a0e4c1-9827-706b-a171-f5a7fbb9aaee"
+    },
+    "bermuda-hilltop-landmark": {
+      "file": "bermuda-hilltop-landmark.glb",
+      "bytes": 713356,
+      "sha256": "c1804e7c9755df2292696e03af7c88f1594e723f6c8b35bfa7e0c38bab770977",
+      "triangles": 3122,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4e3-0722-741b-8497-db27af7f0136",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4c3-fc01-7018-ae42-14b706a39a96"
     }
   },
   "preflight": {
