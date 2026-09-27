@@ -176,9 +176,9 @@
     "bermuda-fish-market-refine": {
       "resource": "text-to-3d",
       "task_id": "01a0e4fa-4756-71b3-afe8-820bbd22eef1",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": "01a0e4e3-358e-7485-af8e-5d3362efb5b2",
-      "consumed_credits": null
+      "consumed_credits": 10
     },
     "bermuda-bait-tackle-refine": {
       "resource": "text-to-3d",
