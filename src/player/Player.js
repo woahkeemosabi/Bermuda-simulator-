@@ -435,7 +435,8 @@ export class Player {
 
 		this.mode = 'boat';
 		this.boat.driven = true;
-		this.boat.moored = false;
+		// Stay physically secured while the player settles at the helm. The first deliberate
+		// throttle input releases the berth; simply boarding/taking the helm must not kick the hull.
 		this.helmYaw = 0;
 		this.helmPitch = - 0.05;
 		this.orbitYaw = this.boat.getYaw() + Math.PI;
@@ -743,6 +744,7 @@ export class Player {
 		let throttle = 0;
 		if ( inp.down( 'KeyW' ) ) throttle = inp.down( 'ShiftLeft' ) ? 1 : 0.7;
 		if ( inp.down( 'KeyS' ) ) throttle = - 0.6;
+		if ( Math.abs( throttle ) > 0.05 && b.moored ) b.moored = false;
 		let steer = 0;
 		if ( inp.down( 'KeyA' ) ) steer += 1;
 		if ( inp.down( 'KeyD' ) ) steer -= 1;

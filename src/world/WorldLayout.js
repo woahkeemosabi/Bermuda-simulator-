@@ -30,7 +30,7 @@ export const WORLD = {
 	// Bermuda blockout: keep the 8.2 m boat alongside the eastern face of the landing with real
 	// clearance between the hull and dock. The previous x=-61.5 put the hull directly inside the
 	// landing-head footprint.
-	boatDock: { position: new THREE.Vector3( - 57.7, 0, - 13.0 ), heading: 0 },
+	boatDock: { position: new THREE.Vector3( - 59.2, 0, - 14.5 ), heading: 0 },
 
 	village: { center: new THREE.Vector3( 40, 0, - 118 ), radius: 95 },
 
