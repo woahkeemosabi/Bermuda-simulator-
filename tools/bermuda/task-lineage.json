@@ -79,6 +79,22 @@
       "task_id": "01a0e2ae-fd79-7047-a737-2a87b2d2a536",
       "resource": "remesh",
       "parent_task_id": "01a0defc-1335-7017-983e-b4bf3ec7f275"
+    },
+    "bermuda-house-b": {
+      "file": "bermuda-house-b.glb",
+      "bytes": 1419096,
+      "sha256": "3994cefe0063ed3bc927722eeb2d39edfac5aac0c758b06640b86f4747caadd0",
+      "triangles": 3670,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e2af-05a7-7124-b4b0-f83e0ddc648a",
+      "resource": "remesh",
+      "parent_task_id": "01a0defe-b314-720a-8374-6e859ca76b35"
     }
   }
 }
