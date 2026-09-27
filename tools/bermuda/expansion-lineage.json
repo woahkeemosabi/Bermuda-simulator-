@@ -240,6 +240,22 @@
       "task_id": "01a0e4e3-0722-741b-8497-db27af7f0136",
       "resource": "remesh",
       "parent_task_id": "01a0e4c3-fc01-7018-ae42-14b706a39a96"
+    },
+    "bermuda-bougainvillea-cluster": {
+      "file": "bermuda-bougainvillea-cluster.glb",
+      "bytes": 708940,
+      "sha256": "7e92ae283bf4fa32bcde107c3e2910d6cb7f08ab4bd7ff76702e63f69eda5c53",
+      "triangles": 1920,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4e3-0fdf-7600-bf17-dff0f12ad8af",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4c7-e6ef-733e-8d5b-5b7a5105d66a"
     }
   },
   "preflight": {
