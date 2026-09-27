@@ -1,0 +1,79 @@
+name: Stabilize Bermuda Boat Berth
+
+on:
+  push:
+    paths:
+      - '.github/workflows/bermuda-boat-berth-fix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Move boat alongside dock and keep mooring until throttle
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              s = p.read_text()
+              if old not in s:
+                  raise SystemExit(f'expected block not found in {path}')
+              p.write_text(s.replace(old, new, 1))
+
+          replace(
+              'src/world/WorldLayout.js',
+              "\tboatDock: { position: new THREE.Vector3( - 57.7, 0, - 13.0 ), heading: 0 },",
+              "\tboatDock: { position: new THREE.Vector3( - 59.2, 0, - 14.5 ), heading: 0 },"
+          )
+
+          replace(
+              'src/player/Player.js',
+              "\t\tthis.boat.driven = true;\n\t\tthis.boat.moored = false;",
+              "\t\tthis.boat.driven = true;\n\t\t// Stay physically secured while the player settles at the helm. The first deliberate\n\t\t// throttle input releases the berth; simply boarding/taking the helm must not kick the hull."
+          )
+
+          replace(
+              'src/player/Player.js',
+              "\t\tif ( inp.down( 'KeyS' ) ) throttle = - 0.6;\n\t\tlet steer = 0;",
+              "\t\tif ( inp.down( 'KeyS' ) ) throttle = - 0.6;\n\t\tif ( Math.abs( throttle ) > 0.05 && b.moored ) b.moored = false;\n\t\tlet steer = 0;"
+          )
+          PY
+
+      - name: Verify logic and production build
+        run: |
+          npm ci
+          node test/game-logic.mjs
+          npm run build
+
+      - name: Commit verified boat fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/world/WorldLayout.js src/player/Player.js
+          if git diff --cached --quiet; then
+            echo "No boat changes to commit"
+            exit 0
+          fi
+          git commit -m "fix: berth boat closer and release mooring on throttle"
+          git pull --rebase origin main
+          git push origin HEAD:main
