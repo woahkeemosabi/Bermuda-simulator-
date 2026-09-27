@@ -32,8 +32,9 @@
     "bermuda-palmetto-remesh": {
       "resource": "remesh",
       "task_id": "01a0e2af-16e4-750d-a4e9-6d029fd98d61",
-      "status": "SUBMITTED",
-      "parent_task_id": "01a0df05-3758-7606-b700-74387dbe2e84"
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0df05-3758-7606-b700-74387dbe2e84",
+      "consumed_credits": 5
     },
     "bermuda-harbour-props-preview": {
       "resource": "text-to-3d",
