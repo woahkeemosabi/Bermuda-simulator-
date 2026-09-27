@@ -63,6 +63,12 @@
       "status": "SUCCEEDED",
       "parent_task_id": "01a0e2b6-7b1e-7452-a0d3-36423acbcbfe",
       "consumed_credits": 5
+    },
+    "bermuda-channel-marker-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e3b5-878d-7121-ad2a-af8cc445992e",
+      "status": "SUBMITTED",
+      "parent_task_id": "01a0e2af-2d1b-7342-ab13-c98ef7730430"
     }
   },
   "assets": {
