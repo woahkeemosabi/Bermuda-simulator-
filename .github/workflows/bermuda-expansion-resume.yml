@@ -21,10 +21,21 @@ jobs:
         with:
           node-version: 22
       - run: python -m pip install Pillow
-      - run: |
+      - name: Resume preserved Meshy tasks and build mobile assets
+        run: |
           node --version
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Meshy CLI confines downloads to --workspace. Keep the temporary project
+          # directory and repository outputs beneath the same authorised repo root.
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/bermuda/expand_recover.py')
+          s = p.read_text()
+          s = s.replace("WORK=pathlib.Path(os.environ['RUNNER_TEMP'])/'bermuda-expansion-resume'; WORK.mkdir(exist_ok=True)", "WORK=ROOT/'.meshy-expansion-resume'; WORK.mkdir(exist_ok=True)")
+          s = s.replace("FLAGS=['--output-schema','v1','--format','json','--no-update-check','--workspace',str(WORK)]", "FLAGS=['--output-schema','v1','--format','json','--no-update-check','--workspace',str(ROOT)]")
+          p.write_text(s)
+          PY
           python tools/bermuda/expand_recover.py
         env:
           MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
@@ -33,7 +44,7 @@ jobs:
         with:
           name: expansion-recovery-records
           path: |
-            ${{ runner.temp }}/bermuda-expansion-resume/projects/
+            .meshy-expansion-resume/projects/
             tools/bermuda/expansion-lineage.json
             public/models/bermuda/mobile-v3/previews/
           include-hidden-files: true
