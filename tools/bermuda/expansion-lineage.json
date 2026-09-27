@@ -169,9 +169,9 @@
     "bermuda-marina-kit-refine": {
       "resource": "text-to-3d",
       "task_id": "01a0e4fa-3839-73d3-bc29-86ac710136bc",
-      "status": "SUBMITTED",
+      "status": "SUCCEEDED",
       "parent_task_id": "01a0e4e3-2672-7793-b13d-2f4044c53ff7",
-      "consumed_credits": null
+      "consumed_credits": 10
     },
     "bermuda-fish-market-refine": {
       "resource": "text-to-3d",
