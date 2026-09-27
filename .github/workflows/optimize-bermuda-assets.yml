@@ -31,12 +31,22 @@ jobs:
           for src in "${files[@]}"; do
             base=$(basename "$src")
             echo "Optimizing $base"
-            # Do not emit meshopt/Draco extensions: the simulator's lightweight GLB loader
-            # intentionally accepts only core embedded-buffer glTF. Texture WebP is retained.
+            # Desktop preserves the high-detail source silhouette and 2K texture ceiling.
+            # Do not emit meshopt/Draco: the simulator's lightweight GLB loader accepts
+            # core embedded-buffer geometry. WebP textures are supported by the loader/browser.
             npx gltf-transform optimize "$src" "public/models/bermuda/desktop/$base" \
               --compress false --texture-compress webp --texture-size 2048
+
+            # Mobile LOD is intentionally aggressive on hidden/micro geometry while retaining
+            # the silhouette and baked texture detail. Hero assets get a little more geometry.
+            case "$base" in
+              bermuda-dock.glb) ratio=0.18 ;;
+              bermuda-house-a.glb|bermuda-house-b.glb) ratio=0.12 ;;
+              bermuda-boathouse.glb) ratio=0.08 ;;
+              *) ratio=0.12 ;;
+            esac
             npx gltf-transform optimize "$src" "public/models/bermuda/mobile/$base" \
-              --simplify true --simplify-ratio 0.35 --simplify-error 0.001 \
+              --simplify true --simplify-ratio "$ratio" --simplify-error 0.003 \
               --compress false --texture-compress webp --texture-size 1024
           done
           echo '--- sizes ---'
@@ -47,5 +57,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add public/models/bermuda/mobile public/models/bermuda/desktop
           git diff --cached --quiet && exit 0
-          git commit -m 'assets: generate loader-compatible Bermuda mobile and desktop tiers'
+          git commit -m 'assets: strengthen Bermuda mobile LODs'
           git push
