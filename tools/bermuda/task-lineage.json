@@ -96,6 +96,22 @@
       "task_id": "01a0e2af-05a7-7124-b4b0-f83e0ddc648a",
       "resource": "remesh",
       "parent_task_id": "01a0defe-b314-720a-8374-6e859ca76b35"
+    },
+    "bermuda-boathouse": {
+      "file": "bermuda-boathouse.glb",
+      "bytes": 537368,
+      "sha256": "e81bd05bdeb17cda883de2d72cb9a4e5c36f7036ee80902e6092bc7307197cc9",
+      "triangles": 2414,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e2af-0ecd-7431-b813-a635ed26320c",
+      "resource": "remesh",
+      "parent_task_id": "01a0df01-52a2-7057-abfd-c9e21a77d49c"
     }
   }
 }
