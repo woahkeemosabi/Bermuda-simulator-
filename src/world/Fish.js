@@ -239,6 +239,41 @@ export class FishSchools {
 
 	}
 
+	// First-person spearfishing hit test against the same CPU positions used to draw the fish.
+	// `allowedModels` keeps non-catchable wildlife (rays, turtle, whale escorts) out of the test.
+	spearHit( origin, direction, maxDist = 7, allowedModels = null ) {
+
+		let best = null, bestT = maxDist + 1, bestGroup = null;
+		const dx = direction.x, dy = direction.y, dz = direction.z;
+		for ( const g of this.groups ) {
+
+			const model = g.sp.model;
+			if ( allowedModels && ! allowedModels.has( model ) ) continue;
+			for ( let i = g.offset; i < g.offset + g.count; i ++ ) {
+
+				const k = i * 3, rx = this.pos[ k ] - origin.x, ry = this.pos[ k + 1 ] - origin.y, rz = this.pos[ k + 2 ] - origin.z;
+				const t = rx * dx + ry * dy + rz * dz;
+				if ( t < 0.35 || t > maxDist || t >= bestT ) continue;
+				const d2 = rx * rx + ry * ry + rz * rz - t * t;
+				const r = Math.max( 0.14, this.size[ i ] * 0.48 );
+				if ( d2 <= r * r ) { best = i; bestT = t; bestGroup = g; }
+
+			}
+
+		}
+		if ( best === null ) return null;
+		const k = best * 3, L = this.size[ best ], g = bestGroup;
+		const hit = { index: best, model: g.sp.model, length: L, distance: bestT, position: new THREE.Vector3( this.pos[ k ], this.pos[ k + 1 ], this.pos[ k + 2 ] ) };
+		// Remove the struck individual from the immediate view and respawn it back at its home.
+		const a = g.rng() * TAU, rr = 1.5 + g.rng() * Math.max( 1, g.zone.r * 0.7 );
+		const x = g.home.x + Math.cos( a ) * rr, z = g.home.z + Math.sin( a ) * rr;
+		const y = this.clampY( g.sp, x, z, g.home.y );
+		this.pos.set( [ x, y, z ], k ); this.prev.set( [ x, y, z ], k );
+		this.panic[ best ] = 1;
+		return hit;
+
+	}
+
 	// ------------------------------------------------------------------ layout
 
 	depthAt( x, z ) {

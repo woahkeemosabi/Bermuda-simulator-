@@ -53,6 +53,11 @@ export class Game {
 		this._hookedSpecies = null;
 		this._pier = WORLD.pier;
 		this._tmp = new Vector3();
+		this._spearDir = new Vector3();
+		this._spearCooldown = 0;
+		this._spearModels = new Set();
+		this._spearByModel = new Map();
+		for ( const [ id, f ] of Object.entries( FISH ) ) if ( ! this._spearByModel.has( f.model ) ) { this._spearByModel.set( f.model, id ); this._spearModels.add( f.model ); }
 		this.applyGear();
 		this.state.onChange( () => this.applyGear() );
 
@@ -185,6 +190,9 @@ export class Game {
 		this._lmb = lmb;
 		this._rmb = rmb;
 		const panelOpen = this.hud && ( this.hud.invOpen || this.hud.standOpen );
+		this._spearCooldown = Math.max( 0, this._spearCooldown - dt );
+		const diving = p.mode === 'swim' && ( p.diveDepth || 0 ) > 0.35;
+		if ( diving && ! panelOpen && this._spearCooldown <= 0 && ( lDown || inp.hit( 'KeyE' ) ) ) this.fireSpear();
 
 		if ( rod.equipped && ! panelOpen ) {
 
@@ -264,7 +272,8 @@ export class Game {
 		this.updateVendors( inp, p );
 
 		// prompts when the player has nothing to say
-		if ( ! p.prompt && can ) p.prompt = this.prompt();
+		if ( ! p.prompt && diving ) p.prompt = { key: 'E', text: 'Spear · aim at a fish and ACT' };
+		else if ( ! p.prompt && can ) p.prompt = this.prompt();
 
 		const aboard = p.mode === 'boat' || p.mode === 'deck';
 		if ( aboard && inp.hit( 'KeyX' ) ) { app.boatCtl.reset(); this.state.save(); this.toast( 'Boat recovered to berth', 2200 ); }
@@ -314,6 +323,32 @@ export class Game {
 			default: return null;
 
 		}
+
+	}
+
+	// Spear the fish actually under the reticle. Protected/undersize species still flow through
+	// GameState.addFish, so the same legal-release rules apply to rod and spear catches.
+	fireSpear() {
+
+		this._spearCooldown = 0.7;
+		const app = this.app, schools = app.reef && app.reef.fish;
+		if ( ! schools || ! schools.spearHit ) return;
+		app.player.getViewDir( this._spearDir ).normalize();
+		const hit = schools.spearHit( app.camera.position, this._spearDir, 7, this._spearModels );
+		if ( ! hit ) { this.toast( 'Spear missed', 650 ); return; }
+		const species = this._spearByModel.get( hit.model );
+		const f = species && FISH[ species ];
+		if ( ! f ) return;
+		const cm = Math.max( 5, hit.length * 100 );
+		const rawKg = f.lw[ 0 ] * Math.pow( cm, f.lw[ 1 ] ) / 1000;
+		const kg = Math.max( f.kg[ 0 ], Math.min( f.kg[ 1 ], rawKg ) );
+		const kept = this.state.addFish( species, kg, app.settings?.timeOfDay ?? 12 );
+		const info = this.state.lastCatch;
+		if ( info?.protectedSpecies ) this.toast( `${ f.name } · protected · released`, 2400 );
+		else if ( info && ! info.legalSize ) this.toast( `${ f.name } · undersize · released`, 2400 );
+		else if ( kept ) this.toast( `Speared ${ f.name } · ${ info.kg.toFixed( 2 ) } kg · cooler ${ this.state.inventory.length } fish`, 2600 );
+		else this.toast( `${ f.name } · cooler full · released`, 2200 );
+		if ( this.hud && info ) this.hud.showCatch( info, 5500 );
 
 	}
 
