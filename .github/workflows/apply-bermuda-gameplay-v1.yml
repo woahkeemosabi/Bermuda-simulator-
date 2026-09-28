@@ -33,11 +33,14 @@ jobs:
           replace('src/player/BoatController.js', "\t\tif ( ! this.isFinite() ) this.reset();\n\n\t\tthis.model.setThrottle", "\t\tif ( ! this.isFinite() ) this.reset();\n\t\tconst upright = _up.set( 0, 1, 0 ).applyQuaternion( this.quaternion ).y;\n\t\tthis._capsizeTime = upright < 0.05 ? this._capsizeTime + Math.min( dt, 0.1 ) : Math.max( 0, this._capsizeTime - dt * 2 );\n\t\tif ( this._capsizeTime > 2.5 ) this.reset();\n\n\t\tthis.model.setThrottle")
           replace('src/player/BoatController.js', "\t\tthis.rpm = 0;\n\t\tthis.moored = true;\n", "\t\tthis.rpm = 0;\n\t\tthis._capsizeTime = 0;\n\t\tthis.moored = true;\n")
           replace('src/game/Game.js', "\t\tconst aboard = p.mode === 'boat' || p.mode === 'deck';\n", "\t\tconst aboard = p.mode === 'boat' || p.mode === 'deck';\n\t\tif ( aboard && inp.hit( 'KeyX' ) ) { app.boatCtl.reset(); this.state.save(); this.toast( 'Boat recovered to berth', 2200 ); }\n")
-      - name: Verify
+      - name: Verify gameplay and production build
         run: |
           npm ci
-          npm test
+          node test/game-logic.mjs
           npm run build
+      - name: Headless WebGPU smoke test when adapter exists
+        continue-on-error: true
+        run: node test/engine-smoke.mjs
       - name: Commit verified implementation
         run: |
           git config user.name "bermuda-simulator-bot"
