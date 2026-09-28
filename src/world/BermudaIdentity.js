@@ -3,6 +3,7 @@ import { TerrainData } from './TerrainData.js';
 import { installBermudaBlockout } from './BermudaBlockout.js';
 import { installBermudaModels } from './BermudaModels.js';
 import { installRelic001 } from './Relic001.js';
+import { installRelicStory } from './RelicStory.js';
 import { Whale } from './marine/Whale.js';
 
 export const BERMUDA_LOOK = {
@@ -112,10 +113,11 @@ export function applyBermudaRuntimeLook( app ) {
 		app.fft.foamGain.value = look.water.foamGain; app.fft.foamAdd.value = look.water.foamAdd;
 	}
 
-	// Preserve the known-good collision/start layout, then add RELIC 001 as a Bermuda-world hero
-	// vehicle before the optimized waterfront reference assets finish loading around it.
+	// Preserve the known-good Bermuda collision/start layout and waterfront, then layer RELIC into
+	// that world: hero vehicle + ROAD/AIR/OCEAN/UNDERGROUND story anchors. Do not replace the island.
 	installBermudaBlockout( app );
 	installRelic001( app );
+	installRelicStory( app );
 	const waterfrontReady = installBermudaModels( app );
 
 	if ( app.updateSun ) app.updateSun();
