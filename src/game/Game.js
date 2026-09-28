@@ -13,6 +13,7 @@ import { GameHUD } from './GameHUD.js';
 import { Minimap } from './Minimap.js';
 import { Guide } from './Guide.js';
 import { Lobsters } from './Lobsters.js';
+import { Spear } from './Spear.js';
 
 // how long the catch card stays up unless dismissed (ms)
 const CATCH_CARD_MS = 9000;
@@ -38,6 +39,7 @@ export class Game {
 		this.landing = null; // { species, kg } while the caught fish swings in view
 		this.chandlery = new Chandlery( { scene: app.scene, terrain: app.terrainData, colliders: app.colliders, material: this.stand.material } );
 		this.lobsters = new Lobsters( { scene: app.scene, terrain: app.terrainData, reef: app.reef } );
+		this.spear = new Spear( { scene: app.scene, camera: app.camera } );
 		this.vendors = [ this.stand.vendor, this.chandlery.vendor ];
 		// boat upgrades: engine (thrust / top speed) and deck floodlights for night fishing
 		const b = app.boatCtl;
@@ -203,6 +205,8 @@ export class Game {
 			this._lobsterTarget = this.lobsters.target( app.camera.position, this._spearDir, 1.8 );
 
 		}
+		const swimSpeed = p.velocity ? Math.hypot( p.velocity.x, p.velocity.z ) : 0;
+		if ( this.spear ) this.spear.update( dt, { visible: diving && ! panelOpen, moving: Math.min( 1, swimSpeed / 2 ) } );
 		const act = diving ? inp.hit( 'KeyE' ) : false;
 		if ( diving && ! panelOpen && act && this._lobsterTarget ) this.grabLobster();
 		else if ( diving && ! panelOpen && this._spearCooldown <= 0 && ( lDown || act ) ) this.fireSpear();
@@ -376,6 +380,7 @@ export class Game {
 	fireSpear() {
 
 		this._spearCooldown = 0.7;
+		if ( this.spear ) this.spear.fire();
 		const app = this.app, schools = app.reef && app.reef.fish;
 		if ( ! schools || ! schools.spearHit ) return;
 		app.player.getViewDir( this._spearDir ).normalize();
