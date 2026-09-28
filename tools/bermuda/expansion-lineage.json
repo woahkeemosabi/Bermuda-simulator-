@@ -1,0 +1,395 @@
+{
+  "version": 1,
+  "recovered_from": {
+    "run_id": 36351012281,
+    "artifact_id": 10942663382
+  },
+  "tasks": {
+    "bermuda-bougainvillea-cluster-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c5-b52f-7352-bc89-526c9fc3f5bc",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-bougainvillea-cluster-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c7-e6ef-733e-8d5b-5b7a5105d66a",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4c5-b52f-7352-bc89-526c9fc3f5bc",
+      "consumed_credits": 10
+    },
+    "bermuda-hillside-cluster-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c0-a2fa-7133-87c6-ac586d4d1b08",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-hillside-cluster-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c1-9827-706b-a171-f5a7fbb9aaee",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4c0-a2fa-7133-87c6-ac586d4d1b08",
+      "consumed_credits": 10
+    },
+    "bermuda-hilltop-landmark-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c3-5167-766b-9bdb-f83ba5aa91c2",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-hilltop-landmark-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4c3-fc01-7018-ae42-14b706a39a96",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4c3-5167-766b-9bdb-f83ba5aa91c2",
+      "consumed_credits": 10
+    },
+    "bermuda-house-c-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4bb-57d1-74bf-9698-eaa6ffb59ea5",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-house-c-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4bc-4d30-7794-bde9-ef86bbd91685",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4bb-57d1-74bf-9698-eaa6ffb59ea5",
+      "consumed_credits": 10
+    },
+    "bermuda-house-d-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4bd-fd76-77df-9633-3c79a77f9831",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-house-d-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4be-f1bf-7485-8415-5de461964ef0",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4bd-fd76-77df-9633-3c79a77f9831",
+      "consumed_credits": 10
+    },
+    "bermuda-limestone-seawall-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4b8-fb39-74fb-a4eb-ec4db49ee360",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-limestone-seawall-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4b9-f00e-72e7-b40d-76e2c78e8d87",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4b8-fb39-74fb-a4eb-ec4db49ee360",
+      "consumed_credits": 10
+    },
+    "bermuda-limestone-seawall-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4e2-e5c5-752e-8d9a-154475f7faa7",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4b9-f00e-72e7-b40d-76e2c78e8d87",
+      "consumed_credits": 5
+    },
+    "bermuda-house-c-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4e2-ee70-7530-aa8d-d7c2dddab850",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4bc-4d30-7794-bde9-ef86bbd91685",
+      "consumed_credits": 5
+    },
+    "bermuda-house-d-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4e2-f6a1-77ac-9f39-bf0939915524",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4be-f1bf-7485-8415-5de461964ef0",
+      "consumed_credits": 5
+    },
+    "bermuda-hillside-cluster-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4e2-fea5-7383-8a75-1622b8b96964",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4c1-9827-706b-a171-f5a7fbb9aaee",
+      "consumed_credits": 5
+    },
+    "bermuda-hilltop-landmark-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4e3-0722-741b-8497-db27af7f0136",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4c3-fc01-7018-ae42-14b706a39a96",
+      "consumed_credits": 5
+    },
+    "bermuda-bougainvillea-cluster-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4e3-0fdf-7600-bf17-dff0f12ad8af",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4c7-e6ef-733e-8d5b-5b7a5105d66a",
+      "consumed_credits": 5
+    },
+    "bermuda-rocky-shoreline-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4e3-1812-7038-a10c-db0629f7a019",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-marina-kit-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4e3-2672-7793-b13d-2f4044c53ff7",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-fish-market-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4e3-358e-7485-af8e-5d3362efb5b2",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-bait-tackle-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4e3-45dd-75d7-a7db-5291445cb8aa",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-rocky-shoreline-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4fa-295f-7693-bb1a-1cdb3182d455",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4e3-1812-7038-a10c-db0629f7a019",
+      "consumed_credits": 10
+    },
+    "bermuda-marina-kit-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4fa-3839-73d3-bc29-86ac710136bc",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4e3-2672-7793-b13d-2f4044c53ff7",
+      "consumed_credits": 10
+    },
+    "bermuda-fish-market-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4fa-4756-71b3-afe8-820bbd22eef1",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4e3-358e-7485-af8e-5d3362efb5b2",
+      "consumed_credits": 10
+    },
+    "bermuda-bait-tackle-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e4fa-55a9-7022-a2ee-4306beefa62c",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4e3-45dd-75d7-a7db-5291445cb8aa",
+      "consumed_credits": 10
+    },
+    "bermuda-rocky-shoreline-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4fc-768a-7247-af7f-752f6542c334",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4fa-295f-7693-bb1a-1cdb3182d455",
+      "consumed_credits": 5
+    },
+    "bermuda-marina-kit-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4fc-7eed-7401-bf6a-a0f44b557027",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4fa-3839-73d3-bc29-86ac710136bc",
+      "consumed_credits": 5
+    },
+    "bermuda-fish-market-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4fc-876f-77ec-b7c7-002923d93789",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4fa-4756-71b3-afe8-820bbd22eef1",
+      "consumed_credits": 5
+    },
+    "bermuda-bait-tackle-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e4fc-8f71-7381-8b8f-2d2c7119de59",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e4fa-55a9-7022-a2ee-4306beefa62c",
+      "consumed_credits": 5
+    }
+  },
+  "assets": {
+    "bermuda-limestone-seawall": {
+      "file": "bermuda-limestone-seawall.glb",
+      "bytes": 1988424,
+      "sha256": "979632ebcee919c1bfd59cbe9e93c4089e251d1ac4047feacbbdf8587a1a3517",
+      "triangles": 3855,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4e2-e5c5-752e-8d9a-154475f7faa7",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4b9-f00e-72e7-b40d-76e2c78e8d87"
+    },
+    "bermuda-house-c": {
+      "file": "bermuda-house-c.glb",
+      "bytes": 1603228,
+      "sha256": "df35a214070278a61aa924f6aec1569d34c6dbbcdfe0591dd157e5ed7c08fc4c",
+      "triangles": 5069,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4e2-ee70-7530-aa8d-d7c2dddab850",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4bc-4d30-7794-bde9-ef86bbd91685"
+    },
+    "bermuda-house-d": {
+      "file": "bermuda-house-d.glb",
+      "bytes": 1783808,
+      "sha256": "91f8ab31a509f8dce5840e08ab06e083b800dc4850d278163909c4b156004bdc",
+      "triangles": 5163,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4e2-f6a1-77ac-9f39-bf0939915524",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4be-f1bf-7485-8415-5de461964ef0"
+    },
+    "bermuda-hillside-cluster": {
+      "file": "bermuda-hillside-cluster.glb",
+      "bytes": 800600,
+      "sha256": "aa7779a4642c225034fb554e9d304310065948184bb8dbc1f06a77c81cae141c",
+      "triangles": 4248,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4e2-fea5-7383-8a75-1622b8b96964",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4c1-9827-706b-a171-f5a7fbb9aaee"
+    },
+    "bermuda-hilltop-landmark": {
+      "file": "bermuda-hilltop-landmark.glb",
+      "bytes": 713356,
+      "sha256": "c1804e7c9755df2292696e03af7c88f1594e723f6c8b35bfa7e0c38bab770977",
+      "triangles": 3122,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4e3-0722-741b-8497-db27af7f0136",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4c3-fc01-7018-ae42-14b706a39a96"
+    },
+    "bermuda-bougainvillea-cluster": {
+      "file": "bermuda-bougainvillea-cluster.glb",
+      "bytes": 708940,
+      "sha256": "7e92ae283bf4fa32bcde107c3e2910d6cb7f08ab4bd7ff76702e63f69eda5c53",
+      "triangles": 1920,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4e3-0fdf-7600-bf17-dff0f12ad8af",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4c7-e6ef-733e-8d5b-5b7a5105d66a"
+    },
+    "bermuda-rocky-shoreline": {
+      "file": "bermuda-rocky-shoreline.glb",
+      "bytes": 559856,
+      "sha256": "135a0038b6d5f7c9433d4beca90bcb3c088f8e25acdeb7f55dcecaa9bce1eff0",
+      "triangles": 3632,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4fc-768a-7247-af7f-752f6542c334",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4fa-295f-7693-bb1a-1cdb3182d455"
+    },
+    "bermuda-marina-kit": {
+      "file": "bermuda-marina-kit.glb",
+      "bytes": 676236,
+      "sha256": "119d44c7af2f4ba620b31c14c66c0b1a8113f6f8b57c0816b5c561606d3613f1",
+      "triangles": 2978,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4fc-7eed-7401-bf6a-a0f44b557027",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4fa-3839-73d3-bc29-86ac710136bc"
+    },
+    "bermuda-fish-market": {
+      "file": "bermuda-fish-market.glb",
+      "bytes": 1805204,
+      "sha256": "03381c1073f5cae4f7d7b081cd822681c319c332836962657d36be716c0248d6",
+      "triangles": 4733,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4fc-876f-77ec-b7c7-002923d93789",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4fa-4756-71b3-afe8-820bbd22eef1"
+    },
+    "bermuda-bait-tackle": {
+      "file": "bermuda-bait-tackle.glb",
+      "bytes": 1824768,
+      "sha256": "de0b246b69ccadcc49ccc218ae47cb979e3ce6e89973c0c1fbaccf9992240209",
+      "triangles": 5654,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e4fc-8f71-7381-8b8f-2d2c7119de59",
+      "resource": "remesh",
+      "parent_task_id": "01a0e4fa-55a9-7022-a2ee-4306beefa62c"
+    }
+  },
+  "preflight": {
+    "balance": 565,
+    "estimated_remaining_credits": 60,
+    "generation_estimates": {
+      "rocky-shoreline": 30,
+      "marina-kit": 30,
+      "fish-market": 30,
+      "bait-tackle": 30
+    },
+    "remesh_estimate_each": 5,
+    "remesh_price_source": "https://docs.meshy.ai/en/api/pricing",
+    "price_checked": "2026-09-27"
+  },
+  "balance_after": 505
+}

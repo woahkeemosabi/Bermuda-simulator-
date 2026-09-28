@@ -1,11 +1,11 @@
-import { BoxGeometry, CylinderGeometry, Group, Mesh, SphereGeometry, Vector3 } from '../engine/index.js';
+import { InstancedMesh, Matrix4, BoxGeometry, CylinderGeometry, Group, Mesh, SphereGeometry, Vector3 } from '../engine/index.js';
 import { Material } from '../engine/render/Material.js';
 
 // Bermuda World v0.1 blockout.
 // Primitive, texture-free geometry only. On mobile the blockout is deliberately sparse and reuses
 // three shared geometries so the scene does not recreate dozens of GPU vertex/index buffers.
 
-const START = { x: - 64.5, z: - 22.0, yaw: Math.PI };
+const START = { x: - 63.4, z: - 20.0, yaw: Math.PI };
 
 function makeMaterial( name, color, roughness = 0.9 ) {
 
@@ -102,6 +102,25 @@ export function installBermudaBlockout( app ) {
 	box( M.asphalt, - 68.0, 1.43, - 49.2, 34, 0.18, 5.0, 0, true, 'bermuda-road', true );
 	visualKey = 'approach';
 	box( M.limestone, - 65.0, 0.55, - 30.0, 5.2, 0.9, 34.0, 0, true, 'bermuda-landing', true );
+
+    // Shared timber planks and capped pilings: collision stays on the existing level deck.
+    visuals.approach[0].material = M.wood;
+    const planks = new InstancedMesh(GEO.box, M.wood, 75);
+    const matrix = new Matrix4();
+    for(let i=0;i<75;i++) {
+        matrix.makeScale(5.18,.045,.385).setPosition(-65,.9775,-46.7+i*.4);
+        planks.setMatrixAt(i,matrix);
+    }
+    planks.instanceMatrix.needsUpdate=true; planks.computeBoundingSphere(); group.add(planks);
+    const piles = new InstancedMesh(GEO.cyl,M.wood,16);
+    const caps = new InstancedMesh(GEO.cyl,M.limestone,16);
+    let n=0;
+    for(const x of [-67.45,-62.55]) for(let z=-44;z<=-16;z+=4) {
+        matrix.makeScale(.19,3.5,.19).setPosition(x,.25,z); piles.setMatrixAt(n,matrix);
+        matrix.makeScale(.205,.10,.205).setPosition(x,2.04,z); caps.setMatrixAt(n,matrix); n++;
+        colliders.addCylinder(x,z,.19,-1.5,2.1,{tag:'bermuda-piling'});
+    }
+    for(const mesh of [piles,caps]) { mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();group.add(mesh); }
 
 	// Keep the landing head compact. The old 8 m-wide head physically intersected the 8.2 m boat.
 	visualKey = 'dock';

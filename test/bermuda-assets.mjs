@@ -6,11 +6,12 @@ import { staticGeometry } from '../src/world/bermuda/StaticAsset.js';
 import { WATERFRONT_ASSETS, fitPlacement, dockSurfaceHeight } from '../src/world/bermuda/AssetLayout.js';
 import { Vector3 } from '../src/engine/index.js';
 const lineage = JSON.parse(readFileSync('tools/bermuda/task-lineage.json'));
+const expansion = JSON.parse(readFileSync('tools/bermuda/expansion-lineage.json'));
 let triangles = 0, bytes = 0;
 for (const entry of WATERFRONT_ASSETS) {
  const name = 'bermuda-' + entry.id;
- const record = lineage.assets[name];
- const data = readFileSync('public/models/bermuda/mobile-v2/' + name + '.glb');
+ const record = (entry.version ? expansion : lineage).assets[name];
+ const data = readFileSync('public/models/bermuda/' + (entry.version || 'mobile-v2') + '/' + name + '.glb');
  assert.equal(createHash('sha256').update(data).digest('hex'), record.sha256);
  const gltf = parseGLB(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength));
  const asset = staticGeometry(gltf);
@@ -31,5 +32,5 @@ for (const entry of WATERFRONT_ASSETS) {
  triangles += asset.triangles; bytes += data.length;
  console.log(name, asset.triangles, data.length, record.task_id);
 }
-assert.equal(WATERFRONT_ASSETS.length,7); assert(triangles <= 19100);
+assert.equal(WATERFRONT_ASSETS.length,17); assert(triangles <= 65000);
 console.log({triangles,bytes});

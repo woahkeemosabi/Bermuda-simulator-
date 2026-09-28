@@ -1,3 +1,7 @@
+import { BoatModel } from '../src/world/BoatModel.js';
+import { Colliders } from '../src/world/Colliders.js';
+import { installBermudaBlockout } from '../src/world/BermudaBlockout.js';
+import { applyBermudaBootLook } from '../src/world/BermudaIdentity.js';
 // Player / BoatController / FlyCamera on the CPU (node, no GPU) with stubs: a gentle analytic
 // swell behind the WaterQuery API, empty colliders, a boat model with the BoatModel anchor API.
 // Simulates walking, swimming, boarding + driving the boat, leaving it, and the fly camera, and
@@ -19,6 +23,8 @@ const check = ( ok, msg ) => {
 };
 const finite = ( v ) => [ v.x, v.y, v.z ].every( Number.isFinite );
 
+const bermuda = process.argv.includes('--bermuda');
+if(bermuda) applyBermudaBootLook({settings:{}});
 const terrain = new TerrainData();
 
 // ---- WaterQuery stub: swell h = 0.25 sin( k x + w t ) + 0.15 sin( k2 z - w2 t ); cpu = ( h, nx, nz, 0 )
@@ -66,15 +72,18 @@ const query = {
 };
 
 // ---- colliders stub (no pier / buildings)
-const colliders = { boxes: [], groundHeightAt: () => - Infinity, resolveCapsule: () => false };
+const colliders = bermuda ? new Colliders() : { boxes: [], groundHeightAt: () => - Infinity, resolveCapsule: () => false };
+if(bermuda) installBermudaBlockout({scene:new E.Scene(),terrainData:terrain,colliders});
 
 // ---- boat model stub (BoatModel's anchor / hydro API, an 8.2 m hull as a 5 x 3 waterplane grid)
 const hullSamples = [];
 for ( let i = 0; i < 5; i ++ ) for ( let j = 0; j < 3; j ++ ) hullSamples.push( { position: new E.Vector3( ( j - 1 ) * 0.95, - 0.22, - 3.2 + i * 1.5 ), area: 1.1, bottomY: - 0.6 } );
 const volume = hullSamples.reduce( ( a, s ) => a + s.area * - s.position.y, 0 );
 const calls = { throttle: 0, steer: 0, rpm: 0 };
-const model = {
+const model = bermuda ? new BoatModel() : {
 	group: new E.Group(),
+    colliders: [],
+    lines: {deckY:.9,zAft:-3.8,shell:.08,halfBreadth:()=>1.5,tAtSheerZ:z=>z},
 	hullSamples,
 	hydro: { suggestedMass: Math.round( 1025 * volume ), centerOfMass: new E.Vector3( 0, 0.3, - 0.2 ), centerOfBuoyancy: new E.Vector3( 0, - 0.11, - 0.2 ), inertia: new E.Vector3( 14600, 15700, 3500 ) },
 	helmEye: new E.Vector3( 0.4, 1.85, 0.3 ),
@@ -87,6 +96,10 @@ const model = {
 	setSteering( v ) { calls.steer = v; },
 	setPropellerRPM( v ) { calls.rpm = v; },
 };
+
+if(bermuda) for(const [method,key] of [['setThrottle','throttle'],['setSteering','steer'],['setPropellerRPM','rpm']]) {
+ const original=model[method].bind(model); model[method]=v=>{calls[key]=v;original(v);};
+}
 
 // ---- input stub (Input's API)
 class InputStub {
@@ -135,7 +148,7 @@ run( 3 );
 input.keys.delete( 'KeyW' );
 run( 0.5 );
 const walked = Math.hypot( player.position.x - p0.x, player.position.z - p0.z );
-const g = terrain.heightAt( player.position.x, player.position.z );
+const g = Math.max(terrain.heightAt(player.position.x,player.position.z),colliders.groundHeightAt(player.position.x,player.position.z,player.position.y+.35));
 check( player.mode === 'walk' && walked > 3 && walked < 30, `walk: moved ${ walked.toFixed( 2 ) } m in 3 s, mode ${ player.mode }` );
 check( Math.abs( player.position.y - g ) < 0.3, `walk: feet on the ground (y ${ player.position.y.toFixed( 2 ) }, ground ${ g.toFixed( 2 ) })` );
 check( finite( camera.position ) && Math.abs( camera.position.y - player.position.y - 1.62 ) < 0.3, `walk: eye at ${ ( camera.position.y - player.position.y ).toFixed( 2 ) } m` );
@@ -167,13 +180,19 @@ run( 0.1 );
 check( player.nearBoat(), 'boat: near the board point' );
 input.press( 'KeyE' );
 run( dt );
-check( player.mode === 'boat' && boat.driven && ! boat.moored, `boat: boarded (mode ${ player.mode })` );
+check( player.mode === 'deck' && boat.moored, `boat: ACT boards deck (mode ${ player.mode })` );
+player.takeHelm();
+check(player.mode === 'boat' && boat.driven && boat.moored, 'taking helm preserves mooring');
 
+run(5);
+check(boat.moored && boat.position.distanceTo(WORLD.boatDock.position) < 3, 'boarding leaves berth spring active');
+check(new E.Vector3(0,1,0).applyQuaternion(boat.quaternion).y > .9, 'boarding stays upright');
 // ---- drive: full ahead, then a turn
 const b0 = boat.position.clone();
 input.keys.add( 'KeyW' );
 input.keys.add( 'ShiftLeft' );
 run( 12 );
+check(!boat.moored, 'deliberate throttle releases mooring');
 const straight = boat.speed;
 input.keys.add( 'KeyA' );
 const yaw0 = boat.getYaw();
@@ -195,10 +214,16 @@ input.press( 'KeyV' );
 run( 1 );
 check( player.camMode === 'first' && camera.position.distanceTo( boat.toWorld( model.helmEye, new E.Vector3() ) ) < 0.4, 'boat: helm camera at the helm eye (within one boat step)' );
 
+input.keys.add('KeyW');
+run(45);
+input.keys.delete('KeyW');
+check(boat.isFinite() && new E.Vector3(0,1,0).applyQuaternion(boat.quaternion).y > .9, 'over 60 seconds driving remains finite and upright');
 // ---- coast, then leave the boat (out at sea: swim)
 run( 15 );
 input.press( 'KeyE' );
 run( 1 );
+check(player.mode === 'deck', 'ACT leaves helm onto deck');
+player.exitBoat();
 check( player.mode === 'swim' || player.mode === 'walk', `boat: left the boat (mode ${ player.mode })` );
 check( ! boat.driven && finite( player.position ), 'boat: no longer driven' );
 run( 5 );

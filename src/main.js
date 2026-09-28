@@ -1,3 +1,5 @@
+import { startDeferredWaterfront, updateWaterfrontVisibility } from './world/BermudaModels.js';
+import { mobileQualityParameters } from './mobile/QualityProfile.js';
 import './core/BenchSeed.js';
 import { App } from './App.js';
 import { GPU } from './engine/gpu/GPU.js';
@@ -21,31 +23,7 @@ const mobileSafeLevel = mobileFastStart ? Math.max( 0, Number( initialParams.get
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ], [ 'noSim', '1' ] ] ) {
-
-		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
-
-	}
-
-	// Keep the normal phone image at 90% rather than globally lowering quality. The expensive shoreline
-	// simulation is disabled on mobile because it adds GPU allocations that are not worth risking a
-	// WebGPU device loss on iOS. Recovery only lowers resolution after an actual device failure.
-	if ( mobileSafeLevel >= 2 ) {
-
-		url.searchParams.set( 'scale', '0.72' );
-		url.searchParams.set( 'noVeg', '1' );
-		url.searchParams.set( 'G', '16' );
-
-	} else if ( mobileSafeLevel === 1 ) {
-
-		url.searchParams.set( 'scale', '0.82' );
-		url.searchParams.set( 'G', '16' );
-
-	} else if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) {
-
-		url.searchParams.set( 'scale', '0.90' );
-
-	}
+	url.search = mobileQualityParameters(url.searchParams, mobileSafeLevel).toString();
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	// Keep all scene pipelines asynchronous on mobile. MeshRenderer explicitly supports this mode:
@@ -67,7 +45,12 @@ if ( mobileFastStart ) {
 // were enough to materialise every lazy GPU buffer (wake, spray, wildlife, shadows, etc.) at once.
 // Keep the scene-building work, but defer all actual frames until the user taps Explore and after
 // the mobile memory profile has disabled nonessential GPU systems.
-const normalAppFrame = App.prototype.frame;
+const originalAppFrame = App.prototype.frame;
+const normalAppFrame = function(...args) {
+    updateWaterfrontVisibility(this);
+    return originalAppFrame.apply(this,args);
+};
+App.prototype.frame = normalAppFrame;
 if ( mobileFastStart ) {
 
 	App.prototype.frame = function( ...args ) {
@@ -357,6 +340,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 			if ( app.audio ) app.audio.resume();
 			installMobileGPUWatchdog();
 			app.start();
+            startDeferredWaterfront(app);
 
 		} );
 		return;
@@ -364,6 +348,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	} else {
 
 		app.start();
+            startDeferredWaterfront(app);
 
 	}
 	ui.showStartOverlay( () => {
