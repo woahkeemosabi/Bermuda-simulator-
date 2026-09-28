@@ -1,13 +1,11 @@
+import { addDockShopFixtures } from './DockShopFixtures.js';
 import { BAIT_TACKLE } from '../world/bermuda/HarbourLayout.js';
 import { Group, Mesh, Vector3, Matrix4 } from '../engine/index.js';
 import { prepare, mergePrepared, box, cylinder, sphere, rod, torus, mat4 } from '../world/boat/GeoKit.js';
 import { createPropMaterial, PAT } from './GameMaterials.js';
 import { Vendor } from './Vendor.js';
 
-// The upgrade trader by the boathouse: a scanned work table with a tackle box, spools of line and
-// reels, display shelves of rope and floats behind her, a rack of rods, jerrycans of diesel, fenders,
-// a coil of mooring line and a hand-painted sign on posts (StallKit, Poly Haven CC0; the old
-// procedural table is the fallback). Sells the gear levels in Gear.js and fuel.
+// The dock-side trader sells gear, bait and fuel. Meshy visual loads during startup.
 export const CHANDLERY = BAIT_TACKLE;
 
 export class Chandlery {
@@ -23,6 +21,8 @@ export class Chandlery {
 		scene.add( this.group );
 		const fallback = new Mesh( buildTable(), this.material );
         this.group.add( fallback );
+        this.fallback = fallback;
+        addDockShopFixtures(this.group, CHANDLERY, false);
         this.ready = Promise.resolve();
 
 		const local = new Vector3( 0.6, 0, 1.4 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );

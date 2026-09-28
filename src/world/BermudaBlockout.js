@@ -133,6 +133,12 @@ export function installBermudaBlockout( app ) {
 
 	}
 
+    // A low green headland supports the distant landmark; the plateau is buried
+    // into the terrain behind the generated hillside cluster rather than floating above it.
+    visualKey = 'hillside-base';
+    const headland = new Mesh(new CylinderGeometry(20,32,14,24),M.green);
+    headland.position.set(-80,10,-133); group.add(headland);
+
 	// ---------------------------------------------------------------- Bermuda houses
 	const steppedRoof = ( x, baseY, z, w, d, ry = 0 ) => {
 

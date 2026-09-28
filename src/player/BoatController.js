@@ -385,7 +385,7 @@ export class BoatController {
 		_v.set( - aLoc.x * 25000, - aLoc.y * 2000, - aLoc.z * ( 4500 + 900 * au ) ).multiplyScalar( wd ).applyQuaternion( this.quaternion );
 		T.add( _v );
 
-		// ---- mooring lines when docked and not driven
+		// ---- mooring lines remain attached while occupied, until deliberate throttle
 		if ( this.moored ) {
 
 			const a = this.mooring.anchor;

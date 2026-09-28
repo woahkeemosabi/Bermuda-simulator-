@@ -30,7 +30,7 @@ async function loadTier(app, tier) {
 		let asset;
 		try {
 			const file = 'bermuda-' + entry.id + '.glb';
-            app.onWaterfrontProgress?.( entries.indexOf(entry), entries.length, entry.id );
+            if(tier === 1) app.onWaterfrontProgress?.( entries.indexOf(entry), entries.length, entry.id );
 			asset = await loadStaticAsset( BASE + (entry.version || 'mobile-v2') + '/' + file, { id: entry.id, maxTriangles: entry.triangles, maxTextureSize: entry.texture } );
 			const placements = entry.placements.filter( p => ! p.desktopOnly || ! app.bermudaBlockout.mobileLite )
 				.map( p => fitPlacement( asset, p, app.terrainData ) );
@@ -38,7 +38,7 @@ async function loadTier(app, tier) {
             group.add(node);
             state.nodes.push({node, placements, distance: tier === 3 ? 550 : 230});
             const shop = entry.id === 'fish-market' ? app.game?.stand : entry.id === 'bait-tackle' ? app.game?.chandlery : null;
-            if (shop) shop.group.visible = false;
+            if (shop?.fallback) shop.fallback.visible = false;
             if (['house-c','house-d'].includes(entry.id)) for(const p of placements) {
                 app.colliders?.addBox(new Vector3(p.x,p.y+p.height/2,p.z),new Vector3(p.width/2,p.height/2,p.depth/2),p.yaw||0,{tag:'bermuda-house'});
             }

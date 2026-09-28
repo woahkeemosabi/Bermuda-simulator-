@@ -1,3 +1,8 @@
+import { TerrainData } from '../src/world/TerrainData.js';
+import { applyBermudaBootLook } from '../src/world/BermudaIdentity.js';
+import { Vendor } from '../src/game/Vendor.js';
+import { FishStand } from '../src/game/FishStand.js';
+import { Chandlery } from '../src/game/Chandlery.js';
 import './headless.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -12,8 +17,11 @@ globalThis.__assetImage = bytes => PNG.sync.read(Buffer.from(bytes));
 const H = await worldHarness({width:1280,height:800});
 const errors=[]; H.GPU.device.addEventListener('uncapturederror', e=>errors.push(e.error.message));
 H.GPU.device.pushErrorScope('validation');
-// Isolated native-engine waterfront render; flat ground deliberately isolates asset placement.
-const app = {scene:H.scene, terrainData:{heightAt:()=>1.45}, colliders:new Colliders()};
+// Native engine with actual Bermuda terrain heights; simplified ground/water shading isolates placement.
+applyBermudaBootLook({settings:{}});
+const app = {scene:H.scene, terrainData:new TerrainData(), colliders:new Colliders()};
+Vendor.prototype.loadCharacter = async () => {};
+app.game = {stand:new FishStand({scene:app.scene,terrain:app.terrainData,colliders:app.colliders}),chandlery:new Chandlery({scene:app.scene,terrain:app.terrainData,colliders:app.colliders})};
 installBermudaBlockout(app);
 const progress = [];
 app.onWaterfrontProgress = done => progress.push(done);
@@ -26,13 +34,23 @@ await startDeferredWaterfront(app);
 assert.equal(state.loaded.length,17);
 assert.deepEqual(state.errors,[]);
 const {E}=H;
-const ground = new E.Mesh(new E.BoxGeometry(100,1,65),new Material({name:'test-ground',color:0xb2b292,roughness:1}));
-ground.position.set(-65,0.95,-78); H.scene.add(ground);
+const geo=new E.PlaneGeometry(220,220,110,110).rotateX(-Math.PI/2);
+const positions=geo.attributes.position;
+for(let i=0;i<positions.count;i++) {
+ const x=positions.getX(i)-70, z=positions.getZ(i)-80;
+ positions.setXYZ(i,x,app.terrainData.heightAt(x,z),z);
+}
+geo.computeVertexNormals();
+const ground = new E.Mesh(geo,new Material({name:'test-ground',color:0xb2b292,roughness:1}));
+H.scene.add(ground);
 const sea = new E.Mesh(new E.PlaneGeometry(400,400).rotateX(-Math.PI/2),new Material({name:'test-sea',color:0x208e9e,roughness:.5}));H.scene.add(sea);
 mkdirSync('verification',{recursive:true});
 await H.shot('verification/waterfront.png',{pos:[-108,27,-6],target:[-66,2,-58]},2);
 await H.shot('verification/houses.png',{pos:[-76,10,-46],target:[-68,4,-70]},2);
+await H.shot('verification/vendors.png',{pos:[-60,4,-17],target:[-66,2.2,-25]},2);
 await H.shot('verification/dock.png',{pos:[-74,6,-5],target:[-64,1,-17]},2);
+// Include sustained uploads/render submission in the native check, without claiming iPhone FPS.
+for(let i=0;i<120;i++) H.renderFrame();
 await H.GPU.queue.onSubmittedWorkDone();
 const validation=await H.GPU.device.popErrorScope();
 assert.equal(validation,null,validation?.message); assert.deepEqual(errors,[]);

@@ -1,3 +1,4 @@
+import { addDockShopFixtures } from './DockShopFixtures.js';
 import { FISH_MARKET } from '../world/bermuda/HarbourLayout.js';
 import { Group, Mesh, Vector3, BoxGeometry, Matrix4, Quaternion } from '../engine/index.js';
 import { mergeGeometries } from '../engine/geometry/BufferGeometryUtils.js';
@@ -30,6 +31,8 @@ export class FishStand {
 		fallback.name = 'FishStandFallback';
 		fallback.castShadow = true;
 		this.group.add( fallback );
+        this.fallback = fallback;
+        addDockShopFixtures(this.group, STAND, true);
 		this.ready = Promise.resolve();
 
 		const local = new Vector3( 0.7, 0, 1.4 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );
