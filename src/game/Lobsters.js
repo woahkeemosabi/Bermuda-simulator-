@@ -230,7 +230,7 @@ export class Lobsters {
 			if ( d2 <= r * r ) { best = l; bestT = t; }
 
 		}
-		return best ? { id: best.id, distance: bestT, cm: best.bodyCm, kg: best.kg } : null;
+		return best ? { id: best.id, distance: bestT, cm: best.bodyCm, kg: best.kg, position: new Vector3( best.x, this.floorAt( best.x, best.z ) + 0.18 * best.size, best.z ) } : null;
 
 	}
 

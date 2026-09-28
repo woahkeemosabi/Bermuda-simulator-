@@ -197,6 +197,7 @@ export class FishSchools {
 		this.pattern = new Uint8Array( n );
 		this.slot = new Float32Array( n * 4 ); // bait: formation slot (unit direction, radius); pile: pile index
 		this.jump = new Float32Array( n ); // mullet: 0 swimming, 1 rising to the surface, 2 in the air
+		this.spearRespawn = new Float32Array( n ); // struck fish recoil briefly before returning to their home
 		this.floorC = new Float32Array( n ).fill( - 1000 ); // cached bottom under / ahead of each fish
 		this.shallowC = new Uint8Array( n ); // cached: shallow water or breakers ahead
 		this.prev = new Float32Array( n * 3 ); // positions in the previous frame (motion vectors)
@@ -251,6 +252,7 @@ export class FishSchools {
 			if ( allowedModels && ! allowedModels.has( model ) ) continue;
 			for ( let i = g.offset; i < g.offset + g.count; i ++ ) {
 
+				if ( this.spearRespawn[ i ] > 0 ) continue;
 				const k = i * 3, rx = this.pos[ k ] - origin.x, ry = this.pos[ k + 1 ] - origin.y, rz = this.pos[ k + 2 ] - origin.z;
 				const t = rx * dx + ry * dy + rz * dz;
 				if ( t < 0.35 || t > maxDist || t >= bestT ) continue;
@@ -264,12 +266,15 @@ export class FishSchools {
 		if ( best === null ) return null;
 		const k = best * 3, L = this.size[ best ], g = bestGroup;
 		const hit = { index: best, model: g.sp.model, length: L, distance: bestT, position: new THREE.Vector3( this.pos[ k ], this.pos[ k + 1 ], this.pos[ k + 2 ] ) };
-		// Remove the struck individual from the immediate view and respawn it back at its home.
-		const a = g.rng() * TAU, rr = 1.5 + g.rng() * Math.max( 1, g.zone.r * 0.7 );
-		const x = g.home.x + Math.cos( a ) * rr, z = g.home.z + Math.sin( a ) * rr;
-		const y = this.clampY( g.sp, x, z, g.home.y );
-		this.pos.set( [ x, y, z ], k ); this.prev.set( [ x, y, z ], k );
+		// Give the struck fish a visible recoil instead of teleporting it on the impact frame. It is
+		// non-targetable during this short reaction, then quietly respawns near its group's home.
+		const kick = Math.max( 0.9, L * 3.4 );
+		this.vel[ k ] = direction.x * kick;
+		this.vel[ k + 1 ] = direction.y * kick + 0.12;
+		this.vel[ k + 2 ] = direction.z * kick;
 		this.panic[ best ] = 1;
+		this.spearRespawn[ best ] = 0.42;
+		g.alarm = Math.max( g.alarm, 3.5 );
 		return hit;
 
 	}
@@ -689,6 +694,25 @@ export class FishSchools {
 		let any = false;
 		for ( const g of this.groups ) {
 
+			// Finish a spear-hit reaction by placing the fish back near its normal home. Keeping the
+			// timer in the shared fish state also prevents a single target from being harvested twice.
+			for ( let i = g.offset; i < g.offset + g.count; i ++ ) if ( this.spearRespawn[ i ] > 0 ) {
+
+				this.spearRespawn[ i ] -= dt;
+				if ( this.spearRespawn[ i ] <= 0 ) {
+
+					const a = g.rng() * TAU, rr = 1.5 + g.rng() * Math.max( 1, g.zone.r * 0.7 );
+					const x = g.home.x + Math.cos( a ) * rr, z = g.home.z + Math.sin( a ) * rr;
+					const y = this.clampY( g.sp, x, z, g.home.y );
+					const k = i * 3;
+					this.pos.set( [ x, y, z ], k ); this.prev.set( [ x, y, z ], k );
+					const speed = g.sp.cruise * this.size[ i ];
+					this.vel.set( [ Math.cos( a ) * speed, 0, Math.sin( a ) * speed ], k );
+					this.panic[ i ] = 0;
+
+				}
+
+			}
 			const was = g.active;
 			if ( g.sp.mode === 'escort' || g.sp.mode === 'remora' ) {
 

@@ -63,6 +63,7 @@ export class Game {
 		this._spearByModel = new Map();
 		for ( const [ id, f ] of Object.entries( FISH ) ) if ( ! this._spearByModel.has( f.model ) ) { this._spearByModel.set( f.model, id ); this._spearModels.add( f.model ); }
 		this._lobsterTarget = null;
+		// UNDERWATER_POLISH_V1: physical grab / impact feedback and non-blocking dive catch HUD.
 		this.applyGear();
 		this.state.onChange( () => this.applyGear() );
 
@@ -305,7 +306,7 @@ export class Game {
 			casting: rod.state === 'windup',
 			power: rod.power,
 			bite: this.bite && this.bite.phase === 'take',
-			aiming: rod.equipped,
+			aiming: rod.equipped || diving,
 		} );
 		if ( this.minimap ) this.minimap.update( dt );
 		if ( this.guide ) this.guide.update( dt );
@@ -362,6 +363,7 @@ export class Game {
 		}
 		const hit = this.lobsters.grab( app.camera.position, this._spearDir, 1.8 );
 		if ( ! hit ) return false;
+		if ( this.spear ) this.spear.grab( hit.position );
 		const kept = this.state.addFish( 'spinyLobster', hit.kg, app.settings?.timeOfDay ?? 12, hit.cm );
 		if ( ! kept ) {
 
@@ -370,7 +372,8 @@ export class Game {
 			return false;
 
 		}
-		this.toast( `Grabbed Caribbean spiny lobster · ${ hit.cm } cm · ${ hit.kg.toFixed( 2 ) } kg`, 2600 );
+		this.toast( `Grabbed Caribbean spiny lobster · ${ hit.cm } cm · ${ hit.kg.toFixed( 2 ) } kg`, 1800 );
+		if ( this.hud && this.state.lastCatch ) this.hud.showDiveCatch( this.state.lastCatch, 'HAND CAPTURE' );
 		return true;
 
 	}
@@ -386,6 +389,7 @@ export class Game {
 		app.player.getViewDir( this._spearDir ).normalize();
 		const hit = schools.spearHit( app.camera.position, this._spearDir, 7, this._spearModels );
 		if ( ! hit ) { this.toast( 'Spear missed', 650 ); return; }
+		if ( this.spear ) this.spear.impact( hit.position, 1 );
 		const species = this._spearByModel.get( hit.model );
 		const f = species && FISH[ species ];
 		if ( ! f ) return;
@@ -398,7 +402,7 @@ export class Game {
 		else if ( info && ! info.legalSize ) this.toast( `${ f.name } · undersize · released`, 2400 );
 		else if ( kept ) this.toast( `Speared ${ f.name } · ${ info.kg.toFixed( 2 ) } kg · cooler ${ this.state.inventory.length } fish`, 2600 );
 		else this.toast( `${ f.name } · cooler full · released`, 2200 );
-		if ( this.hud && info ) this.hud.showCatch( info, 5500 );
+		if ( this.hud && info ) this.hud.showDiveCatch( info, 'SPEARED' );
 
 	}
 
