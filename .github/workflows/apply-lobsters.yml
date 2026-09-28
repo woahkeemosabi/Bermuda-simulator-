@@ -1,3 +1,4 @@
+# Underwater polish source is applied incrementally; keep this migration idempotent.
 name: Apply Underwater Gameplay
 
 on:
