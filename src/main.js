@@ -9,6 +9,7 @@ import { AppUI } from './ui/AppUI.js';
 import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaIdentity.js';
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
+import { RelicVehicle } from './player/RelicVehicle.js';
 
 // iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
 // Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
@@ -86,6 +87,7 @@ function applyMobileMemoryProfile( app ) {
 		app.wake.update = () => {};
 
 	}
+	// Keep the low-cost MobileWake active; only the GPU particle spray is disabled on the safe path.
 	if ( app.boatSpray ) app.boatSpray.update = () => {};
 	if ( app.spray ) {
 
@@ -283,6 +285,10 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
         ui.setLoading( 0.99, `Waterfront ${ done }/${ total }${ id ? ': ' + id : '' }`, 0.99 );
     };
     const waterfront = await applyBermudaRuntimeLook( app );
+    if ( app.relic001 && ! app.relic ) {
+        app.relic = new RelicVehicle( { app, vehicle: app.relic001 } );
+        app.player.relic = app.relic;
+    }
     if ( ! waterfront?.ready ) {
         const details = waterfront?.errors.map( e => e.id + ': ' + e.message ).join( '; ' );
         throw new Error( 'Waterfront failed to load: ' + ( details || 'scene unavailable' ) );

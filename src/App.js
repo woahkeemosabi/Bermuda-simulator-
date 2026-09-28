@@ -62,6 +62,7 @@ import { CHANDLERY } from './game/Chandlery.js';
 import { BoatController } from './player/BoatController.js';
 import { BoatSpray } from './player/BoatSpray.js';
 import { WakeSim } from './ocean/WakeSim.js';
+import { MobileWake } from './ocean/MobileWake.js';
 import { Vegetation } from './world/Vegetation.js';
 import { SoundScape } from './audio/SoundScape.js';
 import { updateCameraVelocity, useStaticVelocity } from './post/CameraVelocity.js';
@@ -75,7 +76,9 @@ export class App {
 		this.settings = {
 			timeOfDay: 16.2,
 			sunAzimuth: 0, // degrees: turns the sun's daily path about the vertical
-			timeSpeed: 0, // hours per real second
+			timeSpeed: 0.05, // hours per real second; T pauses/resumes the day
+			weatherMode: 'clear',
+			weatherTimer: 0,
 			exposure: 0.55,
 			renderScale: 1, // internal resolution (the temporal upscaler reconstructs the output), Performance tab
 		};
@@ -309,6 +312,8 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// interactive wake around the boat (Kelvin pattern, bow/stern waves, prop wash foam)
 		this.wake = new WakeSim( renderer, { terrainGPU: this.terrainGPU, boat: this.boatCtl, colliders: this.colliders } );
 		this.surface.wake = this.wake;
+		// A tiny CPU wake remains available on iPhone when the GPU Kelvin wake is disabled by the memory profile.
+		this.mobileWake = new MobileWake( { scene, boat: this.boatCtl } );
 		this.player = new Player( { camera, input: this.input, terrain: this.terrainData, colliders: this.colliders, query: this.query, boat: this.boatCtl, reef: this.reef } );
 		// birds, beach crabs, sanderlings (after spray / query / boat, which they use)
 		this.wildlife = new Wildlife( {
@@ -479,6 +484,47 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 	}
 
+	cycleWeather() {
+
+		const modes = [ 'clear', 'overcast', 'storm' ];
+		const i = modes.indexOf( this.settings.weatherMode );
+		this.settings.weatherMode = modes[ ( i + 1 ) % modes.length ];
+		this.settings.weatherTimer = 0;
+		this.updateWeather( 0 );
+		if ( this.ui ) this.ui.ui.toast( 'Weather: ' + this.settings.weatherMode );
+
+	}
+
+	updateWeather( dt ) {
+
+		const s = this.settings;
+		s.weatherTimer += dt;
+		if ( s.weatherTimer > 180 ) {
+
+			const modes = [ 'clear', 'overcast', 'storm' ];
+			s.weatherMode = modes[ ( modes.indexOf( s.weatherMode ) + 1 ) % modes.length ];
+			s.weatherTimer = 0;
+
+		}
+		const profile = {
+			clear: { coverage: 0.30, wind: 5.2, chop: 0.76, surf: 0.24 },
+			overcast: { coverage: 0.66, wind: 8.5, chop: 0.92, surf: 0.38 },
+			storm: { coverage: 0.88, wind: 14, chop: 1.08, surf: 0.62 },
+		}[ s.weatherMode ] || { coverage: 0.30, wind: 5.2, chop: 0.76, surf: 0.24 };
+		if ( this.clouds?.coverage ) this.clouds.coverage.value += ( profile.coverage - this.clouds.coverage.value ) * Math.min( 1, dt * 0.8 );
+		if ( this.fft?.local ) {
+
+			this.fft.local.windSpeed += ( profile.wind - this.fft.local.windSpeed ) * Math.min( 1, dt * 0.45 );
+			if ( this.fft.updateSpectrumUniforms ) this.fft.updateSpectrumUniforms();
+
+		}
+		if ( this.fft?.choppiness ) this.fft.choppiness.value += ( profile.chop - this.fft.choppiness.value ) * Math.min( 1, dt * 0.7 );
+		if ( this.shore?.amplitude ) this.shore.amplitude.value += ( profile.surf - this.shore.amplitude.value ) * Math.min( 1, dt * 0.7 );
+		if ( G.windSpeed ) G.windSpeed.value = profile.wind;
+		this.settings.weather = s.weatherMode;
+
+	}
+
 	// T: let the day run (about 8 minutes per day) or stop it
 	toggleTime() {
 
@@ -607,10 +653,12 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		G.dt.value = dt;
 		G.time.value += dt;
 		if ( s.timeSpeed !== 0 ) s.timeOfDay = ( s.timeOfDay + dt * s.timeSpeed + 24 ) % 24;
+		this.updateWeather( dt );
 
 		// ---- player / boat (boat physics first so the cameras follow this frame's pose)
 		if ( this.input.hit( 'KeyF' ) ) this.setFreeCam( ! this.freeCam );
 		if ( this.input.hit( 'KeyT' ) ) this.toggleTime();
+		if ( this.input.hit( 'KeyY' ) ) this.cycleWeather();
 		if ( this.input.hit( 'KeyL' ) ) {
 
 			const on = this.localLights.toggleFlashlight();
@@ -627,6 +675,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.boatCtl.update( dt );
 		this.boatSpray.update( dt );
 		this.wake.update( dt );
+		if ( this.mobileWake ) this.mobileWake.update( dt );
 		if ( this.freeCam ) this.fly.update( dt );
 		else this.player.update( dt );
 		this.game.update( dt );

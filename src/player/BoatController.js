@@ -102,6 +102,10 @@ export class BoatController {
 		this.driven = false;
 		this.moored = true;
 		this.mooring = { anchor: WORLD.boatDock.position.clone(), heading: WORLD.boatDock.heading };
+		// Anchoring is separate from the startup berth mooring: it persists while the player swims/dives.
+		this.anchored = false;
+		this.anchorPosition = this.position.clone();
+		this.anchorHeading = WORLD.boatDock.heading;
 
 		const n = this.samples.length;
 		this.waterH = new Float32Array( n ); // latest read-back
@@ -140,6 +144,28 @@ export class BoatController {
 	forward( out ) {
 
 		return out.set( 0, 0, 1 ).applyQuaternion( this.quaternion );
+
+	}
+
+	toggleAnchor() {
+
+		if ( this.anchored ) return this.raiseAnchor();
+		this.anchored = true;
+		this.moored = false;
+		this.anchorPosition.copy( this.position );
+		this.anchorHeading = this.getYaw();
+		this.velocity.set( 0, 0, 0 );
+		this.angular.set( 0, 0, 0 );
+		this.throttle = 0;
+		return true;
+
+	}
+
+	raiseAnchor() {
+
+		if ( ! this.anchored ) return false;
+		this.anchored = false;
+		return true;
 
 	}
 
@@ -220,6 +246,19 @@ export class BoatController {
 	update( dt ) {
 
 		this.readQueries();
+		if ( this.anchored ) {
+
+			this.driven = false;
+			this.throttle = 0;
+			this.rpm += ( 0 - this.rpm ) * ( 1 - Math.exp( - dt * 5 ) );
+			this.velocity.set( 0, 0, 0 );
+			this.angular.set( 0, 0, 0 );
+			this.position.copy( this.anchorPosition );
+			this.quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.anchorHeading );
+			this.apply();
+			return;
+
+		}
 		if ( ! this.hasWater ) {
 
 			this.apply();

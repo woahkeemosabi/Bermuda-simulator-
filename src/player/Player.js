@@ -34,7 +34,7 @@ const HELM_REACH = 0.75; // m from the helm seat to take the wheel
 //   boat : at the helm, driving; V toggles helm (1st person) / chase (3rd person) camera, E stands up
 export class Player {
 
-	constructor( { camera, input, terrain, colliders, query, boat, reef = null, audio = null } ) {
+	constructor( { camera, input, terrain, colliders, query, boat, reef = null, audio = null, relic = null } ) {
 
 		this.camera = camera;
 		this.input = input;
@@ -44,6 +44,7 @@ export class Player {
 		this.boat = boat;
 		this.reef = reef;
 		this.audio = audio;
+		this.relic = relic;
 
 		this.mode = 'walk';
 		this.camMode = 'third';
@@ -141,6 +142,13 @@ export class Player {
 		this.waterMean = this.waterMean === null ? this.waterH : this.waterMean + ( this.waterH - this.waterMean ) * ( 1 - Math.exp( - dt / 4 ) );
 		this.prompt = null;
 
+		if ( this.mode === 'relic' && this.relic ) {
+
+			this.relic.update( dt, this );
+			return;
+
+		}
+
 		if ( this.mode === 'boat' ) {
 
 			this.updateBoat( dt );
@@ -158,6 +166,19 @@ export class Player {
 		const look = inp.consumeLook();
 		this.yaw -= look.x * 0.0022;
 		this.pitch = THREE.MathUtils.clamp( this.pitch - look.y * 0.0022, - 1.5, 1.5 );
+
+		// RELIC is a road vehicle, entered from the driver side. Keep the pedestrian route clear.
+		if ( this.relic && this.mode === 'walk' && this.relic.near( this.position ) && ! this.busy ) {
+
+			this.prompt = { key: 'E', text: 'Enter RELIC' };
+			if ( inp.hit( 'KeyE' ) ) {
+
+				this.relic.enter( this );
+				return;
+
+			}
+
+		}
 
 		// (not with a line out or a fish in hand: E belongs to the fishing then)
 		if ( this.nearBoat() && ! this.busy ) {
@@ -747,7 +768,13 @@ export class Player {
 		const look = inp.consumeLook();
 		const wheel = inp.consumeWheel();
 
-		if ( inp.hit( 'KeyV' ) ) this.camMode = this.camMode === 'first' ? 'third' : 'first';
+		if ( inp.hit( 'KeyV' ) ) this.camMode = this.camMode === 'first' ? 'first' : 'third';
+		if ( inp.hit( 'KeyK' ) && b.toggleAnchor ) {
+
+			b.toggleAnchor();
+
+		}
+		if ( b.anchored && ( inp.down( 'KeyW' ) || inp.down( 'KeyS' ) ) && b.raiseAnchor ) b.raiseAnchor();
 		if ( inp.hit( 'KeyE' ) ) {
 
 			this.leaveHelm();

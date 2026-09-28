@@ -448,6 +448,13 @@ export class FishSchools {
 		this.escort = [ [ 'pilot', 12 ], [ 'juvenile', 6 ], [ 'remora', 4 ] ].map( ( [ name, c ] ) => this.addGroup( name, c, { x: 0, z: 200, r: 5, band: [ 0, 1e9 ] } ) );
 		const wet = piles.filter( ( p ) => this.depthAt( p[ 0 ], p[ 1 ] ) > 2.2 );
 		const pierZone = { x: P.x, z: P.zEnd - 8, r: 18, anchors: wet, piles: wet };
+		// The Bermuda hero dock is west of the legacy Tidewater pier. Keep a small, dense reef edge
+		// population here so a first dive from the boat finds life without a long swim to the bay.
+		const D = WORLD.boatDock.position;
+		const dockPiles = [];
+		for ( const dx of [ -2.6, 2.6 ] ) for ( const dz of [ -7, -3, 1, 5 ] ) dockPiles.push( [ D.x + dx, D.z + dz ] );
+		const dockZone = { x: D.x, z: D.z - 2, r: 13, anchors: dockPiles, piles: dockPiles, band: [ 2.0, 12 ] };
+		for ( const [ name, c ] of [ [ 'pierGrunt', 10 ], [ 'pierSnapper', 8 ], [ 'pierSergeant', 8 ] ] ) place( name, c, dockZone, true );
 		for ( const [ name, c ] of [ [ 'pierGrunt', 14 ], [ 'pierSnapper', 10 ], [ 'pierSergeant', 12 ] ] ) {
 
 			const g = place( name, c, pierZone, true );

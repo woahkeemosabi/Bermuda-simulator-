@@ -45,6 +45,8 @@ export function installStableMobileControls( app ) {
 			<button type="button" data-key="KeyC">DIVE</button>
 			<button type="button" data-key="KeyV">CAM</button>
 			<button type="button" data-key="KeyR">ROD</button>
+			<button type="button" data-key="ShiftLeft">RUN</button>
+			<button type="button" data-key="KeyK">ANCH</button>
 			<button type="button" data-fish="1" class="is-muted">FISH</button>
 		</div>`;
 	document.body.appendChild( root );

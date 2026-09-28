@@ -42,6 +42,7 @@ export function installRelicStory( app ) {
 	group.name = 'RELIC_BERMUDA_STORY';
 	const box = new BoxGeometry( 1, 1, 1 );
 	const ring = new TorusGeometry( 1, 0.18, mobile ? 6 : 10, mobile ? 18 : 30 );
+	const archRing = new TorusGeometry( 1, 0.28, mobile ? 6 : 10, mobile ? 16 : 24 );
 	const M = {
 		limestone: material( 'limestone', 0xd9d4c8, 0.92, 0.04 ),
 		obsidian: material( 'obsidian', 0x090b0e, 0.18, 0.88 ),
@@ -54,11 +55,14 @@ export function installRelicStory( app ) {
 	const vault = new Group();
 	vault.name = 'RELIC_VAULT_MOUTH';
 	vault.position.set( RELIC_STORY.vault.x, vaultGround, RELIC_STORY.vault.z );
-	mesh( vault, box, M.obsidian, 0, 1.75, 0, 4.6, 3.5, 0.30, 'relic-vault-door' );
-	mesh( vault, box, M.limestone, -2.72, 1.82, 0.12, 0.86, 3.95, 1.15, 'relic-vault-rock-left' );
-	mesh( vault, box, M.limestone, 2.72, 1.82, 0.12, 0.86, 3.95, 1.15, 'relic-vault-rock-right' );
-	mesh( vault, box, M.limestone, 0, 3.58, 0.12, 6.3, 0.72, 1.15, 'relic-vault-rock-top' );
-	mesh( vault, box, M.amber, 0, 1.74, 0.18, 0.055, 2.55, 0.10, 'relic-vault-needle' );
+	const mouth = mesh( vault, box, M.obsidian, 0, 1.45, 0.34, 2.25, 2.8, 0.18, 'relic-vault-recess' );
+	mouth.castShadow = false;
+	const arch = mesh( vault, archRing, M.limestone, 0, 1.58, 0.12, 2.3, 1.45, 0.72, 'relic-vault-limestone-arch' );
+	arch.rotation.x = Math.PI * 0.5;
+	mesh( vault, box, M.limestone, -2.55, 1.35, 0.05, 0.72, 2.75, 1.12, 'relic-vault-rock-left' ).rotation.z = -0.08;
+	mesh( vault, box, M.limestone, 2.55, 1.35, 0.05, 0.72, 2.75, 1.12, 'relic-vault-rock-right' ).rotation.z = 0.08;
+	mesh( vault, box, M.limestone, 0, 3.25, 0.04, 5.9, 0.72, 1.1, 'relic-vault-rock-top' ).rotation.z = 0.03;
+	mesh( vault, box, M.amber, 0, 1.45, 0.58, 0.045, 1.95, 0.05, 'relic-vault-needle' );
 	group.add( vault );
 	if ( app.colliders ) {
 		app.colliders.addBox( new Vector3( RELIC_STORY.vault.x - 2.72, vaultGround + 1.82, RELIC_STORY.vault.z ), new Vector3( 0.43, 1.98, 0.58 ), 0, { tag: 'relic-vault-frame' } );

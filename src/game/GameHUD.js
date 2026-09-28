@@ -70,6 +70,11 @@ const CSS = /* css */`
 .gm-gauge.is-on { display: flex; }
 .gm-gauge b { font-family: var(--tw-mono); font-weight: 500; color: var(--tw-ink); }
 .gm-fuel-bar > span { background: var(--tw-sun); }
+.gm-clock { display:flex!important; gap:6px; white-space:nowrap; }
+.gm-clock-time { font-family: var(--tw-mono); color: var(--tw-ink); }
+.gm-weather { color: var(--tw-ink-3); text-transform:capitalize; }
+.gm-anchor.is-on { display:flex; }
+.gm-anchor b { font-family:var(--tw-mono); }
 .gm-fuel.is-low .gm-fuel-bar > span { background: var(--tw-coral); }
 .gm-sonar-dots { letter-spacing: 1px; color: var(--tw-aqua); }
 .gm-shop-row { display: grid; grid-template-columns: 1fr auto; gap: var(--tw-3); align-items: center; padding: var(--tw-2) 0; border-bottom: 1px solid var(--tw-line); }
@@ -186,7 +191,7 @@ export class GameHUD {
 		style.textContent = CSS;
 		document.head.append( style );
 
-		this.purse = h( 'div', 'gm-purse tw-glass', `<span class="gm-money">$0</span><span class="gm-cooler"><span class="gm-cooler-label">Cooler</span><span class="gm-cooler-bar"><span></span></span><span class="gm-cooler-kg">0 / 30 kg</span></span><span class="gm-gauge gm-fuel"><span>Fuel</span><span class="gm-cooler-bar gm-fuel-bar"><span></span></span><b class="gm-fuel-l">40 L</b></span><span class="gm-gauge gm-sonar"><span>Sonar</span><b class="gm-sonar-d">0 m</b><span class="gm-sonar-dots"></span></span><span class="gm-gauge gm-dive"><span>O₂</span><span class="gm-cooler-bar gm-dive-bar"><span></span></span><b class="gm-dive-o2">100%</b><b class="gm-dive-depth">0.0 m</b></span>` );
+		this.purse = h( 'div', 'gm-purse tw-glass', `<span class="gm-money">$0</span><span class="gm-cooler"><span class="gm-cooler-label">Cooler</span><span class="gm-cooler-bar"><span></span></span><span class="gm-cooler-kg">0 / 30 kg</span></span><span class="gm-gauge gm-fuel"><span>Fuel</span><span class="gm-cooler-bar gm-fuel-bar"><span></span></span><b class="gm-fuel-l">40 L</b></span><span class="gm-gauge gm-sonar"><span>Sonar</span><b class="gm-sonar-d">0 m</b><span class="gm-sonar-dots"></span></span><span class="gm-gauge gm-dive"><span>O₂</span><span class="gm-cooler-bar gm-dive-bar"><span></span></span><b class="gm-dive-o2">100%</b><b class="gm-dive-depth">0.0 m</b></span><span class="gm-gauge gm-clock is-on"><b class="gm-clock-time">16:12</b><span class="gm-weather">Clear</span></span><span class="gm-gauge gm-anchor"><span>⚓</span><b class="gm-anchor-d">Boat</b></span>` );
 		this.fuelEl = this.purse.querySelector( '.gm-fuel' );
 		this.fuelBar = this.purse.querySelector( '.gm-fuel-bar > span' );
 		this.fuelL = this.purse.querySelector( '.gm-fuel-l' );
@@ -197,6 +202,10 @@ export class GameHUD {
 		this.diveBar = this.purse.querySelector( '.gm-dive-bar > span' );
 		this.diveO2 = this.purse.querySelector( '.gm-dive-o2' );
 		this.diveDepth = this.purse.querySelector( '.gm-dive-depth' );
+		this.clockTime = this.purse.querySelector( '.gm-clock-time' );
+		this.weatherEl = this.purse.querySelector( '.gm-weather' );
+		this.anchorEl = this.purse.querySelector( '.gm-anchor' );
+		this.anchorD = this.purse.querySelector( '.gm-anchor-d' );
 		this.moneyEl = this.purse.querySelector( '.gm-money' );
 		this.coolerEl = this.purse.querySelector( '.gm-cooler' );
 		this.coolerBar = this.purse.querySelector( '.gm-cooler-bar > span' );
@@ -267,7 +276,7 @@ export class GameHUD {
 	}
 
 	// per frame
-	update( { fight, casting, power, bite, aiming, fuel = null, sonar = null, dive = null } ) {
+	update( { fight, casting, power, bite, aiming, fuel = null, sonar = null, dive = null, time = null, anchor = null } ) {
 
 		// boat instruments in the purse: fuel while aboard, the fish finder when fitted
 		this.fuelEl.classList.toggle( 'is-on', !! fuel );
@@ -286,6 +295,16 @@ export class GameHUD {
 			this.diveDepth.textContent = `${ dive.depth.toFixed( 1 ) } m`;
 		}
 
+		if ( time && this.clockTime ) {
+
+			const hours = Math.floor( ( time.hours + 24 ) % 24 );
+			const minutes = Math.floor( ( ( time.hours + 24 ) % 1 ) * 60 );
+			this.clockTime.textContent = `${ String( hours ).padStart( 2, '0' ) }:${ String( minutes ).padStart( 2, '0' ) }`;
+			if ( this.weatherEl ) this.weatherEl.textContent = time.weather || 'Clear';
+
+		}
+		this.anchorEl.classList.toggle( 'is-on', !! anchor );
+		if ( anchor ) this.anchorD.textContent = anchor.anchored ? `⚓ ${ anchor.distance.toFixed( 0 ) }m` : 'Boat';
 		this.sonarEl.classList.toggle( 'is-on', !! sonar );
 		if ( sonar ) {
 

@@ -302,6 +302,8 @@ export class Game {
 			fuel: aboard ? { litres: this.state.fuelL, tank: this.state.stats.fuelL } : null,
 			sonar: aboard && this.state.stats.finder ? this._sonar : null,
 			dive: p.mode === 'swim' ? { oxygen: p.oxygen, depth: p.diveDepth } : null,
+			time: { hours: app.settings.timeOfDay, weather: app.settings.weatherMode },
+			anchor: app.boatCtl && ( app.boatCtl.anchored || p.mode === 'boat' || p.mode === 'deck' ) ? { anchored: !! app.boatCtl.anchored, distance: p.position.distanceTo( app.boatCtl.position ) } : null,
 			fight: this.fight,
 			casting: rod.state === 'windup',
 			power: rod.power,
