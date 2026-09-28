@@ -172,13 +172,17 @@ export class GameHUD {
 		style.textContent = CSS;
 		document.head.append( style );
 
-		this.purse = h( 'div', 'gm-purse tw-glass', `<span class="gm-money">$0</span><span class="gm-cooler"><span class="gm-cooler-label">Cooler</span><span class="gm-cooler-bar"><span></span></span><span class="gm-cooler-kg">0 / 30 kg</span></span><span class="gm-gauge gm-fuel"><span>Fuel</span><span class="gm-cooler-bar gm-fuel-bar"><span></span></span><b class="gm-fuel-l">40 L</b></span><span class="gm-gauge gm-sonar"><span>Sonar</span><b class="gm-sonar-d">0 m</b><span class="gm-sonar-dots"></span></span>` );
+		this.purse = h( 'div', 'gm-purse tw-glass', `<span class="gm-money">$0</span><span class="gm-cooler"><span class="gm-cooler-label">Cooler</span><span class="gm-cooler-bar"><span></span></span><span class="gm-cooler-kg">0 / 30 kg</span></span><span class="gm-gauge gm-fuel"><span>Fuel</span><span class="gm-cooler-bar gm-fuel-bar"><span></span></span><b class="gm-fuel-l">40 L</b></span><span class="gm-gauge gm-sonar"><span>Sonar</span><b class="gm-sonar-d">0 m</b><span class="gm-sonar-dots"></span></span><span class="gm-gauge gm-dive"><span>O₂</span><span class="gm-cooler-bar gm-dive-bar"><span></span></span><b class="gm-dive-o2">100%</b><b class="gm-dive-depth">0.0 m</b></span>` );
 		this.fuelEl = this.purse.querySelector( '.gm-fuel' );
 		this.fuelBar = this.purse.querySelector( '.gm-fuel-bar > span' );
 		this.fuelL = this.purse.querySelector( '.gm-fuel-l' );
 		this.sonarEl = this.purse.querySelector( '.gm-sonar' );
 		this.sonarD = this.purse.querySelector( '.gm-sonar-d' );
 		this.sonarDots = this.purse.querySelector( '.gm-sonar-dots' );
+		this.diveEl = this.purse.querySelector( '.gm-dive' );
+		this.diveBar = this.purse.querySelector( '.gm-dive-bar > span' );
+		this.diveO2 = this.purse.querySelector( '.gm-dive-o2' );
+		this.diveDepth = this.purse.querySelector( '.gm-dive-depth' );
 		this.moneyEl = this.purse.querySelector( '.gm-money' );
 		this.coolerEl = this.purse.querySelector( '.gm-cooler' );
 		this.coolerBar = this.purse.querySelector( '.gm-cooler-bar > span' );
@@ -248,7 +252,7 @@ export class GameHUD {
 	}
 
 	// per frame
-	update( { fight, casting, power, bite, aiming, fuel = null, sonar = null } ) {
+	update( { fight, casting, power, bite, aiming, fuel = null, sonar = null, dive = null } ) {
 
 		// boat instruments in the purse: fuel while aboard, the fish finder when fitted
 		this.fuelEl.classList.toggle( 'is-on', !! fuel );
@@ -258,6 +262,13 @@ export class GameHUD {
 			this.fuelL.textContent = `${ fuel.litres.toFixed( 0 ) } L`;
 			this.fuelEl.classList.toggle( 'is-low', fuel.litres < fuel.tank * 0.15 );
 
+		}
+
+		this.diveEl.classList.toggle( 'is-on', !! dive );
+		if ( dive ) {
+			this.diveBar.style.width = `${ Math.max( 0, dive.oxygen ) * 100 }%`;
+			this.diveO2.textContent = `${ Math.round( dive.oxygen * 100 ) }%`;
+			this.diveDepth.textContent = `${ dive.depth.toFixed( 1 ) } m`;
 		}
 
 		this.sonarEl.classList.toggle( 'is-on', !! sonar );

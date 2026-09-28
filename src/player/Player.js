@@ -65,6 +65,8 @@ export class Player {
 		this.camOffV = 0;
 		this._camY = null;
 		this.floating = true; // swimming at the surface (riding the waves) vs. free under water
+		this.oxygen = 1; // breath reserve: 1 full, 0 forces an emergency ascent
+		this.diveDepth = 0;
 		this.slot = query.allocate( 'player', 1 );
 		this.prompt = null;
 		this.surface = 'sand';
@@ -349,6 +351,18 @@ export class Player {
 			this.stepDist = 0;
 			if ( this.audio ) this.audio.swimStroke();
 
+		}
+
+		// Freediving: breath drains only while the player's head is properly submerged.
+		// Sprinting costs more oxygen; returning to the surface recovers it quickly. At zero
+		// reserve the swimmer is forced upward rather than silently remaining underwater.
+		this.diveDepth = Math.max( 0, surfaceY - ( p.y + SWIM_EYE ) );
+		const submerged = this.diveDepth > 0.18;
+		if ( submerged ) this.oxygen = Math.max( 0, this.oxygen - dt * ( sprint ? 0.024 : 0.017 ) );
+		else this.oxygen = Math.min( 1, this.oxygen + dt * 0.32 );
+		if ( this.oxygen <= 0 ) {
+			this.floating = false;
+			this.velocity.y = Math.max( this.velocity.y, 2.25 );
 		}
 
 		const under = this.camera.position.y < surfaceY - 0.05;

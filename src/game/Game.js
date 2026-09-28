@@ -273,6 +273,7 @@ export class Game {
 		if ( this.hud ) this.hud.update( {
 			fuel: aboard ? { litres: this.state.fuelL, tank: this.state.stats.fuelL } : null,
 			sonar: aboard && this.state.stats.finder ? this._sonar : null,
+			dive: p.mode === 'swim' ? { oxygen: p.oxygen, depth: p.diveDepth } : null,
 			fight: this.fight,
 			casting: rod.state === 'windup',
 			power: rod.power,
