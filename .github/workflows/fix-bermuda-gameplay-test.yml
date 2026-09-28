@@ -1,0 +1,34 @@
+name: Fix Bermuda Gameplay Test
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-bermuda-gameplay-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update offshore species assertion
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('test/game-logic.mjs')
+          s = p.read_text()
+          old = "[ 'tuna', 'mahi', 'redSnapper', 'grouper', 'barracuda' ].includes( pickSpecies( habitatAt( spots.deep ), 12, rng ) )"
+          new = "[ 'tuna', 'mahi', 'redSnapper', 'grouper', 'barracuda', 'wahoo', 'yellowfin', 'blackGrouper', 'redHind' ].includes( pickSpecies( habitatAt( spots.deep ), 12, rng ) )"
+          if old not in s:
+              raise SystemExit('old offshore species assertion not found')
+          p.write_text(s.replace(old, new, 1))
+      - name: Commit corrected test
+        run: |
+          git config user.name "bermuda-simulator-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add test/game-logic.mjs
+          git commit -m "Update offshore fish test for Bermuda species"
+          git push
