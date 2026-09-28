@@ -349,7 +349,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 			const c = Math.cos( s.yaw ), sn = Math.sin( s.yaw );
 			const x = s.x + lx * c + lz * sn, z = s.z - lx * sn + lz * c;
-			this.localLights.add( { position: new Vector3( x, this.terrainData.heightAt( s.x, s.z ) + ly, z ), color: new Color( 1.0, 0.72, 0.42 ), intensity: 5 * 1.5, range: 11, kind: 'lantern', flicker: 0.08 } );
+			this.localLights.add( { position: new Vector3( x, s.baseY + ly, z ), color: new Color( 1.0, 0.72, 0.42 ), intensity: 5 * 1.5, range: 11, kind: 'lantern', flicker: 0.08 } );
 
 		}
 

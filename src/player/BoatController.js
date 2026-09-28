@@ -386,7 +386,7 @@ export class BoatController {
 		T.add( _v );
 
 		// ---- mooring lines when docked and not driven
-		if ( this.moored && ! this.driven ) {
+		if ( this.moored ) {
 
 			const a = this.mooring.anchor;
 			const k = 5500, c = 4200;

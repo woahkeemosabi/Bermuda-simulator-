@@ -1,8 +1,8 @@
 name: Verify waterfront rendering
 on:
   push:
-    branches: [bermuda-waterfront-verified-v2]
-    paths: ['src/world/**', 'test/bermuda-*.mjs', '.github/workflows/bermuda-verify.yml']
+    branches: [bermuda-waterfront-verified-v2, bermuda-waterfront-expansion-recovery]
+    paths: ['src/**', 'test/**', '.github/workflows/bermuda-verify.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,7 +16,7 @@ jobs:
           node-version: 22
       - run: npm ci && npm install --no-save pngjs
       - run: sudo apt-get update -qq && sudo apt-get install -y mesa-vulkan-drivers
-      - run: node test/bermuda-assets.mjs && node test/game-logic.mjs && npm run build
+      - run: node test/bermuda-assets.mjs && node test/bermuda-layout.mjs && node test/game-logic.mjs && node test/life-player.mjs && npm run build
       - run: node test/bermuda-render.mjs
         env:
           XDG_RUNTIME_DIR: /tmp

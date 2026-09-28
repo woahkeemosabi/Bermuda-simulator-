@@ -1,3 +1,4 @@
+import { FISH_MARKET, BAIT_TACKLE } from './HarbourLayout.js';
 // World dimensions are metres. Fit each GLB only after reading its actual bounds.
 export const WATERFRONT_ASSETS = [
 	{ id: 'dock', triangles: 4000, texture: 1024, placements: [ { x: -64, z: -14.5, width: 5.4, depth: 4.8, height: 1.5, deckY: 1.06 } ] },
@@ -14,6 +15,22 @@ export const WATERFRONT_ASSETS = [
 	{ id: 'harbour-props', triangles: 2050, texture: 512, placements: [ { x: -73, z: -45, y: 1.45, width: 2.2 } ] },
 	{ id: 'channel-marker', triangles: 600, texture: 512, placements: [ { x: -91, z: 20, y: -0.3, height: 3.2 } ] },
 ];
+
+// Startup is intentionally small; background uploads begin only after gameplay starts.
+for (const a of WATERFRONT_ASSETS) a.tier = ['dock','house-a','house-b'].includes(a.id) ? 1 : 2;
+const shop = s => ({...s, y:s.baseY});
+WATERFRONT_ASSETS.push(
+ {id:'fish-market', tier:1, version:'mobile-v3', triangles:6000, texture:1024, placements:[shop(FISH_MARKET)]},
+ {id:'bait-tackle', tier:1, version:'mobile-v3', triangles:6000, texture:1024, placements:[shop(BAIT_TACKLE)]},
+ {id:'house-c', tier:2, version:'mobile-v3', triangles:6000, texture:1024, placements:[{x:-84,z:-54,width:6,depth:5,height:6}]},
+ {id:'house-d', tier:2, version:'mobile-v3', triangles:6000, texture:1024, placements:[{x:-57,z:-61,width:7,depth:5.5,height:5.5}]},
+ {id:'limestone-seawall', tier:2, version:'mobile-v3', triangles:4500, texture:1024, placements:[{x:-79,z:-45,y:-0.4,width:13,depth:2,height:2.5},{x:-51,z:-45,y:-0.4,width:12,depth:2,height:2.5}]},
+ {id:'bougainvillea-cluster', tier:2, version:'mobile-v3', triangles:2500, texture:512, placements:[{x:-78,z:-49,height:4},{x:-55,z:-51,height:4},{x:-88,z:-61,height:5}]},
+ {id:'rocky-shoreline', tier:2, version:'mobile-v3', triangles:4500, texture:512, placements:[{x:-91,z:-38,y:-0.6,width:12,height:3},{x:-39,z:-38,y:-0.6,width:11,height:3}]},
+ {id:'hillside-cluster', tier:3, version:'mobile-v3', triangles:5000, texture:512, placements:[{x:-77,z:-107,width:40,depth:28,height:18}]},
+ {id:'hilltop-landmark', tier:3, version:'mobile-v3', triangles:4000, texture:512, placements:[{x:-80,z:-140,width:24,depth:20,height:23}]},
+ {id:'marina-kit', tier:3, version:'mobile-v3', triangles:3500, texture:512, placements:[{x:-112,z:4,y:-1.4,width:19,depth:16,height:17}]}
+);
 
 // Broad upward-facing deck triangles locate the walkable surface below the ladder.
 export function dockSurfaceHeight( asset ) {

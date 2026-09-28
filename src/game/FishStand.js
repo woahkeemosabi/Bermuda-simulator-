@@ -1,14 +1,14 @@
+import { FISH_MARKET } from '../world/bermuda/HarbourLayout.js';
 import { Group, Mesh, Vector3, BoxGeometry, Matrix4, Quaternion } from '../engine/index.js';
 import { mergeGeometries } from '../engine/geometry/BufferGeometryUtils.js';
 import { prepare, mergePrepared, box, cylinder, sphere, rod, mat4 } from '../world/boat/GeoKit.js';
 import { createPropMaterial, PAT } from './GameMaterials.js';
 import { Vendor } from './Vendor.js';
-import { loadStallAssets, KitBuilder, LAYER, ATLAS, place, Shapes } from './StallKit.js';
 import { FishProps } from '../world/fish/FishProps.js';
 import { FISH } from './FishTable.js';
 
 // Fish market relocated to the Bermuda harbour, immediately beside the hero dock.
-export const STAND = { x: - 69.0, z: - 22.5, yaw: Math.PI * 0.5 };
+export const STAND = FISH_MARKET;
 
 const STALL_FLOOR = 0.06;
 const ICE_TOP = 1.27;
@@ -17,7 +17,7 @@ export class FishStand {
 
 	constructor( { scene, terrain, colliders } ) {
 
-		const y = terrain.heightAt( STAND.x, STAND.z );
+		const y = STAND.baseY;
 		this.material = createPropMaterial( 'fishStand' );
 		this.group = new Group();
 		this.group.name = 'FishStand';
@@ -30,21 +30,9 @@ export class FishStand {
 		fallback.name = 'FishStandFallback';
 		fallback.castShadow = true;
 		this.group.add( fallback );
-		this.ready = loadStallAssets().then( ( a ) => {
+		this.ready = Promise.resolve();
 
-			const mesh = new Mesh( buildStallKit( a ), a.material );
-			mesh.name = 'FishStandStall';
-			mesh.castShadow = true;
-			this.group.remove( fallback );
-			this.group.add( mesh );
-
-		} ).catch( ( e ) => {
-
-			console.error( 'FishStand: stall assets failed, keeping the plain stall', e );
-
-		} );
-
-		const local = new Vector3( 0.2, 0, 0.12 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );
+		const local = new Vector3( 0.7, 0, 1.4 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );
 		this.vendor = new Vendor( {
 			name: 'Joe · Fish buyer', kind: 'buyer',
 			position: new Vector3( STAND.x + local.x, y + STALL_FLOOR, STAND.z + local.z ),
@@ -58,14 +46,7 @@ export class FishStand {
 
 		if ( colliders ) {
 
-			colliders.addBox( new Vector3( STAND.x, y + 1.2, STAND.z ), new Vector3( 1.45, 1.2, 0.95 ), STAND.yaw, { tag: 'fishStand' } );
-			for ( const [ lx, lz, hx, hz, hy ] of [ [ - 1.85, 0.25, 0.45, 0.25, 0.35 ], [ 1.8, - 0.2, 0.3, 0.6, 0.23 ], [ 1.55, 1.05, 0.2, 0.2, 0.28 ], [ 1.95, 1.45, 0.35, 0.25, 0.42 ] ] ) {
-
-				const w = new Vector3( lx, 0, lz ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );
-				colliders.addBox( new Vector3( STAND.x + w.x, y + hy, STAND.z + w.z ), new Vector3( hx, hy, hz ), STAND.yaw, { tag: 'fishStandProps' } );
-
-			}
-
+			colliders.addBox( new Vector3( STAND.x, y + 1.2, STAND.z ), new Vector3( STAND.width / 2, 1.2, STAND.depth / 2 ), STAND.yaw, { tag: 'fishStand' } );
 		}
 
 	}
@@ -119,10 +100,4 @@ function buildStall() {
 function corrugated( w, d, ribs ) {
 	const g = new BoxGeometry( w, 0.025, d );
 	return g;
-}
-
-function buildStallKit( assets ) {
-	const K = new KitBuilder( assets, 7 );
-	K.prop( 'wooden_fishing_stall', place( 0, 0, 0 ) );
-	return K.finish();
 }
