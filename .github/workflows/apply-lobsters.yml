@@ -23,11 +23,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Apply underwater gameplay
-        run: |
-          node scripts/apply-lobsters.mjs
-          node scripts/apply-spear-visual.mjs
-          node scripts/apply-underwater-polish.mjs
+      - name: Apply underwater polish
+        run: node scripts/apply-underwater-polish.mjs
       - name: Verify underwater gameplay
         run: |
           git diff --check
