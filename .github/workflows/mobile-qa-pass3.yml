@@ -24,195 +24,35 @@ jobs:
       - run: npm ci
 
       - name: Apply iPhone QA fixes
-        shell: python
-        run: |
-          from pathlib import Path
-
-          def replace_once(path, old, new, label):
-              p = Path(path)
-              text = p.read_text()
-              if old not in text:
-                  raise SystemExit(f'patch anchor missing: {label}')
-              p.write_text(text.replace(old, new, 1))
-
-          # ---- Vendor visibility: keep both staff physically inside but close enough to the service
-          # opening to read clearly, and correct the Rocketbox model facing direction.
-          replace_once(
-              'src/game/FishStand.js',
-              "\t\tconst local = new Vector3( 0.45, 0, 0.52 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );",
-              "\t\t// Joe stays behind the counter but is brought forward into the service opening.\n\t\tconst local = new Vector3( 0.45, 0, 0.84 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );",
-              'Joe service-window placement'
-          )
-          replace_once(
-              'src/game/FishStand.js',
-              "character: { url: ( ( import.meta.env && import.meta.env.BASE_URL ) || '/' ) + 'models/characters/joe.glb', idle: 'idle_neutral_01', talk: 'gestic_talk_relaxed_01', greet: 'wave_01' },",
-              "character: { url: ( ( import.meta.env && import.meta.env.BASE_URL ) || '/' ) + 'models/characters/joe.glb', idle: 'idle_neutral_01', talk: 'gestic_talk_relaxed_01', greet: 'wave_01', yaw: Math.PI },",
-              'Joe character facing'
-          )
-          replace_once(
-              'src/game/Chandlery.js',
-              "\t\tconst local = new Vector3( 0.4, 0, 0.5 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );",
-              "\t\t// Martha stays inside but stands directly behind the service opening.\n\t\tconst local = new Vector3( 0.4, 0, 0.84 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );",
-              'Martha service-window placement'
-          )
-          replace_once(
-              'src/game/Chandlery.js',
-              "character: { url: ( ( import.meta.env && import.meta.env.BASE_URL ) || '/' ) + 'models/characters/marta.glb', idle: 'idle_neutral_01', talk: 'gestic_talk_neutral_01', greet: 'wave_01' },",
-              "character: { url: ( ( import.meta.env && import.meta.env.BASE_URL ) || '/' ) + 'models/characters/marta.glb', idle: 'idle_neutral_01', talk: 'gestic_talk_neutral_01', greet: 'wave_01', yaw: Math.PI },",
-              'Martha character facing'
-          )
-          replace_once(
-              'src/game/Vendor.js',
-              "async loadCharacter( url, { idle = 'idle_neutral_01', talk = 'gestic_talk_relaxed_01', greet = 'wave_01', listen = null } = {} ) {",
-              "async loadCharacter( url, { idle = 'idle_neutral_01', talk = 'gestic_talk_relaxed_01', greet = 'wave_01', listen = null, yaw = 0 } = {} ) {",
-              'vendor character yaw option'
-          )
-          replace_once(
-              'src/game/Vendor.js',
-              "\t\tconst model = await SkinnedModel.create( await loadGLB( url ) );\n\t\t// on land, never under water: no caustics / wave lookups in their shaders",
-              "\t\tconst model = await SkinnedModel.create( await loadGLB( url ) );\n\t\tmodel.group.rotation.y = yaw;\n\t\t// on land, never under water: no caustics / wave lookups in their shaders",
-              'apply vendor character yaw'
-          )
-
-          # ---- Building signage: physical shop-local signs rendered with a tiny 5x7 block font.
-          # This avoids external fonts/canvas textures and remains readable on the iPhone build.
-          Path('src/game/DockShopFixtures.js').write_text(r'''import { BoxGeometry, CylinderGeometry, InstancedMesh, Matrix4, Mesh } from '../engine/index.js';
-import { Material } from '../engine/render/Material.js';
-
-const FONT = {
- A:['01110','10001','10001','11111','10001','10001','10001'],
- B:['11110','10001','10001','11110','10001','10001','11110'],
- C:['01111','10000','10000','10000','10000','10000','01111'],
- E:['11111','10000','10000','11110','10000','10000','11111'],
- F:['11111','10000','10000','11110','10000','10000','10000'],
- H:['10001','10001','10001','11111','10001','10001','10001'],
- I:['11111','00100','00100','00100','00100','00100','11111'],
- J:['00111','00010','00010','00010','10010','10010','01100'],
- K:['10001','10010','10100','11000','10100','10010','10001'],
- L:['10000','10000','10000','10000','10000','10000','11111'],
- M:['10001','11011','10101','10101','10001','10001','10001'],
- O:['01110','10001','10001','10001','10001','10001','01110'],
- R:['11110','10001','10001','11110','10100','10010','10001'],
- S:['01111','10000','10000','01110','00001','00001','11110'],
- T:['11111','00100','00100','00100','00100','00100','00100'],
- '+':['00000','00100','00100','11111','00100','00100','00000'],
- "'":['00100','00100','00000','00000','00000','00000','00000'],
-};
-
-function addPixelSign(group, lines) {
-    const boardMat = new Material({name:'shop-sign-board',color:0x12313d,roughness:.82,receiveShadows:false});
-    const typeMat = new Material({name:'shop-sign-type',color:0xf4f1df,roughness:.55,receiveShadows:false});
-    const board = new Mesh(new BoxGeometry(2.9,.58,.07),boardMat);
-    board.position.set(0,2.22,1.31); group.add(board);
-    const px=.029, gap=.008, cell=px+gap;
-    const placements=[];
-    lines.forEach((line,row)=>{
-        const chars=[...line.toUpperCase()];
-        const width=Math.max(0,chars.length*6-1)*cell;
-        const x0=-width*.5;
-        const y0=row===0?2.32:2.10;
-        chars.forEach((ch,ci)=>{
-            if(ch===' ') return;
-            const glyph=FONT[ch]; if(!glyph) return;
-            glyph.forEach((bits,gy)=>[...bits].forEach((on,gx)=>{
-                if(on!=='1') return;
-                placements.push([x0+(ci*6+gx)*cell,y0+(3-gy)*cell,1.355]);
-            }));
-        });
-    });
-    const dots=new InstancedMesh(new BoxGeometry(px,px,.026),typeMat,placements.length);
-    const m=new Matrix4();
-    placements.forEach((p,i)=>{m.makeTranslation(p[0],p[1],p[2]);dots.setMatrixAt(i,m);});
-    dots.instanceMatrix.needsUpdate=true; dots.computeBoundingSphere(); group.add(dots);
-}
-
-// Fixtures stay in shop-local coordinates when its temporary visual is replaced.
-export function addDockShopFixtures(group, layout, fishMarket = false) {
-    const frame = new Material({name:'dock-lamp-frame',color:0x243e40,roughness:.75,receiveShadows:false});
-    const glass = new Material({name:'dock-lamp-glass',color:0xffda92,roughness:.35,receiveShadows:false});
-    const [x,y,z] = layout.lamp;
-    for(const [dy,r,h,m] of [[0,.085,.22,glass],[-.13,.11,.05,frame],[.13,.11,.05,frame]]) {
-        const lamp = new Mesh(new CylinderGeometry(r,r,h,8),m);
-        lamp.position.set(x,y+dy,z);group.add(lamp);
-    }
-    addPixelSign(group, fishMarket ? ["JOE'S",'FISH MARKET'] : ["MARTHA'S",'BAIT + TACKLE']);
-    if(fishMarket) {
-        const tray=new Mesh(new BoxGeometry(.94,.12,.52),new Material({name:'fish-ice-tray',color:0xe5f5f4,roughness:.4,receiveShadows:false}));
-        tray.position.set(-.55,1.21,.87); group.add(tray);
-    }
-}
-''')
-
-          # ---- Lobster visual pass: smaller adult proportions, less centipede-like abdomen, warmer
-          # mottled shell and stronger antenna/tail silhouette.
-          replace_once('src/game/Lobsters.js',
-              "const BODY = 0x9a3e24;\nconst SHELL = 0xb85c32;\nconst JOINT = 0x6f2e1f;\nconst CREAM = 0xd9b98d;",
-              "const BODY = 0x6b3826;\nconst SHELL = 0xa85a32;\nconst JOINT = 0x3b241d;\nconst CREAM = 0xe1c68d;",
-              'lobster shell palette')
-          replace_once('src/game/Lobsters.js',
-              "add( sphere( 0.22, 18, 11 ), BODY, 0.5, mat4( 0, 0.17, 0.08, 0, 0, 0, 1.0, 0.58, 1.45 ) );\n\tfor ( let i = 0; i < 5; i ++ ) {\n\n\t\tconst z = - 0.19 - i * 0.105;\n\t\tconst r = 0.18 - i * 0.014;\n\t\tadd( sphere( r, 14, 8 ), i % 2 ? BODY : SHELL, 0.56, mat4( 0, 0.14 - i * 0.006, z, 0, 0, 0, 1.0, 0.52, 0.62 ) );\n\n\t}",
-              "add( sphere( 0.23, 20, 12 ), BODY, 0.5, mat4( 0, 0.15, 0.08, 0, 0, 0, 1.05, 0.48, 1.22 ) );\n\tfor ( let i = 0; i < 4; i ++ ) {\n\n\t\tconst z = - 0.17 - i * 0.12;\n\t\tconst r = 0.17 - i * 0.018;\n\t\tadd( sphere( r, 16, 8 ), i % 2 ? BODY : SHELL, 0.56, mat4( 0, 0.12 - i * 0.004, z, 0, 0, 0, 1.05, 0.42, 0.72 ) );\n\n\t}",
-              'lobster adult body proportions')
-          replace_once('src/game/Lobsters.js',
-              "\t\t\tconst size = 0.82 + this.rng() * 0.34;",
-              "\t\t\tconst size = 0.58 + this.rng() * 0.18;",
-              'lobster gameplay scale')
-          replace_once('src/game/Lobsters.js',
-              "\t\t\t\tsize, bodyCm: Math.round( ( 44 + this.rng() * 18 ) * size ),\n\t\t\t\tkg: Math.round( ( 0.75 + this.rng() * 2.0 ) * size * 100 ) / 100,",
-              "\t\t\t\tsize, bodyCm: Math.round( 30 + this.rng() * 20 ),\n\t\t\t\tkg: Math.round( ( 0.7 + this.rng() * 1.9 ) * ( 0.78 + size * 0.3 ) * 100 ) / 100,",
-              'lobster realistic catch size')
-
-          # ---- Never send a lobster through the fish spear-hit/display path. Spear aimed at a
-          # lobster gives physical feedback but instructs the player to use close-range ACT capture.
-          replace_once('src/game/Game.js',
-              "\tfireSpear() {\n\n\t\tthis._spearCooldown = 0.7;\n\t\tif ( this.spear ) this.spear.fire();\n\t\tconst app = this.app, schools = app.reef && app.reef.fish;\n\t\tif ( ! schools || ! schools.spearHit ) return;\n\t\tapp.player.getViewDir( this._spearDir ).normalize();",
-              "\tfireSpear() {\n\n\t\tthis._spearCooldown = 0.7;\n\t\tconst app = this.app;\n\t\tapp.player.getViewDir( this._spearDir ).normalize();\n\t\tconst lobsterAim = this.lobsters && this.lobsters.target( app.camera.position, this._spearDir, 4.0 );\n\t\tif ( this.spear ) this.spear.fire();\n\t\tif ( lobsterAim ) {\n\n\t\t\tif ( this.spear ) this.spear.impact( lobsterAim.position, 0.45 );\n\t\t\tthis.toast( 'Caribbean spiny lobster · move close and use ACT to grab', 1900 );\n\t\t\treturn;\n\n\t\t}\n\t\tconst schools = app.reef && app.reef.fish;\n\t\tif ( ! schools || ! schools.spearHit ) return;",
-              'lobster-safe spear path')
-
-          # Make lobster capture defensive: a presentation/storage exception should never take down
-          # the render loop; restore the animal and keep playing instead.
-          replace_once('src/game/Game.js',
-              "\t\tconst kept = this.state.addFish( 'spinyLobster', hit.kg, app.settings?.timeOfDay ?? 12, hit.cm );",
-              "\t\tlet kept;\n\t\ttry {\n\n\t\t\tkept = this.state.addFish( 'spinyLobster', hit.kg, app.settings?.timeOfDay ?? 12, hit.cm );\n\n\t\t} catch ( error ) {\n\n\t\t\tconsole.error( 'lobster capture recovered', error );\n\t\t\tthis.lobsters.restore( hit.id );\n\t\t\tthis.toast( 'Lobster capture recovered · try again', 1800 );\n\t\t\treturn false;\n\n\t\t}",
-              'defensive lobster capture')
-
-          # ---- Mobile startup: spend more of the loading screen on real pipeline preparation, and
-          # make the Tap-to-Explore stage opaque so an unrendered canvas can never show as a black half.
-          replace_once('src/main.js',
-              "\t\t\tnew Promise( ( resolve ) => setTimeout( resolve, 6500 ) ),",
-              "\t\t\tnew Promise( ( resolve ) => setTimeout( resolve, 25000 ) ),",
-              'longer mobile pipeline preparation window')
-          replace_once('src/mobile/BermudaMobileStable.js',
-              "\t\tbody.bm-mobile .tw-depth{display:none!important}\n\t\t@media (max-width:700px){body.bm-mobile .gm-map{width:102px;height:102px;right:15px;bottom:230px;opacity:.84}}",
-              "\t\tbody.bm-mobile .tw-depth{display:none!important}\n\t\tbody.bm-mobile .tw-start{background:radial-gradient(90% 55% at 50% 18%,rgba(40,132,181,.92),rgba(9,52,76,.96) 62%,#04151f 100%)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}\n\t\tbody.bm-mobile .tw-start-inner{background:rgba(3,22,32,.30);border:1px solid rgba(150,242,234,.16);border-radius:24px;padding:24px 22px;box-shadow:0 22px 70px rgba(0,0,0,.28)}\n\t\t@media (max-width:700px){body.bm-mobile .gm-map{width:102px;height:102px;right:15px;bottom:230px;opacity:.84}}",
-              'opaque mobile start screen')
+        run: node scripts/mobile-qa-pass3.mjs
 
       - name: Verify source logic and build
         run: |
           git diff --check
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          const game=fs.readFileSync('src/game/Game.js','utf8');
-          const lob=fs.readFileSync('src/game/Lobsters.js','utf8');
-          const fixtures=fs.readFileSync('src/game/DockShopFixtures.js','utf8');
-          const vendor=fs.readFileSync('src/game/Vendor.js','utf8');
-          const mobile=fs.readFileSync('src/mobile/BermudaMobileStable.js','utf8');
-          const main=fs.readFileSync('src/main.js','utf8');
-          for (const needle of ['lobsterAim','Lobster capture recovered']) if(!game.includes(needle)) throw new Error(`Game missing ${needle}`);
-          for (const needle of ['const size = 0.58','bodyCm: Math.round( 30']) if(!lob.includes(needle)) throw new Error(`Lobsters missing ${needle}`);
-          for (const needle of ["JOE'S", "MARTHA'S", 'BAIT + TACKLE', 'InstancedMesh']) if(!fixtures.includes(needle)) throw new Error(`sign missing ${needle}`);
-          if(!vendor.includes('model.group.rotation.y = yaw')) throw new Error('vendor yaw not applied');
-          if(!mobile.includes('tw-start{background:radial-gradient')) throw new Error('mobile start background missing');
-          if(!main.includes('setTimeout( resolve, 25000 )')) throw new Error('pipeline prep window missing');
-          console.log('QA pass 3 source checks passed');
+          const game = fs.readFileSync('src/game/Game.js','utf8');
+          const lobster = fs.readFileSync('src/game/Lobsters.js','utf8');
+          const fixtures = fs.readFileSync('src/game/DockShopFixtures.js','utf8');
+          const vendor = fs.readFileSync('src/game/Vendor.js','utf8');
+          const mobile = fs.readFileSync('src/mobile/BermudaMobileStable.js','utf8');
+          const main = fs.readFileSync('src/main.js','utf8');
+          for (const needle of ['lobsterAim', 'Lobster capture recovered']) if (!game.includes(needle)) throw new Error(`Game missing ${needle}`);
+          for (const needle of ['const size = 0.58', 'bodyCm: Math.round( 30']) if (!lobster.includes(needle)) throw new Error(`Lobsters missing ${needle}`);
+          for (const needle of ["JOE'S", "MARTHA'S", 'BAIT + TACKLE', 'InstancedMesh']) if (!fixtures.includes(needle)) throw new Error(`signage missing ${needle}`);
+          if (!vendor.includes('( this.characterYaw || 0 ) + this._yawOff')) throw new Error('vendor facing fix missing');
+          if (!mobile.includes('tw-start{background:radial-gradient')) throw new Error('opaque mobile start screen missing');
+          if (!main.includes('setTimeout( resolve, 25000 )')) throw new Error('pipeline prep window missing');
+          if (!main.includes("Preparing Bermuda scenery")) throw new Error('pre-play scenery staging missing');
+          console.log('mobile QA pass 3 source checks passed');
           NODE
           node test/game-logic.mjs
           npm run build
 
-      - name: Commit verified QA fixes
+      - name: Commit verified fixes
         run: |
           git config user.name 'bermuda-simulator-bot'
           git config user.email 'actions@users.noreply.github.com'
           git add src/game/FishStand.js src/game/Chandlery.js src/game/Vendor.js src/game/DockShopFixtures.js src/game/Lobsters.js src/game/Game.js src/mobile/BermudaMobileStable.js src/main.js
-          git commit -m 'Fix lobster capture shop visibility signage and mobile startup'
+          git commit -m 'Fix lobster safety shop signage vendor visibility and startup staging'
           git push origin HEAD:bermuda-mobile-qa-pass3
