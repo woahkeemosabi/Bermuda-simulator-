@@ -22,40 +22,14 @@ jobs:
         run: node test/bermuda-layout.mjs
       - name: Game logic
         run: node test/game-logic.mjs
-      - name: Player life moor
-        continue-on-error: true
-        run: node test/life-player.mjs --bermuda --phase=moor
-      - name: Player life walk
-        continue-on-error: true
-        run: node test/life-player.mjs --bermuda --phase=walk
-      - name: Player life swim
-        continue-on-error: true
-        run: node test/life-player.mjs --bermuda --phase=swim
-      - name: Player life board
-        continue-on-error: true
-        run: node test/life-player.mjs --bermuda --phase=board
-      - name: Player life drive
-        continue-on-error: true
-        run: node test/life-player.mjs --bermuda --phase=drive
-      - name: Player life coast
-        continue-on-error: true
-        run: node test/life-player.mjs --bermuda --phase=coast
-      - name: Player life leave
-        continue-on-error: true
-        run: node test/life-player.mjs --bermuda --phase=leave
-      - name: Player life drift
-        continue-on-error: true
-        run: node test/life-player.mjs --bermuda --phase=drift
-      - name: Player life fly
-        continue-on-error: true
-        run: node test/life-player.mjs --bermuda --phase=fly
       - name: Bermuda player life test
         run: node test/life-player.mjs --bermuda
       - name: World polish assertions
         run: node test/world-polish.mjs
       - name: Production build
         run: npm run build
-      - run: node test/bermuda-render.mjs
+      - name: Native render smoke
+        run: node test/bermuda-render.mjs
         env:
           XDG_RUNTIME_DIR: /tmp
       - uses: actions/upload-artifact@v4
