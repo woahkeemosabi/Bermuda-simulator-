@@ -1,0 +1,101 @@
+name: Bermuda Gameplay Systems V1
+
+on:
+  push:
+    paths:
+      - '.github/workflows/bermuda-gameplay-systems-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  implement:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Patch gameplay systems
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              s = p.read_text()
+              if old not in s:
+                  raise SystemExit(f'anchor not found in {path}: {old[:80]!r}')
+              p.write_text(s.replace(old, new, 1))
+
+          # 1) Bermuda-specific catch table. Reuse existing procedural fish geometry/skins for V1,
+          # while giving the gameplay authentic Bermuda species, habitats and legal minimums.
+          replace('src/game/FishTable.js',
+          "\tmahi: { name: 'Mahi-mahi', sci: 'Coryphaena hippurus', lw: [ 0.0079, 3.0 ], model: 'mahi', habitat: { deep: 0.8 }, kg: [ 4, 18 ], price: 14, fight: 0.8, stamina: 15, time: 'day', rarity: 0.4 },\n",
+          "\tmahi: { name: 'Mahi-mahi', sci: 'Coryphaena hippurus', lw: [ 0.0079, 3.0 ], model: 'mahi', habitat: { deep: 0.8 }, kg: [ 4, 18 ], price: 14, fight: 0.8, stamina: 15, time: 'day', rarity: 0.4 },\n"
+          "\twahoo: { name: 'Wahoo', sci: 'Acanthocybium solandri', lw: [ 0.0063, 3.02 ], model: 'barracuda', habitat: { deep: 1 }, kg: [ 3.2, 32 ], price: 18, fight: 0.92, stamina: 18, time: 'dawnDusk', rarity: 0.42, minKg: 3.2 },\n"
+          "\tyellowfin: { name: 'Yellowfin tuna', sci: 'Thunnus albacares', lw: [ 0.0188, 3.0 ], model: 'tuna', habitat: { deep: 1 }, kg: [ 3.2, 45 ], price: 20, fight: 0.96, stamina: 22, time: 'dawnDusk', rarity: 0.32, minKg: 3.2 },\n"
+          "\tblackGrouper: { name: 'Black grouper', sci: 'Mycteroperca bonaci', lw: [ 0.011, 3.05 ], model: 'grouper', habitat: { reef: 0.55, deep: 0.8 }, kg: [ 8, 30 ], price: 19, fight: 0.72, stamina: 15, time: 'any', rarity: 0.2, minCm: 95, bagLimit: 1 },\n"
+          "\tredHind: { name: 'Red hind', sci: 'Epinephelus guttatus', lw: [ 0.012, 3.04 ], model: 'grouper', habitat: { reef: 0.9, deep: 0.35 }, kg: [ 0.5, 3.5 ], price: 14, fight: 0.48, stamina: 8, time: 'any', rarity: 0.62, minCm: 35, bagLimit: 10 },\n"
+          "\tlaneSnapper: { name: 'Lane snapper', sci: 'Lutjanus synagris', lw: [ 0.013, 3.0 ], model: 'yellowtail', habitat: { reef: 0.8, bay: 0.45 }, kg: [ 0.25, 2.5 ], price: 13, fight: 0.38, stamina: 5, time: 'any', rarity: 0.75, minCm: 25, bagLimit: 30 },\n")
+
+          # Protected Bermuda species must never enter the sellable cooler.
+          replace('src/game/FishTable.js',
+          "\tparrot: { name: 'Stoplight parrotfish', sci: 'Sparisoma viride',",
+          "\tparrot: { protected: true, name: 'Stoplight parrotfish', sci: 'Sparisoma viride',")
+          replace('src/game/FishTable.js',
+          "\tgrouper: { name: 'Nassau grouper', sci: 'Epinephelus striatus',",
+          "\tgrouper: { protected: true, name: 'Nassau grouper', sci: 'Epinephelus striatus',")
+
+          # Enforce protected release and minimum legal size in the catch authority, not only UI.
+          replace('src/game/GameState.js',
+          "\t\tconst value = fishValue( species, kg );\n\t\tconst kept = this.fits( kg );\n",
+          "\t\tconst rule = FISH[ species ];\n"
+          "\t\tconst legalSize = ( ! rule.minKg || kg >= rule.minKg ) && ( ! rule.minCm || cm >= rule.minCm );\n"
+          "\t\tconst protectedSpecies = !! rule.protected;\n"
+          "\t\tconst value = protectedSpecies || ! legalSize ? 0 : fishValue( species, kg );\n"
+          "\t\tconst kept = ! protectedSpecies && legalSize && this.fits( kg );\n")
+          replace('src/game/GameState.js',
+          "\t\tthis.lastCatch = { species, kg, cm, value, newSpecies, record, prevBestKg, prevBestCm, kept };\n",
+          "\t\tthis.lastCatch = { species, kg, cm, value, newSpecies, record, prevBestKg, prevBestCm, kept, protectedSpecies, legalSize };\n")
+
+          # 2) Capsize safety. A transient hard roll is allowed; sustained inversion resets to berth.
+          replace('src/player/BoatController.js',
+          "\t\tthis._age = 0; // s since the latest read-back was issued\n",
+          "\t\tthis._age = 0; // s since the latest read-back was issued\n\t\tthis._capsizeTime = 0; // sustained inversion timer; prevents permanent upside-down boats\n")
+          replace('src/player/BoatController.js',
+          "\t\tif ( ! this.isFinite() ) this.reset();\n\n\t\tthis.model.setThrottle",
+          "\t\tif ( ! this.isFinite() ) this.reset();\n"
+          "\t\t// Boat-local up dotted with world up. Below zero means the hull is past 90 degrees.\n"
+          "\t\tconst upright = _up.set( 0, 1, 0 ).applyQuaternion( this.quaternion ).y;\n"
+          "\t\tthis._capsizeTime = upright < 0.05 ? this._capsizeTime + Math.min( dt, 0.1 ) : Math.max( 0, this._capsizeTime - dt * 2 );\n"
+          "\t\tif ( this._capsizeTime > 2.5 ) this.reset();\n\n\t\tthis.model.setThrottle")
+          replace('src/player/BoatController.js',
+          "\t\tthis.rpm = 0;\n\t\tthis.moored = true;\n",
+          "\t\tthis.rpm = 0;\n\t\tthis._capsizeTime = 0;\n\t\tthis.moored = true;\n")
+
+          # Manual recovery: X while aboard returns the vessel safely to its berth.
+          replace('src/game/Game.js',
+          "\t\tconst aboard = p.mode === 'boat' || p.mode === 'deck';\n",
+          "\t\tconst aboard = p.mode === 'boat' || p.mode === 'deck';\n"
+          "\t\tif ( aboard && inp.hit( 'KeyX' ) ) {\n"
+          "\t\t\tapp.boatCtl.reset();\n"
+          "\t\t\tthis.state.save();\n"
+          "\t\t\tthis.toast( 'Boat recovered to berth', 2200 );\n"
+          "\t\t}\n")
+
+      - name: Install and verify
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - name: Commit implementation
+        run: |
+          git config user.name "bermuda-simulator-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add src/game/FishTable.js src/game/GameState.js src/game/Game.js src/player/BoatController.js
+          git commit -m "Add Bermuda fish rules and boat capsize recovery" || exit 0
+          git push
