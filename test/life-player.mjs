@@ -24,9 +24,6 @@ const check = ( ok, msg ) => {
 const finite = ( v ) => [ v.x, v.y, v.z ].every( Number.isFinite );
 
 const bermuda = process.argv.includes('--bermuda');
-const phaseArg = process.argv.find( a => a.startsWith('--phase=') );
-const phase = phaseArg ? phaseArg.slice(8) : '';
-const stopPhase = name => { if ( phase === name ) { console.log(`phase ${ name } complete`); process.exit( fails ? 1 : 0 ); } };
 if(bermuda) applyBermudaBootLook({settings:{}});
 const terrain = new TerrainData();
 
@@ -144,7 +141,6 @@ run( 4 );
 check( finite( boat.position ) && Math.abs( boat.position.y ) < 0.6, `boat floats at the mooring: y ${ boat.position.y.toFixed( 3 ) } m (mass ${ boat.mass } kg)` );
 check( boat.position.distanceTo( WORLD.boatDock.position ) < 3, `boat stays moored: ${ boat.position.distanceTo( WORLD.boatDock.position ).toFixed( 2 ) } m from the dock` );
 
-stopPhase( 'moor' );
 
 // ---- walk
 const p0 = player.position.clone();
@@ -158,7 +154,6 @@ check( player.mode === 'walk' && walked > 3 && walked < 30, `walk: moved ${ walk
 check( Math.abs( player.position.y - g ) < 0.3, `walk: feet on the ground (y ${ player.position.y.toFixed( 2 ) }, ground ${ g.toFixed( 2 ) })` );
 check( finite( camera.position ) && Math.abs( camera.position.y - player.position.y - 1.62 ) < 0.3, `walk: eye at ${ ( camera.position.y - player.position.y ).toFixed( 2 ) } m` );
 
-stopPhase( 'walk' );
 
 // ---- swim: drop the player into deep water off the beach
 let sx = 20, sz = 80;
@@ -179,7 +174,6 @@ run( 4 );
 input.keys.delete( 'Space' );
 check( player.position.y > - 1.2, `swim: rises again (y ${ player.position.y.toFixed( 2 ) })` );
 
-stopPhase( 'swim' );
 
 // ---- board the boat
 const bp = boat.toWorld( model.boardPoint, new E.Vector3() );
@@ -196,7 +190,6 @@ check(player.mode === 'boat' && boat.driven && boat.moored, 'taking helm preserv
 run(5);
 check(boat.moored && boat.position.distanceTo(WORLD.boatDock.position) < 3, 'boarding leaves berth spring active');
 check(new E.Vector3(0,1,0).applyQuaternion(boat.quaternion).y > .9, 'boarding stays upright');
-stopPhase( 'board' );
 
 // ---- drive: full ahead, then a turn
 const b0 = boat.position.clone();
@@ -229,7 +222,6 @@ input.keys.add('KeyW');
 run(45);
 input.keys.delete('KeyW');
 check(boat.isFinite() && new E.Vector3(0,1,0).applyQuaternion(boat.quaternion).y > .9, 'over 60 seconds driving remains finite and upright');
-stopPhase( 'drive' );
 
 // ---- coast, then leave the boat (out at sea: swim)
 run( 15 );
@@ -239,12 +231,9 @@ check(player.mode === 'deck', 'ACT leaves helm onto deck');
 player.exitBoat();
 check( player.mode === 'swim' || player.mode === 'walk', `boat: left the boat (mode ${ player.mode })` );
 check( ! boat.driven && finite( player.position ), 'boat: no longer driven' );
-stopPhase( 'leave' );
 run( 5 );
 check( finite( boat.position ) && boat.speed < straight, `boat: drifts (speed ${ boat.speed.toFixed( 2 ) } m/s)` );
-stopPhase( 'drift' );
 
-stopPhase( 'coast' );
 
 // ---- fly camera
 const fly = new FlyCamera( camera, { addEventListener() {} }, input );
@@ -256,7 +245,6 @@ check( camera.position.z < - 3 && Math.abs( camera.position.x ) < 1e-3, `fly: mo
 input.look.x = 100;
 fly.update( dt );
 check( Math.abs( fly.yaw + 0.22 ) < 1e-6, `fly: mouse look (yaw ${ fly.yaw.toFixed( 3 ) })` );
-stopPhase( 'fly' );
 
 console.log( fails ? `${ fails } FAILED` : 'all passed' );
 process.exit( fails ? 1 : 0 );
