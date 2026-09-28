@@ -267,6 +267,7 @@ export class Game {
 		if ( ! p.prompt && can ) p.prompt = this.prompt();
 
 		const aboard = p.mode === 'boat' || p.mode === 'deck';
+		if ( aboard && inp.hit( 'KeyX' ) ) { app.boatCtl.reset(); this.state.save(); this.toast( 'Boat recovered to berth', 2200 ); }
 		// the catch card's live fish portrait (or one queued thumbnail)
 		if ( this.hud && this.hud.portrait ) this.hud.portrait.update( dt );
 		if ( this.hud ) this.hud.update( {

@@ -70,9 +70,12 @@ export class GameState {
 
 		}
 
-		const value = fishValue( species, kg );
-		const kept = this.fits( kg );
-		this.lastCatch = { species, kg, cm, value, newSpecies, record, prevBestKg, prevBestCm, kept };
+		const rule = FISH[ species ];
+		const legalSize = ( ! rule.minKg || kg >= rule.minKg ) && ( ! rule.minCm || cm >= rule.minCm );
+		const protectedSpecies = !! rule.protected;
+		const value = protectedSpecies || ! legalSize ? 0 : fishValue( species, kg );
+		const kept = ! protectedSpecies && legalSize && this.fits( kg );
+		this.lastCatch = { species, kg, cm, value, newSpecies, record, prevBestKg, prevBestCm, kept, protectedSpecies, legalSize };
 		if ( ! kept ) {
 
 			this.save();

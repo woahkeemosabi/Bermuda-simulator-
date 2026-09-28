@@ -121,6 +121,7 @@ export class BoatController {
 		this.onSlam = null;
 		this._acc = 0;
 		this._age = 0; // s since the latest read-back was issued
+		this._capsizeTime = 0;
 
 		this.bowWorld = new THREE.Vector3();
 		this.sternWorld = new THREE.Vector3();
@@ -244,6 +245,9 @@ export class BoatController {
 		}
 
 		if ( ! this.isFinite() ) this.reset();
+		const upright = _up.set( 0, 1, 0 ).applyQuaternion( this.quaternion ).y;
+		this._capsizeTime = upright < 0.05 ? this._capsizeTime + Math.min( dt, 0.1 ) : Math.max( 0, this._capsizeTime - dt * 2 );
+		if ( this._capsizeTime > 2.5 ) this.reset();
 
 		this.model.setThrottle( this.throttle );
 		this.model.setSteering( this.steer );
@@ -445,6 +449,7 @@ export class BoatController {
 		this.throttle = 0;
 		this.steer = 0;
 		this.rpm = 0;
+		this._capsizeTime = 0;
 		this.moored = true;
 		this.mooring.anchor.copy( WORLD.boatDock.position );
 		this.mooring.heading = WORLD.boatDock.heading;
