@@ -46,3 +46,5 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+# Redeploy marker: lobster startup fix verified 2026-09-28
