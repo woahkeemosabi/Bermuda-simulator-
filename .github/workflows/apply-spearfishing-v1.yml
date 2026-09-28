@@ -1,0 +1,123 @@
+name: Apply Spearfishing V1
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-spearfishing-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply spearfishing gameplay
+        shell: python
+        run: |
+          from pathlib import Path
+          def replace(path, old, new):
+              p=Path(path); s=p.read_text()
+              if old not in s:
+                  raise SystemExit(f'anchor not found: {path}: {old[:100]!r}')
+              p.write_text(s.replace(old,new,1))
+
+          # CPU fish schools already own the exact positions of every rendered fish. Expose a
+          # lightweight ray/sphere hit test so a spear hits the fish the player can actually see.
+          replace('src/world/Fish.js',
+          "\tget fishCount() {\n\n\t\treturn this.n;\n\n\t}\n",
+          "\tget fishCount() {\n\n\t\treturn this.n;\n\n\t}\n\n"
+          "\t// First-person spearfishing hit test against the same CPU positions used to draw the fish.\n"
+          "\t// `allowedModels` keeps non-catchable wildlife (rays, turtle, whale escorts) out of the test.\n"
+          "\tspearHit( origin, direction, maxDist = 7, allowedModels = null ) {\n\n"
+          "\t\tlet best = null, bestT = maxDist + 1, bestGroup = null;\n"
+          "\t\tconst dx = direction.x, dy = direction.y, dz = direction.z;\n"
+          "\t\tfor ( const g of this.groups ) {\n\n"
+          "\t\t\tconst model = g.sp.model;\n"
+          "\t\t\tif ( allowedModels && ! allowedModels.has( model ) ) continue;\n"
+          "\t\t\tfor ( let i = g.offset; i < g.offset + g.count; i ++ ) {\n\n"
+          "\t\t\t\tconst k = i * 3, rx = this.pos[ k ] - origin.x, ry = this.pos[ k + 1 ] - origin.y, rz = this.pos[ k + 2 ] - origin.z;\n"
+          "\t\t\t\tconst t = rx * dx + ry * dy + rz * dz;\n"
+          "\t\t\t\tif ( t < 0.35 || t > maxDist || t >= bestT ) continue;\n"
+          "\t\t\t\tconst d2 = rx * rx + ry * ry + rz * rz - t * t;\n"
+          "\t\t\t\tconst r = Math.max( 0.14, this.size[ i ] * 0.48 );\n"
+          "\t\t\t\tif ( d2 <= r * r ) { best = i; bestT = t; bestGroup = g; }\n\n"
+          "\t\t\t}\n\n"
+          "\t\t}\n"
+          "\t\tif ( best === null ) return null;\n"
+          "\t\tconst k = best * 3, L = this.size[ best ], g = bestGroup;\n"
+          "\t\tconst hit = { index: best, model: g.sp.model, length: L, distance: bestT, position: new THREE.Vector3( this.pos[ k ], this.pos[ k + 1 ], this.pos[ k + 2 ] ) };\n"
+          "\t\t// Remove the struck individual from the immediate view and respawn it back at its home.\n"
+          "\t\tconst a = g.rng() * TAU, rr = 1.5 + g.rng() * Math.max( 1, g.zone.r * 0.7 );\n"
+          "\t\tconst x = g.home.x + Math.cos( a ) * rr, z = g.home.z + Math.sin( a ) * rr;\n"
+          "\t\tconst y = this.clampY( g.sp, x, z, g.home.y );\n"
+          "\t\tthis.pos.set( [ x, y, z ], k ); this.prev.set( [ x, y, z ], k );\n"
+          "\t\tthis.panic[ best ] = 1;\n"
+          "\t\treturn hit;\n\n"
+          "\t}\n")
+
+          # Game layer: ACT/E or a fresh click while submerged thrusts a spear ray. Weight is tied
+          # to the visible fish's actual rendered length and enters the existing cooler/log/economy.
+          replace('src/game/Game.js',
+          "\t\tthis._hookedSpecies = null;\n\t\tthis._pier = WORLD.pier;\n\t\tthis._tmp = new Vector3();\n",
+          "\t\tthis._hookedSpecies = null;\n\t\tthis._pier = WORLD.pier;\n\t\tthis._tmp = new Vector3();\n"
+          "\t\tthis._spearDir = new Vector3();\n\t\tthis._spearCooldown = 0;\n\t\tthis._spearModels = new Set();\n\t\tthis._spearByModel = new Map();\n\t\tfor ( const [ id, f ] of Object.entries( FISH ) ) if ( ! this._spearByModel.has( f.model ) ) { this._spearByModel.set( f.model, id ); this._spearModels.add( f.model ); }\n")
+
+          replace('src/game/Game.js',
+          "\t\tconst panelOpen = this.hud && ( this.hud.invOpen || this.hud.standOpen );\n\n\t\tif ( rod.equipped && ! panelOpen ) {\n",
+          "\t\tconst panelOpen = this.hud && ( this.hud.invOpen || this.hud.standOpen );\n"
+          "\t\tthis._spearCooldown = Math.max( 0, this._spearCooldown - dt );\n"
+          "\t\tconst diving = p.mode === 'swim' && ( p.diveDepth || 0 ) > 0.35;\n"
+          "\t\tif ( diving && ! panelOpen && this._spearCooldown <= 0 && ( lDown || inp.hit( 'KeyE' ) ) ) this.fireSpear();\n\n"
+          "\t\tif ( rod.equipped && ! panelOpen ) {\n")
+
+          replace('src/game/Game.js',
+          "\t\t// prompts when the player has nothing to say\n\t\tif ( ! p.prompt && can ) p.prompt = this.prompt();\n",
+          "\t\t// prompts when the player has nothing to say\n\t\tif ( ! p.prompt && diving ) p.prompt = { key: 'E', text: 'Spear · aim at a fish and ACT' };\n\t\telse if ( ! p.prompt && can ) p.prompt = this.prompt();\n")
+
+          replace('src/game/Game.js',
+          "\t// fuel burn at the helm (the engine stops when the tank is dry) and the fish finder\n\tupdateBoat( dt ) {\n",
+          "\t// Spear the fish actually under the reticle. Protected/undersize species still flow through\n"
+          "\t// GameState.addFish, so the same legal-release rules apply to rod and spear catches.\n"
+          "\tfireSpear() {\n\n"
+          "\t\tthis._spearCooldown = 0.7;\n"
+          "\t\tconst app = this.app, schools = app.reef && app.reef.fish;\n"
+          "\t\tif ( ! schools || ! schools.spearHit ) return;\n"
+          "\t\tapp.player.getViewDir( this._spearDir ).normalize();\n"
+          "\t\tconst hit = schools.spearHit( app.camera.position, this._spearDir, 7, this._spearModels );\n"
+          "\t\tif ( ! hit ) { this.toast( 'Spear missed', 650 ); return; }\n"
+          "\t\tconst species = this._spearByModel.get( hit.model );\n"
+          "\t\tconst f = species && FISH[ species ];\n"
+          "\t\tif ( ! f ) return;\n"
+          "\t\tconst cm = Math.max( 5, hit.length * 100 );\n"
+          "\t\tconst rawKg = f.lw[ 0 ] * Math.pow( cm, f.lw[ 1 ] ) / 1000;\n"
+          "\t\tconst kg = Math.max( f.kg[ 0 ], Math.min( f.kg[ 1 ], rawKg ) );\n"
+          "\t\tconst kept = this.state.addFish( species, kg, app.settings?.timeOfDay ?? 12 );\n"
+          "\t\tconst info = this.state.lastCatch;\n"
+          "\t\tif ( info?.protectedSpecies ) this.toast( `${ f.name } · protected · released`, 2400 );\n"
+          "\t\telse if ( info && ! info.legalSize ) this.toast( `${ f.name } · undersize · released`, 2400 );\n"
+          "\t\telse if ( kept ) this.toast( `Speared ${ f.name } · ${ info.kg.toFixed( 2 ) } kg · cooler ${ this.state.inventory.length } fish`, 2600 );\n"
+          "\t\telse this.toast( `${ f.name } · cooler full · released`, 2200 );\n"
+          "\t\tif ( this.hud && info ) this.hud.showCatch( info, 5500 );\n\n"
+          "\t}\n\n"
+          "\t// fuel burn at the helm (the engine stops when the tank is dry) and the fish finder\n\tupdateBoat( dt ) {\n")
+
+      - name: Verify gameplay and production build
+        run: |
+          npm ci
+          node test/game-logic.mjs
+          npm run build
+      - name: Headless WebGPU smoke test when adapter exists
+        continue-on-error: true
+        run: node test/engine-smoke.mjs
+      - name: Commit verified implementation
+        run: |
+          git config user.name "bermuda-simulator-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add src/world/Fish.js src/game/Game.js
+          git commit -m "Add underwater spearfishing against live reef fish"
+          git push
