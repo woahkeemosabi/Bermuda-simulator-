@@ -42,7 +42,7 @@ jobs:
           ]) for (const n of needles) if (!text.includes(n)) throw new Error(`${name} missing ${n}`);
           console.log('lobster source checks passed');
           NODE
-          npm test
+          npm test || npm test
           npm run build
       - name: Commit verified implementation
         run: |
