@@ -1,0 +1,57 @@
+name: Apply Lobster Gameplay
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/apply-lobsters.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Apply lobster gameplay
+        run: node scripts/apply-lobsters.mjs
+      - name: Verify lobster integration
+        run: |
+          git diff --check
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const game = fs.readFileSync('src/game/Game.js', 'utf8');
+          const table = fs.readFileSync('src/game/FishTable.js', 'utf8');
+          const state = fs.readFileSync('src/game/GameState.js', 'utf8');
+          const lob = fs.readFileSync('src/game/Lobsters.js', 'utf8');
+          for (const [name, text, needles] of [
+            ['Game.js', game, ['new Lobsters', 'grabLobster()', 'this.lobsters.target']],
+            ['FishTable.js', table, ['spinyLobster', 'Panulirus argus']],
+            ['GameState.js', state, ['cmOverride']],
+            ['Lobsters.js', lob, ['class Lobsters', 'target( origin', 'grab( origin']],
+          ]) for (const n of needles) if (!text.includes(n)) throw new Error(`${name} missing ${n}`);
+          console.log('lobster source checks passed');
+          NODE
+          npm test
+          npm run build
+      - name: Commit verified implementation
+        run: |
+          if git diff --quiet; then
+            echo 'No source changes to commit.'
+            exit 0
+          fi
+          git config user.name 'bermuda-simulator-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/game/Game.js src/game/GameState.js src/game/FishTable.js src/game/GameHUD.js
+          git commit -m 'Add Caribbean spiny lobster capture gameplay'
+          git push
