@@ -1,67 +1,29 @@
 import { FISH_MARKET, BAIT_TACKLE } from './HarbourLayout.js';
 // World dimensions are metres. Fit each GLB only after reading its actual bounds.
 export const WATERFRONT_ASSETS = [
-	{ id: 'dock', triangles: 4000, texture: 1024, placements: [ { x: -64, z: -14.5, width: 5.4, depth: 4.8, height: 1.5, deckY: 1.06 } ] },
-	{ id: 'house-a', triangles: 4000, texture: 1024, placements: [
-		{ x: -80, z: -69, width: 10, depth: 7, height: 6.1, yaw: 0.06 },
-		{ x: -92, z: -82, width: 8, depth: 6, height: 5.7, yaw: 0.1 },
-	] },
-	{ id: 'house-b', triangles: 4000, texture: 1024, placements: [
-		{ x: -61, z: -73.5, width: 8.4, depth: 6.4, height: 5.5, yaw: -0.05 },
-		{ x: -46, z: -87, width: 9, depth: 6.8, height: 5.9, yaw: -0.12 },
-	] },
-	{ id: 'boathouse', triangles: 3000, texture: 512, placements: [ { x: -52.5, z: -55.5, width: 5.5, depth: 4.5, height: 5.1 } ] },
-	{ id: 'palmetto', triangles: 1500, texture: 512, placements: [ { x: -87.5, z: -61.5, height: 5.4 }, { x: -53, z: -67, height: 6 } ] },
-	{ id: 'harbour-props', triangles: 2050, texture: 512, placements: [ { x: -73, z: -45, y: 1.45, width: 2.2 } ] },
-	{ id: 'channel-marker', triangles: 600, texture: 512, placements: [ { x: -91, z: 20, y: -0.3, height: 3.2 } ] },
+ {id:'dock',triangles:4000,texture:1024,placements:[{x:-64,z:-14.5,width:5.4,depth:4.8,height:1.5,deckY:1.06}]},
+ {id:'house-a',triangles:4000,texture:1024,placements:[{x:-80,z:-69,width:10,depth:7,height:6.1,yaw:.06},{x:-92,z:-82,width:8,depth:6,height:5.7,yaw:.1}]},
+ {id:'house-b',triangles:4000,texture:1024,placements:[{x:-61,z:-73.5,width:8.4,depth:6.4,height:5.5,yaw:-.05},{x:-46,z:-87,width:9,depth:6.8,height:5.9,yaw:-.12}]},
+ {id:'boathouse',triangles:3000,texture:512,placements:[{x:-52.5,z:-55.5,width:5.5,depth:4.5,height:5.1}]},
+ {id:'palmetto',triangles:1500,texture:512,placements:[{x:-87.5,z:-61.5,height:5.4},{x:-53,z:-67,height:6}]},
+ {id:'harbour-props',triangles:2050,texture:512,placements:[{x:-73,z:-45,y:1.45,width:2.2}]},
+ {id:'channel-marker',triangles:600,texture:512,placements:[{x:-91,z:20,y:-.3,height:3.2}]}
 ];
-
-// Startup is intentionally small; background uploads begin only after gameplay starts.
-for (const a of WATERFRONT_ASSETS) a.tier = ['dock','house-a','house-b'].includes(a.id) ? 1 : 2;
-const shop = s => ({...s, y:s.baseY});
+for(const a of WATERFRONT_ASSETS)a.tier=['dock','house-a','house-b'].includes(a.id)?1:2;
+const shop=s=>({...s,y:s.baseY});
 WATERFRONT_ASSETS.push(
- {id:'fish-market', tier:1, version:'mobile-v3', triangles:6000, texture:1024, placements:[shop(FISH_MARKET)]},
- {id:'bait-tackle', tier:1, version:'mobile-v3', triangles:6000, texture:1024, placements:[shop(BAIT_TACKLE)]},
- {id:'house-c', tier:2, version:'mobile-v3', triangles:6000, texture:1024, placements:[{x:-84,z:-54,width:6,depth:5,height:6}]},
- {id:'house-d', tier:2, version:'mobile-v3', triangles:6000, texture:1024, placements:[{x:-57,z:-61,width:7,depth:5.5,height:5.5}]},
- {id:'limestone-seawall', tier:2, version:'mobile-v3', triangles:4500, texture:1024, placements:[{x:-79,z:-45,y:-0.4,width:13,depth:2,height:2.5},{x:-51,z:-45,y:-0.4,width:12,depth:2,height:2.5}]},
- {id:'bougainvillea-cluster', tier:2, version:'mobile-v3', triangles:2500, texture:512, placements:[{x:-78,z:-49,height:4},{x:-55,z:-51,height:4},{x:-88,z:-61,height:5},{x:-74,z:-61,height:4},{x:-62,z:-64,height:4}]},
- {id:'rocky-shoreline', tier:2, version:'mobile-v3', triangles:4500, texture:512, placements:[{x:-91,z:-38,y:-0.6,width:12,height:3},{x:-39,z:-38,y:-0.6,width:11,height:3}]},
- {id:'hillside-cluster', tier:3, version:'mobile-v3', triangles:5000, texture:512, placements:[{x:-77,z:-107,width:40,depth:28,height:18}]},
- {id:'hilltop-landmark', tier:3, version:'mobile-v3', triangles:4000, texture:512, placements:[{x:-80,z:-145,y:17,width:24,depth:32,height:8}]},
- {id:'marina-kit', tier:3, version:'mobile-v3', triangles:3500, texture:512, placements:[{x:-112,z:4,y:-1.4,width:19,depth:16,height:17}]}
+ {id:'fish-market',tier:1,version:'mobile-v3',triangles:6000,texture:1024,placements:[shop(FISH_MARKET)]},
+ {id:'bait-tackle',tier:1,version:'mobile-v3',triangles:6000,texture:1024,placements:[shop(BAIT_TACKLE)]},
+ {id:'house-c',tier:2,version:'mobile-v3',triangles:6000,texture:1024,placements:[{x:-84,z:-54,width:6,depth:5,height:6}]},
+ {id:'house-d',tier:2,version:'mobile-v3',triangles:6000,texture:1024,placements:[{x:-57,z:-61,width:7,depth:5.5,height:5.5}]},
+ {id:'limestone-seawall',tier:2,version:'mobile-v3',triangles:4500,texture:1024,placements:[{x:-79,z:-45,y:-.4,width:13,depth:2,height:2.5},{x:-51,z:-45,y:-.4,width:12,depth:2,height:2.5}]},
+ {id:'bougainvillea-cluster',tier:2,version:'mobile-v3',triangles:2500,texture:512,placements:[{x:-78,z:-49,height:4},{x:-55,z:-51,height:4},{x:-88,z:-61,height:5},{x:-74,z:-61,height:4},{x:-62,z:-64,height:4}]},
+ {id:'rocky-shoreline',tier:2,version:'mobile-v3',triangles:4500,texture:512,placements:[{x:-91,z:-38,y:-.6,width:12,height:3},{x:-39,z:-38,y:-.6,width:11,height:3}]},
+ // Sink and overlap the backdrop into the native terrain instead of presenting the GLB as a
+ // freestanding shelf. Extra Z depth creates a broad transition zone hidden behind the houses.
+ {id:'hillside-cluster',tier:3,version:'mobile-v3',triangles:5000,texture:512,placements:[{x:-77,z:-105,y:-3.0,width:44,depth:42,height:18}]},
+ {id:'hilltop-landmark',tier:3,version:'mobile-v3',triangles:4000,texture:512,placements:[{x:-80,z:-139,y:11.5,width:22,depth:26,height:8}]},
+ {id:'marina-kit',tier:3,version:'mobile-v3',triangles:3500,texture:512,placements:[{x:-112,z:4,y:-1.4,width:19,depth:16,height:17}]}
 );
-
-// Broad upward-facing deck triangles locate the walkable surface below the ladder.
-export function dockSurfaceHeight( asset ) {
-	const bins = new Map(), step = asset.size.y / 64;
-	const a = [ 0, 0, 0 ], b = [ 0, 0, 0 ], c = [ 0, 0, 0 ];
-	for ( const part of asset.parts ) {
-		const p = part.geometry.attributes.position.array, ix = part.geometry.index.array;
-		for ( let i = 0; i < ix.length; i += 3 ) {
-			for ( let k = 0; k < 3; k ++ ) { a[ k ] = p[ ix[ i ] * 3 + k ]; b[ k ] = p[ ix[ i + 1 ] * 3 + k ]; c[ k ] = p[ ix[ i + 2 ] * 3 + k ]; }
-			const ux = b[ 0 ] - a[ 0 ], uy = b[ 1 ] - a[ 1 ], uz = b[ 2 ] - a[ 2 ];
-			const vx = c[ 0 ] - a[ 0 ], vy = c[ 1 ] - a[ 1 ], vz = c[ 2 ] - a[ 2 ];
-			const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
-			const area = Math.hypot( nx, ny, nz );
-			if ( area <= 0 || ny / area < 0.85 ) continue;
-			const y = ( a[ 1 ] + b[ 1 ] + c[ 1 ] ) / 3;
-			if ( y < asset.size.y * 0.15 ) continue;
-			const key = Math.round( y / step ), bin = bins.get( key ) || { area: 0, y: 0 };
-			bin.area += area; bin.y += area * y; bins.set( key, bin );
-		}
-	}
-	const surface = [ ...bins.values() ].sort( ( a, b ) => b.area - a.area )[ 0 ];
-	if ( ! surface ) throw new Error( 'Dock has no measurable horizontal deck.' );
-	return surface.y / surface.area;
-}
-
-export function fitPlacement( asset, placement, terrain ) {
-	const uniform = placement.width ? placement.width / asset.size.x : placement.height / asset.size.y;
-	const scaleXYZ = [ placement.width ? placement.width / asset.size.x : uniform,
-		placement.height ? placement.height / asset.size.y : uniform,
-		placement.depth ? placement.depth / asset.size.z : uniform ];
-	const y = placement.deckY !== undefined ? placement.deckY - dockSurfaceHeight( asset ) * scaleXYZ[ 1 ] :
-		( placement.y ?? terrain.heightAt( placement.x, placement.z ) );
-	return { ...placement, y, scaleXYZ };
-}
+export function dockSurfaceHeight(asset){const bins=new Map(),step=asset.size.y/64,a=[0,0,0],b=[0,0,0],c=[0,0,0];for(const part of asset.parts){const p=part.geometry.attributes.position.array,ix=part.geometry.index.array;for(let i=0;i<ix.length;i+=3){for(let k=0;k<3;k++){a[k]=p[ix[i]*3+k];b[k]=p[ix[i+1]*3+k];c[k]=p[ix[i+2]*3+k];}const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2],nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,area=Math.hypot(nx,ny,nz);if(area<=0||ny/area<.85)continue;const y=(a[1]+b[1]+c[1])/3;if(y<asset.size.y*.15)continue;const key=Math.round(y/step),bin=bins.get(key)||{area:0,y:0};bin.area+=area;bin.y+=area*y;bins.set(key,bin);}}const surface=[...bins.values()].sort((a,b)=>b.area-a.area)[0];if(!surface)throw new Error('Dock has no measurable horizontal deck.');return surface.y/surface.area;}
+export function fitPlacement(asset,placement,terrain){const uniform=placement.width?placement.width/asset.size.x:placement.height/asset.size.y;const scaleXYZ=[placement.width?placement.width/asset.size.x:uniform,placement.height?placement.height/asset.size.y:uniform,placement.depth?placement.depth/asset.size.z:uniform];const y=placement.deckY!==undefined?placement.deckY-dockSurfaceHeight(asset)*scaleXYZ[1]:(placement.y??terrain.heightAt(placement.x,placement.z));return{...placement,y,scaleXYZ};}
