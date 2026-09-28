@@ -1,3 +1,3 @@
-# Bermuda Simulator Build Trigger
+Bermuda simulator production deploy marker.
 
-GitHub Actions was enabled on the fork on 2026-09-25. This commit intentionally triggers the first clean test/build/deploy run for the `bermuda-v0.1` branch.
+World polish v1 strict verification passed on cleaned branch head 173a32f59e9fc3a38631733b4aa1eb859bacab4c.
