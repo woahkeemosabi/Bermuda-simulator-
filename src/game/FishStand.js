@@ -36,8 +36,8 @@ export class FishStand {
 		this.ready = Promise.resolve();
 
 		// Joe works behind the market service opening rather than occupying the dock lane.
-		// Joe stays behind the counter but is brought forward into the service opening.
-		const local = new Vector3( 0.45, 0, 0.84 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );
+		// Joe stays behind the counter on the shoreward side of the service opening.
+		const local = new Vector3( 0.45, 0, -0.62 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );
 		this.vendor = new Vendor( {
 			name: 'Joe · Fish buyer', kind: 'buyer',
 			position: new Vector3( STAND.x + local.x, y + STALL_FLOOR, STAND.z + local.z ),

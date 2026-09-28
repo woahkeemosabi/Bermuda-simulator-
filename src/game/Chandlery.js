@@ -26,8 +26,8 @@ export class Chandlery {
         this.ready = Promise.resolve();
 
 		// Martha works behind the tackle-shop service opening, keeping the dock lane clear.
-		// Martha stays inside but stands directly behind the service opening.
-		const local = new Vector3( 0.4, 0, 0.84 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );
+		// Martha stays inside behind the counter, just shoreward of the service opening.
+		const local = new Vector3( 0.4, 0, -0.62 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );
 		const vx = CHANDLERY.x + local.x, vz = CHANDLERY.z + local.z;
 		this.vendor = new Vendor( {
 			name: 'Martha · Bait & Tackle',
