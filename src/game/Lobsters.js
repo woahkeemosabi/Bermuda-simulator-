@@ -10,10 +10,10 @@ import { createPropMaterial } from './GameMaterials.js';
 // Frame: +Z is the head / antennae, +Y is up. Geometry is built at roughly adult real scale.
 
 const TAU = Math.PI * 2;
-const BODY = 0x9a3e24;
-const SHELL = 0xb85c32;
-const JOINT = 0x6f2e1f;
-const CREAM = 0xd9b98d;
+const BODY = 0x6b3826;
+const SHELL = 0xa85a32;
+const JOINT = 0x3b241d;
+const CREAM = 0xe1c68d;
 const EYE = 0x15100d;
 
 const _dir = new Vector3();
@@ -24,12 +24,12 @@ function lobsterGeometry() {
 	const add = ( g, color, rough = 0.58, matrix = null ) => parts.push( prepare( g, { color, rough, matrix } ) );
 
 	// Carapace and segmented abdomen. The abdomen tapers back toward the tail.
-	add( sphere( 0.22, 18, 11 ), BODY, 0.5, mat4( 0, 0.17, 0.08, 0, 0, 0, 1.0, 0.58, 1.45 ) );
-	for ( let i = 0; i < 5; i ++ ) {
+	add( sphere( 0.23, 20, 12 ), BODY, 0.5, mat4( 0, 0.15, 0.08, 0, 0, 0, 1.05, 0.48, 1.22 ) );
+	for ( let i = 0; i < 4; i ++ ) {
 
-		const z = - 0.19 - i * 0.105;
-		const r = 0.18 - i * 0.014;
-		add( sphere( r, 14, 8 ), i % 2 ? BODY : SHELL, 0.56, mat4( 0, 0.14 - i * 0.006, z, 0, 0, 0, 1.0, 0.52, 0.62 ) );
+		const z = - 0.17 - i * 0.12;
+		const r = 0.17 - i * 0.018;
+		add( sphere( r, 16, 8 ), i % 2 ? BODY : SHELL, 0.56, mat4( 0, 0.12 - i * 0.004, z, 0, 0, 0, 1.05, 0.42, 0.72 ) );
 
 	}
 
@@ -147,7 +147,7 @@ export class Lobsters {
 		for ( let i = 0; i < Math.min( count, candidates.length ); i ++ ) {
 
 			const [ x, z ] = candidates[ i ];
-			const size = 0.82 + this.rng() * 0.34;
+			const size = 0.58 + this.rng() * 0.18;
 			const mesh = new Mesh( this.geometry, this.material );
 			mesh.name = `spiny-lobster-${ i }`;
 			mesh.scale.setScalar( size );
@@ -155,8 +155,8 @@ export class Lobsters {
 			const yaw = this.rng() * TAU;
 			this.items.push( {
 				id: i, mesh, x, z, homeX: x, homeZ: z, yaw, targetYaw: yaw,
-				size, bodyCm: Math.round( ( 44 + this.rng() * 18 ) * size ),
-				kg: Math.round( ( 0.75 + this.rng() * 2.0 ) * size * 100 ) / 100,
+				size, bodyCm: Math.round( 30 + this.rng() * 20 ),
+				kg: Math.round( ( 0.7 + this.rng() * 1.9 ) * ( 0.78 + size * 0.3 ) * 100 ) / 100,
 				active: true, respawn: 0, flee: 0, think: this.rng() * 3,
 			} );
 
