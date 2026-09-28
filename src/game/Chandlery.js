@@ -26,7 +26,8 @@ export class Chandlery {
         this.ready = Promise.resolve();
 
 		// Martha works behind the tackle-shop service opening, keeping the dock lane clear.
-		const local = new Vector3( 0.4, 0, 0.5 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );
+		// Martha stays inside but stands directly behind the service opening.
+		const local = new Vector3( 0.4, 0, 0.84 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );
 		const vx = CHANDLERY.x + local.x, vz = CHANDLERY.z + local.z;
 		this.vendor = new Vendor( {
 			name: 'Martha · Bait & Tackle',
@@ -37,7 +38,7 @@ export class Chandlery {
 			greeting: 'Bait, line, reels, upgrades and diesel. What do you need?',
 			material: this.material,
 			// realistic character (Rocketbox, MIT): the stand-in shows until it has loaded
-			character: { url: ( ( import.meta.env && import.meta.env.BASE_URL ) || '/' ) + 'models/characters/marta.glb', idle: 'idle_neutral_01', talk: 'gestic_talk_neutral_01', greet: 'wave_01' },
+			character: { url: ( ( import.meta.env && import.meta.env.BASE_URL ) || '/' ) + 'models/characters/marta.glb', idle: 'idle_neutral_01', talk: 'gestic_talk_neutral_01', greet: 'wave_01', yaw: Math.PI },
 			look: { shirt: 0x8a3b32, trousers: 0x2f3b4a, apron: 0x3d5a4a, hat: 0x2c3a44, hair: 0x3a2c22, skin: 0x7a5236 },
 		} );
 		scene.add( this.vendor.group );

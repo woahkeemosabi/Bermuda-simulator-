@@ -36,7 +36,8 @@ export class FishStand {
 		this.ready = Promise.resolve();
 
 		// Joe works behind the market service opening rather than occupying the dock lane.
-		const local = new Vector3( 0.45, 0, 0.52 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );
+		// Joe stays behind the counter but is brought forward into the service opening.
+		const local = new Vector3( 0.45, 0, 0.84 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );
 		this.vendor = new Vendor( {
 			name: 'Joe · Fish buyer', kind: 'buyer',
 			position: new Vector3( STAND.x + local.x, y + STALL_FLOOR, STAND.z + local.z ),
@@ -44,7 +45,7 @@ export class FishStand {
 			greeting: 'Let\'s see what you caught. Fair prices, cash.',
 			idle: 'Nothing to sell? The grunts are biting off the dock.',
 			material: this.material,
-			character: { url: ( ( import.meta.env && import.meta.env.BASE_URL ) || '/' ) + 'models/characters/joe.glb', idle: 'idle_neutral_01', talk: 'gestic_talk_relaxed_01', greet: 'wave_01' },
+			character: { url: ( ( import.meta.env && import.meta.env.BASE_URL ) || '/' ) + 'models/characters/joe.glb', idle: 'idle_neutral_01', talk: 'gestic_talk_relaxed_01', greet: 'wave_01', yaw: Math.PI },
 		} );
 		scene.add( this.vendor.group );
 

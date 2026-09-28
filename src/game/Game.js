@@ -364,7 +364,19 @@ export class Game {
 		const hit = this.lobsters.grab( app.camera.position, this._spearDir, 1.8 );
 		if ( ! hit ) return false;
 		if ( this.spear ) this.spear.grab( hit.position );
-		const kept = this.state.addFish( 'spinyLobster', hit.kg, app.settings?.timeOfDay ?? 12, hit.cm );
+		let kept;
+		try {
+
+			kept = this.state.addFish( 'spinyLobster', hit.kg, app.settings?.timeOfDay ?? 12, hit.cm );
+
+		} catch ( error ) {
+
+			console.error( 'lobster capture recovered', error );
+			this.lobsters.restore( hit.id );
+			this.toast( 'Lobster capture recovered · try again', 1800 );
+			return false;
+
+		}
 		if ( ! kept ) {
 
 			this.lobsters.restore( hit.id );
@@ -383,10 +395,19 @@ export class Game {
 	fireSpear() {
 
 		this._spearCooldown = 0.7;
-		if ( this.spear ) this.spear.fire();
-		const app = this.app, schools = app.reef && app.reef.fish;
-		if ( ! schools || ! schools.spearHit ) return;
+		const app = this.app;
 		app.player.getViewDir( this._spearDir ).normalize();
+		const lobsterAim = this.lobsters && this.lobsters.target( app.camera.position, this._spearDir, 4.0 );
+		if ( this.spear ) this.spear.fire();
+		if ( lobsterAim ) {
+
+			if ( this.spear ) this.spear.impact( lobsterAim.position, 0.45 );
+			this.toast( 'Caribbean spiny lobster · move close and use ACT to grab', 1900 );
+			return;
+
+		}
+		const schools = app.reef && app.reef.fish;
+		if ( ! schools || ! schools.spearHit ) return;
 		const hit = schools.spearHit( app.camera.position, this._spearDir, 7, this._spearModels );
 		if ( ! hit ) { this.toast( 'Spear missed', 650 ); return; }
 		if ( this.spear ) this.spear.impact( hit.position, 1 );

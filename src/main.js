@@ -33,7 +33,7 @@ if ( mobileFastStart ) {
 
 		await Promise.race( [
 			GPU.pipelinesReady(),
-			new Promise( ( resolve ) => setTimeout( resolve, 6500 ) ),
+			new Promise( ( resolve ) => setTimeout( resolve, 25000 ) ),
 		] );
 		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;
 
@@ -286,6 +286,10 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
     if ( ! waterfront?.ready ) {
         const details = waterfront?.errors.map( e => e.id + ': ' + e.message ).join( '; ' );
         throw new Error( 'Waterfront failed to load: ' + ( details || 'scene unavailable' ) );
+    }
+    if ( mobileDevice ) {
+        ui.setLoading( 0.992, 'Preparing Bermuda scenery', 0.998 );
+        await startDeferredWaterfront( app );
     }
 	app.ui = new AppUI( app, ui );
 	applyBermudaBranding( mobileDevice );
