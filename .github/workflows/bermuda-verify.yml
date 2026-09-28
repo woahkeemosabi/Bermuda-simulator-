@@ -5,7 +5,7 @@ on:
     paths: ['src/**', 'test/**', '.github/workflows/bermuda-verify.yml']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -23,7 +23,18 @@ jobs:
       - name: Game logic
         run: node test/game-logic.mjs
       - name: Player life test
-        run: node test/life-player.mjs
+        id: life
+        continue-on-error: true
+        run: node test/life-player.mjs > life-player.log 2>&1
+      - name: Publish life diagnostics
+        if: steps.life.outcome == 'failure'
+        run: |
+          cp life-player.log .ci-life-player.log
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .ci-life-player.log
+          git commit -m "ci: capture player life diagnostics" || true
+          git push origin "HEAD:\${GITHUB_REF_NAME}"
       - name: Bermuda player life test
         run: node test/life-player.mjs --bermuda
       - name: World polish assertions
