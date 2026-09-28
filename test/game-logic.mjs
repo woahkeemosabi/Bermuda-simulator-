@@ -42,7 +42,7 @@ ok( biteDelay( habitatAt( spots.sand ), 12, rng ) === Infinity, 'no bite delay o
 {
 
 	let deepOnly = 0;
-	for ( let i = 0; i < 500; i ++ ) if ( [ 'tuna', 'mahi', 'redSnapper', 'grouper', 'barracuda' ].includes( pickSpecies( habitatAt( spots.deep ), 12, rng ) ) ) deepOnly ++;
+	for ( let i = 0; i < 500; i ++ ) if ( [ 'tuna', 'mahi', 'redSnapper', 'grouper', 'barracuda', 'wahoo', 'yellowfin', 'blackGrouper', 'redHind' ].includes( pickSpecies( habitatAt( spots.deep ), 12, rng ) ) ) deepOnly ++;
 	ok( deepOnly === 500, 'deep water gives offshore species only' );
 	let reefFish = 0;
 	for ( let i = 0; i < 500; i ++ ) if ( FISH[ pickSpecies( habitatAt( spots.reef ), 12, rng ) ].habitat.reef ) reefFish ++;
