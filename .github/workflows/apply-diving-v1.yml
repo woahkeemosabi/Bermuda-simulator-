@@ -1,0 +1,45 @@
+name: Apply Diving V1
+on:
+  push:
+    paths: ['.github/workflows/apply-diving-v1.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Apply diving gameplay
+        shell: python
+        run: |
+          from pathlib import Path
+          def rep(path, old, new):
+              p=Path(path); s=p.read_text()
+              if old not in s: raise SystemExit(f'anchor missing {path}: {old[:70]!r}')
+              p.write_text(s.replace(old,new,1))
+          rep('src/player/Player.js', "\t\tthis.floating = true; // swimming at the surface (riding the waves) vs. free under water\n", "\t\tthis.floating = true; // swimming at the surface (riding the waves) vs. free under water\n\t\tthis.oxygen = 1; // breath reserve: 1 full, 0 forces an emergency ascent\n\t\tthis.diveDepth = 0;\n")
+          rep('src/player/Player.js', "\t\tconst under = this.camera.position.y < surfaceY - 0.05;\n", "\t\t// Freediving: breath drains only while the player's head is properly submerged.\n\t\t// Sprinting costs more oxygen; returning to the surface recovers it quickly. At zero\n\t\t// reserve the swimmer is forced upward rather than silently remaining underwater.\n\t\tthis.diveDepth = Math.max( 0, surfaceY - ( p.y + SWIM_EYE ) );\n\t\tconst submerged = this.diveDepth > 0.18;\n\t\tif ( submerged ) this.oxygen = Math.max( 0, this.oxygen - dt * ( sprint ? 0.024 : 0.017 ) );\n\t\telse this.oxygen = Math.min( 1, this.oxygen + dt * 0.32 );\n\t\tif ( this.oxygen <= 0 ) {\n\t\t\tthis.floating = false;\n\t\t\tthis.velocity.y = Math.max( this.velocity.y, 2.25 );\n\t\t}\n\n\t\tconst under = this.camera.position.y < surfaceY - 0.05;\n")
+          rep('src/game/GameHUD.js', "<span class=\"gm-gauge gm-sonar\"><span>Sonar</span><b class=\"gm-sonar-d\">0 m</b><span class=\"gm-sonar-dots\"></span></span>` );", "<span class=\"gm-gauge gm-sonar\"><span>Sonar</span><b class=\"gm-sonar-d\">0 m</b><span class=\"gm-sonar-dots\"></span></span><span class=\"gm-gauge gm-dive\"><span>O₂</span><span class=\"gm-cooler-bar gm-dive-bar\"><span></span></span><b class=\"gm-dive-o2\">100%</b><b class=\"gm-dive-depth\">0.0 m</b></span>` );")
+          rep('src/game/GameHUD.js', "\t\tthis.sonarDots = this.purse.querySelector( '.gm-sonar-dots' );\n", "\t\tthis.sonarDots = this.purse.querySelector( '.gm-sonar-dots' );\n\t\tthis.diveEl = this.purse.querySelector( '.gm-dive' );\n\t\tthis.diveBar = this.purse.querySelector( '.gm-dive-bar > span' );\n\t\tthis.diveO2 = this.purse.querySelector( '.gm-dive-o2' );\n\t\tthis.diveDepth = this.purse.querySelector( '.gm-dive-depth' );\n")
+          rep('src/game/GameHUD.js', "\tupdate( { fight, casting, power, bite, aiming, fuel = null, sonar = null } ) {\n", "\tupdate( { fight, casting, power, bite, aiming, fuel = null, sonar = null, dive = null } ) {\n")
+          rep('src/game/GameHUD.js', "\t\tthis.sonarEl.classList.toggle( 'is-on', !! sonar );\n", "\t\tthis.diveEl.classList.toggle( 'is-on', !! dive );\n\t\tif ( dive ) {\n\t\t\tthis.diveBar.style.width = `${ Math.max( 0, dive.oxygen ) * 100 }%`;\n\t\t\tthis.diveO2.textContent = `${ Math.round( dive.oxygen * 100 ) }%`;\n\t\t\tthis.diveDepth.textContent = `${ dive.depth.toFixed( 1 ) } m`;\n\t\t}\n\n\t\tthis.sonarEl.classList.toggle( 'is-on', !! sonar );\n")
+          rep('src/game/Game.js', "\t\t\tsonar: aboard && this.state.stats.finder ? this._sonar : null,\n", "\t\t\tsonar: aboard && this.state.stats.finder ? this._sonar : null,\n\t\t\tdive: p.mode === 'swim' ? { oxygen: p.oxygen, depth: p.diveDepth } : null,\n")
+      - name: Verify logic and build
+        run: |
+          npm ci
+          node test/game-logic.mjs
+          npm run build
+      - name: Optional headless WebGPU smoke
+        continue-on-error: true
+        run: node test/engine-smoke.mjs
+      - name: Commit verified diving V1
+        run: |
+          git config user.name 'bermuda-simulator-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/player/Player.js src/game/Game.js src/game/GameHUD.js
+          git commit -m 'Add freediving oxygen and depth system'
+          git push
