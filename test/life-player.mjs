@@ -239,10 +239,12 @@ check(player.mode === 'deck', 'ACT leaves helm onto deck');
 player.exitBoat();
 check( player.mode === 'swim' || player.mode === 'walk', `boat: left the boat (mode ${ player.mode })` );
 check( ! boat.driven && finite( player.position ), 'boat: no longer driven' );
+stopPhase( 'leave' );
 run( 5 );
 check( finite( boat.position ) && boat.speed < straight, `boat: drifts (speed ${ boat.speed.toFixed( 2 ) } m/s)` );
+stopPhase( 'drift' );
 
-stopPhase( 'camera' );
+stopPhase( 'coast' );
 
 // ---- fly camera
 const fly = new FlyCamera( camera, { addEventListener() {} }, input );
@@ -254,6 +256,7 @@ check( camera.position.z < - 3 && Math.abs( camera.position.x ) < 1e-3, `fly: mo
 input.look.x = 100;
 fly.update( dt );
 check( Math.abs( fly.yaw + 0.22 ) < 1e-6, `fly: mouse look (yaw ${ fly.yaw.toFixed( 3 ) })` );
+stopPhase( 'fly' );
 
 console.log( fails ? `${ fails } FAILED` : 'all passed' );
 process.exit( fails ? 1 : 0 );

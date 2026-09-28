@@ -37,9 +37,18 @@ jobs:
       - name: Player life drive
         continue-on-error: true
         run: node test/life-player.mjs --bermuda --phase=drive
-      - name: Player life camera
+      - name: Player life coast
         continue-on-error: true
-        run: node test/life-player.mjs --bermuda --phase=camera
+        run: node test/life-player.mjs --bermuda --phase=coast
+      - name: Player life leave
+        continue-on-error: true
+        run: node test/life-player.mjs --bermuda --phase=leave
+      - name: Player life drift
+        continue-on-error: true
+        run: node test/life-player.mjs --bermuda --phase=drift
+      - name: Player life fly
+        continue-on-error: true
+        run: node test/life-player.mjs --bermuda --phase=fly
       - name: Bermuda player life test
         run: node test/life-player.mjs --bermuda
       - name: World polish assertions
