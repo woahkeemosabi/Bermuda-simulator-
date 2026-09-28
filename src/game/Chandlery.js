@@ -25,7 +25,8 @@ export class Chandlery {
         addDockShopFixtures(this.group, CHANDLERY, false);
         this.ready = Promise.resolve();
 
-		const local = new Vector3( 0.6, 0, 1.4 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );
+		// Martha works behind the tackle-shop service opening, keeping the dock lane clear.
+		const local = new Vector3( 0.4, 0, 0.5 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );
 		const vx = CHANDLERY.x + local.x, vz = CHANDLERY.z + local.z;
 		this.vendor = new Vendor( {
 			name: 'Martha · Bait & Tackle',

@@ -34,7 +34,13 @@ export function installBermudaBlockout(app){
  const house=({x,z,w,d,h,mat,ry=0,id})=>{visualKey=id;const ground=terrain.heightAt(x,z);box(mat,x,ground+h*.5,z,w,h,d,ry,true,'bermuda-house');steppedRoof(x,ground+h+.14,z,w,d,ry);};
  house({x:-80,z:-69,w:10,d:7,h:4.6,mat:M.pink,ry:.06,id:'house-a'});house({x:-61,z:-73.5,w:8.4,d:6.4,h:4,mat:M.yellow,ry:-.05,id:'house-b'});
  if(!mobileLite){house({x:-92,z:-82,w:8,d:6,h:4.2,mat:M.blue,ry:.1,id:'house-a'});house({x:-46,z:-87,w:9,d:6.8,h:4.4,mat:M.mint,ry:-.12,id:'house-b'});}
- visualKey='quay';box(M.limestone,-74,terrain.heightAt(-74,-59)+.6,-59,26,1.15,.55,.02,true,'bermuda-wall');if(!mobileLite)box(M.limestone,-48.5,terrain.heightAt(-48.5,-66)+.55,-66,19,1.05,.5,-.08,true,'bermuda-wall');
+ visualKey='quay';
+ // Keep the dock-to-houses pedestrian corridor open. The previous two long retaining-wall
+ // boxes were solid and acted as invisible route blockers on mobile.
+ // Collision proxies for the additional Bermuda houses stop the player walking through scenery.
+ for(const [x,z,w,d,h,tag] of [[-84,-54,6,5,6,'bermuda-house-c'],[-57,-61,7,5.5,5.5,'bermuda-house-d']]){
+  const gy=terrain.heightAt(x,z);colliders.addBox(new Vector3(x,gy+h*.5,z),new Vector3(w*.5,h*.5,d*.5),0,{tag});
+ }
  const moorings=mobileLite?[[-51,-2,M.roof],[-75,1,M.red]]:[[-51,-2,M.roof],[-75,1,M.red],[-88,12,M.roof],[-39,9,M.red]];for(const [x,z,mat] of moorings){sphere(mat,x,.38,z,.42);cyl(M.dark,x,.08,z,.035,.42);}
  if(!mobileLite){visualKey='channel-marker';cyl(M.limestone,-91,1.35,20,.22,2.7);cyl(M.red,-91,2.85,20,.38,.45);visualKey='palmetto';const palm=(x,z,height=5.8)=>{const y=terrain.heightAt(x,z);cyl(M.trunk,x,y+height*.5,z,.16,height);for(let i=0;i<4;i++){const a=i*Math.PI*.5;addScaled(GEO.box,M.green,x+Math.sin(a)*1.15,y+height+.12,z+Math.cos(a)*1.15,.35,.08,2.6,a);}};palm(-87.5,-61.5,5.4);palm(-53,-67,6);}
  scene.add(group);
