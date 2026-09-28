@@ -20,7 +20,15 @@ export function installStableMobileControls( app ) {
 		#bm-touch-stable button:active,#bm-touch-stable button.is-on{background:rgba(74,225,211,.78);color:#041619}
 		#bm-touch-stable button.is-muted{opacity:.42}
 		body.bm-mobile .gm-guide,body.bm-mobile .gm-coach{display:none!important}
-		body.bm-mobile .tw-rail,body.bm-mobile .tw-panel,body.bm-mobile .tw-help,body.bm-mobile .tw-stats,body.bm-mobile .gm-purse{display:none!important}
+		body.bm-mobile .tw-rail,body.bm-mobile .tw-panel,body.bm-mobile .tw-help,body.bm-mobile .tw-stats{display:none!important}
+		body.bm-mobile .gm-purse{display:flex!important;left:14px;right:14px;top:54px;width:auto;max-width:calc(100vw - 28px);gap:7px;padding:6px 9px;border-radius:12px;flex-wrap:wrap;font-size:11px;pointer-events:none}
+		body.bm-mobile .gm-money{display:none!important}
+		body.bm-mobile .gm-cooler{gap:5px}
+		body.bm-mobile .gm-cooler-label{display:none}
+		body.bm-mobile .gm-cooler-bar{width:38px;height:4px}
+		body.bm-mobile .gm-gauge{gap:5px}
+		body.bm-mobile .gm-dive-depth{font-size:10px;opacity:.82}
+		body.bm-mobile .tw-depth{display:none!important}
 		@media (max-width:700px){body.bm-mobile .gm-map{width:102px;height:102px;right:15px;bottom:230px;opacity:.84}}
 	`;
 	document.head.appendChild( style );
@@ -56,7 +64,8 @@ export function installStableMobileControls( app ) {
 
 	const fishDescriptor = () => {
 
-		const game = app.game, rod = game && game.rod;
+		const game = app.game, rod = game && game.rod, p = app.player;
+		if ( p && p.mode === 'swim' && ( p.diveDepth || 0 ) > 0.35 ) return { kind: 'lmb', label: 'SPEAR' };
 		if ( ! game || ! rod || ! rod.equipped ) return { kind: 'none', label: 'FISH' };
 		if ( rod.state === 'floating' ) {
 

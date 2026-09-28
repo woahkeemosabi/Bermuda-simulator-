@@ -86,7 +86,7 @@ function lobsterGeometry() {
 
 export class Lobsters {
 
-	constructor( { scene, terrain, reef, count = 18, seed = 20260928 } ) {
+	constructor( { scene, terrain, reef, count = 24, seed = 20260928 } ) {
 
 		this.terrain = terrain;
 		this.reef = reef;
@@ -119,11 +119,13 @@ export class Lobsters {
 	place( count ) {
 
 		const candidates = [];
-		// A few discoverable animals around the pier head, then the larger reef population.
-		const P = WORLD.pier;
-		for ( const [ dx, dz ] of [ [ - 5, - 2 ], [ 5, - 1 ], [ - 4, - 8 ], [ 5, - 9 ], [ 0, - 12 ] ] ) {
+		// Seed several discoverable animals around the active Bermuda landing/boat dock first,
+		// then fill the larger reef population. WORLD.pier is the legacy Tidewater pier and is not
+		// where the current mobile player starts.
+		const D = WORLD.boatDock?.position || WORLD.spawn.position;
+		for ( const [ dx, dz ] of [ [ - 8, 4 ], [ 7, 3 ], [ - 6, 10 ], [ 6, 11 ], [ - 10, 16 ], [ 9, 17 ], [ 0, 22 ] ] ) {
 
-			const x = P.x + dx, z = P.zEnd + dz;
+			const x = D.x + dx, z = D.z + dz;
 			if ( this.valid( x, z ) ) candidates.push( [ x, z ] );
 
 		}
