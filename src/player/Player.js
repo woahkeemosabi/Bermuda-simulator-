@@ -768,7 +768,7 @@ export class Player {
 		const look = inp.consumeLook();
 		const wheel = inp.consumeWheel();
 
-		if ( inp.hit( 'KeyV' ) ) this.camMode = this.camMode === 'first' ? 'first' : 'third';
+		if ( inp.hit( 'KeyV' ) ) this.camMode = this.camMode === 'first' ? 'third' : 'first';
 		if ( inp.hit( 'KeyK' ) && b.toggleAnchor ) {
 
 			b.toggleAnchor();
