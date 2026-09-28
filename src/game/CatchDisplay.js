@@ -35,6 +35,8 @@ export class CatchDisplay {
 		for ( const id of FISH_IDS ) {
 
 			const model = FISH[ id ].model;
+			// CatchDisplay is fish-only. Lobsters and future non-fish catches use their own world/UI visuals.
+			if ( ! SPECIES[ model ] ) continue;
 			fp.add( 'whole', model, _f, 'gill', 0.3, { anchor: FishProps.gillAnchor( model ), cloudy: 0.1, wet: 1 } );
 			this.slot[ id ] = i ++;
 

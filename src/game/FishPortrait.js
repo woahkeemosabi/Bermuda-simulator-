@@ -1,6 +1,7 @@
 import { Scene, PerspectiveCamera, Matrix4, Quaternion, Vector3, Vector4 } from '../engine/index.js';
 import { GPU, Texture, MeshRenderer, FullscreenPass, createViewUniforms, setFrameCamera, UniformBlock } from '../engine/webgpu.js';
 import { FishProps } from '../world/fish/FishProps.js';
+import { SPECIES } from '../world/fish/FishSpecies.js';
 import { ACES_WGSL } from '../post/PostFX.js';
 import { FISH, FISH_IDS, fishLengthCm } from './FishTable.js';
 
@@ -43,10 +44,15 @@ export class FishPortrait {
 		const fp = this.props = new FishProps();
 		this.slot = {};
 		_f.makeTranslation( PARK.x, PARK.y, PARK.z );
-		FISH_IDS.forEach( ( id, i ) => {
+		let portraitSlot = 0;
+		FISH_IDS.forEach( ( id ) => {
 
-			fp.add( 'whole', FISH[ id ].model, _f, 'side', 0.3, { cloudy: 0.08, wet: 1, seed: 0.37 } );
-			this.slot[ id ] = i;
+			const model = FISH[ id ].model;
+			// FishPortrait only knows FishSpecies anatomy. Non-fish catches (for example lobster)
+			// have dedicated underwater presentation and must not enter the fish geometry pipeline.
+			if ( ! SPECIES[ model ] ) return;
+			fp.add( 'whole', model, _f, 'side', 0.3, { cloudy: 0.08, wet: 1, seed: 0.37 } );
+			this.slot[ id ] = portraitSlot ++;
 
 		} );
 		this.mesh = fp.build();
@@ -241,7 +247,9 @@ fn fragment( in: FSIn ) -> vec4f {
 
 	show( species, kg ) {
 
+		if ( this.slot[ species ] === undefined ) { this.live = null; return false; }
 		this.live = { species, kg, t: 0 };
+		return true;
 
 	}
 
@@ -273,6 +281,7 @@ fn fragment( in: FSIn ) -> vec4f {
 
 	thumbnail( species ) {
 
+		if ( this.slot[ species ] === undefined ) return Promise.resolve( null );
 		if ( this.thumbs.has( species ) ) return Promise.resolve( this.thumbs.get( species ).url );
 		if ( this.pending.has( species ) ) return this.pending.get( species );
 		const p = new Promise( ( resolve ) => this.queue.push( { species, resolve } ) );
