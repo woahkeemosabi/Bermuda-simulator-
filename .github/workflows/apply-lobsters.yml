@@ -27,6 +27,7 @@ jobs:
         run: |
           node scripts/apply-lobsters.mjs
           node scripts/apply-spear-visual.mjs
+          node scripts/apply-underwater-polish.mjs
       - name: Verify underwater gameplay
         run: |
           git diff --check
@@ -37,28 +38,21 @@ jobs:
           const state = fs.readFileSync('src/game/GameState.js', 'utf8');
           const lob = fs.readFileSync('src/game/Lobsters.js', 'utf8');
           const spear = fs.readFileSync('src/game/Spear.js', 'utf8');
+          const fish = fs.readFileSync('src/world/Fish.js', 'utf8');
+          const hud = fs.readFileSync('src/game/GameHUD.js', 'utf8');
           for (const [name, text, needles] of [
-            ['Game.js', game, ['new Lobsters', 'grabLobster()', 'this.lobsters.target', 'new Spear', 'this.spear.update', 'this.spear.fire']],
+            ['Game.js', game, ['UNDERWATER_POLISH_V1', 'this.spear.grab', 'this.spear.impact', "showDiveCatch( info, 'SPEARED' )", 'aiming: rod.equipped || diving']],
             ['FishTable.js', table, ['spinyLobster', 'Panulirus argus']],
             ['GameState.js', state, ['cmOverride']],
-            ['Lobsters.js', lob, ['class Lobsters', 'target( origin', 'grab( origin']],
-            ['Spear.js', spear, ['class Spear', "FirstPersonSpeargun", 'fire()', 'update( dt']],
+            ['Lobsters.js', lob, ['class Lobsters', 'target( origin', 'grab( origin', 'position: new Vector3']],
+            ['Spear.js', spear, ['UNDERWATER_POLISH_V1', 'updateBubbles', 'grab( position', 'impact( position', 'UnderwaterHuntFX']],
+            ['Fish.js', fish, ['spearRespawn', 'visible recoil', 'non-targetable']],
+            ['GameHUD.js', hud, ['gm-dive-catch', 'showDiveCatch( info', 'NEW RECORD · STORED']],
           ]) for (const n of needles) if (!text.includes(n)) throw new Error(`${name} missing ${n}`);
-          console.log('underwater gameplay source checks passed');
+          console.log('underwater polish source checks passed');
           NODE
 
-          # game-logic currently has one deterministic, pre-existing tuna/30-lb-line balance assertion.
-          # Keep it visible, but only tolerate that exact single failure; any new failure still stops the job.
-          set +e
-          GAME_LOG="$(node test/game-logic.mjs 2>&1)"
-          GAME_STATUS=$?
-          set -e
-          printf '%s\n' "$GAME_LOG"
-          if [ "$GAME_STATUS" -ne 0 ]; then
-            printf '%s\n' "$GAME_LOG" | grep -Fq 'FAIL a 13 kg tuna needs the 30 lb line'
-            printf '%s\n' "$GAME_LOG" | grep -Fq '1 FAILED'
-            echo '::warning::Known tuna balance assertion is still failing; underwater gameplay introduced no additional game-logic failures.'
-          fi
+          node test/game-logic.mjs
 
           # Hosted Linux runners may have no usable Vulkan/WebGPU adapter. Treat only that exact
           # infrastructure condition as a skip; all actual smoke-test failures still fail CI.
@@ -81,6 +75,6 @@ jobs:
           fi
           git config user.name 'bermuda-simulator-bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add src/game/Game.js src/game/GameState.js src/game/FishTable.js src/game/GameHUD.js
-          git commit -m 'Add physical underwater speargun gameplay visual'
+          git add src/game/Game.js src/game/GameHUD.js src/game/Lobsters.js src/game/Spear.js src/world/Fish.js
+          git commit -m 'Polish underwater hunting feedback'
           git push
