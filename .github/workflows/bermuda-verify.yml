@@ -22,19 +22,24 @@ jobs:
         run: node test/bermuda-layout.mjs
       - name: Game logic
         run: node test/game-logic.mjs
-      - name: Player life test
-        id: life
+      - name: Player life moor
         continue-on-error: true
-        run: node test/life-player.mjs > life-player.log 2>&1
-      - name: Publish life diagnostics
-        if: steps.life.outcome == 'failure'
-        run: |
-          cp life-player.log .ci-life-player.log
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .ci-life-player.log
-          git commit -m "ci: capture player life diagnostics" || true
-          git push origin "HEAD:\${GITHUB_REF_NAME}"
+        run: node test/life-player.mjs --phase=moor
+      - name: Player life walk
+        continue-on-error: true
+        run: node test/life-player.mjs --phase=walk
+      - name: Player life swim
+        continue-on-error: true
+        run: node test/life-player.mjs --phase=swim
+      - name: Player life board
+        continue-on-error: true
+        run: node test/life-player.mjs --phase=board
+      - name: Player life drive
+        continue-on-error: true
+        run: node test/life-player.mjs --phase=drive
+      - name: Player life camera
+        continue-on-error: true
+        run: node test/life-player.mjs --phase=camera
       - name: Bermuda player life test
         run: node test/life-player.mjs --bermuda
       - name: World polish assertions
