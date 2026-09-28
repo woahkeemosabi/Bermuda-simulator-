@@ -36,6 +36,7 @@ export const FISH = {
 	redHind: { name: 'Red hind', sci: 'Epinephelus guttatus', lw: [ 0.012, 3.04 ], model: 'grouper', habitat: { reef: 0.9, deep: 0.35 }, kg: [ 0.5, 3.5 ], price: 14, fight: 0.48, stamina: 8, time: 'any', rarity: 0.62, minCm: 35, bagLimit: 10 },
 	laneSnapper: { name: 'Lane snapper', sci: 'Lutjanus synagris', lw: [ 0.013, 3.0 ], model: 'yellowtail', habitat: { reef: 0.8, bay: 0.45 }, kg: [ 0.25, 2.5 ], price: 13, fight: 0.38, stamina: 5, time: 'any', rarity: 0.75, minCm: 25, bagLimit: 30 },
 	tarpon: { name: 'Tarpon', sci: 'Megalops atlanticus', lw: [ 0.0077, 3.02 ], model: 'tarpon', habitat: { pier: 0.35, bay: 0.5, shallows: 0.15 }, kg: [ 10, 45 ], price: 4, fight: 1, stamina: 24, time: 'night', rarity: 0.2 },
+	spinyLobster: { name: 'Caribbean spiny lobster', sci: 'Panulirus argus', lw: [ 0.01, 3.0 ], model: 'lobster', habitat: {}, kg: [ 0.5, 3.5 ], price: 22, fight: 0, stamina: 0, time: 'night', rarity: 0 },
 };
 
 export const FISH_IDS = Object.keys( FISH );

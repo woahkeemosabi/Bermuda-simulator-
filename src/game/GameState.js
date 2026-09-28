@@ -54,10 +54,10 @@ export class GameState {
 
 	// store a caught fish; returns the entry, or null when the hold is full (it is logged either way).
 	// A record beats an earlier catch of the species; the first one of a species is a new species.
-	addFish( species, kg, timeOfDay = 12 ) {
+	addFish( species, kg, timeOfDay = 12, cmOverride = null ) {
 
 		kg = Math.round( kg * 100 ) / 100;
-		const cm = Math.round( fishLengthCm( species, kg ) );
+		const cm = Number.isFinite( cmOverride ) ? Math.round( cmOverride ) : Math.round( fishLengthCm( species, kg ) );
 		const logEntry = this.log[ species ] || ( this.log[ species ] = { count: 0, bestKg: 0 } );
 		const newSpecies = logEntry.count === 0;
 		const prevBestKg = logEntry.bestKg, prevBestCm = logEntry.bestCm ?? ( prevBestKg > 0 ? Math.round( fishLengthCm( species, prevBestKg ) ) : 0 );
