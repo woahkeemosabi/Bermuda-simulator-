@@ -37,3 +37,5 @@ jobs:
         with:
           name: waterfront-native-render
           path: verification/
+
+# Strict clean-branch gate after world-polish diagnostic cleanup.
