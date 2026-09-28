@@ -23,19 +23,9 @@ jobs:
       - name: Game logic
         run: node test/game-logic.mjs
       - name: Player life test
-        continue-on-error: true
-        run: |
-          node test/life-player.mjs > life-player.log 2>&1
-          rc=$?
-          cat life-player.log >> "$GITHUB_STEP_SUMMARY"
-          exit $rc
+        run: node test/life-player.mjs
       - name: Bermuda player life test
-        continue-on-error: true
-        run: |
-          node test/life-player.mjs --bermuda > bermuda-life-player.log 2>&1
-          rc=$?
-          cat bermuda-life-player.log >> "$GITHUB_STEP_SUMMARY"
-          exit $rc
+        run: node test/life-player.mjs --bermuda
       - name: World polish assertions
         run: node test/world-polish.mjs
       - name: Production build
