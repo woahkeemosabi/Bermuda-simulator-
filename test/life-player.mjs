@@ -1,3 +1,7 @@
+import { BoatModel } from '../src/world/BoatModel.js';
+import { Colliders } from '../src/world/Colliders.js';
+import { installBermudaBlockout } from '../src/world/BermudaBlockout.js';
+import { applyBermudaBootLook } from '../src/world/BermudaIdentity.js';
 // Player / BoatController / FlyCamera on the CPU (node, no GPU) with stubs: a gentle analytic
 // swell behind the WaterQuery API, empty colliders, a boat model with the BoatModel anchor API.
 // Simulates walking, swimming, boarding + driving the boat, leaving it, and the fly camera, and
@@ -19,6 +23,8 @@ const check = ( ok, msg ) => {
 };
 const finite = ( v ) => [ v.x, v.y, v.z ].every( Number.isFinite );
 
+const bermuda = process.argv.includes('--bermuda');
+if(bermuda) applyBermudaBootLook({settings:{}});
 const terrain = new TerrainData();
 
 // ---- WaterQuery stub: swell h = 0.25 sin( k x + w t ) + 0.15 sin( k2 z - w2 t ); cpu = ( h, nx, nz, 0 )
@@ -66,14 +72,15 @@ const query = {
 };
 
 // ---- colliders stub (no pier / buildings)
-const colliders = { boxes: [], groundHeightAt: () => - Infinity, resolveCapsule: () => false };
+const colliders = bermuda ? new Colliders() : { boxes: [], groundHeightAt: () => - Infinity, resolveCapsule: () => false };
+if(bermuda) installBermudaBlockout({scene:new E.Scene(),terrainData:terrain,colliders});
 
 // ---- boat model stub (BoatModel's anchor / hydro API, an 8.2 m hull as a 5 x 3 waterplane grid)
 const hullSamples = [];
 for ( let i = 0; i < 5; i ++ ) for ( let j = 0; j < 3; j ++ ) hullSamples.push( { position: new E.Vector3( ( j - 1 ) * 0.95, - 0.22, - 3.2 + i * 1.5 ), area: 1.1, bottomY: - 0.6 } );
 const volume = hullSamples.reduce( ( a, s ) => a + s.area * - s.position.y, 0 );
 const calls = { throttle: 0, steer: 0, rpm: 0 };
-const model = {
+const model = bermuda ? new BoatModel() : {
 	group: new E.Group(),
     colliders: [],
     lines: {deckY:.9,zAft:-3.8,shell:.08,halfBreadth:()=>1.5,tAtSheerZ:z=>z},
@@ -89,6 +96,10 @@ const model = {
 	setSteering( v ) { calls.steer = v; },
 	setPropellerRPM( v ) { calls.rpm = v; },
 };
+
+if(bermuda) for(const [method,key] of [['setThrottle','throttle'],['setSteering','steer'],['setPropellerRPM','rpm']]) {
+ const original=model[method].bind(model); model[method]=v=>{calls[key]=v;original(v);};
+}
 
 // ---- input stub (Input's API)
 class InputStub {
@@ -137,7 +148,7 @@ run( 3 );
 input.keys.delete( 'KeyW' );
 run( 0.5 );
 const walked = Math.hypot( player.position.x - p0.x, player.position.z - p0.z );
-const g = terrain.heightAt( player.position.x, player.position.z );
+const g = Math.max(terrain.heightAt(player.position.x,player.position.z),colliders.groundHeightAt(player.position.x,player.position.z,player.position.y+.35));
 check( player.mode === 'walk' && walked > 3 && walked < 30, `walk: moved ${ walked.toFixed( 2 ) } m in 3 s, mode ${ player.mode }` );
 check( Math.abs( player.position.y - g ) < 0.3, `walk: feet on the ground (y ${ player.position.y.toFixed( 2 ) }, ground ${ g.toFixed( 2 ) })` );
 check( finite( camera.position ) && Math.abs( camera.position.y - player.position.y - 1.62 ) < 0.3, `walk: eye at ${ ( camera.position.y - player.position.y ).toFixed( 2 ) } m` );

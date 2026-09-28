@@ -1,3 +1,5 @@
+import {BoatModel} from '../src/world/BoatModel.js';
+import {WORLD} from '../src/world/WorldLayout.js';
 import { TerrainData } from '../src/world/TerrainData.js';
 import { applyBermudaBootLook } from '../src/world/BermudaIdentity.js';
 import { Vendor } from '../src/game/Vendor.js';
@@ -17,6 +19,7 @@ globalThis.__assetImage = bytes => PNG.sync.read(Buffer.from(bytes));
 const H = await worldHarness({width:1280,height:800});
 const errors=[]; H.GPU.device.addEventListener('uncapturederror', e=>errors.push(e.error.message));
 H.GPU.device.pushErrorScope('validation');
+let lost=null; H.GPU.device.lost.then(info=>{lost=info.reason;});
 // Native engine with actual Bermuda terrain heights; simplified ground/water shading isolates placement.
 applyBermudaBootLook({settings:{}});
 const app = {scene:H.scene, terrainData:new TerrainData(), colliders:new Colliders()};
@@ -34,6 +37,7 @@ await startDeferredWaterfront(app);
 assert.equal(state.loaded.length,17);
 assert.deepEqual(state.errors,[]);
 const {E}=H;
+const boat=new BoatModel(); boat.group.position.copy(WORLD.boatDock.position); boat.group.rotation.y=WORLD.boatDock.heading; H.scene.add(boat.group);
 const geo=new E.PlaneGeometry(220,220,110,110).rotateX(-Math.PI/2);
 const positions=geo.attributes.position;
 for(let i=0;i<positions.count;i++) {
@@ -47,12 +51,14 @@ const sea = new E.Mesh(new E.PlaneGeometry(400,400).rotateX(-Math.PI/2),new Mate
 mkdirSync('verification',{recursive:true});
 await H.shot('verification/waterfront.png',{pos:[-108,27,-6],target:[-66,2,-58]},2);
 await H.shot('verification/houses.png',{pos:[-76,10,-46],target:[-68,4,-70]},2);
+await H.shot('verification/marina.png',{pos:[-104,5,22],target:[-112,2,4]},2);
 await H.shot('verification/vendors.png',{pos:[-60,4,-17],target:[-66,2.2,-25]},2);
 await H.shot('verification/dock.png',{pos:[-74,6,-5],target:[-64,1,-17]},2);
 // Include sustained uploads/render submission in the native check, without claiming iPhone FPS.
 for(let i=0;i<120;i++) H.renderFrame();
 await H.GPU.queue.onSubmittedWorkDone();
 const validation=await H.GPU.device.popErrorScope();
+assert.equal(lost,null);
 assert.equal(validation,null,validation?.message); assert.deepEqual(errors,[]);
 writeFileSync('verification/metrics.json',JSON.stringify(state.metrics,null,2));
 console.log('All seventeen assets rendered with no WebGPU validation errors.');

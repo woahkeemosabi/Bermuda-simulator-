@@ -16,7 +16,7 @@ jobs:
           node-version: 22
       - run: npm ci && npm install --no-save pngjs
       - run: sudo apt-get update -qq && sudo apt-get install -y mesa-vulkan-drivers
-      - run: node test/bermuda-assets.mjs && node test/bermuda-layout.mjs && node test/game-logic.mjs && node test/life-player.mjs && npm run build
+      - run: node test/bermuda-assets.mjs && node test/bermuda-layout.mjs && node test/game-logic.mjs && node test/life-player.mjs && node test/life-player.mjs --bermuda && npm run build
       - run: node test/bermuda-render.mjs
         env:
           XDG_RUNTIME_DIR: /tmp

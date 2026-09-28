@@ -28,7 +28,7 @@ WATERFRONT_ASSETS.push(
  {id:'bougainvillea-cluster', tier:2, version:'mobile-v3', triangles:2500, texture:512, placements:[{x:-78,z:-49,height:4},{x:-55,z:-51,height:4},{x:-88,z:-61,height:5},{x:-74,z:-61,height:4},{x:-62,z:-64,height:4}]},
  {id:'rocky-shoreline', tier:2, version:'mobile-v3', triangles:4500, texture:512, placements:[{x:-91,z:-38,y:-0.6,width:12,height:3},{x:-39,z:-38,y:-0.6,width:11,height:3}]},
  {id:'hillside-cluster', tier:3, version:'mobile-v3', triangles:5000, texture:512, placements:[{x:-77,z:-107,width:40,depth:28,height:18}]},
- {id:'hilltop-landmark', tier:3, version:'mobile-v3', triangles:4000, texture:512, placements:[{x:-80,z:-133,y:17,width:24,depth:32,height:8}]},
+ {id:'hilltop-landmark', tier:3, version:'mobile-v3', triangles:4000, texture:512, placements:[{x:-80,z:-145,y:17,width:24,depth:32,height:8}]},
  {id:'marina-kit', tier:3, version:'mobile-v3', triangles:3500, texture:512, placements:[{x:-112,z:4,y:-1.4,width:19,depth:16,height:17}]}
 );
 
