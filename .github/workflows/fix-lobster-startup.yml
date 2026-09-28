@@ -1,0 +1,85 @@
+name: Fix Lobster Startup Crash
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/fix-lobster-startup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Patch non-fish catch display handling
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('src/game/CatchDisplay.js')
+          s = p.read_text()
+          old = "\t\tfor ( const id of FISH_IDS ) {\n\n\t\t\tconst model = FISH[ id ].model;\n\t\t\tfp.add( 'whole', model, _f, 'gill', 0.3, { anchor: FishProps.gillAnchor( model ), cloudy: 0.1, wet: 1 } );\n\t\t\tthis.slot[ id ] = i ++;\n\n\t\t}\n"
+          new = "\t\tfor ( const id of FISH_IDS ) {\n\n\t\t\tconst model = FISH[ id ].model;\n\t\t\t// CatchDisplay is fish-only. Lobsters and future non-fish catches use their own world/UI visuals.\n\t\t\tif ( ! SPECIES[ model ] ) continue;\n\t\t\tfp.add( 'whole', model, _f, 'gill', 0.3, { anchor: FishProps.gillAnchor( model ), cloudy: 0.1, wet: 1 } );\n\t\t\tthis.slot[ id ] = i ++;\n\n\t\t}\n"
+          if old not in s:
+              raise SystemExit('CatchDisplay anchor not found')
+          p.write_text(s.replace(old, new, 1))
+
+          p = Path('src/game/FishPortrait.js')
+          s = p.read_text()
+          old = "import { FishProps } from '../world/fish/FishProps.js';\n"
+          new = "import { FishProps } from '../world/fish/FishProps.js';\nimport { SPECIES } from '../world/fish/FishSpecies.js';\n"
+          if old not in s:
+              raise SystemExit('FishPortrait import anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = "\t\tFISH_IDS.forEach( ( id, i ) => {\n\n\t\t\tfp.add( 'whole', FISH[ id ].model, _f, 'side', 0.3, { cloudy: 0.08, wet: 1, seed: 0.37 } );\n\t\t\tthis.slot[ id ] = i;\n\n\t\t} );\n"
+          new = "\t\tlet portraitSlot = 0;\n\t\tFISH_IDS.forEach( ( id ) => {\n\n\t\t\tconst model = FISH[ id ].model;\n\t\t\t// FishPortrait only knows FishSpecies anatomy. Non-fish catches (for example lobster)\n\t\t\t// have dedicated underwater presentation and must not enter the fish geometry pipeline.\n\t\t\tif ( ! SPECIES[ model ] ) return;\n\t\t\tfp.add( 'whole', model, _f, 'side', 0.3, { cloudy: 0.08, wet: 1, seed: 0.37 } );\n\t\t\tthis.slot[ id ] = portraitSlot ++;\n\n\t\t} );\n"
+          if old not in s:
+              raise SystemExit('FishPortrait constructor anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = "\tshow( species, kg ) {\n\n\t\tthis.live = { species, kg, t: 0 };\n\n\t}\n"
+          new = "\tshow( species, kg ) {\n\n\t\tif ( this.slot[ species ] === undefined ) { this.live = null; return false; }\n\t\tthis.live = { species, kg, t: 0 };\n\t\treturn true;\n\n\t}\n"
+          if old not in s:
+              raise SystemExit('FishPortrait show anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = "\tthumbnail( species ) {\n\n\t\tif ( this.thumbs.has( species ) ) return Promise.resolve( this.thumbs.get( species ).url );\n"
+          new = "\tthumbnail( species ) {\n\n\t\tif ( this.slot[ species ] === undefined ) return Promise.resolve( null );\n\t\tif ( this.thumbs.has( species ) ) return Promise.resolve( this.thumbs.get( species ).url );\n"
+          if old not in s:
+              raise SystemExit('FishPortrait thumbnail anchor not found')
+          s = s.replace(old, new, 1)
+
+          p.write_text(s)
+      - name: Verify fix
+        run: |
+          git diff --check
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const cd = fs.readFileSync('src/game/CatchDisplay.js','utf8');
+          const fp = fs.readFileSync('src/game/FishPortrait.js','utf8');
+          if (!cd.includes('if ( ! SPECIES[ model ] ) continue;')) throw new Error('CatchDisplay guard missing');
+          if (!fp.includes("FishSpecies.js';") || !fp.includes('if ( ! SPECIES[ model ] ) return;')) throw new Error('FishPortrait guard missing');
+          if (!fp.includes('this.slot[ species ] === undefined')) throw new Error('FishPortrait runtime guard missing');
+          console.log('non-fish display guards present');
+          NODE
+          node test/game-logic.mjs
+          npm run build
+      - name: Commit fix
+        run: |
+          git config user.name 'bermuda-simulator-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/game/CatchDisplay.js src/game/FishPortrait.js
+          git commit -m 'Prevent lobster from entering fish-only display pipeline'
+          git push
