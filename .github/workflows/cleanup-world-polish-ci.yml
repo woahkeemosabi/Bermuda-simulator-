@@ -1,0 +1,63 @@
+name: Cleanup world polish diagnostics
+
+on:
+  push:
+    branches: [bermuda-world-polish-v1]
+    paths:
+      - '.github/workflows/cleanup-world-polish-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bermuda-world-polish-v1
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Remove temporary phase probe
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('test/life-player.mjs')
+          lines = p.read_text().splitlines()
+          prefixes = (
+              "const phaseArg = process.argv.find( a => a.startsWith('--phase=') );",
+              "const phase = phaseArg ? phaseArg.slice(8) : '';",
+              "const stopPhase = name =>",
+              "stopPhase( '",
+          )
+          cleaned = []
+          for line in lines:
+              stripped = line.strip()
+              if any(stripped.startswith(prefix) for prefix in prefixes):
+                  continue
+              cleaned.append(line)
+          text = '\n'.join(cleaned) + '\n'
+          if 'stopPhase(' in text or 'phaseArg' in text:
+              raise SystemExit('phase probe cleanup incomplete')
+          p.write_text(text)
+      - name: Verify clean full player life
+        run: node test/life-player.mjs --bermuda
+      - name: Verify world polish assertions
+        run: node test/world-polish.mjs
+      - name: Verify production build
+        run: npm run build
+      - name: Remove temporary helper workflows
+        run: |
+          git rm -f .github/workflows/fix-helm-camera-v1.yml .github/workflows/cleanup-world-polish-ci.yml
+      - name: Commit cleanup
+        run: |
+          git config user.name "bermuda-simulator-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add test/life-player.mjs .github/workflows
+          git diff --cached --quiet && exit 0
+          git commit -m "Clean temporary world polish diagnostics"
+          git push origin HEAD:bermuda-world-polish-v1
