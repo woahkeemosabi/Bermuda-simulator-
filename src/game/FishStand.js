@@ -35,7 +35,8 @@ export class FishStand {
         addDockShopFixtures(this.group, STAND, true);
 		this.ready = Promise.resolve();
 
-		const local = new Vector3( 0.7, 0, 1.4 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );
+		// Joe works behind the market service opening rather than occupying the dock lane.
+		const local = new Vector3( 0.45, 0, 0.52 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );
 		this.vendor = new Vendor( {
 			name: 'Joe · Fish buyer', kind: 'buyer',
 			position: new Vector3( STAND.x + local.x, y + STALL_FLOOR, STAND.z + local.z ),
