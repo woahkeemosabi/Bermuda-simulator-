@@ -1,0 +1,124 @@
+name: Mobile QA Chat Pass 2
+
+on:
+  push:
+    branches: [ bermuda-mobile-qa-chat-pass ]
+    paths:
+      - '.github/workflows/mobile-qa-chat-pass-2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Apply wake waterfront and vendor fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'patch anchor missing: {label}')
+              p.write_text(text.replace(old, new, 1))
+
+          # Joe and Martha were standing just outside the service side of each structure.
+          # Bring them behind the counter/opening while leaving the player interaction radius outside.
+          replace_once(
+              'src/game/FishStand.js',
+              "\t\tconst local = new Vector3( 0.7, 0, 1.4 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );",
+              "\t\t// Joe works behind the market service opening rather than occupying the dock lane.\n\t\tconst local = new Vector3( 0.45, 0, 0.52 ).applyAxisAngle( new Vector3( 0, 1, 0 ), STAND.yaw );",
+              'move Joe behind service opening'
+          )
+          replace_once(
+              'src/game/Chandlery.js',
+              "\t\tconst local = new Vector3( 0.6, 0, 1.4 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );",
+              "\t\t// Martha works behind the tackle-shop service opening, keeping the dock lane clear.\n\t\tconst local = new Vector3( 0.4, 0, 0.5 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );",
+              'move Martha behind service opening'
+          )
+
+          # The old decorative retaining walls were also solid colliders and cut across the route
+          # from the active dock to the Bermuda houses. Remove those blockers; keep buildings solid.
+          replace_once(
+              'src/world/BermudaBlockout.js',
+              " visualKey='quay';box(M.limestone,-74,terrain.heightAt(-74,-59)+.6,-59,26,1.15,.55,.02,true,'bermuda-wall');if(!mobileLite)box(M.limestone,-48.5,terrain.heightAt(-48.5,-66)+.55,-66,19,1.05,.5,-.08,true,'bermuda-wall');\n",
+              " visualKey='quay';\n // Keep the dock-to-houses pedestrian corridor open. The previous two long retaining-wall\n // boxes were solid and acted as invisible route blockers on mobile.\n // Collision proxies for the additional Bermuda houses stop the player walking through scenery.\n for(const [x,z,w,d,h,tag] of [[-84,-54,6,5,6,'bermuda-house-c'],[-57,-61,7,5.5,5.5,'bermuda-house-d']]){\n  const gy=terrain.heightAt(x,z);colliders.addBox(new Vector3(x,gy+h*.5,z),new Vector3(w*.5,h*.5,d*.5),0,{tag});\n }\n",
+              'remove walkway walls and add scenery collision'
+          )
+
+          # The full wake simulator was already running, but its foam/wash was visually too weak.
+          # Increase only output/source strength: no extra compute grid, dispatch or render pass.
+          replace_once(
+              'src/ocean/WakeSim.js',
+              "\t\t\tfoamGain: [ 'f32', 0.35 ], // thick churn at the transom, patchy lace behind\n\t\t\taerGain: [ 'f32', 1 ],",
+              "\t\t\tfoamGain: [ 'f32', 0.62 ], // readable transom churn / wake lace on mobile\n\t\t\taerGain: [ 'f32', 1.25 ],",
+              'strengthen wake foam and aeration'
+          )
+          replace_once(
+              'src/ocean/WakeSim.js',
+              "\t\tthis.uWash.value = prop * 1.0 + MathUtils.smoothstep( speed, 1.5, 7 ) * 0.5;",
+              "\t\tthis.uWash.value = prop * 1.45 + MathUtils.smoothstep( speed, 1.0, 7 ) * 0.85;",
+              'strengthen prop wash source'
+          )
+
+          # BoatSpray's prior prop-wash particles almost vanished whenever the propeller sat more
+          # than ~0.5 m below the surface. Keep a visible, bounded transom race tied to real thrust
+          # and boat speed while preserving the existing shared particle budget.
+          replace_once(
+              'src/player/BoatSpray.js',
+              "\t\tconst propDepth = b.sampleWaterAt( _m ) - _m.y;\n\t\tconst activity = b.driven && propDepth > - 0.2 ? Math.sqrt( Math.abs( b.thrust || 0 ) / 1000 ) * Math.exp( - Math.max( propDepth, 0 ) / 0.45 ) : 0;",
+              "\t\tconst propDepth = b.sampleWaterAt( _m ) - _m.y;\n\t\tconst thrustActivity = Math.sqrt( Math.abs( b.thrust || 0 ) / 1000 );\n\t\tconst surfaceFactor = 0.32 + 0.68 * Math.exp( - Math.max( propDepth, 0 ) / 1.2 );\n\t\tconst speedActivity = MathUtils.smoothstep( speed, 0.8, 7 ) * ( 0.3 + 0.7 * Math.abs( b.throttle || 0 ) );\n\t\tconst activity = b.driven && propDepth > - 0.4 ? Math.max( thrustActivity * surfaceFactor, speedActivity ) : 0;",
+              'make stern wash visible at normal prop depth'
+          )
+          replace_once(
+              'src/player/BoatSpray.js',
+              "\t\t\t\tthis.washCarry += activity * 45 * dt;",
+              "\t\t\t\tthis.washCarry += activity * 95 * dt;",
+              'increase bounded stern-wash emission'
+          )
+
+      - name: Verify focused changes
+        run: |
+          git diff --check
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const fish = fs.readFileSync('src/game/FishStand.js','utf8');
+          const chand = fs.readFileSync('src/game/Chandlery.js','utf8');
+          const block = fs.readFileSync('src/world/BermudaBlockout.js','utf8');
+          const wake = fs.readFileSync('src/ocean/WakeSim.js','utf8');
+          const spray = fs.readFileSync('src/player/BoatSpray.js','utf8');
+          const checks = [
+            [fish, '0.45, 0, 0.52'], [chand, '0.4, 0, 0.5'],
+            [block, 'bermuda-house-c'], [block, 'dock-to-houses pedestrian corridor'],
+            [wake, "foamGain: [ 'f32', 0.62 ]"], [wake, 'prop * 1.45'],
+            [spray, 'surfaceFactor = 0.32'], [spray, 'activity * 95 * dt']
+          ];
+          for (const [text, needle] of checks) if (!text.includes(needle)) throw new Error(`missing ${needle}`);
+          if (block.includes("box(M.limestone,-74,terrain.heightAt(-74,-59)+.6,-59,26")) throw new Error('blocking retaining wall still present');
+          console.log('mobile QA pass 2 source checks passed');
+          NODE
+          node test/game-logic.mjs
+          node test/ocean-spray-boat.mjs
+          node test/ocean-wake-surface.mjs
+          npm run build
+
+      - name: Commit verified fixes
+        run: |
+          git config user.name 'bermuda-simulator-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/game/FishStand.js src/game/Chandlery.js src/world/BermudaBlockout.js src/ocean/WakeSim.js src/player/BoatSpray.js
+          git commit -m 'Improve wake waterfront access and vendor placement'
+          git push origin HEAD:bermuda-mobile-qa-chat-pass
