@@ -24,22 +24,22 @@ jobs:
         run: node test/game-logic.mjs
       - name: Player life moor
         continue-on-error: true
-        run: node test/life-player.mjs --phase=moor
+        run: node test/life-player.mjs --bermuda --phase=moor
       - name: Player life walk
         continue-on-error: true
-        run: node test/life-player.mjs --phase=walk
+        run: node test/life-player.mjs --bermuda --phase=walk
       - name: Player life swim
         continue-on-error: true
-        run: node test/life-player.mjs --phase=swim
+        run: node test/life-player.mjs --bermuda --phase=swim
       - name: Player life board
         continue-on-error: true
-        run: node test/life-player.mjs --phase=board
+        run: node test/life-player.mjs --bermuda --phase=board
       - name: Player life drive
         continue-on-error: true
-        run: node test/life-player.mjs --phase=drive
+        run: node test/life-player.mjs --bermuda --phase=drive
       - name: Player life camera
         continue-on-error: true
-        run: node test/life-player.mjs --phase=camera
+        run: node test/life-player.mjs --bermuda --phase=camera
       - name: Bermuda player life test
         run: node test/life-player.mjs --bermuda
       - name: World polish assertions
