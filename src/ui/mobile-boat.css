@@ -1,0 +1,32 @@
+/* iPhone boat HUD: keep the read-only instruments clear of the touch throttle/steering controls. */
+@media (hover: none) and (pointer: coarse) {
+  .tw-boat {
+    left: max(12px, env(safe-area-inset-left));
+    right: auto;
+    bottom: max(104px, calc(env(safe-area-inset-bottom) + 88px));
+    max-width: min(64vw, 330px);
+    gap: calc(9 * var(--tw-u));
+    padding: calc(8 * var(--tw-u)) calc(11 * var(--tw-u));
+    transform-origin: 0 100%;
+    scale: .72;
+    pointer-events: none;
+  }
+  /* The touch throttle already supplies throttle feedback. Hiding the duplicate HUD strip
+     prevents it reading as an overlapping control on narrow iPhones. */
+  .tw-boat .tw-thr { display: none; }
+  .tw-depth {
+    left: max(10px, env(safe-area-inset-left));
+    top: 43%;
+    scale: .78;
+    transform-origin: 0 50%;
+    pointer-events: none;
+  }
+  .tw-prompt {
+    bottom: max(152px, calc(env(safe-area-inset-bottom) + 136px));
+  }
+}
+
+@media (hover: none) and (pointer: coarse) and (max-width: 430px) {
+  .tw-boat { scale: .64; bottom: max(112px, calc(env(safe-area-inset-bottom) + 94px)); }
+  .tw-depth { scale: .68; }
+}
