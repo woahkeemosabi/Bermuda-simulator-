@@ -1,7 +1,7 @@
 import { BoxGeometry, CylinderGeometry, Group, Mesh, RoundedBoxGeometry, TorusGeometry, Vector3 } from '../engine/index.js';
 import { Material } from '../engine/render/Material.js';
 
-const RELIC_POS = { x: -76.0, z: -49.15, yaw: Math.PI * 0.5 };
+export const RELIC_POS = { x: -76.0, z: -49.15, yaw: Math.PI * 0.5 };
 
 function isMobileProfile() {
 	if ( typeof navigator === 'undefined' ) return false;
@@ -43,7 +43,7 @@ export function installRelic001( app ) {
 		wheel: mat( 'wheel', 0x17191c, 0.18, 0.96 ),
 		amber: mat( 'amber', 0x4c2508, 0.22, 0.56, 0xff6a12 ),
 		red: mat( 'rear-red', 0x340404, 0.22, 0.42, 0xff1a0f ),
-		stone: mat( 'display-stone', 0x24282b, 0.88, 0.08 ),
+		lift: mat( 'aerolift-chamber', 0x12161a, 0.19, 0.96, 0x5d2408 ),
 	};
 
 	const GEO = {
@@ -53,13 +53,21 @@ export function installRelic001( app ) {
 		torus: new TorusGeometry( 1, 0.22, mobile ? 6 : 10, mobile ? 14 : 24 ),
 	};
 
-	// Low, faceted hypercar proportions taken from the approved RELIC 001 visual language.
+	// Low, faceted hypercar proportions from the RELIC 001 reference. Keep the silhouette clean:
+	// no wings, spider legs, external pods, rocket nozzles or oversized propulsion hardware.
 	addMesh( group, GEO.rounded, M.body, [ 0, 0.72, 0.05 ], [ 2.18, 0.38, 4.55 ], null, 'relic-body' );
 	addMesh( group, GEO.box, M.carbon, [ 0, 0.52, 1.93 ], [ 2.28, 0.16, 0.62 ], [ -0.08, 0, 0 ], 'relic-front-splitter' );
 	addMesh( group, GEO.box, M.carbon, [ 0, 0.55, -2.03 ], [ 2.22, 0.18, 0.54 ], [ 0.08, 0, 0 ], 'relic-rear-diffuser' );
 	addMesh( group, GEO.rounded, M.glass, [ 0, 1.12, -0.08 ], [ 1.58, 0.48, 2.18 ], [ -0.05, 0, 0 ], 'relic-canopy' );
 	addMesh( group, GEO.box, M.body, [ -1.05, 0.73, 0.10 ], [ 0.22, 0.28, 2.90 ], [ 0, 0, 0.03 ], 'relic-left-haunch' );
 	addMesh( group, GEO.box, M.body, [ 1.05, 0.73, 0.10 ], [ 0.22, 0.28, 2.90 ], [ 0, 0, -0.03 ], 'relic-right-haunch' );
+
+	// Four compact underside Aerolift chambers, integrated into the chassis/wheel zones. They remain
+	// visually subordinate to the body and read as vector-lift hardware rather than jet thrusters.
+	for ( const z of [ -1.23, 1.25 ] ) for ( const x of [ -0.78, 0.78 ] ) {
+		const chamber = addMesh( group, GEO.cyl, M.lift, [ x, 0.34, z ], [ 0.32, 0.055, 0.32 ], null, 'relic-aerolift-chamber' );
+		chamber.castShadow = ! mobile;
+	}
 
 	// Needle-light signature: amber front detail and thin red rear blades.
 	addMesh( group, GEO.box, M.amber, [ -0.72, 0.78, 2.26 ], [ 0.62, 0.045, 0.055 ], [ 0, 0.05, -0.04 ], 'relic-front-light-l' );
@@ -74,26 +82,24 @@ export function installRelic001( app ) {
 		tire.castShadow = rim.castShadow = ! mobile;
 	}
 
-	// Bermuda integration: RELIC is staged on a restrained dark limestone turnout rather than
-	// replacing the bright waterfront architecture around it.
-	const y = app.terrainData.heightAt( RELIC_POS.x, RELIC_POS.z );
-	const plinth = addMesh( group, GEO.box, M.stone, [ 0, -0.10, 0 ], [ 5.7, 0.18, 3.15 ], null, 'relic-turnout' );
-	plinth.receiveShadow = true;
-	plinth.castShadow = false;
-
-	group.position.set( RELIC_POS.x, y + 0.18, RELIC_POS.z );
+	// Put the car directly into the Bermuda road scene. The blockout's road collider is authoritative,
+	// so use it rather than the raw terrain height to prevent the car sinking into the raised roadway.
+	const terrainY = app.terrainData.heightAt( RELIC_POS.x, RELIC_POS.z );
+	const roadY = app.colliders ? app.colliders.groundHeightAt( RELIC_POS.x, RELIC_POS.z, 50 ) : -Infinity;
+	const y = Math.max( terrainY, Number.isFinite( roadY ) ? roadY : terrainY );
+	group.position.set( RELIC_POS.x, y + 0.02, RELIC_POS.z );
 	group.rotation.y = RELIC_POS.yaw;
 	app.scene.add( group );
 
 	if ( app.colliders ) {
 		app.colliders.addBox(
-			new Vector3( RELIC_POS.x, y + 0.82, RELIC_POS.z ),
-			new Vector3( 2.45, 0.82, 1.30 ),
+			new Vector3( RELIC_POS.x, y + 0.76, RELIC_POS.z ),
+			new Vector3( 1.30, 0.76, 2.45 ),
 			RELIC_POS.yaw,
 			{ tag: 'relic-001' }
 		);
 	}
 
-	app.relic001 = { group, materials: M, position: RELIC_POS, mobile };
+	app.relic001 = { group, materials: M, position: RELIC_POS, groundY: y, mobile };
 	return app.relic001;
 }
