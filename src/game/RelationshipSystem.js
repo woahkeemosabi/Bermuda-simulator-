@@ -6,8 +6,6 @@ const MILESTONES = Object.freeze( {
 	Joe: { respected: 20, trusted: 50 },
 } );
 
-function money( n ) { return '$' + Math.max( 0, Math.round( Number( n ) || 0 ) ).toLocaleString(); }
-
 export class RelationshipSystem {
 	constructor( app ) {
 		this.app = app;
@@ -67,8 +65,9 @@ export class RelationshipSystem {
 		const before = this.tier( person );
 		const total = this.state.addReputation( person, amount );
 		const after = this.tier( person );
-		if ( before !== after ) this.game.toast( `${ person } · ${ after }`, 3000 );
-		else if ( reason ) this.game.toast( `${ person } +${ amount } · ${ reason }`, 1800 );
+		// Tier changes are announced by the subscribed refresh() exactly once. Ordinary gains can use
+		// a short contextual notice without duplicating the economy's own sale/purchase toast.
+		if ( before === after && reason ) this.game.toast( `${ person } +${ amount } · ${ reason }`, 1800 );
 		this.applyMilestones();
 		return total;
 	}
