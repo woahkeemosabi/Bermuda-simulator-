@@ -1,0 +1,124 @@
+name: Meshy Production Swim Animation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/meshy-generate-swim.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: meshy-production-swim
+  cancel-in-progress: false
+
+jobs:
+  generate-swim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+      RIG_TASK_ID: 01a0ee30-7efa-71bc-af62-e0816f2f8a86
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Meshy balance
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+          $M balance --output-schema v1 --format json --no-update-check | tee /tmp/meshy-balance.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/meshy-balance.json'))
+          balance=(d.get('result') or d).get('balance')
+          print('MESHY_BALANCE=', balance)
+          if not isinstance(balance,(int,float)) or balance < 20:
+              raise SystemExit('Refusing swim generation: fewer than 20 Meshy credits available')
+          PY
+
+      - name: Generate high-quality freestyle swim motion
+        shell: bash
+        run: |
+          set -euo pipefail
+          prompt='Athletic adult character swimming freestyle/front crawl in open water, body fully horizontal and streamlined, alternating overarm recovery and underwater pull, natural shoulder roll, steady flutter kick, smooth forward-swim cycle, no standing, no walking, no jumping, no exaggerated gestures, seamless game-ready locomotion.'
+          create=$(curl --fail-with-body -sS https://api.meshy.ai/openapi/v1/text-to-motion \
+            -X POST \
+            -H "Authorization: Bearer ${MESHY_API_KEY}" \
+            -H 'Content-Type: application/json' \
+            -d "$(jq -n --arg p "$prompt" '{prompt:$p,mode:"prime",duration:4}')")
+          echo "$create" | tee /tmp/swim-motion-create.json
+          motion_id=$(echo "$create" | jq -r '.result // empty')
+          test -n "$motion_id"
+          echo "MOTION_TASK_ID=$motion_id" >> "$GITHUB_ENV"
+
+          for i in $(seq 1 100); do
+            task=$(curl --fail-with-body -sS "https://api.meshy.ai/openapi/v1/text-to-motion/${motion_id}" \
+              -H "Authorization: Bearer ${MESHY_API_KEY}")
+            echo "$task" > /tmp/swim-motion-task.json
+            status=$(echo "$task" | jq -r '.status')
+            progress=$(echo "$task" | jq -r '.progress // 0')
+            echo "text-to-motion status=${status} progress=${progress}%"
+            case "$status" in
+              SUCCEEDED) break ;;
+              FAILED|CANCELED) echo "$task"; exit 1 ;;
+            esac
+            sleep 4
+          done
+          test "$(jq -r '.status' /tmp/swim-motion-task.json)" = "SUCCEEDED"
+
+      - name: Retarget swim motion onto production player rig
+        shell: bash
+        run: |
+          set -euo pipefail
+          create=$(curl --fail-with-body -sS https://api.meshy.ai/openapi/v1/animations \
+            -X POST \
+            -H "Authorization: Bearer ${MESHY_API_KEY}" \
+            -H 'Content-Type: application/json' \
+            -d "$(jq -n --arg rig "$RIG_TASK_ID" --arg motion "$MOTION_TASK_ID" '{rig_task_id:$rig,motion_task_id:$motion}')")
+          echo "$create" | tee /tmp/swim-animation-create.json
+          animation_id=$(echo "$create" | jq -r '.result // empty')
+          test -n "$animation_id"
+
+          for i in $(seq 1 100); do
+            task=$(curl --fail-with-body -sS "https://api.meshy.ai/openapi/v1/animations/${animation_id}" \
+              -H "Authorization: Bearer ${MESHY_API_KEY}")
+            echo "$task" > /tmp/swim-animation-task.json
+            status=$(echo "$task" | jq -r '.status')
+            progress=$(echo "$task" | jq -r '.progress // 0')
+            echo "retarget status=${status} progress=${progress}%"
+            case "$status" in
+              SUCCEEDED) break ;;
+              FAILED|CANCELED) echo "$task"; exit 1 ;;
+            esac
+            sleep 4
+          done
+          test "$(jq -r '.status' /tmp/swim-animation-task.json)" = "SUCCEEDED"
+          url=$(jq -r '.result.animation_glb_url // empty' /tmp/swim-animation-task.json)
+          test -n "$url"
+          mkdir -p public/models/bermuda/characters
+          curl --fail-with-body -L "$url" -o public/models/bermuda/characters/bermuda-player-male-swim.glb
+
+          python3 - <<'PY'
+          p='public/models/bermuda/characters/bermuda-player-male-swim.glb'
+          data=open(p,'rb').read(12)
+          if len(data)<12 or data[:4] != b'glTF':
+              raise SystemExit('Downloaded swim asset is not a valid GLB')
+          print('Validated',p)
+          PY
+
+      - name: Commit swim animation asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/models/bermuda/characters/bermuda-player-male-swim.glb
+          git commit -m "asset: add production Meshy swim animation"
+          git pull --rebase origin main
+          git push origin HEAD:main
