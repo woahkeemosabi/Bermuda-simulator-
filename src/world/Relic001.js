@@ -1,7 +1,9 @@
 import { BoxGeometry, CylinderGeometry, Group, Mesh, RoundedBoxGeometry, TorusGeometry, Vector3 } from '../engine/index.js';
 import { Material } from '../engine/render/Material.js';
 
-export const RELIC_POS = { x: -76.0, z: -49.15, yaw: Math.PI * 0.5 };
+// Park RELIC on the clear centre of the waterfront road, away from the bougainvillea cluster and
+// the removed seawall. Its long axis remains parallel with the road.
+export const RELIC_POS = { x: -69.5, z: -49.6, yaw: Math.PI * 0.5 };
 
 function isMobileProfile() {
 	if ( typeof navigator === 'undefined' ) return false;
