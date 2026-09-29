@@ -3,6 +3,7 @@ import './LegacyProgressionMigration.js';
 import { CloudAccount } from './CloudAccount.js';
 import './CloudAccountAuthCompat.js';
 import './CloudAccountSyncCompat.js';
+import { MissionDirector } from './MissionDirector.js';
 import { LifeProgression } from './LifeProgression.js';
 import { RelationshipSystem } from './RelationshipSystem.js';
 import { VehiclePersistence } from './VehiclePersistence.js';
@@ -34,6 +35,7 @@ if ( typeof window !== 'undefined' ) {
 			}
 
 			try {
+				if ( ! app.missionDirector ) app.missionDirector = new MissionDirector( app );
 				if ( ! app.progression ) app.progression = new LifeProgression( app );
 			} catch ( error ) {
 				console.warn( 'life progression unavailable; existing gameplay remains active', error );
