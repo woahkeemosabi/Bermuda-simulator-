@@ -10,10 +10,12 @@ import { VehiclePersistence } from './VehiclePersistence.js';
 import { PropertySystem } from './PropertySystem.js';
 import { PropertyExpansion } from './PropertyExpansion.js';
 import { DynamicIslandEvents } from './DynamicIslandEvents.js';
+import { IslandMissionSystem } from './IslandMissionSystem.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
 import { BoatOwnership } from './BoatOwnership.js';
 import { BoatUpgradeVisuals } from './BoatUpgradeVisuals.js';
 import { Bicycle } from '../player/Bicycle.js';
+import { CharacterMotionStability } from '../world/CharacterMotionStability.js';
 
 // main.js creates the App asynchronously and exposes it as window.__app once core gameplay systems
 // exist. This small bootstrap keeps progression/account concerns out of App.js and never blocks startup.
@@ -74,6 +76,18 @@ if ( typeof window !== 'undefined' ) {
 				if ( ! app.dynamicIslandEvents ) app.dynamicIslandEvents = new DynamicIslandEvents( app );
 			} catch ( error ) {
 				console.warn( 'dynamic island events unavailable; time/weather simulation remains active', error );
+			}
+
+			try {
+				if ( ! app.islandMissions ) app.islandMissions = new IslandMissionSystem( app );
+			} catch ( error ) {
+				console.warn( 'island mission set unavailable; core progression remains playable', error );
+			}
+
+			try {
+				if ( ! app.characterMotionStability ) app.characterMotionStability = new CharacterMotionStability( app );
+			} catch ( error ) {
+				console.warn( 'character motion stabilizer unavailable; production characters remain active', error );
 			}
 
 			// Accounts are optional: local save remains authoritative until a backend is configured.
