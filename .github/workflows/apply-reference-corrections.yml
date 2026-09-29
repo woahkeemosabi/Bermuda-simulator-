@@ -1,0 +1,134 @@
+name: Apply Bermuda Reference Corrections
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-reference-corrections.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply dock, vegetation and shop corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          # 1) Make the dock-to-road route walkable without a jump by adding a shallow stepped ramp.
+          p = Path('src/world/BermudaBlockout.js')
+          s = p.read_text()
+          old = " visualKey='approach'; box(M.wood,-65,.55,-30,5.2,.9,34,0,true,'bermuda-landing',true);"
+          new = """ visualKey='approach'; box(M.wood,-65,.55,-30,5.2,.9,34,0,true,'bermuda-landing',true);
+ // Smooth the final dock-to-road rise into five shallow walkable terraces. The old 0.5 m step
+ // forced mobile players to use UP just to reach RELIC; normal navigation should not require a jump.
+ const approachTops=[1.10,1.20,1.30,1.40,1.50];
+ for(let i=0;i<approachTops.length;i++){
+  const top=approachTops[i],z=-43.45-i*.82,h=top-.90;
+  box(M.wood,-65,.90+h*.5,z,5.2,h,.90,0,true,'bermuda-approach-ramp',true);
+ }"""
+          if old not in s:
+              raise SystemExit('BermudaBlockout approach marker not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+
+          # 2) Use the authored palmetto GLB as the visible palm layer and delete the remaining seawall.
+          p = Path('src/world/bermuda/AssetLayout.js')
+          s = p.read_text()
+          old = " {id:'palmetto',triangles:1500,texture:512,placements:[{x:-87.5,z:-61.5,height:5.4},{x:-53,z:-67,height:6}]},"
+          new = " {id:'palmetto',triangles:1500,texture:512,placements:[{x:-108,z:-62,height:6.2},{x:-91,z:-61.5,height:5.4},{x:-78,z:-60.5,height:5.8},{x:-65,z:-61.5,height:5.5},{x:-53,z:-67,height:6},{x:-42,z:-60.5,height:5.3},{x:-28,z:-61.5,height:5.0}]},"
+          if old not in s:
+              raise SystemExit('AssetLayout palmetto marker not found')
+          s = s.replace(old, new, 1)
+          s, n = re.subn(r"\n // Keep only the eastern seawall section\.[\s\S]*?\n \{id:'limestone-seawall'[^\n]*\},", "\n // No waterfront seawall is loaded here: the dock-to-road/car route stays visually and physically open.", s, count=1)
+          if n != 1:
+              raise SystemExit('AssetLayout seawall block not found')
+          p.write_text(s)
+
+          # 3) Remove the low-poly crossed-plank palms from the first reference pass.
+          p = Path('src/world/ReferenceWorldUpgrade.js')
+          s = p.read_text()
+          pattern = r"\n\tconst addPalm = \( x, z, height = 5\.5 \) => \{[\s\S]*?\n\t\]\.forEach\( p => addPalm\( \.\.\.p \) \);\n"
+          s, n = re.subn(pattern, "\n\t// Palms are supplied by the authored palmetto GLB tier; do not layer crude crossed-box trees over them.\n", s, count=1)
+          if n != 1:
+              raise SystemExit('ReferenceWorldUpgrade palm block not found')
+          p.write_text(s)
+
+          # 4) Remove the second set of procedural plank palms as well.
+          p = Path('src/world/ReferenceDetailUpgrade.js')
+          s = p.read_text()
+          pattern = r"\n\t// A handful of taller palms make the skyline layer correctly against the white roofs\.[\s\S]*?\n\t\}\n\n\tapp\.scene\.add\( group \);"
+          replacement = "\n\t// Palmetto/fan-palm silhouettes now come from the authored GLB placements in AssetLayout.\n\t// Avoid the previous crossed-box canopy trees, which read as placeholders at phone-camera distance.\n\n\tapp.scene.add( group );"
+          s, n = re.subn(pattern, replacement, s, count=1)
+          if n != 1:
+              raise SystemExit('ReferenceDetailUpgrade palm block not found')
+          p.write_text(s)
+
+          # 5) Tone down the oversized pixel-billboard look and add a compact Bermuda shop canopy/frame.
+          p = Path('src/game/DockShopFixtures.js')
+          s = p.read_text()
+          start = s.index('function addPixelSign(group, lines) {')
+          end = s.index('\n\n// Fixtures stay in shop-local coordinates', start)
+          func = r'''function addPixelSign(group, lines) {
+ const boardMat = new Material({name:'shop-sign-board',color:0x244b57,roughness:.86,receiveShadows:false});
+ const typeMat = new Material({name:'shop-sign-type',color:0xf8f3df,roughness:.62,receiveShadows:false});
+ const board = new Mesh(new BoxGeometry(2.35,.36,.045),boardMat);
+ board.position.set(0,2.28,1.305); group.add(board);
+ const px=.018, gap=.004, cell=px+gap, placements=[];
+ lines.forEach((line,row)=>{
+  const chars=[...line.toUpperCase()];
+  const width=Math.max(0,chars.length*6-1)*cell;
+  const x0=-width*.5, y0=row===0?2.34:2.22;
+  chars.forEach((ch,ci)=>{
+   if(ch===' ') return;
+   const glyph=FONT[ch]; if(!glyph) return;
+   glyph.forEach((bits,gy)=>[...bits].forEach((on,gx)=>{
+    if(on==='1') placements.push([x0+(ci*6+gx)*cell,y0+(3-gy)*cell,1.333]);
+   }));
+  });
+ });
+ const dots=new InstancedMesh(new BoxGeometry(px,px,.018),typeMat,placements.length), m=new Matrix4();
+ placements.forEach((p,i)=>{m.makeTranslation(p[0],p[1],p[2]);dots.setMatrixAt(i,m);});
+ dots.instanceMatrix.needsUpdate=true; dots.computeBoundingSphere(); group.add(dots);
+}'''
+          s = s[:start] + func + s[end:]
+
+          marker = " const [x,y,z] = layout.lamp;"
+          insert = r''' const trim = new Material({name:'dock-shop-trim',color:0xf4f1e8,roughness:.9,receiveShadows:false});
+ const shade = new Material({name:'dock-shop-opening',color:0x1f343b,roughness:.72,receiveShadows:false});
+ // Compact stepped white canopy and framed service opening give both stalls a Bermuda dockside profile.
+ for(const [yy,w,d] of [[2.72,3.85,2.90],[2.86,3.48,2.62],[2.98,3.08,2.34]]){
+  const roof=new Mesh(new BoxGeometry(w,.12,d),trim);roof.position.set(0,yy,0);group.add(roof);
+ }
+ const opening=new Mesh(new BoxGeometry(2.20,1.18,.06),shade);opening.position.set(0,1.48,1.285);group.add(opening);
+ for(const xx of [-1.18,1.18]){const post=new Mesh(new BoxGeometry(.11,1.58,.10),trim);post.position.set(xx,1.55,1.31);group.add(post);}
+ const sill=new Mesh(new BoxGeometry(2.55,.13,.34),trim);sill.position.set(0,.91,1.42);group.add(sill);
+ const [x,y,z] = layout.lamp;'''
+          if marker not in s:
+              raise SystemExit('DockShopFixtures lamp marker not found')
+          s = s.replace(marker, insert, 1)
+          p.write_text(s)
+          PY
+
+      - name: Commit correction pass
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/world/BermudaBlockout.js src/world/bermuda/AssetLayout.js src/world/ReferenceWorldUpgrade.js src/world/ReferenceDetailUpgrade.js src/game/DockShopFixtures.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix: open dock route and improve Bermuda reference details'
+          git pull --rebase origin main
+          git push origin HEAD:main
