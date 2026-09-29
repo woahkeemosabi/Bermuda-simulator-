@@ -1,10 +1,11 @@
 import { Group, Mesh, Vector3 } from '../engine/index.js';
-import { prepare, mergePrepared, box, rod, mat4 } from '../world/boat/GeoKit.js';
+import { prepare, mergePrepared, box, mat4 } from '../world/boat/GeoKit.js';
 import { createPropMaterial, PAT } from './GameMaterials.js';
+import { MissionDirector } from './MissionDirector.js';
 
 const DELIVERY_ID = 'martha-first-delivery';
-const FISHING_INTRO_ID = 'martha-fishing-intro';
 const TMP = new Vector3();
+const Y = new Vector3( 0, 1, 0 );
 
 function buildParcel() {
 	const P = [];
@@ -25,6 +26,7 @@ export class LifeProgression {
 		this.state = app.game?.state;
 		this.player = app.player;
 		this.input = app.input;
+		this.missions = app.missionDirector || new MissionDirector( app );
 		this.martha = app.game?.chandlery?.vendor || null;
 		this.joe = app.game?.stand?.vendor || null;
 
@@ -57,9 +59,9 @@ export class LifeProgression {
 		document.body.appendChild( this.objectiveEl );
 	}
 
-	missionAvailable() { return this.state?.hasMission?.( DELIVERY_ID, 'available' ); }
-	missionActive() { return this.state?.hasMission?.( DELIVERY_ID, 'active' ); }
-	missionDone() { return this.state?.hasMission?.( DELIVERY_ID, 'completed' ); }
+	missionAvailable() { return this.missions.available( DELIVERY_ID ); }
+	missionActive() { return this.missions.active( DELIVERY_ID ); }
+	missionDone() { return this.missions.completed( DELIVERY_ID ); }
 	carrying() { return !! this.state?.storyFlags?.marthaDeliveryCarrying; }
 
 	updateParcelHome() {
@@ -69,7 +71,7 @@ export class LifeProgression {
 		this.parcel.rotation.y = this.martha.yaw || 0;
 	}
 
-	update( dt ) {
+	update() {
 		if ( ! this.state || ! this.martha || ! this.joe ) return;
 		const p = this.player;
 
@@ -82,14 +84,12 @@ export class LifeProgression {
 		if ( this.missionActive() && this.carrying() ) {
 			this.parcel.visible = true;
 			if ( p.mode === 'bike' && this.app.bicycle ) {
-				// Tie the box to the starter bicycle's rear rack while riding.
 				const b = this.app.bicycle.group;
-				TMP.set( 0, 0.83, - 0.52 ).applyAxisAngle( new Vector3( 0, 1, 0 ), this.app.bicycle.yaw );
+				TMP.set( 0, 0.83, - 0.52 ).applyAxisAngle( Y, this.app.bicycle.yaw );
 				this.parcel.position.copy( b.position ).add( TMP );
 				this.parcel.rotation.y = this.app.bicycle.yaw;
 			} else {
-				// Hand-carried position slightly in front/right of the player.
-				const side = TMP.set( 0.38, 0.78, - 0.38 ).applyAxisAngle( new Vector3( 0, 1, 0 ), p.yaw || 0 );
+				const side = TMP.set( 0.38, 0.78, - 0.38 ).applyAxisAngle( Y, p.yaw || 0 );
 				this.parcel.position.copy( p.position ).add( side );
 				this.parcel.rotation.y = p.yaw || 0;
 			}
@@ -101,7 +101,8 @@ export class LifeProgression {
 		} else if ( this.missionAvailable() ) {
 			this.parcel.visible = true;
 			this.updateParcelHome();
-			if ( p.mode === 'walk' && this.martha.inRange( p.position ) ) {
+			const shopReady = ! this.app.marthaShop || this.app.marthaShop.marthaAccessible( p.position );
+			if ( shopReady && p.mode === 'walk' && this.martha.inRange( p.position ) ) {
 				p.prompt = { key: 'E', text: 'Martha: take this box down to Joe' };
 				if ( this.input.hit( 'KeyE' ) ) this.acceptDelivery();
 			}
@@ -111,11 +112,7 @@ export class LifeProgression {
 	}
 
 	acceptDelivery() {
-		if ( ! this.state.activateMission( DELIVERY_ID ) ) return false;
-		this.state.storyFlags.marthaDeliveryCarrying = true;
-		this.state.storyFlags.metMartha = true;
-		this.state.save();
-		this.state.emit();
+		if ( ! this.missions.accept( DELIVERY_ID, { storyFlags: { marthaDeliveryCarrying: true, metMartha: true }, toast: false } ) ) return false;
 		this.game.toast( 'Martha: “Joe needs this box down at the dock.”', 3400 );
 		this.refreshObjective();
 		return true;
@@ -124,29 +121,18 @@ export class LifeProgression {
 	completeDelivery() {
 		if ( ! this.missionActive() || ! this.carrying() ) return false;
 		this.state.storyFlags.marthaDeliveryCarrying = false;
-		this.state.storyFlags.metJoe = true;
-		this.state.completeMission( DELIVERY_ID );
-		this.state.addMoney( 65 );
-		this.state.addReputation( 'Martha', 5 );
-		this.state.addReputation( 'Joe', 5 );
-		this.state.unlockMission( FISHING_INTRO_ID );
+		if ( ! this.missions.complete( DELIVERY_ID, { storyFlags: { metJoe: true }, toast: true } ) ) return false;
 		this.parcel.visible = false;
-		this.game.toast( 'Delivery complete · +$65 · Martha +5 · Joe +5', 3800 );
 		this.refreshObjective();
 		return true;
 	}
 
 	refreshObjective() {
 		if ( ! this.objectiveEl ) return;
-		if ( this.missionActive() ) {
-			this.objectiveEl.style.display = '';
-			this.objectiveEl.innerHTML = '<span class="bm-objective-kicker">CURRENT JOB</span>Take Martha\'s box to Joe at the fish market';
-		} else if ( this.missionAvailable() ) {
-			this.objectiveEl.style.display = '';
-			this.objectiveEl.innerHTML = '<span class="bm-objective-kicker">FIRST DAY</span>Speak to Martha at Bait & Tackle';
-		} else if ( this.state?.hasMission?.( FISHING_INTRO_ID, 'available' ) ) {
-			this.objectiveEl.style.display = '';
-			this.objectiveEl.innerHTML = '<span class="bm-objective-kicker">NEXT OPPORTUNITY</span>Martha says there is money in bringing back fish';
-		} else this.objectiveEl.style.display = 'none';
+		const objective = this.missions.objective();
+		if ( ! objective ) { this.objectiveEl.style.display = 'none'; return; }
+		this.objectiveEl.style.display = '';
+		const kicker = objective.bucket === 'active' ? 'CURRENT JOB' : objective.id === DELIVERY_ID ? 'FIRST DAY' : 'NEXT OPPORTUNITY';
+		this.objectiveEl.innerHTML = `<span class="bm-objective-kicker">${ kicker }</span>${ objective.text }`;
 	}
 }
