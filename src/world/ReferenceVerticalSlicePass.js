@@ -1,6 +1,7 @@
 import { Group, Vector3 } from '../engine/index.js';
 import { placeStaticAsset } from './bermuda/StaticAsset.js';
 import { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js';
+import { installReferenceCenterConsoleOverlay } from './ReferenceCenterConsoleOverlay.js';
 
 const WORLD_SAVE_KEY = 'bermuda.world.v1';
 const _forward = new Vector3();
@@ -86,25 +87,18 @@ function installBoatReferencePresentation( app, assets ) {
 	root.name = 'ReferenceBoatCharacters';
 	app.scene.add( root );
 
-	// High-detail deck avatar used during boarding/walking aboard. This fills the conspicuous gap in
-	// the 54-second reference where the player remains visible while stepping into the centre console.
 	const deckAvatar = placeStaticAsset( asset, [ { x: 0, y: 0, z: 0, yaw: 0, scale } ] );
 	deckAvatar.name = 'ReferenceDeckPlayer';
 	root.add( deckAvatar );
 
-	// A separate instance shares the same decoded geometry/materials and is parented to the boat.
-	// The source character is standing, so lowering the feet slightly into the sole gives the visual
-	// read of a braced helmsman without requiring a second skinned/animated character pipeline.
 	const helmAvatar = placeStaticAsset( asset, [ { x: 0, y: 0, z: 0, yaw: 0, scale } ] );
 	helmAvatar.name = 'ReferenceHelmPlayer';
 	boat.model.group.add( helmAvatar );
 	const deckY = boat.model.lines?.deckY ?? 0.72;
-	helmAvatar.position.set( -0.55, deckY - 0.10, 0.12 );
+	helmAvatar.position.set( -0.38, deckY - 0.08, 0.02 );
 	helmAvatar.rotation.y = Math.PI;
-	helmAvatar.rotation.x = -0.06;
+	helmAvatar.rotation.x = -0.05;
 
-	// Preserve the proven deck collision/input code, but present it with the same close third-person
-	// camera language as the uploaded reference instead of snapping back to first person on boarding.
 	const baseDeck = player.updateDeck.bind( player );
 	player.updateDeck = ( dt ) => {
 		baseDeck( dt );
@@ -129,9 +123,9 @@ function installBoatReferencePresentation( app, assets ) {
 		}
 		helmAvatar.visible = player.mode === 'boat' && player.camMode === 'third';
 		if ( player.mode !== lastMode ) {
-			if ( player.mode === 'deck' ) { player.camInit = false; }
+			if ( player.mode === 'deck' ) player.camInit = false;
 			if ( player.mode === 'boat' && player.camMode === 'third' ) {
-				player.orbitDist = 9.4;
+				player.orbitDist = 9.2;
 				player.orbitPitch = 0.24;
 				player.camInit = false;
 			}
@@ -147,7 +141,8 @@ function installBoatReferencePresentation( app, assets ) {
 
 export function installReferenceVerticalSlicePass( app ) {
 	if ( ! app || app.__bermudaVerticalSlicePass ) return app?.__bermudaVerticalSlicePass;
-	const state = app.__bermudaVerticalSlicePass = { boatPresentation: null, persistence: null };
+	const state = app.__bermudaVerticalSlicePass = { boatPresentation: null, centerConsole: null, persistence: null };
+	state.centerConsole = installReferenceCenterConsoleOverlay( app );
 	state.persistence = installWorldPersistence( app );
 	void installReferenceStreetLifeModels( app ).then( assets => {
 		state.boatPresentation = installBoatReferencePresentation( app, assets );
