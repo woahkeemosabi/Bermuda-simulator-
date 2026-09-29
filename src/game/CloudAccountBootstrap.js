@@ -1,6 +1,7 @@
 import './CloudPublicConfig.js';
 import { CloudAccount } from './CloudAccount.js';
 import './CloudAccountAuthCompat.js';
+import './CloudAccountSyncCompat.js';
 import { LifeProgression } from './LifeProgression.js';
 import { Bicycle } from '../player/Bicycle.js';
 
