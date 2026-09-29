@@ -71,7 +71,7 @@ export function installBermudaGameplayQA( app ) {
 
 			if ( app.game?.toast ) {
 
-				const now = performance.now();
+				const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
 				if ( ! boat.__anchorReminderAt || now - boat.__anchorReminderAt > 1800 ) {
 
 					boat.__anchorReminderAt = now;
@@ -87,10 +87,14 @@ export function installBermudaGameplayQA( app ) {
 
 	};
 
-	window.__bermudaGameplayQA = {
-		boat,
-		get anchored() { return boat.anchored; },
-		get boatPosition() { return { x: boat.position.x, y: boat.position.y, z: boat.position.z }; },
-	};
+	if ( typeof window !== 'undefined' ) {
+
+		window.__bermudaGameplayQA = {
+			boat,
+			get anchored() { return boat.anchored; },
+			get boatPosition() { return { x: boat.position.x, y: boat.position.y, z: boat.position.z }; },
+		};
+
+	}
 
 }
