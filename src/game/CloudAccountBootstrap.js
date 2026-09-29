@@ -4,6 +4,7 @@ import { CloudAccount } from './CloudAccount.js';
 import './CloudAccountAuthCompat.js';
 import './CloudAccountSyncCompat.js';
 import { LifeProgression } from './LifeProgression.js';
+import { RelationshipSystem } from './RelationshipSystem.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
 import { BoatOwnership } from './BoatOwnership.js';
 import { BoatUpgradeVisuals } from './BoatUpgradeVisuals.js';
@@ -29,6 +30,12 @@ if ( typeof window !== 'undefined' ) {
 				if ( ! app.progression ) app.progression = new LifeProgression( app );
 			} catch ( error ) {
 				console.warn( 'life progression unavailable; existing gameplay remains active', error );
+			}
+
+			try {
+				if ( ! app.relationshipSystem ) app.relationshipSystem = new RelationshipSystem( app );
+			} catch ( error ) {
+				console.warn( 'relationship progression unavailable; mission state remains intact', error );
 			}
 
 			try {
