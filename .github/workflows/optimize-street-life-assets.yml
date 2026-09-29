@@ -45,16 +45,9 @@ jobs:
             for src in "${files[@]}"; do
               base=$(basename "$src")
               echo "===== OPTIMIZING $base ====="
-
-              # Desktop retains a strong silhouette and 2K texture detail while stripping Meshy's
-              # huge source texture payload. Keep core GLB geometry; the simulator does not use
-              # Draco or meshopt runtime decoding.
               npx gltf-transform optimize "$src" "$srcdir/desktop/$base" \
                 --simplify true --simplify-ratio 0.52 --simplify-error 0.0015 \
                 --compress false --texture-compress webp --texture-size 2048
-
-              # Mobile aggressively reduces hidden/micro geometry while preserving character and
-              # scooter silhouettes. Textures are capped at 1K for the iPhone WebGPU profile.
               case "$base" in
                 bermuda-scooter.glb) ratio=0.24 ;;
                 bermuda-npc-male.glb|bermuda-npc-female.glb) ratio=0.20 ;;
@@ -64,26 +57,36 @@ jobs:
                 --simplify true --simplify-ratio "$ratio" --simplify-error 0.003 \
                 --compress false --texture-compress webp --texture-size 1024
             done
-
-            # Raw Meshy exports are 35–92 MB apiece and must not ship in the public build.
             rm -f "$srcdir"/*.glb
           else
-            echo 'Raw exports already removed; applying final scooter-specific LOD pass.'
-            test -s "$srcdir/mobile/bermuda-scooter.glb"
-            test -s "$srcdir/desktop/bermuda-scooter.glb"
-
-            # Scooter geometry was much denser than the people. A second targeted simplification
-            # keeps the visible silhouette, wheels, mirrors and bodywork while making initial
-            # iPhone streaming practical. NPC tiers are already in the desired size range.
-            npx gltf-transform optimize "$srcdir/mobile/bermuda-scooter.glb" /tmp/scooter-mobile.glb \
-              --simplify true --simplify-ratio 0.36 --simplify-error 0.0045 \
-              --compress false --texture-compress webp --texture-size 1024
-            mv /tmp/scooter-mobile.glb "$srcdir/mobile/bermuda-scooter.glb"
-
-            npx gltf-transform optimize "$srcdir/desktop/bermuda-scooter.glb" /tmp/scooter-desktop.glb \
-              --simplify true --simplify-ratio 0.55 --simplify-error 0.0025 \
-              --compress false --texture-compress webp --texture-size 2048
-            mv /tmp/scooter-desktop.glb "$srcdir/desktop/bermuda-scooter.glb"
+            echo 'Raw exports already removed; applying gameplay LOD targets.'
+            for tier in mobile desktop; do
+              for base in bermuda-scooter bermuda-npc-male bermuda-npc-female; do
+                test -s "$srcdir/$tier/$base.glb"
+                src="$srcdir/$tier/$base.glb"
+                out="/tmp/${tier}-${base}.glb"
+                if [ "$tier" = mobile ]; then
+                  tex=1024; err=0.006
+                  case "$base" in
+                    bermuda-scooter) ratio=0.13 ;;
+                    bermuda-npc-male) ratio=0.20 ;;
+                    bermuda-npc-female) ratio=0.15 ;;
+                  esac
+                else
+                  tex=2048; err=0.003
+                  case "$base" in
+                    bermuda-scooter) ratio=0.13 ;;
+                    bermuda-npc-male) ratio=0.20 ;;
+                    bermuda-npc-female) ratio=0.17 ;;
+                  esac
+                fi
+                echo "===== FINAL LOD $tier/$base ratio=$ratio ====="
+                npx gltf-transform optimize "$src" "$out" \
+                  --simplify true --simplify-ratio "$ratio" --simplify-error "$err" \
+                  --compress false --texture-compress webp --texture-size "$tex"
+                mv "$out" "$src"
+              done
+            done
           fi
 
           echo '===== FINAL STREET-LIFE SIZES ====='
@@ -97,6 +100,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A public/models/bermuda/street-life
           git diff --cached --quiet && exit 0
-          git commit -m 'assets: tighten Meshy street-life LODs'
+          git commit -m 'assets: finalize Meshy street-life gameplay LODs'
           git pull --rebase origin main
           git push origin HEAD:main
