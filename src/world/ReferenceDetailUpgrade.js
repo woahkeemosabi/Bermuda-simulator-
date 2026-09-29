@@ -251,15 +251,8 @@ export function installReferenceDetailUpgrade( app ) {
 		group.add( mesh );
 	}
 
-	// A handful of taller palms make the skyline layer correctly against the white roofs.
-	for ( const [ x, z, h ] of [ [ -112, -63, 7.2 ], [ -88, -66, 6.8 ], [ -56, -64, 7.0 ], [ -24, -65, 6.5 ] ] ) {
-		const y = Math.max( 1.4, terrain.heightAt( x, z ) );
-		cyl( M.trunk, x, y + h * 0.5, z, 0.17, h, true );
-		for ( let j = 0; j < 6; j ++ ) {
-			const a = j * Math.PI / 3;
-			box( j % 2 ? M.leaf : M.leaf2, x + Math.sin( a ) * 1.25, y + h + 0.05, z + Math.cos( a ) * 1.25, 0.42, 0.09, 2.8, a );
-		}
-	}
+	// Palmetto/fan-palm silhouettes now come from the authored GLB placements in AssetLayout.
+	// Avoid the previous crossed-box canopy trees, which read as placeholders at phone-camera distance.
 
 	app.scene.add( group );
 	app.bermudaReferenceDetail = { group, materials: M };

@@ -134,21 +134,7 @@ export function installReferenceWorldUpgrade( app ) {
 		{ x: -29, z: -68, w: 8.1, d: 6.3, h: 4.5, mat: M.pink, yaw: - 0.05 },
 	].forEach( addHouse );
 
-	const addPalm = ( x, z, height = 5.5 ) => {
-		const gy = Math.max( 1.4, terrain.heightAt( x, z ) );
-		cyl( M.trunk, x, gy + height * 0.5, z, 0.14, height, true );
-		for ( let i = 0; i < 5; i ++ ) {
-			const a = i * Math.PI * 0.4;
-			const r = 1.15;
-			box( i % 2 ? M.green : M.green2, x + Math.sin( a ) * r, gy + height + 0.05, z + Math.cos( a ) * r, 0.42, 0.10, 2.35, a );
-		}
-	};
-
-	[
-		[ -101, -57, 5.7 ], [ -91, -58, 5.1 ], [ -82, -62, 6.1 ],
-		[ -73, -57.5, 5.3 ], [ -60, -59, 6.0 ], [ -48, -58, 5.2 ],
-		[ -36, -58, 5.7 ], [ -27, -60, 5.0 ],
-	].forEach( p => addPalm( ...p ) );
+	// Palms are supplied by the authored palmetto GLB tier; do not layer crude crossed-box trees over them.
 
 	// Compact hedge/shrub masses between the footway and houses. Keep the RELIC's parking/drive lane
 	// completely clear; all vegetation begins several metres landward of the road centreline.

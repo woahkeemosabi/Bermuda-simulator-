@@ -21,6 +21,13 @@ export function installBermudaBlockout(app){
  // read as an artificial barrier and blocked the clean route between the road and waterfront.
  box(M.asphalt,-68,1.43,-49.2,34,.18,5,0,true,'bermuda-road',true);
  visualKey='approach'; box(M.wood,-65,.55,-30,5.2,.9,34,0,true,'bermuda-landing',true);
+ // Smooth the final dock-to-road rise into five shallow walkable terraces. The old 0.5 m step
+ // forced mobile players to use UP just to reach RELIC; normal navigation should not require a jump.
+ const approachTops=[1.10,1.20,1.30,1.40,1.50];
+ for(let i=0;i<approachTops.length;i++){
+  const top=approachTops[i],z=-43.45-i*.82,h=top-.90;
+  box(M.wood,-65,.90+h*.5,z,5.2,h,.90,0,true,'bermuda-approach-ramp',true);
+ }
  visualKey='shop-apron'; box(M.wood,WATERFRONT_DECK.x,.55,WATERFRONT_DECK.z,WATERFRONT_DECK.width,.9,WATERFRONT_DECK.depth,0,true,'bermuda-shop-apron',true);
  const planks=new InstancedMesh(GEO.box,M.wood,120),matrix=new Matrix4();
  for(let i=0;i<120;i++){matrix.makeScale(WATERFRONT_DECK.width-.08,.045,.19).setPosition(WATERFRONT_DECK.x,.9775,WATERFRONT_DECK.z-WATERFRONT_DECK.depth*.5+.2+i*.2);planks.setMatrixAt(i,matrix);}planks.instanceMatrix.needsUpdate=true;planks.computeBoundingSphere();group.add(planks);
