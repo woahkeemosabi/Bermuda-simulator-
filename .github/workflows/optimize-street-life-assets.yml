@@ -1,0 +1,92 @@
+name: Optimize Bermuda Street Life Assets
+
+on:
+  push:
+    paths:
+      - 'public/models/bermuda/street-life/*.glb'
+      - '.github/workflows/optimize-street-life-assets.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: optimize-bermuda-street-life
+  cancel-in-progress: false
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install glTF optimizer
+        run: npm install --no-save @gltf-transform/cli
+
+      - name: Build street-life mobile and desktop tiers
+        shell: bash
+        run: |
+          set -euo pipefail
+          srcdir='public/models/bermuda/street-life'
+          mkdir -p "$srcdir/mobile" "$srcdir/desktop"
+          shopt -s nullglob
+          files=("$srcdir"/*.glb)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo 'No raw street-life GLBs found; optimized tiers may already exist.'
+            test -s "$srcdir/mobile/bermuda-scooter.glb"
+            test -s "$srcdir/mobile/bermuda-npc-male.glb"
+            test -s "$srcdir/mobile/bermuda-npc-female.glb"
+            exit 0
+          fi
+
+          for src in "${files[@]}"; do
+            base=$(basename "$src")
+            echo "===== OPTIMIZING $base ====="
+
+            # Desktop retains a strong silhouette and 2K texture detail while stripping Meshy's
+            # huge source texture payload. Keep core GLB geometry; the simulator does not use
+            # Draco or meshopt runtime decoding.
+            npx gltf-transform optimize "$src" "$srcdir/desktop/$base" \
+              --simplify true --simplify-ratio 0.52 --simplify-error 0.0015 \
+              --compress false --texture-compress webp --texture-size 2048
+
+            # Mobile aggressively reduces hidden/micro geometry while preserving character and
+            # scooter silhouettes. Textures are capped at 1K for the iPhone WebGPU profile.
+            case "$base" in
+              bermuda-scooter.glb) ratio=0.24 ;;
+              bermuda-npc-male.glb|bermuda-npc-female.glb) ratio=0.20 ;;
+              *) ratio=0.20 ;;
+            esac
+            npx gltf-transform optimize "$src" "$srcdir/mobile/$base" \
+              --simplify true --simplify-ratio "$ratio" --simplify-error 0.003 \
+              --compress false --texture-compress webp --texture-size 1024
+          done
+
+          echo '===== OPTIMIZED SIZES ====='
+          du -h "$srcdir"/mobile/*.glb "$srcdir"/desktop/*.glb
+
+          # The source files are 35–92 MB apiece and must never ship in the public build once the
+          # optimized tiers are proven. Remove them from the latest tree; Meshy task IDs remain in
+          # Actions metadata if a source ever needs to be recovered.
+          rm -f "$srcdir"/*.glb
+
+      - name: Commit optimized tiers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A public/models/bermuda/street-life
+          git diff --cached --quiet && exit 0
+          git commit -m 'assets: optimize Meshy Bermuda street life'
+          git pull --rebase origin main
+          git push origin HEAD:main
