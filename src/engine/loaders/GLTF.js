@@ -55,7 +55,9 @@ export function parseGLB( buffer ) {
 	}
 
 	if ( ! json ) throw new Error( 'GLB: no JSON chunk' );
-	if ( json.extensionsRequired && json.extensionsRequired.length ) throw new Error( 'GLB: unsupported extensions ' + json.extensionsRequired.join( ', ' ) );
+	const requiredExtensions = json.extensionsRequired || [];
+	const unsupportedExtensions = requiredExtensions.filter( ( name ) => name !== 'EXT_texture_webp' );
+	if ( unsupportedExtensions.length ) throw new Error( 'GLB: unsupported extensions ' + unsupportedExtensions.join( ', ' ) );
 
 	const viewBytes = ( i ) => {
 
@@ -180,11 +182,20 @@ export function parseGLB( buffer ) {
 
 	} );
 
+	// EXT_texture_webp stores the preferred image source on the texture extension rather than
+	// texture.source. Normalize it here so the rest of the engine can remain extension-agnostic.
+	const textures = ( json.textures || [] ).map( ( texture ) => {
+
+		const webp = texture.extensions && texture.extensions.EXT_texture_webp;
+		return webp && webp.source !== undefined ? { ...texture, source: webp.source } : texture;
+
+	} );
+
 	const images = ( json.images || [] ).map( ( im ) => ( { bytes: im.bufferView !== undefined ? viewBytes( im.bufferView ) : null, mimeType: im.mimeType, uri: im.uri } ) );
 	const scene = json.scenes ? json.scenes[ json.scene || 0 ] : null;
 	const roots = scene ? scene.nodes : nodes.map( ( _, i ) => i ).filter( ( i ) => ! nodes.some( ( n ) => n.children.includes( i ) ) );
 
-	return { json, nodes, roots, meshes, skins, animations, materials: json.materials || [], textures: json.textures || [], images };
+	return { json, nodes, roots, meshes, skins, animations, materials: json.materials || [], textures, images };
 
 }
 

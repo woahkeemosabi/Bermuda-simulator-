@@ -5,6 +5,7 @@ import { installBermudaModels } from './BermudaModels.js';
 import { installReferenceWorldUpgrade } from './ReferenceWorldUpgrade.js';
 import { installReferenceDetailUpgrade } from './ReferenceDetailUpgrade.js';
 import { installReferenceStreetLife } from './ReferenceStreetLife.js';
+import { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js';
 import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
@@ -130,6 +131,19 @@ export function applyBermudaRuntimeLook( app ) {
 	installReferenceWorldUpgrade( app );
 	installReferenceDetailUpgrade( app );
 	installReferenceStreetLife( app );
+	// Meshy models replace the lightweight procedural scooters/people only after each GLB has
+	// loaded and passed the runtime checks. Keep mobile boot responsive by streaming this cosmetic
+	// pass shortly after the core scene; desktop starts it immediately. A load failure leaves the
+	// proven procedural fallback visible instead of breaking gameplay.
+	const loadStreetLifeModels = () => installReferenceStreetLifeModels( app ).catch( ( error ) =>
+		console.warn( 'Bermuda Meshy street-life pass failed; procedural fallbacks remain active.', error ) );
+	const params = typeof location !== 'undefined' ? new URLSearchParams( location.search ) : null;
+	const mobileStreetLife = typeof navigator !== 'undefined' && ! params?.has( 'desktop' ) && (
+		/iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
+		( navigator.maxTouchPoints > 1 && typeof screen !== 'undefined' && Math.min( screen.width, screen.height ) < 1024 )
+	);
+	if ( mobileStreetLife && typeof setTimeout === 'function' ) setTimeout( loadStreetLifeModels, 3200 );
+	else void loadStreetLifeModels();
 	installRelic001( app );
 	installRelicStory( app );
 	installBermudaGameplayQA( app );
