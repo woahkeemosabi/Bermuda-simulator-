@@ -10,6 +10,7 @@ import { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js
 import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
+import { installRelicMobileModes } from '../mobile/RelicMobileModes.js';
 import { Whale } from './marine/Whale.js';
 
 export const BERMUDA_LOOK = {
@@ -149,6 +150,7 @@ export function applyBermudaRuntimeLook( app ) {
 	installRelic001( app );
 	installRelicStory( app );
 	installBermudaGameplayQA( app );
+	installRelicMobileModes( app );
 	const waterfrontReady = installBermudaModels( app );
 
 	if ( app.updateSun ) app.updateSun();
