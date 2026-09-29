@@ -1,0 +1,92 @@
+name: Generate Bermuda Street Life Assets
+
+on:
+  push:
+    paths:
+      - '.github/workflows/meshy-generate-street-life.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: meshy-bermuda-street-life
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Generate scooter and Bermuda pedestrian bases
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+          mkdir -p public/models/bermuda/street-life .meshy-street-life/results .meshy-street-life/previews .meshy-street-life/downloads
+
+          echo '===== STARTING BALANCE ====='
+          $M balance --output-schema v1 --format json --no-update-check | tee .meshy-street-life/results/balance-before.json
+
+          names=(bermuda-scooter bermuda-npc-male bermuda-npc-female)
+          prompts=(
+            "Modern Bermuda commuter scooter, compact 125cc island road scooter, realistic proportions, black tires, metal wheels, tasteful dark blue bodywork, mirrors, headlight and seat, clean stylized-realistic mobile game asset, isolated vehicle, no rider, no ground, no text, no logos"
+            "Bermuda waterfront male pedestrian NPC, adult Black Bermudian man, casual clean island clothing with short sleeve shirt, lightweight trousers and sneakers, realistic human proportions, relaxed neutral standing pose with arms slightly away from torso, stylized-realistic mobile game character, full body isolated, no props, no background"
+            "Bermuda waterfront female pedestrian NPC, adult Black Bermudian woman, casual clean island clothing with summer top, lightweight trousers and sneakers, realistic human proportions, relaxed neutral standing pose with arms slightly away from torso, stylized-realistic mobile game character, full body isolated, no props, no background"
+          )
+
+          for i in "${!names[@]}"; do
+            name="${names[$i]}"
+            prompt="${prompts[$i]}"
+            dl=".meshy-street-life/downloads/${name}"
+            mkdir -p "$dl"
+            echo "===== GENERATING ${name} ====="
+            $M make "$prompt" \
+              --max-credits 30 \
+              --timeout 1200 \
+              -o "$dl" \
+              --output-schema v1 \
+              --format json \
+              --no-update-check | tee ".meshy-street-life/results/${name}.json"
+
+            glb=$(find "$dl" -type f -name '*.glb' | head -n 1)
+            test -n "$glb"
+            cp "$glb" "public/models/bermuda/street-life/${name}.glb"
+
+            preview=$(find "$dl" -type f \( -name 'preview.png' -o -name '*thumbnail*.png' \) | head -n 1 || true)
+            if [ -n "$preview" ]; then cp "$preview" ".meshy-street-life/previews/${name}.png"; fi
+          done
+
+          echo '===== ENDING BALANCE ====='
+          $M balance --output-schema v1 --format json --no-update-check | tee .meshy-street-life/results/balance-after.json
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/models/bermuda/street-life/*.glb
+          git commit -m "asset: add Meshy Bermuda street-life models"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Upload Meshy previews and metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meshy-bermuda-street-life-results
+          path: |
+            .meshy-street-life/results/
+            .meshy-street-life/previews/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
