@@ -11,6 +11,8 @@ import { PropertySystem } from './PropertySystem.js';
 import { PropertyExpansion } from './PropertyExpansion.js';
 import { DynamicIslandEvents } from './DynamicIslandEvents.js';
 import { IslandMissionSystem } from './IslandMissionSystem.js';
+import { SideQuestSystem } from './SideQuestSystem.js';
+import { HarbourJobBoard } from './HarbourJobBoard.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
 import { BoatOwnership } from './BoatOwnership.js';
 import { BoatUpgradeVisuals } from './BoatUpgradeVisuals.js';
@@ -82,6 +84,18 @@ if ( typeof window !== 'undefined' ) {
 				if ( ! app.islandMissions ) app.islandMissions = new IslandMissionSystem( app );
 			} catch ( error ) {
 				console.warn( 'island mission set unavailable; core progression remains playable', error );
+			}
+
+			try {
+				if ( ! app.sideQuests ) app.sideQuests = new SideQuestSystem( app );
+			} catch ( error ) {
+				console.warn( 'Bermuda side quests unavailable; core and dynamic missions remain playable', error );
+			}
+
+			try {
+				if ( ! app.harbourJobBoard ) app.harbourJobBoard = new HarbourJobBoard( app );
+			} catch ( error ) {
+				console.warn( 'harbour quick jobs unavailable; larger missions remain playable', error );
 			}
 
 			try {
