@@ -17,9 +17,8 @@ export function installBermudaBlockout(app){
  const cyl=(mat,x,y,z,r,h,collide=false,tag='bermuda')=>{const mesh=addScaled(GEO.cyl,mat,x,y,z,r,h,r);if(collide)colliders.addCylinder(x,z,r,y-h*.5,y+h*.5,{tag});return mesh;};
  const sphere=(mat,x,y,z,r)=>addScaled(GEO.sphere,mat,x,y,z,r,r,r);
 
- // Waterfront: retain the long approach but add a full-width shop apron so the storefronts no
- // longer consume the walking lane. The apron and approach overlap, avoiding cracks in collision.
- box(M.limestone,-66.5,.55,-45.2,27,1.8,3.2,0,true,'bermuda-seawall',true);
+ // Waterfront: keep the roadway open to the beach/car area. The old continuous limestone seawall
+ // read as an artificial barrier and blocked the clean route between the road and waterfront.
  box(M.asphalt,-68,1.43,-49.2,34,.18,5,0,true,'bermuda-road',true);
  visualKey='approach'; box(M.wood,-65,.55,-30,5.2,.9,34,0,true,'bermuda-landing',true);
  visualKey='shop-apron'; box(M.wood,WATERFRONT_DECK.x,.55,WATERFRONT_DECK.z,WATERFRONT_DECK.width,.9,WATERFRONT_DECK.depth,0,true,'bermuda-shop-apron',true);
