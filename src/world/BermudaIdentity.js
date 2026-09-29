@@ -4,6 +4,7 @@ import { installBermudaBlockout } from './BermudaBlockout.js';
 import { installBermudaModels } from './BermudaModels.js';
 import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
+import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
 import { Whale } from './marine/Whale.js';
 
 export const BERMUDA_LOOK = {
@@ -118,6 +119,7 @@ export function applyBermudaRuntimeLook( app ) {
 	installBermudaBlockout( app );
 	installRelic001( app );
 	installRelicStory( app );
+	installBermudaGameplayQA( app );
 	const waterfrontReady = installBermudaModels( app );
 
 	if ( app.updateSun ) app.updateSun();
