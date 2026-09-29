@@ -151,17 +151,21 @@ function remapAnimation( base, source, name ) {
 		const sourceName = source.nodes[ channel.node ]?.name;
 		const target = byName.get( sourceName );
 		if ( target === undefined ) continue;
+		// Text-to-motion clips can contain root translation. PlayerController remains authoritative for
+		// world movement, so strip only root/pelvis translation while preserving the authored stroke.
+		if ( name === 'swim' && channel.path === 'translation' && /root|hips|pelvis/i.test( sourceName || '' ) ) continue;
 		channels.push( { ...channel, node: target } );
 	}
 	return channels.length ? { name, duration: animation.duration, channels } : null;
 }
 
-function bindCharacterClips( base, walk, run ) {
+function bindCharacterClips( base, walk, run, swim = null ) {
 	const clips = [
 		remapAnimation( base, walk, 'walk' ),
 		remapAnimation( base, run, 'run' ),
+		swim ? remapAnimation( base, swim, 'swim' ) : null,
 	].filter( Boolean );
-	base.animations = [ ...( base.animations || [] ).filter( ( a ) => ! [ 'walk', 'run' ].includes( a.name ) ), ...clips ];
+	base.animations = [ ...( base.animations || [] ).filter( ( a ) => ! [ 'walk', 'run', 'swim' ].includes( a.name ) ), ...clips ];
 	return clips;
 }
 
@@ -178,14 +182,16 @@ function characterHeight( gltf ) {
 	return Number.isFinite( min ) && Number.isFinite( max ) ? Math.max( 0.01, max - min ) : 1.78;
 }
 
-async function loadCharacterSource( prefix ) {
-	const [ base, walk, run ] = await Promise.all( [
+async function loadCharacterSource( prefix, includeSwim = false ) {
+	const [ base, walk, run, swim ] = await Promise.all( [
 		loadGLB( CHARACTERS + prefix + '-rigged.glb' ),
 		loadGLB( CHARACTERS + prefix + '-walk.glb' ),
 		loadGLB( CHARACTERS + prefix + '-run.glb' ),
+		includeSwim ? loadGLB( CHARACTERS + prefix + '-swim.glb' ) : Promise.resolve( null ),
 	] );
-	const clips = bindCharacterClips( base, walk, run );
-	if ( clips.length < 2 ) throw new Error( prefix + ': walk/run clips could not be mapped to the production rig.' );
+	const clips = bindCharacterClips( base, walk, run, swim );
+	const expected = includeSwim ? 3 : 2;
+	if ( clips.length < expected ) throw new Error( prefix + ': production character animation clips could not be mapped to the rig.' );
 	return { gltf: base, height: characterHeight( base ) };
 }
 
@@ -212,7 +218,7 @@ function playCharacter( model, name, speed ) {
 
 async function installProductionCharacters( app, mobile ) {
 	const [ maleSource, femaleSource ] = await Promise.all( [
-		loadCharacterSource( 'bermuda-player-male' ),
+		loadCharacterSource( 'bermuda-player-male', true ),
 		loadCharacterSource( 'bermuda-npc-female' ),
 	] );
 	const playerModel = await createCharacter( maleSource, 1.78 );
@@ -242,24 +248,33 @@ async function installProductionCharacters( app, mobile ) {
 		const presentation = player?.__bermudaReferencePresentation;
 		const third = presentation?.thirdPerson !== false;
 		const walking = player?.mode === 'walk';
-		const camDistance = walking ? app.camera.position.distanceTo( player.position ) : 0;
-		const speed = walking ? Math.hypot( player.velocity.x, player.velocity.z ) : 0;
-		const showPlayer = !! walking && third && camDistance > 1.75;
+		const swimming = player?.mode === 'swim';
+		const playerActive = walking || swimming;
+		const camDistance = playerActive ? app.camera.position.distanceTo( player.position ) : 0;
+		const speed = swimming
+			? Math.hypot( player.velocity.x, player.velocity.y, player.velocity.z )
+			: walking ? Math.hypot( player.velocity.x, player.velocity.z ) : 0;
+		const showPlayer = !! playerActive && third && camDistance > 1.75;
 		playerModel.group.visible = showPlayer;
 		if ( showPlayer ) {
 			playerModel.group.position.copy( player.position );
 			playerModel.group.rotation.y = player.yaw + Math.PI;
-			const running = speed > 3.15;
-			playCharacter( playerModel, running ? 'run' : 'walk', running ? Math.max( 0.75, speed / 4.7 ) : speed < 0.12 ? 0 : Math.max( 0.55, speed / 2.1 ) );
+			if ( swimming ) {
+				// Prime Text-to-Motion authored this as a horizontal freestyle cycle. Keep PlayerController
+				// authoritative for position/yaw and scale cadence with actual 3D swim velocity.
+				const cadence = speed < 0.12 ? 0.62 : Math.max( 0.70, Math.min( 1.40, speed / 2.15 ) );
+				playCharacter( playerModel, 'swim', cadence );
+			} else {
+				const running = speed > 3.15;
+				playCharacter( playerModel, running ? 'run' : 'walk', running ? Math.max( 0.75, speed / 4.7 ) : speed < 0.12 ? 0 : Math.max( 0.55, speed / 2.1 ) );
+			}
 			playerModel.update( dt );
 		} else playerModel.hold();
 
-		// Preserve the existing articulated swimmer until a dedicated production swim clip is authored.
+		// The production player now owns third-person walk/run/swim presentation. The old segmented
+		// articulated proxy must never appear again once the production character has loaded.
 		const fallback = app.__referenceArticulatedCharacters?.playerRig?.root;
-		if ( fallback ) {
-			if ( player?.mode === 'swim' ) fallback.scale.setScalar( 0.86 );
-			else if ( showPlayer ) fallback.scale.setScalar( 0.0001 );
-		}
+		if ( fallback && ( swimming || showPlayer ) ) fallback.scale.setScalar( 0.0001 );
 		const staticIdle = app.__exactReferenceCharacters?.playerModel;
 		if ( staticIdle && showPlayer ) staticIdle.visible = false;
 
