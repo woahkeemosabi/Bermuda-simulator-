@@ -2,6 +2,7 @@ import { G } from '../core/Globals.js';
 import { TerrainData } from './TerrainData.js';
 import { installBermudaBlockout } from './BermudaBlockout.js';
 import { installBermudaModels } from './BermudaModels.js';
+import { installHarbourShopPolish } from './HarbourShopPolish.js';
 import { installReferenceWorldUpgrade } from './ReferenceWorldUpgrade.js';
 import { installReferenceDetailUpgrade } from './ReferenceDetailUpgrade.js';
 import { installReferenceStreetLife } from './ReferenceStreetLife.js';
@@ -128,6 +129,7 @@ export function applyBermudaRuntimeLook( app ) {
 	// detail without rewriting the engine or the Harbour Run gameplay loop. Street life adds scooters,
 	// pedestrians and market furniture from the final third of the 54-second visual benchmark.
 	installBermudaBlockout( app );
+	installHarbourShopPolish( app );
 	installReferenceWorldUpgrade( app );
 	installReferenceDetailUpgrade( app );
 	installReferenceStreetLife( app );
