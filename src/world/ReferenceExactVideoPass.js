@@ -10,6 +10,7 @@ import { installReferenceMaterialFidelityPass } from './ReferenceMaterialFidelit
 import { installReferenceMarineDensityPass } from './ReferenceMarineDensityPass.js';
 import { installReferenceEnvironmentAtmospherePass } from './ReferenceEnvironmentAtmospherePass.js';
 import { installReferenceClosurePass } from './ReferenceClosurePass.js';
+import { installReferenceVisualClosurePass } from './ReferenceVisualClosurePass.js';
 import { installBermudaDockHudFix } from '../mobile/BermudaDockHudFix.js';
 
 function mat( name, color, emissive = 0x000000, roughness = 0.22, metalness = 0.72 ) {
@@ -117,6 +118,7 @@ export function installReferenceExactVideoPass( app ) {
 	const environment = installReferenceEnvironmentAtmospherePass( app );
 	const dockHud = installBermudaDockHudFix( app );
 	const closure = installReferenceClosurePass( app );
+	const visualClosure = installReferenceVisualClosurePass( app );
 	const exact = app.__referenceExactVideoPass = {
 		characters: null,
 		articulated,
@@ -125,6 +127,7 @@ export function installReferenceExactVideoPass( app ) {
 		environment,
 		dockHud,
 		closure,
+		visualClosure,
 		relicShell: heroShell,
 		relic: installRelicVideoMatch( app ),
 	};
