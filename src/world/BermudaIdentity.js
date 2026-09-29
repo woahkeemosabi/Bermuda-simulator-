@@ -4,6 +4,7 @@ import { installBermudaBlockout } from './BermudaBlockout.js';
 import { installBermudaModels } from './BermudaModels.js';
 import { installReferenceWorldUpgrade } from './ReferenceWorldUpgrade.js';
 import { installReferenceDetailUpgrade } from './ReferenceDetailUpgrade.js';
+import { installReferenceStreetLife } from './ReferenceStreetLife.js';
 import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
@@ -123,10 +124,12 @@ export function applyBermudaRuntimeLook( app ) {
 
 	// Preserve the proven simulation systems and layer authored reference-match composition around
 	// them. The detail pass adds the marina, shallow seabed cues and near-camera Bermuda facade/plant
-	// detail without rewriting the engine or the Harbour Run gameplay loop.
+	// detail without rewriting the engine or the Harbour Run gameplay loop. Street life adds scooters,
+	// pedestrians and market furniture from the final third of the 54-second visual benchmark.
 	installBermudaBlockout( app );
 	installReferenceWorldUpgrade( app );
 	installReferenceDetailUpgrade( app );
+	installReferenceStreetLife( app );
 	installRelic001( app );
 	installRelicStory( app );
 	installBermudaGameplayQA( app );
