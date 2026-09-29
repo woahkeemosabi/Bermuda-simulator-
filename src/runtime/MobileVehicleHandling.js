@@ -64,10 +64,17 @@ document.addEventListener( 'visibilitychange', () => {
 	if ( document.visibilityState !== 'visible' ) resetSteerPointer();
 } );
 
-// Keep the existing throttle behaviour, but replace digital mobile steering with the analogue
+const originalSetInput = BoatController.prototype.setInput;
+
+// Keep desktop/key steering untouched. On mobile, replace the digital A/D helm with the analogue
 // thumb value. Steering authority tapers with speed and the rudder recentres faster than it turns
 // in, which removes the left-right hunting reported on iPhone while preserving deliberate turns.
 BoatController.prototype.setInput = function( throttle, steer, dt ) {
+	if ( ! mobilePadReady() ) {
+		originalSetInput.call( this, throttle, steer, dt );
+		return;
+	}
+
 	this.throttleTarget = throttle;
 	this.throttle += ( throttle - this.throttle ) * ( 1 - Math.exp( - dt * 2.2 ) );
 
@@ -87,7 +94,7 @@ BoatController.prototype.setInput = function( throttle, steer, dt ) {
 const originalBoatUpdate = BoatController.prototype.update;
 BoatController.prototype.update = function( dt ) {
 	originalBoatUpdate.call( this, dt );
-	if ( ! this.driven || this.moored || this.anchored ) return;
+	if ( ! mobilePadReady() || ! this.driven || this.moored || this.anchored ) return;
 
 	// Mild neutral-rudder yaw damping. It only becomes strong as the wheel comes back to centre,
 	// so the boat still carves a turn but does not keep oscillating after a correction is released.
