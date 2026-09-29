@@ -6,6 +6,7 @@ import { placeStaticAsset } from './bermuda/StaticAsset.js';
 import { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js';
 import { installReferenceRelicHeroShell } from './ReferenceRelicHeroShell.js';
 import { installReferenceArticulatedCharacters } from './ReferenceArticulatedCharacters.js';
+import { installReferenceMaterialFidelityPass } from './ReferenceMaterialFidelityPass.js';
 
 function mat( name, color, emissive = 0x000000, roughness = 0.22, metalness = 0.72 ) {
 	return new Material( {
@@ -107,9 +108,11 @@ export function installReferenceExactVideoPass( app ) {
 	if ( ! app || app.__referenceExactVideoPass ) return app?.__referenceExactVideoPass;
 	const heroShell = installReferenceRelicHeroShell( app );
 	const articulated = installReferenceArticulatedCharacters( app );
+	const fidelity = installReferenceMaterialFidelityPass( app );
 	const exact = app.__referenceExactVideoPass = {
 		characters: null,
 		articulated,
+		fidelity,
 		relicShell: heroShell,
 		relic: installRelicVideoMatch( app ),
 	};
