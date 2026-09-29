@@ -1,4 +1,6 @@
-// Keyboard / mouse with pointer lock support.
+// Keyboard / mouse input. Desktop camera look is drag-to-look by default so ordinary mouse
+// movement cannot throw the gameplay camera around. Pointer lock remains available only through
+// the explicit ?mouseLock=1 diagnostic/legacy opt-in.
 export class Input {
 
 	constructor( dom ) {
@@ -12,6 +14,7 @@ export class Input {
 		this.rightDown = false;
 		this.locked = false;
 		this.enabled = true;
+		this.pointerLockOptIn = typeof location !== 'undefined' && new URLSearchParams( location.search ).get( 'mouseLock' ) === '1';
 
 		window.addEventListener( 'keydown', ( e ) => {
 
@@ -41,8 +44,12 @@ export class Input {
 
 			if ( this.locked || this.mouseDown || this.rightDown ) {
 
-				this.look.x += e.movementX;
-				this.look.y += e.movementY;
+				// Browser/trackpad delta spikes are the main cause of sudden camera jumps. Clamp one
+				// event's contribution while preserving precise small movements.
+				const dx = Math.max( - 24, Math.min( 24, e.movementX || 0 ) );
+				const dy = Math.max( - 24, Math.min( 24, e.movementY || 0 ) );
+				this.look.x += dx;
+				this.look.y += dy;
 
 			}
 
@@ -57,6 +64,9 @@ export class Input {
 		document.addEventListener( 'pointerlockchange', () => {
 
 			this.locked = document.pointerLockElement === dom;
+			// Discard any accumulated delta from the lock/unlock transition itself.
+			this.look.x = 0;
+			this.look.y = 0;
 
 		} );
 
@@ -64,7 +74,9 @@ export class Input {
 
 	requestLock() {
 
-		if ( ! this.locked ) this.dom.requestPointerLock?.()?.catch?.( () => {} );
+		// Do not capture the desktop mouse automatically. The normal scheme is deliberate drag-to-look.
+		// Keep an explicit opt-in for diagnostics or players who prefer classic FPS pointer lock.
+		if ( this.pointerLockOptIn && ! this.locked ) this.dom.requestPointerLock?.()?.catch?.( () => {} );
 
 	}
 
