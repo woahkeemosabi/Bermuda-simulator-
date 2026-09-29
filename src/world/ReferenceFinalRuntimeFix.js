@@ -1,10 +1,13 @@
+import { installReferenceVerticalSlicePass } from './ReferenceVerticalSlicePass.js';
+
 // Last runtime integration fixes for the 54-second reference pass.
 // The visual final pass is installed before the touch controls are created, so this module keeps the
-// contextual on-foot CAM control's DOM state aligned with the third-person camera wrapper once the
-// mobile controls appear. It also makes the water material visibly follow weather and time-of-day.
+// contextual CAM control's DOM state aligned with the third-person camera wrapper once the mobile
+// controls appear. It also makes the water material visibly follow weather and time-of-day.
 
 export function installReferenceFinalRuntimeFix( app ) {
 	if ( ! app || app.__bermudaReferenceFinalRuntimeFix ) return app?.__bermudaReferenceFinalRuntimeFix;
+	installReferenceVerticalSlicePass( app );
 
 	let camButton = null;
 	let camObserver = null;
@@ -13,7 +16,7 @@ export function installReferenceFinalRuntimeFix( app ) {
 
 	const footCameraRelevant = () => {
 		const mode = app.player?.mode;
-		return mode === 'walk' || mode === 'swim';
+		return mode === 'walk' || mode === 'swim' || mode === 'deck';
 	};
 
 	const bindCamButton = () => {
@@ -25,9 +28,8 @@ export function installReferenceFinalRuntimeFix( app ) {
 			camButton = found;
 			if ( typeof MutationObserver !== 'undefined' ) {
 				camObserver = new MutationObserver( () => {
-					// BermudaMobileStable's own 100 ms context refresh predates the on-foot third-person
-					// camera. If it re-adds bm-hidden while walking/swimming, remove it immediately so
-					// its hit-test (button:not(.bm-hidden)) stays consistent with what the player sees.
+					// BermudaMobileStable's context refresh predates the third-person walk/swim/deck
+					// presentation. Keep its hit-test state identical to the button the player sees.
 					if ( footCameraRelevant() && camButton?.classList.contains( 'bm-hidden' ) ) {
 						camButton.classList.remove( 'bm-hidden' );
 					}
