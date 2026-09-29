@@ -1,0 +1,78 @@
+import { Group, Mesh, Vector3 } from '../engine/index.js';
+import { prepare, mergePrepared, box, rod, mat4 } from '../world/boat/GeoKit.js';
+import { createPropMaterial, PAT } from './GameMaterials.js';
+import { WORLD } from '../world/WorldLayout.js';
+
+const BOAT_ID = 'lobster-workboat';
+const PRICE = 3200;
+
+function signGeometry() {
+	const P = [];
+	const add = ( g, o ) => P.push( prepare( g, o ) );
+	const wood = { color: 0x6f543d, rough: 0.9, pattern: PAT.woodX };
+	const board = { color: 0xe9e4d4, rough: 0.84 };
+	add( rod( new Vector3( - 0.34, 0, 0 ), new Vector3( - 0.34, 1.25, 0 ), 0.035, 7 ), wood );
+	add( rod( new Vector3( 0.34, 0, 0 ), new Vector3( 0.34, 1.25, 0 ), 0.035, 7 ), wood );
+	add( box( 0.92, 0.54, 0.055 ), { ...board, matrix: mat4( 0, 1.05, 0 ) } );
+	// Simple stripes make the sign readable as a sale placard without expensive text geometry.
+	add( box( 0.66, 0.045, 0.012 ), { color: 0x1c5963, rough: 0.5, matrix: mat4( 0, 1.16, 0.035 ) } );
+	add( box( 0.48, 0.045, 0.012 ), { color: 0x1c5963, rough: 0.5, matrix: mat4( 0, 1.02, 0.035 ) } );
+	add( box( 0.58, 0.045, 0.012 ), { color: 0xc89b3c, rough: 0.5, matrix: mat4( 0, 0.88, 0.035 ) } );
+	return mergePrepared( P );
+}
+
+export class BoatOwnership {
+	constructor( app ) {
+		this.app = app;
+		this.player = app.player;
+		this.state = app.game.state;
+		this.game = app.game;
+		this.input = app.input;
+		this._realNearBoat = this.player.nearBoat.bind( this.player );
+		this.player.nearBoat = () => this.ownsBoat() && this._realNearBoat();
+
+		this.sign = new Group();
+		this.sign.name = 'StarterBoatSaleSign';
+		const mesh = new Mesh( signGeometry(), createPropMaterial( 'starterBoatSaleSign' ) );
+		mesh.castShadow = true;
+		this.sign.add( mesh );
+		const dock = WORLD.boatDock.position;
+		this.sign.position.set( dock.x + 3.2, dock.y || 1.0, dock.z + 1.0 );
+		this.sign.rotation.y = WORLD.boatDock.heading || 0;
+		app.scene.add( this.sign );
+
+		this.originalUpdate = this.player.update.bind( this.player );
+		this.player.update = ( dt ) => {
+			this.originalUpdate( dt );
+			this.update();
+		};
+		app.boatOwnership = this;
+		this.refresh();
+	}
+
+	ownsBoat() {
+		return !! this.state.boats?.owned?.some( ( b ) => b.id === BOAT_ID );
+	}
+
+	refresh() { if ( this.sign ) this.sign.visible = ! this.ownsBoat(); }
+
+	update() {
+		this.refresh();
+		if ( this.ownsBoat() ) return;
+		const p = this.player;
+		if ( p.mode !== 'walk' || p.busy || ! this._realNearBoat() ) return;
+		p.prompt = { key: 'E', text: `Downeast lobster boat · $${ PRICE.toLocaleString() } · buy` };
+		if ( ! this.input.hit( 'KeyE' ) ) return;
+		if ( this.state.money < PRICE ) {
+			this.game.toast( `Boat costs $${ PRICE.toLocaleString() } · you need $${ ( PRICE - this.state.money ).toLocaleString() } more`, 2600 );
+			return;
+		}
+		if ( ! this.state.spend( PRICE ) ) return;
+		this.state.ownBoat( { id: BOAT_ID, name: 'Downeast Lobster Boat', purchasedAt: Date.now() } );
+		this.state.storyFlags.firstBoatPurchased = true;
+		this.state.addReputation( 'Joe', 5 );
+		this.state.save(); this.state.emit();
+		this.refresh();
+		this.game.toast( 'Your first boat · Downeast Lobster Boat · Joe +5', 3400 );
+	}
+}
