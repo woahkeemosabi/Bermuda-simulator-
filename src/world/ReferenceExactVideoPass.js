@@ -7,6 +7,8 @@ import { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js
 import { installReferenceRelicHeroShell } from './ReferenceRelicHeroShell.js';
 import { installReferenceArticulatedCharacters } from './ReferenceArticulatedCharacters.js';
 import { installReferenceMaterialFidelityPass } from './ReferenceMaterialFidelityPass.js';
+import { installReferenceMarineDensityPass } from './ReferenceMarineDensityPass.js';
+import { installReferenceEnvironmentAtmospherePass } from './ReferenceEnvironmentAtmospherePass.js';
 
 function mat( name, color, emissive = 0x000000, roughness = 0.22, metalness = 0.72 ) {
 	return new Material( {
@@ -109,10 +111,14 @@ export function installReferenceExactVideoPass( app ) {
 	const heroShell = installReferenceRelicHeroShell( app );
 	const articulated = installReferenceArticulatedCharacters( app );
 	const fidelity = installReferenceMaterialFidelityPass( app );
+	const marine = installReferenceMarineDensityPass( app );
+	const environment = installReferenceEnvironmentAtmospherePass( app );
 	const exact = app.__referenceExactVideoPass = {
 		characters: null,
 		articulated,
 		fidelity,
+		marine,
+		environment,
 		relicShell: heroShell,
 		relic: installRelicVideoMatch( app ),
 	};
