@@ -1,3 +1,5 @@
+import { SIDE_QUEST_MISSIONS } from './SideQuestDefinitions.js';
+
 // Reusable mission registry/director for Bermuda life progression.
 // Mission-specific world interactions (parcel meshes, tow lines, dive targets, etc.) stay in their
 // own systems; state transitions, rewards, unlocks and objective copy are centralized here.
@@ -87,6 +89,7 @@ export const MISSIONS = Object.freeze( {
 		} ),
 		unlocks: Object.freeze( [] ),
 	} ),
+	...SIDE_QUEST_MISSIONS,
 	'storm-mooring-check': Object.freeze( {
 		id: 'storm-mooring-check',
 		title: 'Loose Weather',
