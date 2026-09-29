@@ -9,6 +9,7 @@ import { RelationshipSystem } from './RelationshipSystem.js';
 import { VehiclePersistence } from './VehiclePersistence.js';
 import { PropertySystem } from './PropertySystem.js';
 import { PropertyExpansion } from './PropertyExpansion.js';
+import { DynamicIslandEvents } from './DynamicIslandEvents.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
 import { BoatOwnership } from './BoatOwnership.js';
 import { BoatUpgradeVisuals } from './BoatUpgradeVisuals.js';
@@ -67,6 +68,12 @@ if ( typeof window !== 'undefined' ) {
 				if ( ! app.propertyExpansion ) app.propertyExpansion = new PropertyExpansion( app );
 			} catch ( error ) {
 				console.warn( 'property progression unavailable; the rest of the life loop remains active', error );
+			}
+
+			try {
+				if ( ! app.dynamicIslandEvents ) app.dynamicIslandEvents = new DynamicIslandEvents( app );
+			} catch ( error ) {
+				console.warn( 'dynamic island events unavailable; time/weather simulation remains active', error );
 			}
 
 			// Accounts are optional: local save remains authoritative until a backend is configured.
