@@ -140,8 +140,6 @@ export class DynamicIslandEvents {
 			}
 		} else if ( next === 'overcast' ) {
 			this.game.toast( 'Cloud cover building · the water and fish activity are changing', 2400 );
-		} else if ( this.lastWeather === 'storm' ) {
-			this.game.toast( 'Squall easing · harbour activity returning to normal', 2400 );
 		}
 		this.state.world.weather = next;
 		this.state.save(); this.state.emit();
@@ -155,16 +153,17 @@ export class DynamicIslandEvents {
 	}
 
 	updateDialogue( weather, hour ) {
+		// RelationshipSystem owns normal dialogue. Reapply it first, then temporarily layer weather/time
+		// reactions over the top so Trusted/Respected dialogue is restored as soon as conditions clear.
+		this.app.relationshipSystem?.updateGreetings?.();
 		if ( this.joe ) {
 			if ( weather === 'storm' ) this.joe.greeting = 'Weather turning nasty. Secure anything that can move before it gets worse.';
 			else if ( hour < 7 || hour >= 20 ) this.joe.greeting = 'Harbour is quiet this time of night. Mind the navigation lights.';
 			else if ( weather === 'overcast' ) this.joe.greeting = 'Clouds are in. Fish usually move differently when the light drops.';
-			else this.joe.greeting = 'Bring me legal fish or lobster and I’ll give you a fair price.';
 		}
 		if ( this.martha ) {
 			if ( weather === 'storm' ) this.martha.greeting = 'Storm coming through. Get what you need and don’t stay offshore too long.';
 			else if ( weather === 'overcast' ) this.martha.greeting = 'Keep an eye on the sky if you’re heading offshore.';
-			else this.martha.greeting = 'Have a look around. Rods, reels, marine gear and diesel are on the shelves.';
 		}
 	}
 
@@ -211,7 +210,6 @@ export class DynamicIslandEvents {
 		if ( weather !== this.lastWeather ) {
 			const previous = this.lastWeather;
 			this.lastWeather = weather;
-			// Keep the previous mode visible to onWeatherChanged for the storm-cleared message.
 			if ( previous === 'storm' && weather !== 'storm' ) this.game.toast( 'Squall easing · harbour activity returning to normal', 2400 );
 			this.onWeatherChanged( weather );
 		}
