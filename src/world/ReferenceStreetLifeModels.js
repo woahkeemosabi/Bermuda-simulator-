@@ -4,12 +4,15 @@ import { loadStaticAsset, placeStaticAsset } from './bermuda/StaticAsset.js';
 const BASE = ((import.meta.env && import.meta.env.BASE_URL) || '/') + 'models/bermuda/street-life/';
 
 function isMobileProfile() {
-	if ( typeof navigator === 'undefined' || typeof location === 'undefined' ) return false;
+	if ( typeof navigator === 'undefined' ) return false;
+	const mobileHardware = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
+		( navigator.maxTouchPoints > 1 && typeof screen !== 'undefined' && Math.min( screen.width, screen.height ) < 1024 );
+	if ( typeof location === 'undefined' ) return mobileHardware;
 	const qs = new URLSearchParams( location.search );
-	return ! qs.has( 'desktop' ) && (
-		/iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
-		( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 )
-	);
+	if ( qs.has( 'assetDesktop' ) ) return false;
+	// ?desktop is a world/rendering-quality override, not permission to duplicate desktop-size
+	// background NPC textures on iPhone. Keep background street-life efficient on phone hardware.
+	return mobileHardware;
 }
 
 function groundAt( app, x, z ) {
@@ -35,6 +38,10 @@ function personPlacements( app, points, scale ) {
 	} ) );
 }
 
+function breathe() {
+	return new Promise( ( resolve ) => setTimeout( resolve, 350 ) );
+}
+
 export function installReferenceStreetLifeModels( app ) {
 	if ( ! app?.scene || ! app?.terrainData ) return Promise.resolve( null );
 	if ( app.bermudaStreetLifeModelsPromise ) return app.bermudaStreetLifeModelsPromise;
@@ -50,18 +57,12 @@ async function loadStreetLife( app ) {
 	root.name = 'BermudaMeshyStreetLife';
 	app.scene.add( root );
 
-	// Keep the validated decoded asset objects available to later reference-matching layers so they
-	// can reuse the exact same geometry/materials for a dynamic player/NPC without another network
-	// fetch or another texture upload. This is especially important on iPhone where duplicate GLB
-	// decoding and GPU texture allocation can cause the otherwise-good ?desktop path to spike memory.
 	const state = app.bermudaStreetLifeModels = {
 		group: root, mobile, loaded: [], errors: [],
 		scooterAsset: null, maleAsset: null, femaleAsset: null,
 	};
 	if ( typeof window !== 'undefined' ) window.__bermudaStreetLifeModels = state;
 
-	// One shared scooter mesh is instanced three times. The authored procedural scooters remain as
-	// a fallback until the Meshy asset has loaded and passed the runtime GLB checks.
 	try {
 		const scooter = await loadStaticAsset( BASE + tier + '/bermuda-scooter.glb', {
 			id: 'street-scooter', maxTriangles: mobile ? 36000 : 115000, maxTextureSize: texture,
@@ -82,17 +83,18 @@ async function loadStreetLife( app ) {
 		console.warn( 'Bermuda street-life scooter model failed; keeping procedural fallback.', error );
 	}
 
-	// Two character bases cover the six visible NPC slots. Geometry/materials are shared between
-	// instances, so the reference pass gains real silhouettes without multiplying model memory.
+	if ( mobile ) await breathe();
+
+	// Load the two background character bases one at a time on phone hardware. They remain instanced
+	// after load; the stagger only removes the simultaneous decode/texture-upload spike.
 	try {
-		const [ male, female ] = await Promise.all( [
-			loadStaticAsset( BASE + tier + '/bermuda-npc-male.glb', {
-				id: 'street-npc-male', maxTriangles: mobile ? 26000 : 68000, maxTextureSize: texture,
-			} ),
-			loadStaticAsset( BASE + tier + '/bermuda-npc-female.glb', {
-				id: 'street-npc-female', maxTriangles: mobile ? 26000 : 68000, maxTextureSize: texture,
-			} ),
-		] );
+		const male = await loadStaticAsset( BASE + tier + '/bermuda-npc-male.glb', {
+			id: 'street-npc-male', maxTriangles: mobile ? 26000 : 68000, maxTextureSize: texture,
+		} );
+		if ( mobile ) await breathe();
+		const female = await loadStaticAsset( BASE + tier + '/bermuda-npc-female.glb', {
+			id: 'street-npc-female', maxTriangles: mobile ? 26000 : 68000, maxTextureSize: texture,
+		} );
 		state.maleAsset = male;
 		state.femaleAsset = female;
 		const maleScale = 1.78 / Math.max( 0.01, male.size.y );
