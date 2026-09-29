@@ -1,7 +1,7 @@
 import { Group, Vector3 } from '../engine/index.js';
 import { placeStaticAsset } from './bermuda/StaticAsset.js';
 import { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js';
-import { installReferenceCenterConsoleOverlay } from './ReferenceCenterConsoleOverlay.js';
+import { HOUSE } from './boat/Wheelhouse.js';
 
 const WORLD_SAVE_KEY = 'bermuda.world.v1';
 const _forward = new Vector3();
@@ -95,7 +95,9 @@ function installBoatReferencePresentation( app, assets ) {
 	helmAvatar.name = 'ReferenceHelmPlayer';
 	boat.model.group.add( helmAvatar );
 	const deckY = boat.model.lines?.deckY ?? 0.72;
-	helmAvatar.position.set( -0.38, deckY - 0.08, 0.02 );
+	// Original Downeast lobster-boat helm: use the wheelhouse constants instead of the removed
+	// centre-console coordinates so the visible captain sits at the actual wheel/seat again.
+	helmAvatar.position.set( HOUSE.helmX, deckY - 0.08, HOUSE.seatZ );
 	helmAvatar.rotation.y = Math.PI;
 	helmAvatar.rotation.x = -0.05;
 
@@ -141,8 +143,7 @@ function installBoatReferencePresentation( app, assets ) {
 
 export function installReferenceVerticalSlicePass( app ) {
 	if ( ! app || app.__bermudaVerticalSlicePass ) return app?.__bermudaVerticalSlicePass;
-	const state = app.__bermudaVerticalSlicePass = { boatPresentation: null, centerConsole: null, persistence: null };
-	state.centerConsole = installReferenceCenterConsoleOverlay( app );
+	const state = app.__bermudaVerticalSlicePass = { boatPresentation: null, persistence: null };
 	state.persistence = installWorldPersistence( app );
 	void installReferenceStreetLifeModels( app ).then( assets => {
 		state.boatPresentation = installBoatReferencePresentation( app, assets );
