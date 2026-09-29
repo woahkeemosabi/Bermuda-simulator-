@@ -53,7 +53,9 @@
 			</div>
 		</div>
 	</div>
-	<script type="module" src="/src/runtime/MobileVehicleHandling.js"></script>
-	<script type="module" src="/src/main.js"></script>
+	<script type="module">
+		await import('/src/runtime/MobileVehicleHandling.js');
+		await import('/src/main.js');
+	</script>
 </body>
 </html>
