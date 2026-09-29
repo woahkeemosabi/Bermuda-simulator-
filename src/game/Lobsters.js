@@ -15,6 +15,7 @@ const SHELL = 0xa85a32;
 const JOINT = 0x3b241d;
 const CREAM = 0xe1c68d;
 const EYE = 0x15100d;
+const ULTRA_DENSITY = typeof location !== 'undefined' && new URLSearchParams( location.search ).has( 'desktop' );
 
 const _dir = new Vector3();
 
@@ -86,7 +87,7 @@ function lobsterGeometry() {
 
 export class Lobsters {
 
-	constructor( { scene, terrain, reef, count = 24, seed = 20260928 } ) {
+	constructor( { scene, terrain, reef, count = ULTRA_DENSITY ? 36 : 26, seed = 20260928 } ) {
 
 		this.terrain = terrain;
 		this.reef = reef;
@@ -98,6 +99,7 @@ export class Lobsters {
 		this.material = createPropMaterial( 'spinyLobster' );
 		this.items = [];
 		this.time = 0;
+		this.drawDistance = ULTRA_DENSITY ? 58 : 42;
 		this.place( count );
 
 	}
@@ -119,11 +121,13 @@ export class Lobsters {
 	place( count ) {
 
 		const candidates = [];
-		// Seed several discoverable animals around the active Bermuda landing/boat dock first,
-		// then fill the larger reef population. WORLD.pier is the legacy Tidewater pier and is not
-		// where the current mobile player starts.
+		// Put enough animals in the active dive corridor to make a night or daylight dive feel alive,
+		// then distribute the rest across the reef instead of hiding almost the whole population far away.
 		const D = WORLD.boatDock?.position || WORLD.spawn.position;
-		for ( const [ dx, dz ] of [ [ - 8, 4 ], [ 7, 3 ], [ - 6, 10 ], [ 6, 11 ], [ - 10, 16 ], [ 9, 17 ], [ 0, 22 ] ] ) {
+		for ( const [ dx, dz ] of [
+			[ - 8, 4 ], [ 7, 3 ], [ - 6, 10 ], [ 6, 11 ], [ - 10, 16 ], [ 9, 17 ], [ 0, 22 ],
+			[ - 14, 23 ], [ 13, 25 ], [ - 5, 29 ], [ 6, 31 ], [ - 16, 34 ], [ 15, 36 ],
+		] ) {
 
 			const x = D.x + dx, z = D.z + dz;
 			if ( this.valid( x, z ) ) candidates.push( [ x, z ] );
@@ -132,14 +136,15 @@ export class Lobsters {
 
 		const c = this.reef?.center || WORLD.reef.center;
 		const R = Math.min( this.reef?.radius || WORLD.reef.radius, 80 );
-		for ( let n = 0; n < 600 && candidates.length < count; n ++ ) {
+		const minSpacing = ULTRA_DENSITY ? 3.0 : 4.2;
+		for ( let n = 0; n < 800 && candidates.length < count; n ++ ) {
 
 			const a = this.rng() * TAU;
 			const r = 12 + Math.sqrt( this.rng() ) * Math.max( 10, R - 12 );
 			const x = c.x + Math.cos( a ) * r;
 			const z = c.z + Math.sin( a ) * r;
 			if ( ! this.valid( x, z ) ) continue;
-			if ( candidates.some( ( p ) => Math.hypot( p[ 0 ] - x, p[ 1 ] - z ) < 4.5 ) ) continue;
+			if ( candidates.some( ( p ) => Math.hypot( p[ 0 ] - x, p[ 1 ] - z ) < minSpacing ) ) continue;
 			candidates.push( [ x, z ] );
 
 		}
@@ -210,8 +215,9 @@ export class Lobsters {
 			const y = this.floorAt( l.x, l.z );
 			l.mesh.position.set( l.x, y + 0.045 * l.size, l.z );
 			l.mesh.rotation.set( 0, l.yaw, 0 );
-			// No need to draw / submit distant individuals.
-			l.mesh.visible = d < 42;
+			// The ultra/reference path keeps reef-floor animals visible farther out so the diver can
+			// perceive a populated habitat rather than targets appearing only at grab distance.
+			l.mesh.visible = d < this.drawDistance;
 
 		}
 
