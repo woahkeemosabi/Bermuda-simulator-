@@ -2,32 +2,133 @@ import { FISH, fishValue, fishLengthCm } from './FishTable.js';
 import { defaultUpgrades, gearStats, nextLevel, UPGRADES, FUEL_PRICE } from './Gear.js';
 
 const SAVE_KEY = 'tidewater.save.v1';
+const SAVE_VERSION = 2;
 
-// Everything the player owns: wallet, the fish in the cooler / hold, the fish log and the gear
-// levels. Saved to localStorage (per browser) after every change; storage can be missing or throw
-// (private windows, blocked site data), so every access is guarded and the game runs without it.
+function defaultProgression() {
+
+	return {
+		bankBalance: 0,
+		reputation: {
+			Martha: 0,
+			Joe: 0,
+			fishermen: 0,
+			marineCommunity: 0,
+		},
+		equipment: {
+			rod: 'basic',
+			cooler: 'small',
+			divingMask: 'basic',
+		},
+		vehicles: {
+			bicycle: { owned: true, id: 'starter-bicycle', parked: null },
+			scooter: { owned: false, id: null, parked: null },
+			cars: [],
+			relic: { owned: false, discovered: false, parked: null },
+		},
+		boats: {
+			owned: [],
+			activeBoat: null,
+			upgrades: {},
+		},
+		properties: {
+			owned: [],
+			home: null,
+			garage: null,
+			marinaBerth: null,
+		},
+		missions: {
+			available: [ 'martha-first-delivery' ],
+			active: [],
+			completed: [],
+		},
+		relationships: {
+			Martha: { status: 'Known', points: 0 },
+			Joe: { status: 'Known', points: 0 },
+		},
+		discoveries: [],
+		storyFlags: {},
+		world: {
+			time: null,
+			weather: null,
+		},
+	};
+
+}
+
+function clone( value ) {
+
+	return JSON.parse( JSON.stringify( value ) );
+
+}
+
+function mergeProgression( source = {} ) {
+
+	const d = defaultProgression();
+	const vehicles = source.vehicles || {};
+	const boats = source.boats || {};
+	const properties = source.properties || {};
+	const missions = source.missions || {};
+	const relationships = source.relationships || {};
+	return {
+		bankBalance: Number.isFinite( source.bankBalance ) ? source.bankBalance : d.bankBalance,
+		reputation: { ...d.reputation, ...( source.reputation || {} ) },
+		equipment: { ...d.equipment, ...( source.equipment || {} ) },
+		vehicles: {
+			...d.vehicles,
+			...vehicles,
+			bicycle: { ...d.vehicles.bicycle, ...( vehicles.bicycle || {} ) },
+			scooter: { ...d.vehicles.scooter, ...( vehicles.scooter || {} ) },
+			relic: { ...d.vehicles.relic, ...( vehicles.relic || {} ) },
+			cars: Array.isArray( vehicles.cars ) ? vehicles.cars : [],
+		},
+		boats: {
+			...d.boats,
+			...boats,
+			owned: Array.isArray( boats.owned ) ? boats.owned : [],
+			upgrades: { ...d.boats.upgrades, ...( boats.upgrades || {} ) },
+		},
+		properties: {
+			...d.properties,
+			...properties,
+			owned: Array.isArray( properties.owned ) ? properties.owned : [],
+		},
+		missions: {
+			available: Array.isArray( missions.available ) ? missions.available : [ ...d.missions.available ],
+			active: Array.isArray( missions.active ) ? missions.active : [],
+			completed: Array.isArray( missions.completed ) ? missions.completed : [],
+		},
+		relationships: {
+			Martha: { ...d.relationships.Martha, ...( relationships.Martha || {} ) },
+			Joe: { ...d.relationships.Joe, ...( relationships.Joe || {} ) },
+			...relationships,
+		},
+		discoveries: Array.isArray( source.discoveries ) ? source.discoveries : [],
+		storyFlags: { ...( source.storyFlags || {} ) },
+		world: { ...d.world, ...( source.world || {} ) },
+	};
+
+}
+
+// Player life state. The original fishing economy remains intact, while progression/ownership
+// data is layered on top and saved through the same guarded localStorage path.
 export class GameState {
 
 	constructor( storage = safeStorage() ) {
 
 		this.storage = storage;
-		this.money = 0;
-		this.inventory = []; // { id, species, kg, cm, value, caughtAt (game hours), record }
-		this.log = {}; // species -> { count, bestKg, bestCm }
-		// the last addFish: { species, kg, cm, value, newSpecies, record, prevBestKg, prevBestCm, kept } (the catch card)
+		this.money = 75;
+		this.inventory = []; // caught fish / lobster entries
+		this.log = {};
 		this.lastCatch = null;
 		this.upgrades = defaultUpgrades();
-		this.fuel = null; // litres left (null = full tank)
+		this.fuel = null;
 		this._nextId = 1;
 		this.listeners = new Set();
+		Object.assign( this, clone( defaultProgression() ) );
 
 	}
 
-	get stats() {
-
-		return gearStats( this.upgrades );
-
-	}
+	get stats() { return gearStats( this.upgrades ); }
 
 	get holdKg() {
 
@@ -45,15 +146,8 @@ export class GameState {
 
 	}
 
-	// room in the cooler / hold for a fish of `kg`?
-	fits( kg ) {
+	fits( kg ) { return this.holdKg + kg <= this.stats.holdKg + 1e-6; }
 
-		return this.holdKg + kg <= this.stats.holdKg + 1e-6;
-
-	}
-
-	// store a caught fish; returns the entry, or null when the hold is full (it is logged either way).
-	// A record beats an earlier catch of the species; the first one of a species is a new species.
 	addFish( species, kg, timeOfDay = 12, cmOverride = null ) {
 
 		kg = Math.round( kg * 100 ) / 100;
@@ -78,21 +172,17 @@ export class GameState {
 		this.lastCatch = { species, kg, cm, value, newSpecies, record, prevBestKg, prevBestCm, kept, protectedSpecies, legalSize };
 		if ( ! kept ) {
 
-			this.save();
-			this.emit();
-			return null;
+			this.save(); this.emit(); return null;
 
 		}
 
 		const f = { id: this._nextId ++, species, kg, cm, value, caughtAt: timeOfDay, record };
 		this.inventory.push( f );
-		this.save();
-		this.emit();
+		this.save(); this.emit();
 		return f;
 
 	}
 
-	// sell the given fish ids (all when omitted); returns the money made
 	sell( ids = null ) {
 
 		const keep = [], sold = [];
@@ -101,8 +191,7 @@ export class GameState {
 		for ( const f of sold ) total += f.value;
 		this.inventory = keep;
 		this.money += total;
-		this.save();
-		this.emit();
+		this.save(); this.emit();
 		return { total, count: sold.length };
 
 	}
@@ -110,23 +199,114 @@ export class GameState {
 	release( id ) {
 
 		this.inventory = this.inventory.filter( ( f ) => f.id !== id );
-		this.save();
-		this.emit();
+		this.save(); this.emit();
 
 	}
 
-	// spend money (upgrade shop); false when it can't be afforded
+	addMoney( amount ) {
+
+		if ( ! Number.isFinite( amount ) || amount === 0 ) return this.money;
+		this.money = Math.max( 0, this.money + amount );
+		this.save(); this.emit();
+		return this.money;
+
+	}
+
 	spend( amount ) {
 
-		if ( amount > this.money ) return false;
+		if ( ! Number.isFinite( amount ) || amount < 0 || amount > this.money ) return false;
 		this.money -= amount;
-		this.save();
-		this.emit();
+		this.save(); this.emit();
 		return true;
 
 	}
 
-	// buy the next level of an upgrade track; returns the new level entry or null
+	deposit( amount ) {
+
+		amount = Math.max( 0, Math.min( this.money, Number( amount ) || 0 ) );
+		if ( amount <= 0 ) return 0;
+		this.money -= amount;
+		this.bankBalance += amount;
+		this.save(); this.emit();
+		return amount;
+
+	}
+
+	withdraw( amount ) {
+
+		amount = Math.max( 0, Math.min( this.bankBalance, Number( amount ) || 0 ) );
+		if ( amount <= 0 ) return 0;
+		this.bankBalance -= amount;
+		this.money += amount;
+		this.save(); this.emit();
+		return amount;
+
+	}
+
+	addReputation( person, amount ) {
+
+		if ( ! person || ! Number.isFinite( amount ) ) return 0;
+		this.reputation[ person ] = ( this.reputation[ person ] || 0 ) + amount;
+		if ( this.relationships[ person ] ) {
+
+			this.relationships[ person ].points = ( this.relationships[ person ].points || 0 ) + amount;
+			const points = this.relationships[ person ].points;
+			this.relationships[ person ].status = points >= 50 ? 'Trusted' : points >= 20 ? 'Respected' : points >= 5 ? 'Known' : 'New';
+
+		}
+		this.save(); this.emit();
+		return this.reputation[ person ];
+
+	}
+
+	hasMission( id, bucket = 'active' ) { return this.missions[ bucket ]?.includes( id ) || false; }
+
+	activateMission( id ) {
+
+		if ( this.hasMission( id, 'completed' ) || this.hasMission( id, 'active' ) ) return false;
+		this.missions.available = this.missions.available.filter( ( m ) => m !== id );
+		this.missions.active.push( id );
+		this.save(); this.emit();
+		return true;
+
+	}
+
+	completeMission( id ) {
+
+		if ( ! this.hasMission( id, 'active' ) ) return false;
+		this.missions.active = this.missions.active.filter( ( m ) => m !== id );
+		if ( ! this.missions.completed.includes( id ) ) this.missions.completed.push( id );
+		this.save(); this.emit();
+		return true;
+
+	}
+
+	unlockMission( id ) {
+
+		if ( this.hasMission( id, 'available' ) || this.hasMission( id, 'active' ) || this.hasMission( id, 'completed' ) ) return false;
+		this.missions.available.push( id );
+		this.save(); this.emit();
+		return true;
+
+	}
+
+	ownsVehicle( kind ) {
+
+		if ( kind === 'car' ) return this.vehicles.cars.length > 0;
+		return !! this.vehicles[ kind ]?.owned;
+
+	}
+
+	ownBoat( boat ) {
+
+		if ( ! boat?.id || this.boats.owned.some( ( b ) => b.id === boat.id ) ) return false;
+		this.boats.owned.push( { ...boat } );
+		if ( ! this.boats.activeBoat ) this.boats.activeBoat = boat.id;
+		this.save(); this.emit();
+		return true;
+
+	}
+
 	buy( key ) {
 
 		if ( ! UPGRADES[ key ] ) return null;
@@ -134,20 +314,14 @@ export class GameState {
 		if ( ! next || next.cost > this.money ) return null;
 		this.money -= next.cost;
 		this.upgrades[ key ] = next.index;
-		if ( key === 'fuel' ) this.fuel = null; // a new tank comes full
-		this.save();
-		this.emit();
+		if ( key === 'fuel' ) this.fuel = null;
+		this.save(); this.emit();
 		return next;
 
 	}
 
-	get fuelL() {
+	get fuelL() { return this.fuel === null ? this.stats.fuelL : Math.min( this.fuel, this.stats.fuelL ); }
 
-		return this.fuel === null ? this.stats.fuelL : Math.min( this.fuel, this.stats.fuelL );
-
-	}
-
-	// burn litres (no save: that happens when the boat stops or at the next sale / purchase)
 	burn( litres ) {
 
 		this.fuel = Math.max( 0, this.fuelL - litres );
@@ -155,13 +329,8 @@ export class GameState {
 
 	}
 
-	refuelCost() {
+	refuelCost() { return Math.ceil( ( this.stats.fuelL - this.fuelL ) * FUEL_PRICE ); }
 
-		return Math.ceil( ( this.stats.fuelL - this.fuelL ) * FUEL_PRICE );
-
-	}
-
-	// fill up as far as the money goes; returns litres bought
 	refuel() {
 
 		const missing = this.stats.fuelL - this.fuelL;
@@ -170,43 +339,53 @@ export class GameState {
 		this.money -= Math.ceil( litres * FUEL_PRICE );
 		this.fuel = this.fuelL + litres;
 		if ( this.fuel >= this.stats.fuelL - 1e-3 ) this.fuel = null;
-		this.save();
-		this.emit();
+		this.save(); this.emit();
 		return litres;
 
 	}
 
-	onChange( fn ) {
-
-		this.listeners.add( fn );
-		return () => this.listeners.delete( fn );
-
-	}
-
-	emit() {
-
-		for ( const fn of this.listeners ) fn( this );
-
-	}
+	onChange( fn ) { this.listeners.add( fn ); return () => this.listeners.delete( fn ); }
+	emit() { for ( const fn of this.listeners ) fn( this ); }
 
 	toJSON() {
 
-		return { v: 1, money: this.money, inventory: this.inventory, log: this.log, upgrades: this.upgrades, fuel: this.fuel, nextId: this._nextId };
+		return {
+			v: SAVE_VERSION,
+			money: this.money,
+			inventory: this.inventory,
+			log: this.log,
+			upgrades: this.upgrades,
+			fuel: this.fuel,
+			nextId: this._nextId,
+			bankBalance: this.bankBalance,
+			reputation: this.reputation,
+			equipment: this.equipment,
+			vehicles: this.vehicles,
+			boats: this.boats,
+			properties: this.properties,
+			missions: this.missions,
+			relationships: this.relationships,
+			discoveries: this.discoveries,
+			storyFlags: this.storyFlags,
+			world: this.world,
+		};
 
 	}
 
 	fromJSON( d ) {
 
-		if ( ! d || d.v !== 1 ) return false;
-		this.money = Number.isFinite( d.money ) ? d.money : 0;
+		if ( ! d || ( d.v !== 1 && d.v !== SAVE_VERSION ) ) return false;
+		// v1 values are migrated verbatim; only new progression fields receive defaults.
+		this.money = Number.isFinite( d.money ) ? d.money : ( d.v === 1 ? 0 : 75 );
 		this.inventory = Array.isArray( d.inventory ) ? d.inventory.filter( ( f ) => f && FISH[ f.species ] && Number.isFinite( f.kg ) ) : [];
-		// saves from before lengths were recorded
 		for ( const f of this.inventory ) if ( ! Number.isFinite( f.cm ) ) f.cm = Math.round( fishLengthCm( f.species, f.kg ) );
 		this.log = d.log && typeof d.log === 'object' ? d.log : {};
 		for ( const [ k, v ] of Object.entries( this.log ) ) if ( FISH[ k ] && v && v.bestKg > 0 && ! Number.isFinite( v.bestCm ) ) v.bestCm = Math.round( fishLengthCm( k, v.bestKg ) );
 		this.upgrades = { ...defaultUpgrades(), ...( d.upgrades || {} ) };
 		this.fuel = Number.isFinite( d.fuel ) ? d.fuel : null;
 		this._nextId = Math.max( d.nextId | 0, ...this.inventory.map( ( f ) => f.id + 1 ), 1 );
+		const p = mergeProgression( d.v === 1 ? {} : d );
+		Object.assign( this, p );
 		return true;
 
 	}
@@ -214,11 +393,8 @@ export class GameState {
 	save() {
 
 		if ( ! this.storage ) return;
-		try {
-
-			this.storage.setItem( SAVE_KEY, JSON.stringify( this.toJSON() ) );
-
-		} catch ( e ) { /* storage full or blocked: keep playing */ }
+		try { this.storage.setItem( SAVE_KEY, JSON.stringify( this.toJSON() ) ); }
+		catch ( e ) { /* storage full or blocked: keep playing */ }
 
 	}
 
@@ -230,23 +406,20 @@ export class GameState {
 			const raw = this.storage.getItem( SAVE_KEY );
 			return raw ? this.fromJSON( JSON.parse( raw ) ) : false;
 
-		} catch ( e ) {
-
-			return false;
-
-		}
+		} catch ( e ) { return false; }
 
 	}
 
 	reset() {
 
-		this.money = 0;
+		this.money = 75;
 		this.inventory = [];
 		this.log = {};
 		this.upgrades = defaultUpgrades();
 		this.fuel = null;
-		this.save();
-		this.emit();
+		this._nextId = 1;
+		Object.assign( this, clone( defaultProgression() ) );
+		this.save(); this.emit();
 
 	}
 
@@ -254,14 +427,7 @@ export class GameState {
 
 function safeStorage() {
 
-	try {
-
-		return typeof localStorage !== 'undefined' ? localStorage : null;
-
-	} catch ( e ) {
-
-		return null;
-
-	}
+	try { return typeof localStorage !== 'undefined' ? localStorage : null; }
+	catch ( e ) { return null; }
 
 }
