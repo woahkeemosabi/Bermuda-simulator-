@@ -3,6 +3,7 @@ import { FISH, FISH_IDS, fishValue, fishLengthCm } from '../src/game/FishTable.j
 import { habitatAt, pickSpecies, rollWeight, biteDelay } from '../src/game/Bites.js';
 import { CatchMinigame } from '../src/game/CatchMinigame.js';
 import { GameState } from '../src/game/GameState.js';
+import { MissionDirector } from '../src/game/MissionDirector.js';
 import { gearStats, defaultUpgrades, UPGRADES } from '../src/game/Gear.js';
 
 let fails = 0;
@@ -90,7 +91,7 @@ for ( const [ species, kg ] of [ [ 'grunt', 0.8 ], [ 'yellowtail', 1.2 ], [ 'jac
 	for ( const p of Object.keys( policies ) ) {
 
 		const r = fight( species, kg, policies[ p ] );
-		table[ `${ species }/${ p }` ] = r;
+		table[ `${ species}/${ p }` ] = r;
 		console.log( `     ${ species } ${ kg } kg, ${ p }: ${ r.st } after ${ r.t.toFixed( 1 ) } s` );
 
 	}
@@ -125,6 +126,22 @@ const s2 = new GameState( storage );
 s.save();
 ok( s2.load() && s2.money === s.money && s2.inventory.length === 1 && s2.log.grunt.bestKg === 0.84 && s2.stats.holdKg === 70 && s2.missions.completed.includes( 'martha-first-delivery' ), 'save / load round trip' );
 ok( s2.addFish( 'grunt', 0.5 ).id > b.id, 'ids keep counting after a load' );
+
+// ---- reusable mission director: rewards and unlocks are data-driven rather than hard-coded in a world interaction.
+{
+	const m = new Map();
+	const st = new GameState( { getItem: ( k ) => m.get( k ) ?? null, setItem: ( k, v ) => m.set( k, v ) } );
+	const game = { state: st, toast() {} };
+	const app = { game };
+	const director = new MissionDirector( app );
+	ok( director.available( 'martha-first-delivery' ) && director.accept( 'martha-first-delivery', { toast: false } ), 'mission director accepts registered available mission' );
+	ok( director.active( 'martha-first-delivery' ) && director.objective()?.bucket === 'active', 'mission director exposes current active objective' );
+	const before = st.money;
+	ok( director.complete( 'martha-first-delivery', { toast: false } ), 'mission director completes active mission' );
+	ok( st.money === before + 65 && st.reputation.Martha === 5 && st.reputation.Joe === 5, 'mission director applies declared money and reputation rewards' );
+	ok( st.hasMission( 'martha-fishing-intro', 'available' ) && st.storyFlags.metMartha && st.storyFlags.metJoe, 'mission director applies story flags and unlocks next mission' );
+}
+
 // ---- lengths and the catch card's record logic
 {
 
@@ -151,7 +168,6 @@ ok( s2.addFish( 'grunt', 0.5 ).id > b.id, 'ids keep counting after a load' );
 	ok( i3.record && i3.prevBestKg === 3.2 && i3.prevBestCm === i1.cm && st.log.jack.bestKg === 4.05 && st.log.jack.bestCm === i3.cm, 'a bigger one: new record, previous best reported, log updated' );
 	st.addFish( 'tarpon', 40 );
 	ok( st.lastCatch.kept === false && st.lastCatch.newSpecies, 'a fish that does not fit: logged, card says released' );
-	// a save from before lengths: inventory/log are upgraded and progression defaults are added without touching legacy money.
 	const old = { v: 1, money: 5, inventory: [ { id: 1, species: 'grunt', kg: 0.84, value: 6, caughtAt: 9 } ], log: { grunt: { count: 1, bestKg: 0.84 } }, upgrades: {}, fuel: null, nextId: 2 };
 	const st2 = new GameState( { getItem: () => JSON.stringify( old ), setItem: () => {} } );
 	ok( st2.load() && st2.money === 5 && st2.inventory[ 0 ].cm === 36 && st2.log.grunt.bestCm === 36 && st2.ownsVehicle( 'bicycle' ), 'old saves migrate without losing progress' );
