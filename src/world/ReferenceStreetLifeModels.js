@@ -57,7 +57,7 @@ async function loadStreetLife( app ) {
 	// a fallback until the Meshy asset has loaded and passed the runtime GLB checks.
 	try {
 		const scooter = await loadStaticAsset( BASE + tier + '/bermuda-scooter.glb', {
-			id: 'street-scooter', maxTriangles: mobile ? 32000 : 65000, maxTextureSize: texture,
+			id: 'street-scooter', maxTriangles: mobile ? 36000 : 115000, maxTextureSize: texture,
 		} );
 		const longest = Math.max( scooter.size.x, scooter.size.z );
 		const scale = 1.90 / Math.max( 0.01, longest );
@@ -79,10 +79,10 @@ async function loadStreetLife( app ) {
 	try {
 		const [ male, female ] = await Promise.all( [
 			loadStaticAsset( BASE + tier + '/bermuda-npc-male.glb', {
-				id: 'street-npc-male', maxTriangles: mobile ? 28000 : 55000, maxTextureSize: texture,
+				id: 'street-npc-male', maxTriangles: mobile ? 26000 : 68000, maxTextureSize: texture,
 			} ),
 			loadStaticAsset( BASE + tier + '/bermuda-npc-female.glb', {
-				id: 'street-npc-female', maxTriangles: mobile ? 28000 : 55000, maxTextureSize: texture,
+				id: 'street-npc-female', maxTriangles: mobile ? 26000 : 68000, maxTextureSize: texture,
 			} ),
 		] );
 		const maleScale = 1.78 / Math.max( 0.01, male.size.y );
