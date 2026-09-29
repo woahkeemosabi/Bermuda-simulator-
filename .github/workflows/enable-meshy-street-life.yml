@@ -18,61 +18,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Enable WebP GLBs and Meshy street-life loading
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-
-          gltf = Path('src/engine/loaders/GLTF.js')
-          s = gltf.read_text()
-          old = "\tif ( json.extensionsRequired && json.extensionsRequired.length ) throw new Error( 'GLB: unsupported extensions ' + json.extensionsRequired.join( ', ' ) );"
-          new = "\tconst requiredExtensions = json.extensionsRequired || [];\n\tconst unsupportedExtensions = requiredExtensions.filter( ( name ) => name !== 'EXT_texture_webp' );\n\tif ( unsupportedExtensions.length ) throw new Error( 'GLB: unsupported extensions ' + unsupportedExtensions.join( ', ' ) );"
-          if old not in s:
-              raise SystemExit('GLTF required-extension guard not found')
-          s = s.replace(old, new, 1)
-
-          marker = "\tconst images = ( json.images || [] ).map( ( im ) => ( { bytes: im.bufferView !== undefined ? viewBytes( im.bufferView ) : null, mimeType: im.mimeType, uri: im.uri } ) );"
-          insert = "\t// EXT_texture_webp stores the preferred image source on the texture extension rather than\n\t// texture.source. Normalize it here so the rest of the engine can remain extension-agnostic.\n\tconst textures = ( json.textures || [] ).map( ( texture ) => {\n\n\t\tconst webp = texture.extensions && texture.extensions.EXT_texture_webp;\n\t\treturn webp && webp.source !== undefined ? { ...texture, source: webp.source } : texture;\n\n\t} );\n\n" + marker
-          if marker not in s:
-              raise SystemExit('GLTF image marker not found')
-          s = s.replace(marker, insert, 1)
-          old_return = "\treturn { json, nodes, roots, meshes, skins, animations, materials: json.materials || [], textures: json.textures || [], images };"
-          new_return = "\treturn { json, nodes, roots, meshes, skins, animations, materials: json.materials || [], textures, images };"
-          if old_return not in s:
-              raise SystemExit('GLTF return marker not found')
-          s = s.replace(old_return, new_return, 1)
-          gltf.write_text(s)
-
-          identity = Path('src/world/BermudaIdentity.js')
-          s = identity.read_text()
-          import_marker = "import { installReferenceStreetLife } from './ReferenceStreetLife.js';"
-          import_line = import_marker + "\nimport { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js';"
-          if import_marker not in s:
-              raise SystemExit('BermudaIdentity street-life import not found')
-          s = s.replace(import_marker, import_line, 1)
-
-          call_marker = "\tinstallReferenceStreetLife( app );"
-          call_block = """\tinstallReferenceStreetLife( app );
-\t// Meshy models replace the lightweight procedural scooters/people only after each GLB has
-\t// loaded and passed the runtime checks. Keep mobile boot responsive by streaming this cosmetic
-\t// pass shortly after the core scene; desktop starts it immediately. A load failure leaves the
-\t// proven procedural fallback visible instead of breaking gameplay.
-\tconst loadStreetLifeModels = () => installReferenceStreetLifeModels( app ).catch( ( error ) =>
-\t\tconsole.warn( 'Bermuda Meshy street-life pass failed; procedural fallbacks remain active.', error ) );
-\tconst params = typeof location !== 'undefined' ? new URLSearchParams( location.search ) : null;
-\tconst mobileStreetLife = typeof navigator !== 'undefined' && ! params?.has( 'desktop' ) && (
-\t\t/iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
-\t\t( navigator.maxTouchPoints > 1 && typeof screen !== 'undefined' && Math.min( screen.width, screen.height ) < 1024 )
-\t);
-\tif ( mobileStreetLife && typeof setTimeout === 'function' ) setTimeout( loadStreetLifeModels, 3200 );
-\telse void loadStreetLifeModels();"""
-          if call_marker not in s:
-              raise SystemExit('BermudaIdentity street-life call not found')
-          s = s.replace(call_marker, call_block, 1)
-          identity.write_text(s)
-          PY
+      - name: Apply runtime integration
+        run: node scripts/enable-meshy-street-life.mjs
 
       - name: Commit runtime integration
         shell: bash
