@@ -9,11 +9,13 @@ export const WATERFRONT_ASSETS = [
  {id:'harbour-props',triangles:2050,texture:512,placements:[{x:-73,z:-45,y:1.45,width:2.2}]},
  {id:'channel-marker',triangles:600,texture:512,placements:[{x:-91,z:20,y:-.3,height:3.2}]}
 ];
-for(const a of WATERFRONT_ASSETS)a.tier=['dock','house-a','house-b'].includes(a.id)?1:2;
+// Only the dock is boot-critical. Everything decorative keeps its blockout fallback visible
+// and streams after gameplay starts, so a slow GLB cannot hold iOS Safari at 98%.
+for(const a of WATERFRONT_ASSETS)a.tier=a.id==='dock'?1:2;
 const shop=s=>({...s,y:s.baseY});
 WATERFRONT_ASSETS.push(
- {id:'fish-market',tier:1,version:'mobile-v3',triangles:6000,texture:1024,placements:[shop(FISH_MARKET)]},
- {id:'bait-tackle',tier:1,version:'mobile-v3',triangles:6000,texture:1024,placements:[shop(BAIT_TACKLE)]},
+ {id:'fish-market',tier:2,version:'mobile-v3',triangles:6000,texture:1024,placements:[shop(FISH_MARKET)]},
+ {id:'bait-tackle',tier:2,version:'mobile-v3',triangles:6000,texture:1024,placements:[shop(BAIT_TACKLE)]},
  {id:'house-c',tier:2,version:'mobile-v3',triangles:6000,texture:1024,placements:[{x:-84,z:-54,width:6,depth:5,height:6}]},
  {id:'house-d',tier:2,version:'mobile-v3',triangles:6000,texture:1024,placements:[{x:-57,z:-61,width:7,depth:5.5,height:5.5}]},
  // No waterfront seawall is loaded here: the dock-to-road/car route stays visually and physically open.
