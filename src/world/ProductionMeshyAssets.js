@@ -17,11 +17,24 @@ function isMobileHardware() {
 function useMobileAssetTier() {
 	if ( typeof location === 'undefined' ) return isMobileHardware();
 	const params = new URLSearchParams( location.search );
-	// ?desktop keeps the high-quality Bermuda WORLD path. On real phone hardware we still use the
-	// efficient hero GLBs to avoid a second wave of 4K texture uploads freezing Safari. Developers
-	// can explicitly force the large hero GLBs with ?assetDesktop when profiling.
 	if ( params.has( 'assetDesktop' ) ) return false;
 	return isMobileHardware();
+}
+
+function waitUntilVisible() {
+	if ( typeof document === 'undefined' || document.visibilityState === 'visible' ) return Promise.resolve();
+	return new Promise( ( resolve ) => {
+		const onVisible = () => {
+			if ( document.visibilityState !== 'visible' ) return;
+			document.removeEventListener( 'visibilitychange', onVisible );
+			resolve();
+		};
+		document.addEventListener( 'visibilitychange', onVisible );
+	} );
+}
+
+function breathe( ms ) {
+	return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
 }
 
 function groundAt( app, x, z ) {
@@ -51,18 +64,17 @@ function tuneStaticMaterials( asset, kind ) {
 function hideLegacyRelicRenderLayers( app ) {
 	if ( app.__referenceRelicHeroShell?.root ) app.__referenceRelicHeroShell.root.visible = false;
 	if ( app.__referenceExactVideoPass?.relic?.root ) app.__referenceExactVideoPass.relic.root.visible = false;
-
 	const visual = app.__referenceRelicVisualClosure?.root;
 	visual?.traverse?.( ( object ) => {
 		if ( /haunch|side-sculpt|canopy-rail|hood-v-crease|nose-crease|diffuser-fin/.test( object.name || '' ) ) object.visible = false;
 	} );
-
 	app.relic001?.group?.traverse?.( ( object ) => {
 		if ( object.name === 'relic-tire' || object.name === 'relic-rim' || object.name === 'relic-brake-disc' ) object.visible = false;
 	} );
 }
 
 async function installProductionRelic( app, mobile ) {
+	await waitUntilVisible();
 	if ( ! app.relic001?.group ) throw new Error( 'RELIC gameplay object is not ready.' );
 	const tier = mobile ? 'mobile' : 'desktop';
 	const asset = await loadStaticAsset( HERO + tier + '/relic-001.glb', {
@@ -71,7 +83,6 @@ async function installProductionRelic( app, mobile ) {
 		maxTextureSize: mobile ? 2048 : 4096,
 	} );
 	tuneStaticMaterials( asset, 'relic' );
-
 	const horizontalLongest = Math.max( asset.size.x, asset.size.z );
 	const scale = 4.90 / Math.max( 0.01, horizontalLongest );
 	const yaw = asset.size.x > asset.size.z ? Math.PI * 0.5 : 0;
@@ -79,13 +90,13 @@ async function installProductionRelic( app, mobile ) {
 	node.name = 'MeshyProductionRELIC001';
 	app.relic001.group.add( node );
 	hideLegacyRelicRenderLayers( app );
-
 	const state = { asset, node, scale, tier };
 	app.__productionMeshyRelic = state;
 	return state;
 }
 
 async function installProductionLobsters( app, mobile ) {
+	await waitUntilVisible();
 	const lobsters = app.game?.lobsters;
 	if ( ! lobsters?.items?.length ) throw new Error( 'Lobster gameplay system is not ready.' );
 	const tier = mobile ? 'mobile' : 'desktop';
@@ -95,7 +106,6 @@ async function installProductionLobsters( app, mobile ) {
 		maxTextureSize: mobile ? 2048 : 4096,
 	} );
 	tuneStaticMaterials( asset, 'lobster' );
-
 	const horizontalLongest = Math.max( asset.size.x, asset.size.z );
 	const baseScale = 0.92 / Math.max( 0.01, horizontalLongest );
 	const modelYaw = asset.size.x > asset.size.z ? Math.PI * 0.5 : 0;
@@ -117,7 +127,6 @@ async function installProductionLobsters( app, mobile ) {
 	const rotation = new Quaternion();
 	const scale = new Vector3();
 	const originalUpdate = lobsters.update.bind( lobsters );
-
 	const sync = () => {
 		for ( let i = 0; i < lobsters.items.length; i ++ ) {
 			const l = lobsters.items[ i ];
@@ -132,14 +141,12 @@ async function installProductionLobsters( app, mobile ) {
 		}
 		for ( const mesh of instanceMeshes ) mesh.instanceMatrix.needsUpdate = true;
 	};
-
 	lobsters.update = ( dt, player, camera ) => {
 		for ( const l of lobsters.items ) if ( l.active ) l.mesh.visible = true;
 		originalUpdate( dt, player, camera );
 		sync();
 	};
 	sync();
-
 	const state = { asset, node, instanceMeshes, baseScale, tier };
 	app.__productionMeshyLobsters = state;
 	return state;
@@ -154,8 +161,8 @@ function remapAnimation( base, source, name ) {
 		const sourceName = source.nodes[ channel.node ]?.name;
 		const target = byName.get( sourceName );
 		if ( target === undefined ) continue;
-		// Gameplay owns locomotion and character dimensions. Bone-scale animation is unnecessary for
-		// walk/run/swim and was able to make clothing/body meshes balloon on the retargeted character.
+		// Never let a retargeted clip scale the skeleton or translate the locomotion root. Those two
+		// channels caused the visible clothing/body inflation and controller-vs-animation fighting.
 		if ( channel.path === 'scale' ) continue;
 		if ( channel.path === 'translation' && /root|hips|pelvis/i.test( sourceName || '' ) ) continue;
 		channels.push( { ...channel, node: target } );
@@ -199,6 +206,20 @@ async function loadCharacterSource( prefix, includeSwim = false ) {
 	return { gltf: base, height: characterHeight( base ) };
 }
 
+async function loadCharacterBase( prefix ) {
+	await waitUntilVisible();
+	const gltf = await loadGLB( CHARACTERS + prefix + '-rigged.glb' );
+	return { gltf, height: characterHeight( gltf ) };
+}
+
+async function loadCharacterClip( source, prefix, name ) {
+	await waitUntilVisible();
+	const clipSource = await loadGLB( CHARACTERS + prefix + '-' + name + '.glb' );
+	const clip = remapAnimation( source.gltf, clipSource, name );
+	if ( ! clip ) throw new Error( prefix + ': ' + name + ' animation could not be mapped to the production rig.' );
+	return clip;
+}
+
 async function createCharacter( source, targetHeight ) {
 	const model = await SkinnedModel.create( source.gltf, {
 		materials: () => ( { roughness: 0.78, metalness: 0 } ),
@@ -214,37 +235,14 @@ async function createCharacter( source, targetHeight ) {
 }
 
 function playCharacter( model, name, speed ) {
-	if ( ! model.clips.has( name ) ) return;
+	if ( ! model.clips.has( name ) ) return false;
 	if ( model.current !== name ) model.play( name, { fade: 0.20, loop: true, speed } );
 	const layer = model.layers.find( ( l ) => l.target === 1 );
 	if ( layer ) layer.speed = speed;
+	return true;
 }
 
-async function installProductionCharacters( app, constrained ) {
-	const [ maleSource, femaleSource ] = await Promise.all( [
-		loadCharacterSource( 'bermuda-player-male', true ),
-		loadCharacterSource( 'bermuda-npc-female' ),
-	] );
-	const playerModel = await createCharacter( maleSource, 1.78 );
-	playerModel.group.name = 'MeshyProductionPlayer';
-	app.scene.add( playerModel.group );
-
-	// Real phone hardware gets one high-quality moving NPC even when ?desktop is active. This avoids
-	// constructing a second copy of the male skinned model/textures merely for a background walker.
-	const routes = constrained ? [
-		{ source: femaleSource, height: 1.70, x0: -51, z0: -55.9, range: 5.6, rate: 0.58, phase: 1.9 },
-	] : [
-		{ source: femaleSource, height: 1.70, x0: -51, z0: -55.9, range: 5.8, rate: 0.58, phase: 1.9 },
-		{ source: maleSource, height: 1.78, x0: -99, z0: -56.2, range: 6.8, rate: 0.50, phase: 0.2 },
-	];
-	const movers = [];
-	for ( const route of routes ) {
-		const model = await createCharacter( route.source, route.height );
-		model.group.name = 'MeshyProductionNPC';
-		app.scene.add( model.group );
-		movers.push( { ...route, model } );
-	}
-
+function startCharacterTick( app, playerModel, movers ) {
 	let raf = 0;
 	let last = 0;
 	const tick = ( now ) => {
@@ -267,18 +265,22 @@ async function installProductionCharacters( app, constrained ) {
 			playerModel.group.rotation.y = player.yaw + Math.PI;
 			if ( swimming ) {
 				const cadence = speed < 0.12 ? 0.62 : Math.max( 0.70, Math.min( 1.40, speed / 2.15 ) );
-				playCharacter( playerModel, 'swim', cadence );
+				if ( ! playCharacter( playerModel, 'swim', cadence ) ) playerModel.hold();
 			} else {
-				const running = speed > 3.15;
-				playCharacter( playerModel, running ? 'run' : 'walk', running ? Math.max( 0.75, speed / 4.7 ) : speed < 0.12 ? 0 : Math.max( 0.55, speed / 2.1 ) );
+				const running = speed > 3.15 && playerModel.clips.has( 'run' );
+				const clip = running ? 'run' : 'walk';
+				const cadence = running ? Math.max( 0.75, speed / 4.7 ) : speed < 0.12 ? 0 : Math.max( 0.55, speed / 2.1 );
+				playCharacter( playerModel, clip, cadence );
 			}
 			playerModel.update( dt );
 		} else playerModel.hold();
 
+		// Once the real production body exists the segmented proxy must never reappear, even while
+		// later run/swim/NPC assets are still streaming.
 		const fallback = app.__referenceArticulatedCharacters?.playerRig?.root;
-		if ( fallback && ( swimming || showPlayer ) ) fallback.scale.setScalar( 0.0001 );
+		if ( fallback ) fallback.scale.setScalar( 0.0001 );
 		const staticIdle = app.__exactReferenceCharacters?.playerModel;
-		if ( staticIdle && showPlayer ) staticIdle.visible = false;
+		if ( staticIdle ) staticIdle.visible = false;
 
 		for ( let i = 0; i < movers.length; i ++ ) {
 			const mover = movers[ i ];
@@ -288,7 +290,7 @@ async function installProductionCharacters( app, constrained ) {
 			mover.model.group.position.set( x, groundAt( app, x, mover.z0 ), mover.z0 );
 			mover.model.group.rotation.y = Math.cos( a ) >= 0 ? - Math.PI * 0.5 : Math.PI * 0.5;
 			mover.model.group.visible = true;
-			const running = velocity > 2.7;
+			const running = velocity > 2.7 && mover.model.clips.has( 'run' );
 			playCharacter( mover.model, running ? 'run' : 'walk', running ? Math.max( 0.75, velocity / 4.5 ) : Math.max( 0.35, velocity / 1.65 ) );
 			mover.model.update( dt );
 		}
@@ -298,14 +300,85 @@ async function installProductionCharacters( app, constrained ) {
 	};
 	if ( typeof requestAnimationFrame === 'function' ) raf = requestAnimationFrame( tick );
 	if ( typeof window !== 'undefined' ) window.addEventListener( 'pagehide', () => raf && cancelAnimationFrame( raf ), { once: true } );
+	return () => raf && cancelAnimationFrame( raf );
+}
 
-	const state = { playerModel, movers, maleSource, femaleSource };
+async function installPhoneProductionCharacters( app ) {
+	// First opening priority: one real player body + walk clip. Previously seven ~7 MB character GLBs
+	// were fetched/decoded together, which explains the frozen frame and the stick proxy seen in the
+	// user's startup recordings. This path makes the visible player usable before any extras begin.
+	const maleSource = await loadCharacterBase( 'bermuda-player-male' );
+	await breathe( 120 );
+	const walk = await loadCharacterClip( maleSource, 'bermuda-player-male', 'walk' );
+	maleSource.gltf.animations = [ walk ];
+	const playerModel = await createCharacter( maleSource, 1.78 );
+	playerModel.group.name = 'MeshyProductionPlayer';
+	app.scene.add( playerModel.group );
+	const movers = [];
+	startCharacterTick( app, playerModel, movers );
+
+	const state = { playerModel, movers, maleSource, femaleSource: null, coreReady: true, extrasReady: false };
+	app.__productionMeshyCharacters = state;
+
+	state.extrasPromise = ( async () => {
+		try {
+			await breathe( 450 );
+			const run = await loadCharacterClip( maleSource, 'bermuda-player-male', 'run' );
+			playerModel.clips.set( 'run', run );
+			await breathe( 450 );
+			const swim = await loadCharacterClip( maleSource, 'bermuda-player-male', 'swim' );
+			playerModel.clips.set( 'swim', swim );
+
+			// One moving production NPC is enough for phone QA. Load it after the player's complete
+			// locomotion set rather than competing with the player's first visible frame.
+			await breathe( 750 );
+			const femaleSource = await loadCharacterBase( 'bermuda-npc-female' );
+			await breathe( 120 );
+			const femaleWalk = await loadCharacterClip( femaleSource, 'bermuda-npc-female', 'walk' );
+			femaleSource.gltf.animations = [ femaleWalk ];
+			const model = await createCharacter( femaleSource, 1.70 );
+			model.group.name = 'MeshyProductionNPC';
+			app.scene.add( model.group );
+			movers.push( { source: femaleSource, height: 1.70, x0: -51, z0: -55.9, range: 5.6, rate: 0.58, phase: 1.9, model } );
+			state.femaleSource = femaleSource;
+			state.extrasReady = true;
+		} catch ( error ) {
+			state.extrasError = String( error?.message || error );
+			console.warn( 'Deferred phone character extras failed; keeping core production player.', error );
+		}
+		return state;
+	} )();
+
+	return state;
+}
+
+async function installDesktopProductionCharacters( app ) {
+	const [ maleSource, femaleSource ] = await Promise.all( [
+		loadCharacterSource( 'bermuda-player-male', true ),
+		loadCharacterSource( 'bermuda-npc-female' ),
+	] );
+	const playerModel = await createCharacter( maleSource, 1.78 );
+	playerModel.group.name = 'MeshyProductionPlayer';
+	app.scene.add( playerModel.group );
+	const routes = [
+		{ source: femaleSource, height: 1.70, x0: -51, z0: -55.9, range: 5.8, rate: 0.58, phase: 1.9 },
+		{ source: maleSource, height: 1.78, x0: -99, z0: -56.2, range: 6.8, rate: 0.50, phase: 0.2 },
+	];
+	const movers = [];
+	for ( const route of routes ) {
+		const model = await createCharacter( route.source, route.height );
+		model.group.name = 'MeshyProductionNPC';
+		app.scene.add( model.group );
+		movers.push( { ...route, model } );
+	}
+	startCharacterTick( app, playerModel, movers );
+	const state = { playerModel, movers, maleSource, femaleSource, coreReady: true, extrasReady: true, extrasPromise: Promise.resolve() };
 	app.__productionMeshyCharacters = state;
 	return state;
 }
 
-function breathe( ms ) {
-	return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
+async function installProductionCharacters( app, constrained ) {
+	return constrained ? installPhoneProductionCharacters( app ) : installDesktopProductionCharacters( app );
 }
 
 export function installProductionMeshyAssets( app ) {
@@ -325,15 +398,26 @@ export function installProductionMeshyAssets( app ) {
 		};
 		if ( typeof window !== 'undefined' ) window.__productionMeshyAssets = state;
 
-		// Character visibility is the first user-facing problem when the replacement pass is late, so
-		// load the real rig first. Hero meshes follow one at a time with breathing room between GPU
-		// uploads on iPhone. This keeps ?desktop world quality while avoiding the previous asset spike.
+		try {
+			state.characters = await installProductionCharacters( app, hardwareMobile );
+			state.loaded.push( 'characters' );
+		} catch ( error ) {
+			state.errors.push( { id: 'characters', message: String( error?.message || error ) } );
+			console.warn( 'Production Meshy characters failed; keeping validated fallback.', error );
+		}
+
+		// On phones let the player's deferred run/swim/NPC files finish before any unrelated hero GLB
+		// starts decoding. If the tab is hidden, each stage waits for visibility and then resumes.
+		if ( hardwareMobile && state.characters?.extrasPromise ) await state.characters.extrasPromise;
+
 		for ( const [ id, install ] of [
-			[ 'characters', () => installProductionCharacters( app, hardwareMobile ) ],
 			[ 'lobsters', () => installProductionLobsters( app, mobileAssets ) ],
 			[ 'relic', () => installProductionRelic( app, mobileAssets ) ],
 		] ) {
-			if ( hardwareMobile && state.loaded.length ) await breathe( id === 'relic' ? 2400 : 1400 );
+			if ( hardwareMobile ) {
+				await waitUntilVisible();
+				await breathe( id === 'relic' ? 2400 : 1400 );
+			}
 			try {
 				state[ id ] = await install();
 				state.loaded.push( id );
