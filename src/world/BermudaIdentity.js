@@ -2,21 +2,27 @@ import { G } from '../core/Globals.js';
 import { TerrainData } from './TerrainData.js';
 import { installBermudaBlockout } from './BermudaBlockout.js';
 import { installBermudaModels } from './BermudaModels.js';
+import { installReferenceWorldUpgrade } from './ReferenceWorldUpgrade.js';
 import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
 import { Whale } from './marine/Whale.js';
 
 export const BERMUDA_LOOK = {
-	daylight: { timeOfDay: 14.35, exposure: 0.62 },
+	// Slightly later Atlantic afternoon light gives stronger form/readability than the flatter
+	// prototype lighting while keeping the clear blue Bermuda-day identity from the reference.
+	daylight: { timeOfDay: 14.75, exposure: 0.68 },
 	water: {
-		absorption: [ 0.32, 0.048, 0.018 ], scattering: [ 0.008, 0.019, 0.024 ],
-		backscatter: 0.028, sss: 1.08, refraction: 0.075, roughness: 0.026,
-		reflectionStrength: 0.96, foamIntensity: 0.82, choppiness: 0.76,
-		foamBias: 0.54, foamGain: 2.45, foamAdd: 1.9,
+		// Cleaner shallow-water transmission: brighter sand/turquoise near shore, deeper cyan-blue with
+		// distance, and fewer opaque whitecaps than the previous high-foam prototype tuning.
+		absorption: [ 0.275, 0.040, 0.015 ], scattering: [ 0.007, 0.019, 0.025 ],
+		backscatter: 0.024, sss: 1.10, refraction: 0.082, roughness: 0.021,
+		reflectionStrength: 0.94, foamIntensity: 0.72, choppiness: 0.66,
+		foamBias: 0.58, foamGain: 2.18, foamAdd: 1.62,
 	},
-	atmosphere: { rayleighScale: 0.96, mieScale: 0.72, mieG: 0.78, ozoneScale: 1.0, cloudCoverage: 0.37, cloudShadowStrength: 0.72 },
-	wind: { speed: 5.2, direction: [ 0.28, 0.96 ] },
+	// Bermuda should read as high-clarity Atlantic air rather than a hazy tropical/jungle scene.
+	atmosphere: { rayleighScale: 1.02, mieScale: 0.58, mieG: 0.78, ozoneScale: 1.0, cloudCoverage: 0.24, cloudShadowStrength: 0.50 },
+	wind: { speed: 4.4, direction: [ 0.28, 0.96 ] },
 	terrain: { coastalKeepHeight: 4, midOriginalHeight: 60, midReliefScale: 0.23, highReliefScale: 0.12, maxHeight: 38, highlandRockScale: 0.52 },
 };
 
@@ -114,9 +120,11 @@ export function applyBermudaRuntimeLook( app ) {
 		app.fft.foamGain.value = look.water.foamGain; app.fft.foamAdd.value = look.water.foamAdd;
 	}
 
-	// Preserve the known-good Bermuda collision/start layout and waterfront, then layer RELIC into
-	// that world: hero vehicle + ROAD/AIR/OCEAN/UNDERGROUND story anchors. Do not replace the island.
+	// Preserve the known-good Bermuda collision/start layout and systems, then add reference-match
+	// density around the playable waterfront. This is an incremental visual convergence pass, not a
+	// rewrite of the world or engine.
 	installBermudaBlockout( app );
+	installReferenceWorldUpgrade( app );
 	installRelic001( app );
 	installRelicStory( app );
 	installBermudaGameplayQA( app );
