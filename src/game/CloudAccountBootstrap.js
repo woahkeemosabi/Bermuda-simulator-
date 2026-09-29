@@ -7,6 +7,7 @@ import { MissionDirector } from './MissionDirector.js';
 import { LifeProgression } from './LifeProgression.js';
 import { RelationshipSystem } from './RelationshipSystem.js';
 import { VehiclePersistence } from './VehiclePersistence.js';
+import { PropertySystem } from './PropertySystem.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
 import { BoatOwnership } from './BoatOwnership.js';
 import { BoatUpgradeVisuals } from './BoatUpgradeVisuals.js';
@@ -58,6 +59,12 @@ if ( typeof window !== 'undefined' ) {
 				if ( ! app.boatUpgradeVisuals ) app.boatUpgradeVisuals = new BoatUpgradeVisuals( app );
 			} catch ( error ) {
 				console.warn( 'boat progression visuals unavailable; existing boat controller remains active', error );
+			}
+
+			try {
+				if ( ! app.propertySystem ) app.propertySystem = new PropertySystem( app );
+			} catch ( error ) {
+				console.warn( 'property progression unavailable; the rest of the life loop remains active', error );
 			}
 
 			// Accounts are optional: local save remains authoritative until a backend is configured.
