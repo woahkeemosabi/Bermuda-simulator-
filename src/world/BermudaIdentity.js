@@ -10,6 +10,7 @@ import { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js
 import { installReferenceFinalPass } from './ReferenceFinalPass.js';
 import { installReferenceFinalRuntimeFix } from './ReferenceFinalRuntimeFix.js';
 import { installReferenceExactVideoPass } from './ReferenceExactVideoPass.js';
+import { installProductionMeshyAssets } from './ProductionMeshyAssets.js';
 import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
@@ -157,6 +158,16 @@ export function applyBermudaRuntimeLook( app ) {
 	installReferenceFinalPass( app );
 	installReferenceFinalRuntimeFix( app );
 	installReferenceExactVideoPass( app );
+
+	// Production Meshy assets are cosmetic replacements on top of the already-proven gameplay state:
+	// RELIC keeps its existing controller/modes/collider, lobsters keep their AI/targeting/economy, and
+	// the character rigs replace only the walk/run presentation. Stream them after the reference pass
+	// so a slow GLB can never hold the loading screen at 98% again.
+	const loadProductionAssets = () => installProductionMeshyAssets( app ).catch( ( error ) =>
+		console.warn( 'Production Meshy asset pass failed; validated reference fallbacks remain active.', error ) );
+	if ( mobileStreetLife && typeof setTimeout === 'function' ) setTimeout( loadProductionAssets, 5200 );
+	else void loadProductionAssets();
+
 	const waterfrontReady = installBermudaModels( app );
 
 	if ( app.updateSun ) app.updateSun();
