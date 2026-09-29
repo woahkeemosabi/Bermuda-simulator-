@@ -1,0 +1,109 @@
+name: Visual Reference QA
+
+on:
+  push:
+    paths:
+      - '.github/workflows/visual-reference-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install browser driver
+        run: npm install --no-save playwright
+      - name: Start app and shot collector
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa-shots
+          cat > /tmp/collector.py <<'PY'
+          from http.server import BaseHTTPRequestHandler, HTTPServer
+          from pathlib import Path
+          out=Path('qa-shots'); out.mkdir(exist_ok=True)
+          class H(BaseHTTPRequestHandler):
+              def do_POST(self):
+                  n=int(self.headers.get('content-length','0'))
+                  data=self.rfile.read(n)
+                  name=self.path.lstrip('/').replace('..','_') or 'shot.bin'
+                  (out/name).write_bytes(data)
+                  self.send_response(200); self.end_headers(); self.wfile.write(b'ok')
+              def log_message(self,*args): pass
+          HTTPServer(('127.0.0.1',5190),H).serve_forever()
+          PY
+          python3 /tmp/collector.py > /tmp/collector.log 2>&1 &
+          npm run dev > /tmp/vite.log 2>&1 &
+          for i in {1..60}; do
+            curl -fsS http://127.0.0.1:5189/ >/dev/null && break
+            sleep 1
+          done
+      - name: Capture deterministic simulator views
+        shell: bash
+        run: |
+          cat > /tmp/capture.mjs <<'JS'
+          import { chromium } from 'playwright';
+          const browser = await chromium.launch({
+            channel: 'chrome',
+            headless: true,
+            args: [
+              '--enable-unsafe-webgpu',
+              '--enable-features=Vulkan',
+              '--use-angle=swiftshader',
+              '--enable-dawn-features=allow_unsafe_apis',
+              '--disable-gpu-sandbox',
+              '--no-sandbox'
+            ]
+          });
+          const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+          page.on('console', m => console.log('BROWSER', m.type(), m.text()));
+          page.on('pageerror', e => console.error('PAGEERROR', e));
+          const views = 'pier,village,beach,shallowSeabed,pierShallows,underwater,aerial,boatHelm';
+          const url = `http://127.0.0.1:5189/?desktop&bench&shots=${views}&tag=current&dt=0`;
+          await page.goto(url, { waitUntil: 'networkidle', timeout: 120000 });
+          await page.waitForFunction(() => window.__job, null, { timeout: 120000 });
+          await page.evaluate(async () => await window.__job);
+          await page.screenshot({ path: 'qa-shots/browser-final.png', fullPage: true });
+          await browser.close();
+          JS
+          node /tmp/capture.mjs
+      - name: Convert BGRA captures to PNG sheet
+        shell: bash
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageOps, ImageDraw
+          import struct, math
+          src=Path('qa-shots')
+          pngs=[]
+          for p in sorted(src.glob('current-*.bgra')):
+              b=p.read_bytes(); w,h=struct.unpack('<II',b[:8]); raw=b[8:]
+              img=Image.frombytes('RGBA',(w,h),raw,'raw','BGRA').transpose(Image.Transpose.FLIP_TOP_BOTTOM).convert('RGB')
+              out=p.with_suffix('.png'); img.save(out,quality=92); pngs.append(out)
+          if not pngs:
+              raise SystemExit('No benchmark captures produced')
+          tw,th=480,285; cols=2; rows=math.ceil(len(pngs)/cols)
+          sheet=Image.new('RGB',(cols*tw,rows*(th+32)),'black'); d=ImageDraw.Draw(sheet)
+          for i,p in enumerate(pngs):
+              im=Image.open(p).convert('RGB'); im=ImageOps.fit(im,(tw,th))
+              x=(i%cols)*tw; y=(i//cols)*(th+32)
+              sheet.paste(im,(x,y)); d.text((x+8,y+th+8),p.stem,fill='white')
+          sheet.save(src/'current-reference-sheet.jpg',quality=90)
+          PY
+      - name: Upload visual QA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-reference-qa-${{ github.sha }}
+          path: qa-shots/
+          retention-days: 7
+          if-no-files-found: error
