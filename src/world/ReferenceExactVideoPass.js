@@ -20,6 +20,12 @@ function mat( name, color, emissive = 0x000000, roughness = 0.22, metalness = 0.
 	} );
 }
 
+function phoneHardware() {
+	if ( typeof navigator === 'undefined' ) return false;
+	return /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
+		( navigator.maxTouchPoints > 1 && typeof screen !== 'undefined' && Math.min( screen.width, screen.height ) < 1024 );
+}
+
 function addBox( parent, material, p, s, r, name ) {
 	const m = new Mesh( new BoxGeometry( 1, 1, 1 ), material );
 	m.name = name;
@@ -36,8 +42,6 @@ function installRelicVideoMatch( app ) {
 	const vehicle = app.relic001?.group;
 	if ( ! vehicle || app.__relicExactVideoMatch ) return app.__relicExactVideoMatch;
 
-	// The dedicated RELIC references are authoritative for the car. The hero shell owns silhouette,
-	// proportions, DRLs and rear signature; this layer adds only close-range identity details.
 	const root = new Group();
 	root.name = 'RELIC_EXACT_VIDEO_DETAILS';
 	vehicle.add( root );
@@ -80,8 +84,6 @@ function installReferenceCharacterModels( app, state ) {
 		const camDistance = footMode ? app.camera.position.distanceTo( player.position ) : 0;
 		const animated = !! app.__articulatedReferencePlayerVisible || player?.mode === 'swim' || speed > 0.18;
 
-		// Never render the external body into a first-person/near-clipped camera. The screenshot defect
-		// was the camera physically entering this static Meshy body while diving.
 		const showIdle = !! footMode && player.mode === 'walk' && third && ! animated && camDistance > 1.55;
 		playerModel.visible = showIdle;
 		if ( showIdle ) {
@@ -90,7 +92,6 @@ function installReferenceCharacterModels( app, state ) {
 			playerModel.rotation.x = 0;
 		}
 
-		// Match the 54-second gameplay reference with a close, readable chase view at the helm.
 		if ( player?.mode !== lastMode ) {
 			if ( player?.mode === 'boat' && player.camMode === 'third' ) {
 				player.orbitDist = 10.5;
@@ -132,11 +133,15 @@ export function installReferenceExactVideoPass( app ) {
 		relic: installRelicVideoMatch( app ),
 	};
 
-	// Detailed static GLB is now used only for a still third-person player pose. Movement and swimming
-	// stay on the articulated rig, so limbs actually stride/kick/stroke instead of sliding a rigid model.
-	void installReferenceStreetLifeModels( app ).then( ( state ) => {
-		exact.characters = installReferenceCharacterModels( app, state );
-	} ).catch( ( error ) => console.warn( 'Exact 54-second character pass kept articulated fallback.', error ) );
+	// Desktop can keep the old detailed static idle layer. On real phone hardware the production
+	// skinned player now owns third-person presentation from startup. Do NOT trigger the complete
+	// street-life GLB pack from here: it duplicates the deferred loader in BermudaIdentity and was
+	// causing Safari to decode/upload static people at the same time as the animated player rig.
+	if ( ! phoneHardware() ) {
+		void installReferenceStreetLifeModels( app ).then( ( state ) => {
+			exact.characters = installReferenceCharacterModels( app, state );
+		} ).catch( ( error ) => console.warn( 'Exact 54-second character pass kept articulated fallback.', error ) );
+	}
 
 	if ( typeof window !== 'undefined' ) window.__referenceExactVideoPass = exact;
 	return exact;
