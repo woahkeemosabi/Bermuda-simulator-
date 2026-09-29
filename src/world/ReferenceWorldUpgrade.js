@@ -1,4 +1,4 @@
-import { BoxGeometry, CylinderGeometry, Group, Mesh } from '../engine/index.js';
+import { BoxGeometry, CylinderGeometry, Group, Mesh, Vector3 } from '../engine/index.js';
 import { Material } from '../engine/render/Material.js';
 
 // Reference-match environment pass for the playable Bermuda waterfront.
@@ -79,13 +79,23 @@ export function installReferenceWorldUpgrade( app ) {
 		{ x: - 38.0, z: - 49.2, w: 28, d: 5.0 },
 	] ) {
 		box( M.asphalt, road.x, roadY, road.z, road.w, 0.18, road.d );
-		colliders.addBox( { x: road.x, y: roadY, z: road.z }, { x: road.w * 0.5, y: 0.09, z: road.d * 0.5 }, 0, { tag: 'bermuda-road-extension', walkable: true } );
+		colliders.addBox(
+			new Vector3( road.x, roadY, road.z ),
+			new Vector3( road.w * 0.5, 0.09, road.d * 0.5 ),
+			0,
+			{ tag: 'bermuda-road-extension', walkable: true }
+		);
 	}
 
 	// Landward footway gives the road a believable Bermuda residential edge without fencing the car
 	// in. It is low enough to remain driveable at driveway gaps and never forms a seaward barrier.
 	box( M.path, - 68, 1.39, - 53.25, 88, 0.12, 2.15 );
-	colliders.addBox( { x: - 68, y: 1.39, z: - 53.25 }, { x: 44, y: 0.06, z: 1.075 }, 0, { tag: 'bermuda-footway', walkable: true } );
+	colliders.addBox(
+		new Vector3( - 68, 1.39, - 53.25 ),
+		new Vector3( 44, 0.06, 1.075 ),
+		0,
+		{ tag: 'bermuda-footway', walkable: true }
+	);
 
 	const addRoof = ( x, baseY, z, w, d, yaw ) => {
 		for ( let i = 0; i < 4; i ++ ) {
@@ -105,7 +115,12 @@ export function installReferenceWorldUpgrade( app ) {
 		box( M.wood, x, y + 1.05, front, 0.82, 2.02, 0.08, yaw );
 		box( M.dark, x - w * 0.27, y + 1.45, front + 0.01, 0.94, 1.05, 0.07, yaw );
 		box( M.dark, x + w * 0.27, y + 1.45, front + 0.01, 0.94, 1.05, 0.07, yaw );
-		colliders.addBox( { x, y: y + h * 0.5, z }, { x: w * 0.5, y: h * 0.5, z: d * 0.5 }, yaw, { tag: 'bermuda-reference-house' } );
+		colliders.addBox(
+			new Vector3( x, y + h * 0.5, z ),
+			new Vector3( w * 0.5, h * 0.5, d * 0.5 ),
+			yaw,
+			{ tag: 'bermuda-reference-house' }
+		);
 	};
 
 	// Dense staggered cottage line behind the road. Existing hero houses remain; these fill the large
