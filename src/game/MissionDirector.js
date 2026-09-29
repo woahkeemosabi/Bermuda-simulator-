@@ -23,6 +23,18 @@ export const MISSIONS = Object.freeze( {
 		rewards: Object.freeze( {} ),
 		unlocks: Object.freeze( [] ),
 	} ),
+	'storm-mooring-check': Object.freeze( {
+		id: 'storm-mooring-check',
+		title: 'Loose Weather',
+		availableObjective: 'Talk to Joe before the storm gets worse',
+		activeObjective: 'Secure your boat: return to the berth or drop anchor',
+		rewards: Object.freeze( {
+			money: 180,
+			reputation: Object.freeze( { Joe: 3, marineCommunity: 2 } ),
+			storyFlags: Object.freeze( { completedStormMooring: true } ),
+		} ),
+		unlocks: Object.freeze( [] ),
+	} ),
 } );
 
 export class MissionDirector {
