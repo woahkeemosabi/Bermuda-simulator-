@@ -14,12 +14,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Inspect GLB contracts
+      - name: Inspect GLB contracts and gameplay budgets
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json, struct, glob, os, sys
+          import json, struct, glob, sys
 
           errors=[]
           for path in sorted(glob.glob('public/models/bermuda/street-life/**/*.glb', recursive=True)):
@@ -56,6 +56,11 @@ jobs:
               if mats > 4: errors.append(f'{path}: material budget {mats} > 4')
               unsupported=[x for x in req if x not in ('EXT_texture_webp',)]
               if unsupported: errors.append(f'{path}: unsupported required extensions {unsupported}')
+
+              mobile='/mobile/' in path
+              scooter=path.endswith('/bermuda-scooter.glb')
+              limit = (36000 if scooter else 26000) if mobile else (115000 if scooter else 68000)
+              if tris > limit: errors.append(f'{path}: triangle budget {tris} > {limit}')
 
           if errors:
               print('VALIDATION ERRORS:', file=sys.stderr)
