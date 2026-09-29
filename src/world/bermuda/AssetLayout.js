@@ -16,7 +16,9 @@ WATERFRONT_ASSETS.push(
  {id:'bait-tackle',tier:1,version:'mobile-v3',triangles:6000,texture:1024,placements:[shop(BAIT_TACKLE)]},
  {id:'house-c',tier:2,version:'mobile-v3',triangles:6000,texture:1024,placements:[{x:-84,z:-54,width:6,depth:5,height:6}]},
  {id:'house-d',tier:2,version:'mobile-v3',triangles:6000,texture:1024,placements:[{x:-57,z:-61,width:7,depth:5.5,height:5.5}]},
- {id:'limestone-seawall',tier:2,version:'mobile-v3',triangles:4500,texture:1024,placements:[{x:-79,z:-45,y:-.4,width:13,depth:2,height:2.5},{x:-51,z:-45,y:-.4,width:12,depth:2,height:2.5}]},
+ // Keep only the eastern seawall section. The western section beside the RELIC parking area was
+ // an unnecessary visual barrier between the beach and the road.
+ {id:'limestone-seawall',tier:2,version:'mobile-v3',triangles:4500,texture:1024,placements:[{x:-51,z:-45,y:-.4,width:12,depth:2,height:2.5}]},
  {id:'bougainvillea-cluster',tier:2,version:'mobile-v3',triangles:2500,texture:512,placements:[{x:-78,z:-49,height:4},{x:-55,z:-51,height:4},{x:-88,z:-61,height:5},{x:-74,z:-61,height:4},{x:-62,z:-64,height:4}]},
  {id:'rocky-shoreline',tier:2,version:'mobile-v3',triangles:4500,texture:512,placements:[{x:-91,z:-38,y:-.6,width:12,height:3},{x:-39,z:-38,y:-.6,width:11,height:3}]},
  // Sink and overlap the backdrop into the native terrain instead of presenting the GLB as a
