@@ -104,22 +104,26 @@ ok( [ 'escaped' ].includes( table[ 'grunt/idle' ].st ), 'never reeling loses the
 ok( fight( 'tarpon', 35, policies.careful ).st !== 'caught', 'a 35 kg tarpon beats the starter line' );
 ok( fight( 'tarpon', 35, policies.careful, 50, 2.2 ).st === 'caught', 'the top line and reel land it' );
 
-// ---- inventory, wallet, save round trip
+// ---- inventory, wallet, progression, save round trip
 const mem = new Map();
 const storage = { getItem: ( k ) => mem.get( k ) ?? null, setItem: ( k, v ) => mem.set( k, v ) };
 const s = new GameState( storage );
+ok( s.money === 75 && s.ownsVehicle( 'bicycle' ) && s.equipment.rod === 'basic', 'new player starts with cash, bicycle and basic equipment' );
 ok( s.stats.holdKg === 30, 'cooler holds 30 kg' );
 const a = s.addFish( 'grunt', 0.84, 9.5 );
 const b = s.addFish( 'yellowtail', 1.31, 10 );
 ok( a && b && s.inventory.length === 2, 'fish go into the cooler' );
 ok( s.addFish( 'tarpon', 40, 22 ) === null && s.log.tarpon.count === 1, 'a fish too big for the hold is logged but not kept' );
 const value = s.holdValue;
+const beforeSale = s.money;
 const sale = s.sell( [ a.id ] );
-ok( sale.count === 1 && s.money === a.value && s.inventory.length === 1, 'selling one fish pays for it' );
+ok( sale.count === 1 && s.money === beforeSale + a.value && s.inventory.length === 1, 'selling one fish adds its value to the wallet' );
+ok( s.activateMission( 'martha-first-delivery' ) && s.hasMission( 'martha-first-delivery' ) && s.completeMission( 'martha-first-delivery' ), 'missions move from available to active to completed' );
+ok( s.addReputation( 'Martha', 10 ) === 10 && s.relationships.Martha.points === 10, 'relationship reputation is persistent progression state' );
 s.upgrades.hold = 1;
 const s2 = new GameState( storage );
 s.save();
-ok( s2.load() && s2.money === s.money && s2.inventory.length === 1 && s2.log.grunt.bestKg === 0.84 && s2.stats.holdKg === 70, 'save / load round trip' );
+ok( s2.load() && s2.money === s.money && s2.inventory.length === 1 && s2.log.grunt.bestKg === 0.84 && s2.stats.holdKg === 70 && s2.missions.completed.includes( 'martha-first-delivery' ), 'save / load round trip' );
 ok( s2.addFish( 'grunt', 0.5 ).id > b.id, 'ids keep counting after a load' );
 // ---- lengths and the catch card's record logic
 {
@@ -147,10 +151,10 @@ ok( s2.addFish( 'grunt', 0.5 ).id > b.id, 'ids keep counting after a load' );
 	ok( i3.record && i3.prevBestKg === 3.2 && i3.prevBestCm === i1.cm && st.log.jack.bestKg === 4.05 && st.log.jack.bestCm === i3.cm, 'a bigger one: new record, previous best reported, log updated' );
 	st.addFish( 'tarpon', 40 );
 	ok( st.lastCatch.kept === false && st.lastCatch.newSpecies, 'a fish that does not fit: logged, card says released' );
-	// a save from before lengths: inventory and log get lengths on load
+	// a save from before lengths: inventory/log are upgraded and progression defaults are added without touching legacy money.
 	const old = { v: 1, money: 5, inventory: [ { id: 1, species: 'grunt', kg: 0.84, value: 6, caughtAt: 9 } ], log: { grunt: { count: 1, bestKg: 0.84 } }, upgrades: {}, fuel: null, nextId: 2 };
 	const st2 = new GameState( { getItem: () => JSON.stringify( old ), setItem: () => {} } );
-	ok( st2.load() && st2.inventory[ 0 ].cm === 36 && st2.log.grunt.bestCm === 36, 'old saves load with lengths filled in' );
+	ok( st2.load() && st2.money === 5 && st2.inventory[ 0 ].cm === 36 && st2.log.grunt.bestCm === 36 && st2.ownsVehicle( 'bicycle' ), 'old saves migrate without losing progress' );
 
 }
 ok( new GameState( { getItem: () => { throw new Error( 'blocked' ); }, setItem: () => { throw new Error( 'blocked' ); } } ).load() === false, 'blocked storage does not throw' );
