@@ -8,6 +8,7 @@ import { installReferenceDetailUpgrade } from './ReferenceDetailUpgrade.js';
 import { installReferenceStreetLife } from './ReferenceStreetLife.js';
 import { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js';
 import { installReferenceFinalPass } from './ReferenceFinalPass.js';
+import { installReferenceFinalRuntimeFix } from './ReferenceFinalRuntimeFix.js';
 import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
@@ -153,6 +154,7 @@ export function applyBermudaRuntimeLook( app ) {
 	installBermudaGameplayQA( app );
 	installRelicMobileModes( app );
 	installReferenceFinalPass( app );
+	installReferenceFinalRuntimeFix( app );
 	const waterfrontReady = installBermudaModels( app );
 
 	if ( app.updateSun ) app.updateSun();
