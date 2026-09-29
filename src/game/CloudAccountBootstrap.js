@@ -8,6 +8,7 @@ import { LifeProgression } from './LifeProgression.js';
 import { RelationshipSystem } from './RelationshipSystem.js';
 import { VehiclePersistence } from './VehiclePersistence.js';
 import { PropertySystem } from './PropertySystem.js';
+import { PropertyExpansion } from './PropertyExpansion.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
 import { BoatOwnership } from './BoatOwnership.js';
 import { BoatUpgradeVisuals } from './BoatUpgradeVisuals.js';
@@ -63,6 +64,7 @@ if ( typeof window !== 'undefined' ) {
 
 			try {
 				if ( ! app.propertySystem ) app.propertySystem = new PropertySystem( app );
+				if ( ! app.propertyExpansion ) app.propertyExpansion = new PropertyExpansion( app );
 			} catch ( error ) {
 				console.warn( 'property progression unavailable; the rest of the life loop remains active', error );
 			}
