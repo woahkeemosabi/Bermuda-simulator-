@@ -50,7 +50,14 @@ async function loadStreetLife( app ) {
 	root.name = 'BermudaMeshyStreetLife';
 	app.scene.add( root );
 
-	const state = app.bermudaStreetLifeModels = { group: root, mobile, loaded: [], errors: [] };
+	// Keep the validated decoded asset objects available to later reference-matching layers so they
+	// can reuse the exact same geometry/materials for a dynamic player/NPC without another network
+	// fetch or another texture upload. This is especially important on iPhone where duplicate GLB
+	// decoding and GPU texture allocation can cause the otherwise-good ?desktop path to spike memory.
+	const state = app.bermudaStreetLifeModels = {
+		group: root, mobile, loaded: [], errors: [],
+		scooterAsset: null, maleAsset: null, femaleAsset: null,
+	};
 	if ( typeof window !== 'undefined' ) window.__bermudaStreetLifeModels = state;
 
 	// One shared scooter mesh is instanced three times. The authored procedural scooters remain as
@@ -59,6 +66,7 @@ async function loadStreetLife( app ) {
 		const scooter = await loadStaticAsset( BASE + tier + '/bermuda-scooter.glb', {
 			id: 'street-scooter', maxTriangles: mobile ? 36000 : 115000, maxTextureSize: texture,
 		} );
+		state.scooterAsset = scooter;
 		const longest = Math.max( scooter.size.x, scooter.size.z );
 		const scale = 1.90 / Math.max( 0.01, longest );
 		const placements = [
@@ -85,6 +93,8 @@ async function loadStreetLife( app ) {
 				id: 'street-npc-female', maxTriangles: mobile ? 26000 : 68000, maxTextureSize: texture,
 			} ),
 		] );
+		state.maleAsset = male;
+		state.femaleAsset = female;
 		const maleScale = 1.78 / Math.max( 0.01, male.size.y );
 		const femaleScale = 1.70 / Math.max( 0.01, female.size.y );
 		const malePoints = [
