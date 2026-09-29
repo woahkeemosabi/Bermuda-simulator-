@@ -8,18 +8,27 @@ const HERO = BASE + 'hero/';
 const CHARACTERS = BASE + 'characters/';
 const Y_AXIS = new Vector3( 0, 1, 0 );
 
-function isMobileProfile() {
-	if ( typeof navigator === 'undefined' || typeof location === 'undefined' ) return false;
-	const params = new URLSearchParams( location.search );
-	if ( params.has( 'desktop' ) ) return false;
+function isMobileHardware() {
+	if ( typeof navigator === 'undefined' ) return false;
 	return /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 		( navigator.maxTouchPoints > 1 && typeof screen !== 'undefined' && Math.min( screen.width, screen.height ) < 1024 );
+}
+
+function useMobileAssetTier() {
+	if ( typeof location === 'undefined' ) return isMobileHardware();
+	const params = new URLSearchParams( location.search );
+	// ?desktop keeps the high-quality Bermuda WORLD path. On real phone hardware we still use the
+	// efficient hero GLBs to avoid a second wave of 4K texture uploads freezing Safari. Developers
+	// can explicitly force the large hero GLBs with ?assetDesktop when profiling.
+	if ( params.has( 'assetDesktop' ) ) return false;
+	return isMobileHardware();
 }
 
 function groundAt( app, x, z ) {
 	const terrain = app.terrainData?.heightAt?.( x, z );
 	const collider = app.colliders?.groundHeightAt?.( x, z, 30 );
-	return Math.max( Number.isFinite( terrain ) ? terrain : -Infinity, Number.isFinite( collider ) ? collider : -Infinity );
+	const y = Math.max( Number.isFinite( terrain ) ? terrain : -Infinity, Number.isFinite( collider ) ? collider : -Infinity );
+	return Number.isFinite( y ) ? y : 0;
 }
 
 function tuneStaticMaterials( asset, kind ) {
@@ -43,15 +52,11 @@ function hideLegacyRelicRenderLayers( app ) {
 	if ( app.__referenceRelicHeroShell?.root ) app.__referenceRelicHeroShell.root.visible = false;
 	if ( app.__referenceExactVideoPass?.relic?.root ) app.__referenceExactVideoPass.relic.root.visible = false;
 
-	// Keep transformed-mode vector pods and the stronger AIR/SUB tail bridge, but remove the extra
-	// procedural body sculpting so the Meshy production mesh owns the actual silhouette.
 	const visual = app.__referenceRelicVisualClosure?.root;
 	visual?.traverse?.( ( object ) => {
 		if ( /haunch|side-sculpt|canopy-rail|hood-v-crease|nose-crease|diffuser-fin/.test( object.name || '' ) ) object.visible = false;
 	} );
 
-	// The generated RELIC contains its own road wheels. Hide the original procedural running-gear
-	// meshes visually while leaving them in the hierarchy for the existing transform/controller code.
 	app.relic001?.group?.traverse?.( ( object ) => {
 		if ( object.name === 'relic-tire' || object.name === 'relic-rim' || object.name === 'relic-brake-disc' ) object.visible = false;
 	} );
@@ -123,14 +128,12 @@ async function installProductionLobsters( app, mobile ) {
 			scale.setScalar( s );
 			matrix.compose( position, rotation, scale );
 			for ( const mesh of instanceMeshes ) mesh.setMatrixAt( i, matrix );
-			// The procedural mesh remains the gameplay visibility oracle but is never rendered.
 			l.mesh.visible = false;
 		}
 		for ( const mesh of instanceMeshes ) mesh.instanceMatrix.needsUpdate = true;
 	};
 
 	lobsters.update = ( dt, player, camera ) => {
-		// Re-enable CPU visibility before the original update so its active/distance logic remains intact.
 		for ( const l of lobsters.items ) if ( l.active ) l.mesh.visible = true;
 		originalUpdate( dt, player, camera );
 		sync();
@@ -151,9 +154,10 @@ function remapAnimation( base, source, name ) {
 		const sourceName = source.nodes[ channel.node ]?.name;
 		const target = byName.get( sourceName );
 		if ( target === undefined ) continue;
-		// Text-to-motion clips can contain root translation. PlayerController remains authoritative for
-		// world movement, so strip only root/pelvis translation while preserving the authored stroke.
-		if ( name === 'swim' && channel.path === 'translation' && /root|hips|pelvis/i.test( sourceName || '' ) ) continue;
+		// Gameplay owns locomotion and character dimensions. Bone-scale animation is unnecessary for
+		// walk/run/swim and was able to make clothing/body meshes balloon on the retargeted character.
+		if ( channel.path === 'scale' ) continue;
+		if ( channel.path === 'translation' && /root|hips|pelvis/i.test( sourceName || '' ) ) continue;
 		channels.push( { ...channel, node: target } );
 	}
 	return channels.length ? { name, duration: animation.duration, channels } : null;
@@ -216,7 +220,7 @@ function playCharacter( model, name, speed ) {
 	if ( layer ) layer.speed = speed;
 }
 
-async function installProductionCharacters( app, mobile ) {
+async function installProductionCharacters( app, constrained ) {
 	const [ maleSource, femaleSource ] = await Promise.all( [
 		loadCharacterSource( 'bermuda-player-male', true ),
 		loadCharacterSource( 'bermuda-npc-female' ),
@@ -225,7 +229,9 @@ async function installProductionCharacters( app, mobile ) {
 	playerModel.group.name = 'MeshyProductionPlayer';
 	app.scene.add( playerModel.group );
 
-	const routes = mobile ? [
+	// Real phone hardware gets one high-quality moving NPC even when ?desktop is active. This avoids
+	// constructing a second copy of the male skinned model/textures merely for a background walker.
+	const routes = constrained ? [
 		{ source: femaleSource, height: 1.70, x0: -51, z0: -55.9, range: 5.6, rate: 0.58, phase: 1.9 },
 	] : [
 		{ source: femaleSource, height: 1.70, x0: -51, z0: -55.9, range: 5.8, rate: 0.58, phase: 1.9 },
@@ -260,8 +266,6 @@ async function installProductionCharacters( app, mobile ) {
 			playerModel.group.position.copy( player.position );
 			playerModel.group.rotation.y = player.yaw + Math.PI;
 			if ( swimming ) {
-				// Prime Text-to-Motion authored this as a horizontal freestyle cycle. Keep PlayerController
-				// authoritative for position/yaw and scale cadence with actual 3D swim velocity.
 				const cadence = speed < 0.12 ? 0.62 : Math.max( 0.70, Math.min( 1.40, speed / 2.15 ) );
 				playCharacter( playerModel, 'swim', cadence );
 			} else {
@@ -271,8 +275,6 @@ async function installProductionCharacters( app, mobile ) {
 			playerModel.update( dt );
 		} else playerModel.hold();
 
-		// The production player now owns third-person walk/run/swim presentation. The old segmented
-		// articulated proxy must never appear again once the production character has loaded.
 		const fallback = app.__referenceArticulatedCharacters?.playerRig?.root;
 		if ( fallback && ( swimming || showPlayer ) ) fallback.scale.setScalar( 0.0001 );
 		const staticIdle = app.__exactReferenceCharacters?.playerModel;
@@ -291,7 +293,6 @@ async function installProductionCharacters( app, mobile ) {
 			mover.model.update( dt );
 		}
 
-		// Retire the old moving proxy people. Static high-detail background residents remain.
 		for ( const walker of app.__referenceArticulatedCharacters?.walkers || [] ) walker.rig.root.scale.setScalar( 0.0001 );
 		raf = requestAnimationFrame( tick );
 	};
@@ -303,19 +304,36 @@ async function installProductionCharacters( app, mobile ) {
 	return state;
 }
 
+function breathe( ms ) {
+	return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
+}
+
 export function installProductionMeshyAssets( app ) {
 	if ( ! app?.scene ) return Promise.resolve( null );
 	if ( app.__productionMeshyAssetsPromise ) return app.__productionMeshyAssetsPromise;
 	app.__productionMeshyAssetsPromise = ( async () => {
-		const mobile = isMobileProfile();
-		const state = app.__productionMeshyAssets = { mobile, relic: null, lobsters: null, characters: null, loaded: [], errors: [] };
+		const hardwareMobile = isMobileHardware();
+		const mobileAssets = useMobileAssetTier();
+		const state = app.__productionMeshyAssets = {
+			mobile: mobileAssets,
+			hardwareMobile,
+			relic: null,
+			lobsters: null,
+			characters: null,
+			loaded: [],
+			errors: [],
+		};
 		if ( typeof window !== 'undefined' ) window.__productionMeshyAssets = state;
 
+		// Character visibility is the first user-facing problem when the replacement pass is late, so
+		// load the real rig first. Hero meshes follow one at a time with breathing room between GPU
+		// uploads on iPhone. This keeps ?desktop world quality while avoiding the previous asset spike.
 		for ( const [ id, install ] of [
-			[ 'relic', () => installProductionRelic( app, mobile ) ],
-			[ 'lobsters', () => installProductionLobsters( app, mobile ) ],
-			[ 'characters', () => installProductionCharacters( app, mobile ) ],
+			[ 'characters', () => installProductionCharacters( app, hardwareMobile ) ],
+			[ 'lobsters', () => installProductionLobsters( app, mobileAssets ) ],
+			[ 'relic', () => installProductionRelic( app, mobileAssets ) ],
 		] ) {
+			if ( hardwareMobile && state.loaded.length ) await breathe( id === 'relic' ? 2400 : 1400 );
 			try {
 				state[ id ] = await install();
 				state.loaded.push( id );
