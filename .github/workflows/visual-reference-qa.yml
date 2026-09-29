@@ -50,7 +50,7 @@ jobs:
       - name: Capture deterministic simulator views
         shell: bash
         run: |
-          cat > /tmp/capture.mjs <<'JS'
+          cat > capture-qa.mjs <<'JS'
           import { chromium } from 'playwright';
           const browser = await chromium.launch({
             channel: 'chrome',
@@ -75,7 +75,7 @@ jobs:
           await page.screenshot({ path: 'qa-shots/browser-final.png', fullPage: true });
           await browser.close();
           JS
-          node /tmp/capture.mjs
+          node capture-qa.mjs
       - name: Convert BGRA captures to PNG sheet
         shell: bash
         run: |
