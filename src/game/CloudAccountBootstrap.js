@@ -5,6 +5,7 @@ import './CloudAccountAuthCompat.js';
 import './CloudAccountSyncCompat.js';
 import { LifeProgression } from './LifeProgression.js';
 import { RelationshipSystem } from './RelationshipSystem.js';
+import { VehiclePersistence } from './VehiclePersistence.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
 import { BoatOwnership } from './BoatOwnership.js';
 import { BoatUpgradeVisuals } from './BoatUpgradeVisuals.js';
@@ -24,6 +25,12 @@ if ( typeof window !== 'undefined' ) {
 				if ( ! app.bicycle ) app.bicycle = new Bicycle( app );
 			} catch ( error ) {
 				console.warn( 'starter bicycle unavailable; continuing on foot', error );
+			}
+
+			try {
+				if ( ! app.vehiclePersistence ) app.vehiclePersistence = new VehiclePersistence( app );
+			} catch ( error ) {
+				console.warn( 'vehicle persistence unavailable; current-session vehicles remain usable', error );
 			}
 
 			try {
