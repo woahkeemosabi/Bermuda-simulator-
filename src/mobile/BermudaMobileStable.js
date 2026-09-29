@@ -1,6 +1,5 @@
 // Stable Bermuda mobile controls.
-// Navigation is kept independent from gameplay actions so one cannot freeze the other.
-// V2: contextual buttons + single-thumb steering/look for walking, swimming and deck movement.
+// V3: floating movement pad + independent look + contextual action buttons.
 
 export function installStableMobileControls( app ) {
 
@@ -13,9 +12,9 @@ export function installStableMobileControls( app ) {
 	style.textContent = `
 		html,body,#app,#app canvas{touch-action:none!important;overscroll-behavior:none}
 		#bm-touch-stable{position:fixed;inset:0;z-index:70;pointer-events:none;user-select:none;-webkit-user-select:none;font-family:system-ui,-apple-system,sans-serif}
-		#bm-touch-stable .bm-stick{position:absolute;left:24px;bottom:max(24px,env(safe-area-inset-bottom));width:126px;height:126px;border-radius:50%;border:1px solid rgba(137,245,235,.45);background:rgba(5,22,31,.31);box-shadow:inset 0 0 26px rgba(66,238,221,.08),0 8px 28px rgba(0,0,0,.18);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);opacity:.9;pointer-events:auto}
-		#bm-touch-stable .bm-nub{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px;border-radius:50%;background:rgba(119,240,228,.86);border:1px solid rgba(255,255,255,.78);box-shadow:0 4px 18px rgba(0,0,0,.25);transform:translate(0,0);transition:transform 70ms linear}
-		#bm-touch-stable .bm-stick.is-active .bm-nub{transition:none}
+		#bm-touch-stable .bm-stick{position:absolute;left:0;top:0;width:132px;height:132px;border-radius:50%;border:1px solid rgba(137,245,235,.45);background:rgba(5,22,31,.28);box-shadow:inset 0 0 28px rgba(66,238,221,.09),0 8px 28px rgba(0,0,0,.18);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);opacity:0;transform:scale(.9);transition:opacity 90ms ease,transform 90ms ease;pointer-events:none}
+		#bm-touch-stable .bm-stick.is-active{opacity:.92;transform:scale(1)}
+		#bm-touch-stable .bm-nub{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px;border-radius:50%;background:rgba(119,240,228,.9);border:1px solid rgba(255,255,255,.8);box-shadow:0 4px 18px rgba(0,0,0,.25);transform:translate(0,0)}
 		#bm-touch-stable .bm-actions{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom));display:grid;grid-template-columns:58px 58px;gap:10px;pointer-events:auto;align-items:end;justify-items:end}
 		#bm-touch-stable button{width:58px;height:58px;border-radius:50%;border:1px solid rgba(139,243,234,.5);background:rgba(5,22,31,.58);color:#eaffff;font-weight:750;font-size:10px;letter-spacing:.08em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);touch-action:none;-webkit-tap-highlight-color:transparent;padding:0 3px;transition:opacity .14s,transform .14s}
 		#bm-touch-stable button:active,#bm-touch-stable button.is-on{background:rgba(74,225,211,.78);color:#041619}
@@ -59,6 +58,10 @@ export function installStableMobileControls( app ) {
 	const buttons = Object.fromEntries( [ ... root.querySelectorAll( '[data-role]' ) ].map( ( b ) => [ b.dataset.role, b ] ) );
 	const fishBtn = buttons.fish;
 	const moveCodes = [ 'KeyW', 'KeyA', 'KeyS', 'KeyD' ];
+	const MOVE_ZONE = 0.48;
+	const MOVE_RADIUS = 88;
+	const NUB_TRAVEL = 40;
+	const DEAD_ZONE = 0.06;
 
 	const down = ( code ) => {
 
@@ -137,11 +140,11 @@ export function installStableMobileControls( app ) {
 
 		buttons.context.textContent = contextLabel();
 		visible( buttons.context, mode === 'relic' || !! prompt );
-		visible( buttons.up, mode === 'swim' );
+		visible( buttons.up, mode === 'walk' || mode === 'swim' || mode === 'deck' );
 		visible( buttons.dive, mode === 'swim' );
 		visible( buttons.cam, mode === 'boat' || mode === 'relic' );
 		visible( buttons.rod, !! app.game?.canFish && mode !== 'swim' );
-		visible( buttons.run, mode === 'walk' || mode === 'relic' );
+		visible( buttons.run, mode === 'walk' || mode === 'deck' || mode === 'relic' );
 		visible( buttons.anchor, mode === 'boat' );
 		visible( buttons.light, underwater && isNight() );
 		visible( buttons.fish, fish.kind !== 'none' );
@@ -161,13 +164,6 @@ export function installStableMobileControls( app ) {
 	let controlRAF = 0;
 	const actionPointers = new Map();
 
-	const stickGeometry = () => {
-
-		const r = stick.getBoundingClientRect();
-		return { x: r.left + r.width * 0.5, y: r.top + r.height * 0.5, hit: Math.max( r.width, r.height ) * 0.64 };
-
-	};
-
 	const oneThumbLookMode = () => {
 
 		const m = app.player?.mode;
@@ -175,29 +171,46 @@ export function installStableMobileControls( app ) {
 
 	};
 
+	const shapeAxis = ( v ) => {
+
+		const a = Math.abs( v );
+		if ( a <= DEAD_ZONE ) return 0;
+		const n = Math.min( 1, ( a - DEAD_ZONE ) / ( 1 - DEAD_ZONE ) );
+		return Math.sign( v ) * Math.pow( n, 0.78 );
+
+	};
+
+	const placeStick = ( x, y ) => {
+
+		stick.style.left = `${ x - 66 }px`;
+		stick.style.top = `${ y - 66 }px`;
+		stick.classList.add( 'is-active' );
+
+	};
+
 	const updateMove = ( x, y ) => {
 
-		let dx = ( x - moveX ) / 52;
-		let dy = ( y - moveY ) / 52;
-		const len = Math.hypot( dx, dy );
-		if ( len > 1 ) { dx /= len; dy /= len; }
-		nub.style.transform = `translate(${ dx * 35 }px,${ dy * 35 }px)`;
+		let rawX = ( x - moveX ) / MOVE_RADIUS;
+		let rawY = ( y - moveY ) / MOVE_RADIUS;
+		const len = Math.hypot( rawX, rawY );
+		if ( len > 1 ) { rawX /= len; rawY /= len; }
+		nub.style.transform = `translate(${ rawX * NUB_TRAVEL }px,${ rawY * NUB_TRAVEL }px)`;
+
+		const dx = shapeAxis( rawX );
+		const dy = shapeAxis( rawY );
 		clearMove();
-		const dead = 0.16;
-		if ( dy < - dead ) down( 'KeyW' );
-		if ( dy > dead ) down( 'KeyS' );
+		if ( dy < 0 ) down( 'KeyW' );
+		if ( dy > 0 ) down( 'KeyS' );
 
 		if ( oneThumbLookMode() ) {
 
-			// One thumb now handles travel + heading: horizontal stick turns the view continuously while
-			// vertical stick moves forward/back. Free-screen drag remains available for precise looking.
-			steerX = Math.abs( dx ) > dead ? dx : 0;
+			steerX = dx;
 
 		} else {
 
 			steerX = 0;
-			if ( dx < - dead ) down( 'KeyA' );
-			if ( dx > dead ) down( 'KeyD' );
+			if ( dx < 0 ) down( 'KeyA' );
+			if ( dx > 0 ) down( 'KeyD' );
 
 		}
 
@@ -215,7 +228,7 @@ export function installStableMobileControls( app ) {
 
 	const driveSingleThumbLook = () => {
 
-		if ( movePointer !== null && steerX !== 0 && oneThumbLookMode() ) input.look.x += steerX * 7.4;
+		if ( movePointer !== null && steerX !== 0 && oneThumbLookMode() ) input.look.x += steerX * 9.2;
 		controlRAF = requestAnimationFrame( driveSingleThumbLook );
 
 	};
@@ -223,6 +236,7 @@ export function installStableMobileControls( app ) {
 
 	const buttonAt = ( x, y ) => document.elementFromPoint( x, y )?.closest?.( '#bm-touch-stable button:not(.bm-hidden)' ) || null;
 	const startOverlayAt = ( x, y ) => document.elementFromPoint( x, y )?.closest?.( '.tw-start-cta,.tw-start' ) || null;
+	const inMoveZone = ( x ) => x <= window.innerWidth * MOVE_ZONE;
 
 	const onPointerDown = ( e ) => {
 
@@ -241,14 +255,12 @@ export function installStableMobileControls( app ) {
 		}
 		if ( startOverlayAt( e.clientX, e.clientY ) ) return;
 
-		const sg = stickGeometry();
-		const onStick = Math.hypot( e.clientX - sg.x, e.clientY - sg.y ) <= sg.hit;
-		if ( movePointer === null && onStick ) {
+		if ( movePointer === null && inMoveZone( e.clientX ) ) {
 
 			movePointer = e.pointerId;
-			moveX = sg.x;
-			moveY = sg.y;
-			stick.classList.add( 'is-active' );
+			moveX = e.clientX;
+			moveY = e.clientY;
+			placeStick( moveX, moveY );
 			updateMove( e.clientX, e.clientY );
 			document.documentElement.setPointerCapture?.( e.pointerId );
 			e.preventDefault();
@@ -306,12 +318,7 @@ export function installStableMobileControls( app ) {
 
 	};
 
-	document.addEventListener( 'pointerdown', onPointerDown, { passive: false, capture: true } );
-	document.addEventListener( 'pointermove', onPointerMove, { passive: false, capture: true } );
-	document.addEventListener( 'pointerup', onPointerUp, { passive: false, capture: true } );
-	document.addEventListener( 'pointercancel', onPointerUp, { passive: false, capture: true } );
-
-	window.addEventListener( 'blur', () => {
+	const resetAllControls = () => {
 
 		resetMove();
 		lookPointer = null;
@@ -325,10 +332,25 @@ export function installStableMobileControls( app ) {
 		input.mouseDown = false;
 		input.rightDown = false;
 
+	};
+
+	document.addEventListener( 'pointerdown', onPointerDown, { passive: false, capture: true } );
+	document.addEventListener( 'pointermove', onPointerMove, { passive: false, capture: true } );
+	document.addEventListener( 'pointerup', onPointerUp, { passive: false, capture: true } );
+	document.addEventListener( 'pointercancel', onPointerUp, { passive: false, capture: true } );
+	document.addEventListener( 'lostpointercapture', onPointerUp, { passive: false, capture: true } );
+
+	window.addEventListener( 'blur', resetAllControls );
+	window.addEventListener( 'orientationchange', resetAllControls );
+	document.addEventListener( 'visibilitychange', () => {
+
+		if ( document.hidden ) resetAllControls();
+
 	} );
 
 	window.addEventListener( 'pagehide', () => {
 
+		resetAllControls();
 		clearInterval( uiTimer );
 		cancelAnimationFrame( controlRAF );
 
