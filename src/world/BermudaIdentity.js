@@ -3,26 +3,27 @@ import { TerrainData } from './TerrainData.js';
 import { installBermudaBlockout } from './BermudaBlockout.js';
 import { installBermudaModels } from './BermudaModels.js';
 import { installReferenceWorldUpgrade } from './ReferenceWorldUpgrade.js';
+import { installReferenceDetailUpgrade } from './ReferenceDetailUpgrade.js';
 import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
 import { Whale } from './marine/Whale.js';
 
 export const BERMUDA_LOOK = {
-	// Slightly later Atlantic afternoon light gives stronger form/readability than the flatter
-	// prototype lighting while keeping the clear blue Bermuda-day identity from the reference.
-	daylight: { timeOfDay: 14.75, exposure: 0.68 },
+	// High-clarity Bermuda afternoon: bright enough to separate pastel walls, white roofs and foliage
+	// without flattening the scene. The 54-second gameplay reference is the visual benchmark.
+	daylight: { timeOfDay: 14.55, exposure: 0.72 },
 	water: {
-		// Cleaner shallow-water transmission: brighter sand/turquoise near shore, deeper cyan-blue with
-		// distance, and fewer opaque whitecaps than the previous high-foam prototype tuning.
-		absorption: [ 0.275, 0.040, 0.015 ], scattering: [ 0.007, 0.019, 0.025 ],
-		backscatter: 0.024, sss: 1.10, refraction: 0.082, roughness: 0.021,
-		reflectionStrength: 0.94, foamIntensity: 0.72, choppiness: 0.66,
-		foamBias: 0.58, foamGain: 2.18, foamAdd: 1.62,
+		// Harbour water should be calm, transparent and strongly depth-coded: pale aqua over sand,
+		// saturated turquoise over the first few metres, then clean Atlantic blue in the channel.
+		absorption: [ 0.235, 0.033, 0.012 ], scattering: [ 0.006, 0.022, 0.028 ],
+		backscatter: 0.019, sss: 1.16, refraction: 0.088, roughness: 0.017,
+		reflectionStrength: 0.97, foamIntensity: 0.62, choppiness: 0.56,
+		foamBias: 0.61, foamGain: 1.96, foamAdd: 1.42,
 	},
 	// Bermuda should read as high-clarity Atlantic air rather than a hazy tropical/jungle scene.
-	atmosphere: { rayleighScale: 1.02, mieScale: 0.58, mieG: 0.78, ozoneScale: 1.0, cloudCoverage: 0.24, cloudShadowStrength: 0.50 },
-	wind: { speed: 4.4, direction: [ 0.28, 0.96 ] },
+	atmosphere: { rayleighScale: 1.03, mieScale: 0.52, mieG: 0.78, ozoneScale: 1.0, cloudCoverage: 0.22, cloudShadowStrength: 0.46 },
+	wind: { speed: 3.7, direction: [ 0.28, 0.96 ] },
 	terrain: { coastalKeepHeight: 4, midOriginalHeight: 60, midReliefScale: 0.23, highReliefScale: 0.12, maxHeight: 38, highlandRockScale: 0.52 },
 };
 
@@ -120,11 +121,12 @@ export function applyBermudaRuntimeLook( app ) {
 		app.fft.foamGain.value = look.water.foamGain; app.fft.foamAdd.value = look.water.foamAdd;
 	}
 
-	// Preserve the known-good Bermuda collision/start layout and systems, then add reference-match
-	// density around the playable waterfront. This is an incremental visual convergence pass, not a
-	// rewrite of the world or engine.
+	// Preserve the proven simulation systems and layer authored reference-match composition around
+	// them. The detail pass adds the marina, shallow seabed cues and near-camera Bermuda facade/plant
+	// detail without rewriting the engine or the Harbour Run gameplay loop.
 	installBermudaBlockout( app );
 	installReferenceWorldUpgrade( app );
+	installReferenceDetailUpgrade( app );
 	installRelic001( app );
 	installRelicStory( app );
 	installBermudaGameplayQA( app );
