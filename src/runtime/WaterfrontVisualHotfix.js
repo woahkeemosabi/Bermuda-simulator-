@@ -2,13 +2,11 @@ import { BoxGeometry, CylinderGeometry, Mesh } from '../engine/index.js';
 import { Material } from '../engine/render/Material.js';
 import { App } from '../App.js';
 import { installBermudaDockHudFix } from '../mobile/BermudaDockHudFix.js';
-import { installReferenceDetailUpgrade } from '../world/ReferenceDetailUpgrade.js';
+import { installMobileReferenceCorridor } from '../world/MobileReferenceCorridor.js';
 import { WATERFRONT_DECK } from '../world/bermuda/HarbourLayout.js';
 
 // Surgical visual/HUD repair for the iPhone waterfront QA build.
-// This module is loaded before main.js, so expose the App instance as soon as App.init runs. The
-// previous version waited for window.__app even though main.js never assigned it, meaning the entire
-// repair (shop shell removal, job-board relocation, dock planks and detail pass) silently never ran.
+// This module is loaded before main.js, so expose the App instance as soon as App.init runs.
 if ( ! App.prototype.__bermudaWaterfrontExposePatched ) {
     App.prototype.__bermudaWaterfrontExposePatched = true;
     const originalInit = App.prototype.init;
@@ -39,18 +37,13 @@ function material(name, color, roughness = 0.9, metalness = 0) {
 function removeAccidentalMarthaShell(app) {
     const shop = app?.marthaShop;
     if (!shop || shop.__openAirShellRemoved) return !!shop;
-
-    // Martha is an OPEN-AIR dock shop in this build. MarthaShopInterior is retained for stock and
-    // purchasing logic only; its white back/side walls created the featureless white cube seen in QA.
     shop.group?.parent?.remove?.(shop.group);
-
     for (const box of app.colliders?.boxes || []) {
         if (['marthaShopDoor', 'marthaShopBack', 'marthaShopSide'].includes(box.tag)) {
             box.solid = false;
             box.walkable = false;
         }
     }
-
     shop.__openAirShellRemoved = true;
     return true;
 }
@@ -89,8 +82,6 @@ function repairJobBoard(app) {
         board.add(post);
     }
 
-    // Move it completely off the beach/water sight-line and onto the landward dock edge. The board
-    // faces the pedestrian corridor and does not obstruct either Martha, Joe or the boat route.
     board.position.set(
         WATERFRONT_DECK.x - WATERFRONT_DECK.width * 0.5 + 0.58,
         WATERFRONT_DECK.baseY,
@@ -107,9 +98,6 @@ function repairDockSurface(app) {
 
     const baseMat = material('dock-base', 0x5f4936, 0.98);
     const plankMat = material('dock-planks', 0x987858, 0.93);
-
-    // The structural slab and 120 plank instances were coplanar, so the planking disappeared and the
-    // dock looked like a single tan polygon. Separate them enough for mobile depth precision.
     for (const mesh of blockout.visuals?.['shop-apron'] || []) mesh.material = baseMat;
     for (const child of blockout.group.children || []) {
         if (child?.isInstancedMesh && child.count === 120) {
@@ -117,27 +105,25 @@ function repairDockSurface(app) {
             child.position.y += 0.035;
         }
     }
-
     blockout.__dockSurfaceRepaired = true;
     return true;
 }
 
 function restoreBalancedMobileDetail(app) {
-    if (!mobileHardware() || !app?.scene || !app?.terrainData || !app?.colliders) return true;
+    if (!mobileHardware() || !app?.scene || !app?.terrainData) return true;
     if (app.__balancedReferenceDetail) return true;
 
-    // Restore the authored low-cost detail pass: house trim/windows, waterfront composition, shallow
-    // reef cues, dock furniture and vegetation accents. Heavy street-life/character packs remain off.
-    installReferenceDetailUpgrade(app);
+    // IMPORTANT: do not reinstall ReferenceDetailUpgrade on iPhone. It was deliberately removed from
+    // the core-stable phone path and, combined with clouds/haze, caused the immediate Explore restart.
+    // Use the much smaller hero-corridor pass instead.
+    installMobileReferenceCorridor(app);
     app.__balancedReferenceDetail = true;
-    if (typeof window !== 'undefined') window.__bermudaMobileWorldMode = 'balanced-detail-v4';
+    if (typeof window !== 'undefined') window.__bermudaMobileWorldMode = 'stable-reference-corridor-v1';
     return true;
 }
 
 function restoreMobileHud(app) {
     if (!mobileHardware() || !app) return true;
-    // This reuses the live GameHUD money node, labels TIME/WEATHER clearly and keeps the minimap clear
-    // of action buttons. Its internal sync timer waits for AppUI if this runs before the HUD is mounted.
     return !!installBermudaDockHudFix(app);
 }
 
