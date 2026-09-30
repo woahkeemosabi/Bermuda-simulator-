@@ -12,6 +12,7 @@ import { installReferenceEnvironmentAtmospherePass } from './ReferenceEnvironmen
 import { installReferenceClosurePass } from './ReferenceClosurePass.js';
 import { installReferenceVisualClosurePass } from './ReferenceVisualClosurePass.js';
 import { installBermudaDockHudFix } from '../mobile/BermudaDockHudFix.js';
+import { installWaterfrontRepair } from '../game/WaterfrontRepair.js';
 
 function mat( name, color, emissive = 0x000000, roughness = 0.22, metalness = 0.72 ) {
 	return new Material( {
@@ -118,6 +119,7 @@ export function installReferenceExactVideoPass( app ) {
 	const marine = installReferenceMarineDensityPass( app );
 	const environment = installReferenceEnvironmentAtmospherePass( app );
 	const dockHud = installBermudaDockHudFix( app );
+	const waterfrontRepair = installWaterfrontRepair( app );
 	const closure = installReferenceClosurePass( app );
 	const visualClosure = installReferenceVisualClosurePass( app );
 	const exact = app.__referenceExactVideoPass = {
@@ -127,6 +129,7 @@ export function installReferenceExactVideoPass( app ) {
 		marine,
 		environment,
 		dockHud,
+		waterfrontRepair,
 		closure,
 		visualClosure,
 		relicShell: heroShell,
