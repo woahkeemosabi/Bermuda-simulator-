@@ -49,15 +49,16 @@ function tuneStaticMaterials( asset, kind ) {
 	}
 }
 
-function hideLegacyRelicRenderLayers( app ) {
+function hideLegacyRelicRenderLayers( app, productionNode ) {
+	// Production means production: once the Meshy car exists there must not be a procedural body,
+	// duplicate shell or reference sculpt rendered through it. Keep the gameplay root/collider and
+	// vehicle controller intact; hide only its old visual children.
 	if ( app.__referenceRelicHeroShell?.root ) app.__referenceRelicHeroShell.root.visible = false;
 	if ( app.__referenceExactVideoPass?.relic?.root ) app.__referenceExactVideoPass.relic.root.visible = false;
-	app.__referenceRelicVisualClosure?.root?.traverse?.( ( object ) => {
-		if ( /haunch|side-sculpt|canopy-rail|hood-v-crease|nose-crease|diffuser-fin/.test( object.name || '' ) ) object.visible = false;
-	} );
-	app.relic001?.group?.traverse?.( ( object ) => {
-		if ( object.name === 'relic-tire' || object.name === 'relic-rim' || object.name === 'relic-brake-disc' ) object.visible = false;
-	} );
+	if ( app.__referenceRelicVisualClosure?.root ) app.__referenceRelicVisualClosure.root.visible = false;
+	for ( const child of app.relic001?.group?.children || [] ) {
+		if ( child !== productionNode ) child.visible = false;
+	}
 }
 
 async function installRelic( app, mobile ) {
@@ -76,7 +77,7 @@ async function installRelic( app, mobile ) {
 	const node = placeStaticAsset( asset, [ { x: 0, y: 0.18, z: 0, yaw, scale } ] );
 	node.name = 'MeshyProductionRELIC001';
 	app.relic001.group.add( node );
-	hideLegacyRelicRenderLayers( app );
+	hideLegacyRelicRenderLayers( app, node );
 	return app.__productionMeshyRelic = { asset, node, scale, tier };
 }
 
@@ -152,13 +153,16 @@ export function installProductionWorldAssetsNoPlayer( app ) {
 		};
 		if ( typeof window !== 'undefined' ) window.__productionWorldAssetsNoPlayer = state;
 
+		// RELIC is a visible hero object beside the opening road and must win the streaming queue.
+		// Previously it waited behind lobster decoding plus a 2.2 s delay, leaving the procedural
+		// fallback on screen long enough to look like the finished car on iPhone.
 		for ( const [ id, install ] of [
-			[ 'lobsters', () => installLobsters( app, mobileAssets ) ],
 			[ 'relic', () => installRelic( app, mobileAssets ) ],
+			[ 'lobsters', () => installLobsters( app, mobileAssets ) ],
 		] ) {
 			if ( hardwareMobile ) {
 				await waitUntilVisible();
-				await breathe( id === 'relic' ? 2200 : 900 );
+				await breathe( id === 'relic' ? 200 : 750 );
 			}
 			try {
 				state[ id ] = await install();
