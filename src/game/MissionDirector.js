@@ -1,8 +1,11 @@
 import { SIDE_QUEST_MISSIONS } from './SideQuestDefinitions.js';
+import { MAIN_CAMPAIGN_NEW_MISSIONS, MAIN_CAMPAIGN_SEQUENCE } from './MainCampaignDefinitions.js';
 
 // Reusable mission registry/director for Bermuda life progression.
-// Mission-specific world interactions (parcel meshes, tow lines, dive targets, etc.) stay in their
-// own systems; state transitions, rewards, unlocks and objective copy are centralized here.
+// Mission-specific world interactions stay in their own systems; state transitions, rewards,
+// unlocks and objective copy are centralized here.
+
+export { MAIN_CAMPAIGN_SEQUENCE };
 
 export const MISSIONS = Object.freeze( {
 	'martha-first-delivery': Object.freeze( {
@@ -27,7 +30,7 @@ export const MISSIONS = Object.freeze( {
 			reputation: Object.freeze( { Martha: 2, Joe: 2 } ),
 			storyFlags: Object.freeze( { fishingTradeIntroduced: true } ),
 		} ),
-		unlocks: Object.freeze( [ 'joe-spiny-business', 'martha-reef-table' ] ),
+		unlocks: Object.freeze( [ 'joe-spiny-business' ] ),
 	} ),
 	'joe-spiny-business': Object.freeze( {
 		id: 'joe-spiny-business',
@@ -39,7 +42,19 @@ export const MISSIONS = Object.freeze( {
 			reputation: Object.freeze( { Joe: 5, marineCommunity: 4 } ),
 			storyFlags: Object.freeze( { completedSpinyBusiness: true } ),
 		} ),
-		unlocks: Object.freeze( [] ),
+		unlocks: Object.freeze( [ 'main-first-boat' ] ),
+	} ),
+	'joe-three-waters': Object.freeze( {
+		id: 'joe-three-waters',
+		title: 'Three Waters',
+		availableObjective: 'Joe has a challenge that will take you across the island waters',
+		activeObjective: 'Land one shallows fish, one reef fish and one offshore fish, then return to Joe',
+		rewards: Object.freeze( {
+			money: 475,
+			reputation: Object.freeze( { Joe: 6, fishermen: 5, marineCommunity: 3 } ),
+			storyFlags: Object.freeze( { completedThreeWaters: true } ),
+		} ),
+		unlocks: Object.freeze( [ 'martha-reef-table' ] ),
 	} ),
 	'martha-reef-table': Object.freeze( {
 		id: 'martha-reef-table',
@@ -51,17 +66,17 @@ export const MISSIONS = Object.freeze( {
 			reputation: Object.freeze( { Martha: 4, Joe: 3, fishermen: 3 } ),
 			storyFlags: Object.freeze( { completedReefTable: true } ),
 		} ),
-		unlocks: Object.freeze( [] ),
+		unlocks: Object.freeze( [ 'storm-mooring-check' ] ),
 	} ),
-	'joe-three-waters': Object.freeze( {
-		id: 'joe-three-waters',
-		title: 'Three Waters',
-		availableObjective: 'Joe has a challenge that will take you across the island waters',
-		activeObjective: 'Land one shallows fish, one reef fish and one offshore fish, then return to Joe',
+	'storm-mooring-check': Object.freeze( {
+		id: 'storm-mooring-check',
+		title: 'Loose Weather',
+		availableObjective: 'Talk to Joe before the storm gets worse',
+		activeObjective: 'Secure your boat: return to the berth or drop anchor',
 		rewards: Object.freeze( {
-			money: 475,
-			reputation: Object.freeze( { Joe: 6, fishermen: 5, marineCommunity: 3 } ),
-			storyFlags: Object.freeze( { completedThreeWaters: true } ),
+			money: 180,
+			reputation: Object.freeze( { Joe: 3, marineCommunity: 2 } ),
+			storyFlags: Object.freeze( { completedStormMooring: true } ),
 		} ),
 		unlocks: Object.freeze( [ 'joe-after-dark' ] ),
 	} ),
@@ -75,7 +90,7 @@ export const MISSIONS = Object.freeze( {
 			reputation: Object.freeze( { Joe: 5, fishermen: 5 } ),
 			storyFlags: Object.freeze( { completedAfterDark: true } ),
 		} ),
-		unlocks: Object.freeze( [] ),
+		unlocks: Object.freeze( [ 'marine-leave-it-living' ] ),
 	} ),
 	'marine-leave-it-living': Object.freeze( {
 		id: 'marine-leave-it-living',
@@ -87,21 +102,10 @@ export const MISSIONS = Object.freeze( {
 			reputation: Object.freeze( { marineCommunity: 6, Joe: 2 } ),
 			storyFlags: Object.freeze( { conservationLessonComplete: true } ),
 		} ),
-		unlocks: Object.freeze( [] ),
+		unlocks: Object.freeze( [ 'main-keys-to-cottage' ] ),
 	} ),
+	...MAIN_CAMPAIGN_NEW_MISSIONS,
 	...SIDE_QUEST_MISSIONS,
-	'storm-mooring-check': Object.freeze( {
-		id: 'storm-mooring-check',
-		title: 'Loose Weather',
-		availableObjective: 'Talk to Joe before the storm gets worse',
-		activeObjective: 'Secure your boat: return to the berth or drop anchor',
-		rewards: Object.freeze( {
-			money: 180,
-			reputation: Object.freeze( { Joe: 3, marineCommunity: 2 } ),
-			storyFlags: Object.freeze( { completedStormMooring: true } ),
-		} ),
-		unlocks: Object.freeze( [] ),
-	} ),
 } );
 
 export class MissionDirector {
