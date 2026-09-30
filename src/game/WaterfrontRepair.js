@@ -1,10 +1,8 @@
-import { BoxGeometry, Group, Matrix4, Mesh, Vector3 } from '../engine/index.js';
+import { BoxGeometry, Group, Mesh, SphereGeometry, Vector3 } from '../engine/index.js';
 import { Material } from '../engine/render/Material.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
 import { CHANDLERY } from './Chandlery.js';
 import { STAND } from './FishStand.js';
-import { FishProps } from '../world/fish/FishProps.js';
-import { FISH } from './FishTable.js';
 
 const FIRST_DAY = 'martha-first-delivery';
 const ENTRANCE_X = 0.72;
@@ -108,8 +106,10 @@ function repairMartha( app ) {
 function makeJoeFishDisplay( app ) {
 	if ( app.__joeVisibleFishDisplay || ! app.scene || ! app.game?.stand ) return app.__joeVisibleFishDisplay;
 
-	// A dedicated exterior ice table keeps the catch visible even when the richer Fish Market GLB
-	// replaces the original procedural stall. The old display sat behind the replacement facade.
+	// Keep Joe visibly stocked even when the production Fish Market GLB covers the original stall.
+	// This intentionally uses only tiny shared primitive meshes. The previous repair allocated a
+	// second full FishProps GPU batch on top of CatchDisplay; that extra allocation is not justified on
+	// iPhone and could contribute to WebGPU device-loss under the deferred waterfront load.
 	const root = new Group();
 	root.name = 'JoeVisibleFishTable';
 	root.position.set( STAND.x, STAND.baseY, STAND.z );
@@ -118,12 +118,18 @@ function makeJoeFishDisplay( app ) {
 
 	const tableMat = new Material( {
 		name: 'joe-visible-fish-table', color: 0x315d67, roughness: 0.72, metalness: 0.08,
-		underwaterLighting: 'lite', localLightsCheap: false, receiveShadows: true,
+		underwaterLighting: 'lite', localLightsCheap: true, receiveShadows: true,
 	} );
 	const iceMat = new Material( {
 		name: 'joe-visible-fish-ice', color: 0xe8f6f4, roughness: 0.22, metalness: 0.02,
-		underwaterLighting: 'lite', localLightsCheap: false, receiveShadows: true,
+		underwaterLighting: 'lite', localLightsCheap: true, receiveShadows: true,
 	} );
+	const fishMats = [
+		new Material( { name: 'joe-fish-silver', color: 0x8fb2b8, roughness: 0.26, metalness: 0.10, underwaterLighting: 'lite', localLightsCheap: true, receiveShadows: true } ),
+		new Material( { name: 'joe-fish-red', color: 0xb65b4f, roughness: 0.28, metalness: 0.08, underwaterLighting: 'lite', localLightsCheap: true, receiveShadows: true } ),
+		new Material( { name: 'joe-fish-gold', color: 0xc9ad56, roughness: 0.30, metalness: 0.08, underwaterLighting: 'lite', localLightsCheap: true, receiveShadows: true } ),
+	];
+
 	const frontZ = STAND.depth * 0.5 + 0.46;
 	const table = new Mesh( new BoxGeometry( 2.72, 0.17, 0.78 ), tableMat );
 	table.position.set( 0, 0.96, frontZ );
@@ -136,27 +142,33 @@ function makeJoeFishDisplay( app ) {
 	ice.receiveShadow = true;
 	root.add( ice );
 
-	const props = new FishProps();
-	const species = [ 'jack', 'redSnapper', 'yellowtail', 'grunt', 'mullet' ];
-	const lengths = [ 0.38, 0.35, 0.31, 0.28, 0.34 ];
-	const xs = [ -0.92, -0.46, 0, 0.46, 0.92 ];
-	const base = new Matrix4().makeRotationY( STAND.yaw ).setPosition( STAND.x, STAND.baseY, STAND.z );
-	for ( let i = 0; i < species.length; i ++ ) {
-		const id = species[ i ];
-		const L = lengths[ i ];
-		const model = FISH[ id ].model;
-		const rest = FishProps.restHeight( model, L );
-		const local = new Matrix4().makeRotationY( i % 2 ? 0.10 : -0.10 ).setPosition(
-			xs[ i ], 1.13 + rest + ( i % 2 ) * 0.008, frontZ + ( i % 2 ? 0.055 : -0.035 ),
-		);
-		const frame = new Matrix4().multiplyMatrices( base, local );
-		props.add( 'whole', model, frame, i % 2 ? 'sideFlip' : 'side', L, { cloudy: 0.36, wet: 0.92 } );
+	const bodyGeo = new SphereGeometry( 1, 8, 6 );
+	const tailGeo = new BoxGeometry( 1, 1, 1 );
+	const xs = [ -0.94, -0.47, 0, 0.47, 0.94 ];
+	const fish = [];
+	for ( let i = 0; i < xs.length; i ++ ) {
+		const g = new Group();
+		g.name = `JoeMarketFish${ i + 1 }`;
+		g.position.set( xs[ i ], 1.17 + ( i % 2 ) * 0.015, frontZ + ( i % 2 ? 0.045 : -0.035 ) );
+		g.rotation.y = i % 2 ? 0.10 : -0.10;
+		const mat = fishMats[ i % fishMats.length ];
+		const body = new Mesh( bodyGeo, mat );
+		body.scale.set( 0.085 + ( i % 3 ) * 0.008, 0.06, 0.20 + ( i % 2 ) * 0.025 );
+		body.castShadow = false;
+		body.receiveShadow = true;
+		g.add( body );
+		const tail = new Mesh( tailGeo, mat );
+		tail.position.z = -0.245 - ( i % 2 ) * 0.02;
+		tail.scale.set( 0.13, 0.025, 0.13 );
+		tail.rotation.y = Math.PI * 0.25;
+		tail.castShadow = false;
+		tail.receiveShadow = true;
+		g.add( tail );
+		root.add( g );
+		fish.push( g );
 	}
-	const fishMesh = props.build();
-	fishMesh.name = 'JoeVisibleMarketFish';
-	app.scene.add( fishMesh );
 
-	app.__joeVisibleFishDisplay = { root, props, mesh: fishMesh };
+	app.__joeVisibleFishDisplay = { root, fish };
 	return app.__joeVisibleFishDisplay;
 }
 
