@@ -18,7 +18,8 @@ export function installStableMobileControls( app ) {
 	style.id = 'bm-tidewater-touch-style';
 	style.textContent = `
 		html,body,#app,#app canvas{touch-action:none!important;overscroll-behavior:none}
-		#bm-touch-stable{position:fixed;inset:0;z-index:70;pointer-events:none;user-select:none;-webkit-user-select:none;font-family:system-ui,-apple-system,sans-serif}
+		body.bm-mobile,body.bm-mobile #app,body.bm-mobile #app canvas,body.bm-mobile .tw-root,body.bm-mobile .tw-hud,body.bm-mobile .gm-purse,body.bm-mobile .gm-map,body.bm-mobile #bm-objective{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;-webkit-tap-highlight-color:transparent}
+		#bm-touch-stable{position:fixed;inset:0;z-index:70;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;font-family:system-ui,-apple-system,sans-serif}
 		#bm-touch-stable .bm-stick{position:absolute;left:0;top:0;width:128px;height:128px;border-radius:50%;border:1px solid rgba(137,245,235,.40);background:rgba(5,22,31,.24);box-shadow:inset 0 0 26px rgba(66,238,221,.08),0 8px 28px rgba(0,0,0,.16);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;transform:scale(.92);transition:opacity 80ms ease,transform 80ms ease;pointer-events:none}
 		#bm-touch-stable .bm-stick.is-active{opacity:.88;transform:scale(1)}
 		#bm-touch-stable .bm-nub{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px;border-radius:50%;background:rgba(119,240,228,.88);border:1px solid rgba(255,255,255,.75);box-shadow:0 4px 18px rgba(0,0,0,.24);transform:translate(0,0)}
@@ -42,6 +43,16 @@ export function installStableMobileControls( app ) {
 		@media (max-width:700px){body.bm-mobile .gm-map{width:96px;height:96px;right:14px;bottom:188px;opacity:.82}}
 	`;
 	document.head.appendChild( style );
+
+	// Safari's long-press text selection competes with the look/ACT gestures. Suppress it only on the
+	// gameplay surface; account/login form controls keep their normal native editing behaviour.
+	const preventGameCallout = ( e ) => {
+		const target = e.target;
+		if ( target?.closest?.( 'input,textarea,select,[contenteditable="true"]' ) ) return;
+		if ( document.body.classList.contains( 'bm-mobile' ) ) e.preventDefault();
+	};
+	document.addEventListener( 'contextmenu', preventGameCallout, { passive: false } );
+	document.addEventListener( 'selectstart', preventGameCallout, { passive: false } );
 
 	const root = document.createElement( 'div' );
 	root.id = 'bm-touch-stable';
@@ -115,7 +126,8 @@ export function installStableMobileControls( app ) {
 		const text = String( p?.prompt?.text || '' );
 		if ( /board/i.test( text ) ) return 'BOARD';
 		if ( /helm|wheel/i.test( text ) ) return 'DRIVE';
-		if ( /leave|ashore|stand up|jump overboard/i.test( text ) ) return 'EXIT';
+		if ( /leave|ashore|stand up|jump overboard|dismount/i.test( text ) ) return 'EXIT';
+		if ( /ride bicycle/i.test( text ) ) return 'RIDE';
 		if ( /grab/i.test( text ) ) return 'GRAB';
 		if ( /talk/i.test( text ) ) return 'TALK';
 		return 'ACT';
@@ -134,10 +146,11 @@ export function installStableMobileControls( app ) {
 		// Tidewater camera switching belongs to vehicles. There is no on-foot third-person body now.
 		visible( buttons.cam, mode === 'boat' || mode === 'relic' );
 		visible( buttons.rod, !! app.game?.canFish && mode !== 'swim' );
-		visible( buttons.run, mode === 'walk' || mode === 'deck' || mode === 'relic' );
+		visible( buttons.run, mode === 'walk' || mode === 'deck' || mode === 'relic' || mode === 'bike' );
 		visible( buttons.anchor, mode === 'boat' );
 		visible( buttons.light, underwater && isNight() );
 		visible( buttons.fish, fish.kind !== 'none' );
+		buttons.run.textContent = mode === 'bike' ? 'FAST' : 'RUN';
 		buttons.anchor.textContent = app.boatCtl?.anchored ? 'UP ANCH' : 'ANCH';
 		buttons.light.classList.toggle( 'is-on', !! app.localLights?.flashlight?.on );
 		buttons.fish.textContent = fish.label;
@@ -269,6 +282,8 @@ export function installStableMobileControls( app ) {
 	window.addEventListener( 'pagehide', () => {
 		clearInterval( uiTimer );
 		clearAll();
+		document.removeEventListener( 'contextmenu', preventGameCallout );
+		document.removeEventListener( 'selectstart', preventGameCallout );
 		window.removeEventListener( 'pointerdown', pointerDown, true );
 		window.removeEventListener( 'pointermove', pointerMove, true );
 		window.removeEventListener( 'pointerup', pointerEnd, true );
