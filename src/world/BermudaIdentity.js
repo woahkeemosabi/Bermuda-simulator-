@@ -3,6 +3,7 @@ import { TerrainData } from './TerrainData.js';
 import { installBermudaBlockout } from './BermudaBlockout.js';
 import { installBermudaModels } from './BermudaModels.js';
 import { installHarbourShopPolish } from './HarbourShopPolish.js';
+import { installBermudaBoatFlag } from './BermudaBoatFlag.js';
 import { installReferenceWorldUpgrade } from './ReferenceWorldUpgrade.js';
 import { installReferenceDetailUpgrade } from './ReferenceDetailUpgrade.js';
 import { installReferenceStreetLife } from './ReferenceStreetLife.js';
@@ -85,6 +86,8 @@ function installMobileWhaleBypass() {
 
 export function applyBermudaBootLook( app ) {
 	const look = BERMUDA_LOOK;
+	// BoatModel is created during App.init, so patch the flag shader here before BoatMaterials exists.
+	installBermudaBoatFlag();
 	installBermudaTerrainProfile();
 	installMobileWhaleBypass();
 	app.settings.timeOfDay = look.daylight.timeOfDay;
