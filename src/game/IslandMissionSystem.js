@@ -105,15 +105,14 @@ export class IslandMissionSystem {
 	ownsBoat() { return ( this.state.boats?.owned?.length || 0 ) > 0; }
 
 	refreshUnlocks() {
-		// The first two jobs come from Proper Money's mission definition. Later jobs require actual
-		// progression so they do not flood a new player's objective list.
-		if ( this.ownsBoat() && this.completed( IDS.lobster ) && this.completed( IDS.reef ) && ! this.completed( IDS.waters ) && ! this.active( IDS.waters ) ) {
-			this.director?.unlock?.( IDS.waters );
+		// MissionDirector now owns the canonical V1 order:
+		// Proper Money → Spiny Business → The First Boat → Three Waters → Reef Table →
+		// Loose Weather → After Dark → Leave It Living → Keys to the Cottage.
+		// Do not unlock later jobs from reputation alone, otherwise the campaign can skip chapters.
+		// Preserve only a migration assist for legacy saves that already completed the required prior beat.
+		if ( this.completed( IDS.lobster ) && this.ownsBoat() && ! this.completed( 'main-first-boat' ) && ! this.active( 'main-first-boat' ) ) {
+			this.director?.unlock?.( 'main-first-boat' );
 		}
-		const joeRep = Number( this.state.reputation?.Joe || 0 );
-		if ( this.ownsBoat() && joeRep >= 20 && ! this.completed( IDS.night ) && ! this.active( IDS.night ) ) this.director?.unlock?.( IDS.night );
-		const marineRep = Number( this.state.reputation?.marineCommunity || 0 );
-		if ( ( marineRep >= 4 || this.completed( IDS.waters ) ) && ! this.completed( IDS.conservation ) && ! this.active( IDS.conservation ) ) this.director?.unlock?.( IDS.conservation );
 	}
 
 	onCatch( species, kept, info ) {
@@ -192,7 +191,7 @@ export class IslandMissionSystem {
 	}
 
 	nextAvailable() {
-		const ids = [ IDS.intro, IDS.lobster, IDS.reef, IDS.waters, IDS.night, IDS.conservation ];
+		const ids = [ IDS.intro, IDS.lobster, IDS.waters, IDS.reef, IDS.night, IDS.conservation ];
 		return ids.find( ( id ) => this.available( id ) ) || null;
 	}
 
@@ -243,7 +242,6 @@ export class IslandMissionSystem {
 		this.refreshObjective();
 		if ( this.player.mode !== 'walk' || this.player.busy ) return;
 
-		// Storm work has priority when the weather event system is actively offering it.
 		if ( this.app.settings?.weatherMode === 'storm' && ( this.app.dynamicIslandEvents?.available?.() || this.app.dynamicIslandEvents?.active?.() ) ) return;
 
 		const active = this.activeIslandMission();
