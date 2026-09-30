@@ -1,8 +1,6 @@
 import { Vector3 } from '../engine/index.js';
 import { CHANDLERY } from './Chandlery.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
-import { installMobileCorePolish } from './MobileCorePolish.js';
-import { installMobileMoneyFix } from './MobileMoneyFix.js';
 
 const Y = new Vector3( 0, 1, 0 );
 
@@ -97,13 +95,14 @@ export function installWaterfrontRepair( app ) {
 	removeBrokenAmbientWalkers( app );
 	const marthaShop = installOpenAirMarthaInterior( app );
 	suppressLegacyMarthaList( app );
-	const mobilePolish = installMobileCorePolish( app );
-	installMobileMoneyFix();
 
+	// Keep the startup path deliberately conservative on iPhone. The new mobile-polish package is
+	// temporarily quarantined because the 2026-09-30 build could reach a rendered world while the
+	// live frame/audio path stalled. Reintroduce those visual/UX patches individually after mobile QA.
 	const state = {
 		ready: true,
 		marthaShop,
-		mobilePolish,
+		mobilePolish: null,
 		legacyMarthaList: false,
 		ambientWalkers: false,
 		storefront: 'tidewater',
