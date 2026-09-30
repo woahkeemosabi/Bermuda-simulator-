@@ -1,6 +1,7 @@
 import { Vector3 } from '../engine/index.js';
 import { CHANDLERY } from './Chandlery.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
+import { installMobileCorePolish } from './MobileCorePolish.js';
 
 const Y = new Vector3( 0, 1, 0 );
 
@@ -107,10 +108,12 @@ export function installWaterfrontRepair( app ) {
 	removeBrokenAmbientWalkers( app );
 	const marthaShop = installOpenAirMarthaInterior( app );
 	suppressLegacyMarthaList( app );
+	const mobilePolish = installMobileCorePolish( app );
 
 	const state = {
 		ready: true,
 		marthaShop,
+		mobilePolish,
 		legacyMarthaList: false,
 		ambientWalkers: false,
 		storefront: 'tidewater',
