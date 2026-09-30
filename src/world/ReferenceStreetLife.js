@@ -1,4 +1,4 @@
-import { BoxGeometry, CylinderGeometry, Group, Mesh, SphereGeometry } from '../engine/index.js';
+import { BoxGeometry, Color, CylinderGeometry, Group, Mesh, SphereGeometry, Vector3 } from '../engine/index.js';
 import { Material } from '../engine/render/Material.js';
 
 // Reference pass 3: street life and human-scale waterfront detail.
@@ -6,9 +6,9 @@ import { Material } from '../engine/render/Material.js';
 // pedestrians, market furniture and small roadside cues make the environment feel inhabited.
 // Keep these props lightweight and authored so the mobile WebGPU path remains predictable.
 
-function mat( name, color, roughness = 0.9, metalness = 0 ) {
+function mat( name, color, roughness = 0.9, metalness = 0, emissive = 0x000000 ) {
 	return new Material( {
-		name: `bermuda-life-${ name }`, color, roughness, metalness,
+		name: `bermuda-life-${ name }`, color, roughness, metalness, emissive,
 		underwaterLighting: 'lite', localLightsCheap: true, receiveShadows: true,
 	} );
 }
@@ -48,6 +48,8 @@ export function installReferenceStreetLife( app ) {
 		shirtGreen: mat( 'shirt-green', 0x536f53, 0.94 ),
 		pantsDark: mat( 'pants-dark', 0x293238, 0.95 ),
 		pantsSand: mat( 'pants-sand', 0xa99d85, 0.95 ),
+		lampPole: mat( 'street-lamp-pole', 0x263238, 0.40, 0.72 ),
+		lampGlass: mat( 'street-lamp-glass', 0xffd9a3, 0.20, 0.04, 0xffa84f ),
 	};
 
 	const mesh = ( parent, geo, material, position, scale, rotation = null, cast = true ) => {
@@ -62,6 +64,33 @@ export function installReferenceStreetLife( app ) {
 	};
 
 	const ground = ( x, z ) => Math.max( terrain.heightAt( x, z ), app.colliders?.groundHeightAt( x, z, 20 ) ?? -Infinity );
+
+	// ---------------------------------------------------------------- street / dock lighting
+	// The previous scene had emissive-looking fixtures but not enough actual light to traverse after
+	// sunset. These are deliberately simple Bermuda-scale posts with real LocalLights. The renderer
+	// already selects the nearest eight sources, so a line of lamps is cheap on iPhone and naturally
+	// follows the player down the road.
+	const streetLamp = ( x, z, intensity = 22, range = 15, kind = 'bermuda-street-lamp' ) => {
+		const y = ground( x, z );
+		const g = new Group();
+		g.name = kind;
+		g.position.set( x, y, z );
+		root.add( g );
+		mesh( g, GEO.cyl, M.lampPole, [ 0, 1.68, 0 ], [ .055, 1.68, .055 ], null, true );
+		mesh( g, GEO.box, M.lampPole, [ 0, 3.29, 0 ], [ .30, .055, .30 ], null, true );
+		mesh( g, GEO.sphere, M.lampGlass, [ 0, 3.20, 0 ], [ .16, .12, .16 ], null, false );
+		if ( app.localLights ) app.localLights.add( {
+			position: new Vector3( x, y + 3.14, z ),
+			color: new Color( 1.0, .72, .43 ), intensity, range, kind, flicker: .015,
+		} );
+		return g;
+	};
+
+	// Main playable coastal road, including the RELIC parking/drive corridor.
+	for ( const x of [ -108, -88, -68, -48, -28 ] ) streetLamp( x, -53.45, 24, 16, 'bermuda-road-lamp' );
+	// Waterfront pedestrian lane: one near Martha, one central dock lamp, one near Joe.
+	for ( const z of [ -31.8, -24.7, -17.6 ] ) streetLamp( -61.35, z, 20, 13, 'bermuda-dock-lamp' );
+	if ( app.localLights ) app.localLights.strength = Math.max( app.localLights.strength || 1, 1.18 );
 
 	// ---------------------------------------------------------------- scooters
 	const scooter = ( x, z, yaw, bodyMat ) => {
