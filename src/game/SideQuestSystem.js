@@ -8,6 +8,7 @@ const IDS = Object.freeze( [
 	'side-blue-water-call',
 	'side-island-table',
 	'side-harbour-before-dark',
+	// Legacy save ID retained; player-facing quest is now Mooring 17.
 	'side-strange-signal',
 ] );
 const SIDE_SET = new Set( IDS );
@@ -182,7 +183,7 @@ export class SideQuestSystem {
 			'side-blue-water-call': 'Joe: “Birds are working offshore. Bring me a mahi and a wahoo if the blue water is alive.”',
 			'side-island-table': 'Martha: “We’re putting on a proper island table. Yellowtail, hogfish, red hind and a lobster.”',
 			'side-harbour-before-dark': 'Joe: “Check the reef marker and get back before dark. I don’t want to go looking for you.”',
-			'side-strange-signal': 'Joe: “There’s a light under the reef some nights. Doesn’t move like a boat. Have a look.”',
+			'side-strange-signal': 'Joe: “Mooring 17 keeps showing occupied on sonar after dark. Funny thing is, there’s never a boat on it. Go make one pass.”',
 		};
 		this.game.toast( lines[ id ], 4800 );
 		this.state.save();
@@ -212,7 +213,7 @@ export class SideQuestSystem {
 		if ( id === 'side-blue-water-call' ) { const p = this.progress[ id ]; return `Blue Water Call · ${ p.mahi ? '✓' : '○' } mahi  ${ p.wahoo ? '✓' : '○' } wahoo${ this.blueWaterReady() ? ' · return to Joe' : '' }`; }
 		if ( id === 'side-island-table' ) return `Island Table · ${ this.islandTableText() }${ this.islandTableReady() ? ' · return to Martha' : '' }`;
 		if ( id === 'side-harbour-before-dark' ) return this.progress[ id ].reached ? 'Harbour Before Dark · return to Joe before 20:00' : 'Harbour Before Dark · reach the reef marker before 20:00';
-		if ( id === 'side-strange-signal' ) return this.progress[ id ].inspected ? 'Strange Signal · report what you found to Joe' : 'Strange Signal · after dark, dive on the marked signal';
+		if ( id === 'side-strange-signal' ) return this.progress[ id ].inspected ? 'Mooring 17 · report the sonar return to Joe' : 'Mooring 17 · after dark, inspect the unexplained sonar return by boat';
 		return this.director?.definition?.( id )?.activeObjective || '';
 	}
 
@@ -225,18 +226,32 @@ export class SideQuestSystem {
 
 	updateDiveInspection( id, promptText ) {
 		if ( this.progress[ id ].inspected ) { this.marker.visible = false; return; }
-		const nightOnly = id === 'side-strange-signal';
-		const hour = Number( this.app.settings?.timeOfDay || 0 );
-		const night = hour >= 20 || hour < 5.5;
-		this.setMarker( id, ! nightOnly || night );
-		if ( nightOnly && ! night ) return;
+		this.setMarker( id, true );
 		if ( this.player.mode !== 'swim' || this.distanceToPoint( id ) > 2.6 ) return;
 		this.player.prompt = { key: 'E', text: promptText };
 		if ( this.input.hit( 'KeyE' ) ) {
 			this.progress[ id ].inspected = true;
 			this.marker.visible = false;
 			this.state.save();
-			this.game.toast( id === 'side-strange-signal' ? 'A strange sealed component is embedded in the limestone. No markings.' : `${ this.director.definition( id ).title } · recovered`, 3300 );
+			this.game.toast( `${ this.director.definition( id ).title } · recovered`, 3300 );
+		}
+	}
+
+	updateMooring17() {
+		const id = 'side-strange-signal';
+		if ( this.progress[ id ].inspected ) { this.marker.visible = false; return; }
+		const hour = Number( this.app.settings?.timeOfDay || 0 );
+		const night = hour >= 20 || hour < 5.5;
+		this.setMarker( id, night );
+		if ( ! night ) return;
+		if ( this.player.mode !== 'boat' || this.distanceToPoint( id ) > 14 ) return;
+		this.player.prompt = { key: 'E', text: 'Mooring 17 · inspect sonar return' };
+		if ( this.input.hit( 'KeyE' ) ) {
+			this.progress[ id ].inspected = true;
+			this.marker.visible = false;
+			this.state.storyFlags.mooring17SonarReturn = true;
+			this.state.save();
+			this.game.toast( 'Sonar paints a hull-sized return below Mooring 17. The surface is empty.', 4200 );
 		}
 	}
 
@@ -248,7 +263,7 @@ export class SideQuestSystem {
 			this.refreshObjective( active );
 			if ( active === 'side-ghost-line' ) this.updateDiveInspection( active, 'Cut away tangled ghost line' );
 			else if ( active === 'side-lost-camera' ) this.updateDiveInspection( active, 'Recover lost dive camera' );
-			else if ( active === 'side-strange-signal' ) this.updateDiveInspection( active, 'Inspect strange underwater signal' );
+			else if ( active === 'side-strange-signal' ) this.updateMooring17();
 			else if ( active === 'side-harbour-before-dark' && ! this.progress[ active ].reached ) {
 				this.setMarker( active, true );
 				if ( this.distanceToPoint( active ) < 7.5 ) {
@@ -280,7 +295,6 @@ export class SideQuestSystem {
 
 		this.marker.visible = false;
 		if ( this.player.mode !== 'walk' || this.player.busy ) return;
-		// Do not stack another story interaction on top of an active core mission.
 		const nonSideActive = ( this.state.missions?.active || [] ).some( ( id ) => ! SIDE_SET.has( id ) );
 		if ( nonSideActive ) return;
 		const next = this.nextAvailable();
