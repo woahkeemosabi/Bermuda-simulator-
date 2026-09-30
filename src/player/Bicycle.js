@@ -16,7 +16,8 @@ function buildBicycleGeometry() {
 	const rubber = { color: 0x111515, rough: 0.92, pattern: PAT.rusty };
 	const chrome = { color: 0xaebfc2, rough: 0.2, metal: 1 };
 
-	// +Z is forward. Wheels are deliberately dense enough to read as a real bicycle at gameplay range.
+	// The authored mesh points +Z. Gameplay uses the Player convention where forward at yaw 0 is -Z;
+	// the mesh is rotated once in the constructor so its front wheel matches actual travel direction.
 	for ( const z of [ - 0.57, 0.57 ] ) {
 		add( torus( 0.34, 0.035, 8, 24 ), { ...rubber, matrix: mat4( 0, 0.36, z, 0, Math.PI / 2, 0 ) } );
 		add( cylinder( 0.045, 0.045, 0.06, 12 ), { ...chrome, matrix: mat4( 0, 0.36, z, 0, 0, Math.PI / 2 ) } );
@@ -60,6 +61,9 @@ export class Bicycle {
 		const mesh = new Mesh( buildBicycleGeometry(), mat );
 		mesh.castShadow = true;
 		mesh.receiveShadow = true;
+		// Physics/camera/player forward is local -Z. Rotate only the authored visual, not the proven
+		// controller, so the bicycle no longer appears to ride backwards in third person.
+		mesh.rotation.y = Math.PI;
 		this.group.add( mesh );
 		app.scene.add( this.group );
 
