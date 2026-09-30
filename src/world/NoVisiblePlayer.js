@@ -7,6 +7,9 @@ const PLAYER_NAMES = new Set( [
 	'ReferenceArticulatedPlayer',
 	'Exact54SecondPlayerIdle',
 	'MeshyProductionPlayer',
+	'ReferenceDeckPlayer',
+	'ReferenceHelmPlayer',
+	'ReferenceHelmCharacter',
 ] );
 
 function hideKnownPlayerVisuals( app ) {
@@ -24,6 +27,10 @@ function hideKnownPlayerVisuals( app ) {
 
 	const production = app.__productionMeshyCharacters?.playerModel?.group;
 	if ( production ) production.visible = false;
+
+	const boatPresentation = app.__bermudaBoatReferencePresentation;
+	if ( boatPresentation?.deckAvatar ) boatPresentation.deckAvatar.visible = false;
+	if ( boatPresentation?.helmAvatar ) boatPresentation.helmAvatar.visible = false;
 
 	app.__articulatedReferencePlayerVisible = false;
 
