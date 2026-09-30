@@ -10,7 +10,8 @@ import { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js
 import { installReferenceFinalPass } from './ReferenceFinalPass.js';
 import { installReferenceFinalRuntimeFix } from './ReferenceFinalRuntimeFix.js';
 import { installReferenceExactVideoPass } from './ReferenceExactVideoPass.js';
-import { installProductionMeshyAssets } from './ProductionMeshyAssets.js';
+import { installProductionWorldAssetsNoPlayer } from './ProductionWorldAssetsNoPlayer.js';
+import { installNoVisiblePlayer } from './NoVisiblePlayer.js';
 import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
@@ -76,8 +77,6 @@ function installBermudaTerrainProfile() {
 function installMobileWhaleBypass() {
 	if ( mobileWhaleBypassInstalled || ! mobileHardware() ) return;
 	mobileWhaleBypassInstalled = true;
-	// Whale is not a progression dependency. Avoid another large animated allocation on phone hardware
-	// even when ?desktop is used; the desktop-quality world/water path remains otherwise unchanged.
 	Whale.prototype.load = async function bermudaMobileWhaleLoad() {
 		this.ready = false;
 		if ( this.group ) this.group.visible = false;
@@ -143,18 +142,20 @@ export function applyBermudaRuntimeLook( app ) {
 	installReferenceFinalPass( app );
 	installReferenceFinalRuntimeFix( app );
 	installReferenceExactVideoPass( app );
+	installNoVisiblePlayer( app );
 
-	const loadProductionAssets = () => installProductionMeshyAssets( app ).catch( ( error ) =>
-		console.warn( 'Production Meshy asset pass failed; validated reference fallbacks remain active.', error ) );
+	// V1 deliberately renders no player body. Keep high-value production lobster/RELIC visuals,
+	// while eliminating the local-player GLB, skeleton, walk/run/swim clips and per-frame skinning.
+	const loadProductionWorld = () => installProductionWorldAssetsNoPlayer( app ).catch( ( error ) =>
+		console.warn( 'Production world asset pass failed; validated reference fallbacks remain active.', error ) );
 
 	if ( phone && typeof setTimeout === 'function' ) {
-		// Start the production player while the opening/world presentation is still being prepared.
-		// The character loader is now sequential, so this does not recreate the old seven-GLB spike.
-		// Background static street life stays delayed and therefore cannot compete with the player rig.
-		void loadProductionAssets();
-		setTimeout( loadStreetLifeModels, 12000 );
+		setTimeout( loadProductionWorld, 900 );
+		// Full static Bermuda residents/scooters can now arrive earlier because they no longer compete
+		// with a four-clip skinned player upload. NPC quality stays; only the local body is removed.
+		setTimeout( loadStreetLifeModels, 5200 );
 	} else {
-		void loadProductionAssets();
+		void loadProductionWorld();
 		void loadStreetLifeModels();
 	}
 
