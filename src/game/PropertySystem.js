@@ -6,13 +6,10 @@ const HOME = Object.freeze( {
 	id: 'harbour-cottage',
 	name: 'Harbour Cottage',
 	price: 8500,
-	// Existing house-d sits around (-57,-61); this door is on its harbour-facing/south side.
 	exterior: Object.freeze( { x: - 57, z: - 58.2 } ),
-	// Closed interior cell, separated from the streaming waterfront so the existing house GLB does
-	// not need to be cut apart before interiors can become meaningful progression spaces.
 	interior: Object.freeze( { x: 360, y: 34, z: - 360 } ),
 } );
-
+const HOME_MISSION = 'main-keys-to-cottage';
 const ROOM = Object.freeze( { width: 7.2, depth: 5.6, height: 2.8 } );
 const TMP = new Vector3();
 
@@ -39,31 +36,26 @@ function interiorGeometry() {
 	const cedar = { color: 0x8a6548, rough: 0.86, pattern: PAT.woodX };
 	const darkWood = { color: 0x5f4635, rough: 0.88, pattern: PAT.woodX };
 
-	// Room shell.
 	add( box( w, 0.1, d ), { ...cedar, matrix: mat4( 0, 0.05, 0 ) } );
 	add( box( w, 0.08, d ), { ...trim, matrix: mat4( 0, h, 0 ) } );
 	add( box( w, h, 0.1 ), { ...plaster, matrix: mat4( 0, h / 2, - d / 2 ) } );
 	for ( const sx of [ - 1, 1 ] ) add( box( 0.1, h, d ), { ...plaster, matrix: mat4( sx * w / 2, h / 2, 0 ) } );
 	add( box( w, h, 0.1 ), { ...plaster, matrix: mat4( 0, h / 2, d / 2 ) } );
 
-	// White Bermuda-style interior trim and a framed exit door.
 	add( box( 1.05, 2.18, 0.09 ), { ...darkWood, matrix: mat4( 0, 1.09, d / 2 - 0.06 ) } );
 	add( box( 1.18, 0.08, 0.11 ), { ...trim, matrix: mat4( 0, 2.22, d / 2 - 0.1 ) } );
 	for ( const x of [ - 0.57, 0.57 ] ) add( box( 0.08, 2.28, 0.11 ), { ...trim, matrix: mat4( x, 1.12, d / 2 - 0.1 ) } );
 
-	// Bed + bedside table.
 	add( box( 2.0, 0.42, 1.45 ), { ...darkWood, matrix: mat4( - 2.05, 0.28, - 1.28 ) } );
 	add( box( 1.9, 0.28, 1.35 ), { color: 0xded9cf, rough: 0.92, pattern: PAT.cloth, matrix: mat4( - 2.05, 0.59, - 1.28 ) } );
 	add( box( 0.85, 0.15, 0.5 ), { color: 0xf5f0e7, rough: 0.94, pattern: PAT.cloth, matrix: mat4( - 2.46, 0.82, - 1.28 ) } );
 	add( box( 0.58, 0.62, 0.5 ), { ...cedar, matrix: mat4( - 3.0, 0.31, 0.08 ) } );
 
-	// Wardrobe and storage chest.
 	add( box( 1.35, 2.15, 0.62 ), { ...cedar, matrix: mat4( 2.72, 1.08, - 1.75 ) } );
 	add( box( 0.05, 1.9, 0.64 ), { ...darkWood, matrix: mat4( 2.72, 1.05, - 1.74 ) } );
 	add( box( 1.3, 0.68, 0.72 ), { ...darkWood, matrix: mat4( 2.55, 0.34, 1.55 ) } );
 	add( box( 1.34, 0.09, 0.76 ), { color: 0xa47a53, rough: 0.82, pattern: PAT.woodX, matrix: mat4( 2.55, 0.72, 1.55 ) } );
 
-	// Small desk / island map corner.
 	add( box( 1.5, 0.08, 0.72 ), { ...cedar, matrix: mat4( 0.1, 0.84, - 1.95 ) } );
 	for ( const x of [ - 0.58, 0.58 ] ) for ( const z of [ - 0.23, 0.23 ] ) add( box( 0.07, 0.82, 0.07 ), { ...darkWood, matrix: mat4( 0.1 + x, 0.41, - 1.95 + z ) } );
 	add( box( 1.02, 0.025, 0.52 ), { color: 0xd9d2bc, rough: 0.72, matrix: mat4( 0.1, 0.9, - 1.95 ) } );
@@ -157,7 +149,6 @@ export class PropertySystem {
 	}
 
 	refreshExterior() { if ( this.saleSign ) this.saleSign.visible = ! this.ownsHome(); }
-
 	distanceXZ( a, b ) { return Math.hypot( a.x - b.x, a.z - b.z ); }
 
 	enterHome() {
@@ -169,7 +160,11 @@ export class PropertySystem {
 		this.player.yaw = Math.PI;
 		this.player.pitch = - 0.04;
 		this.player._camY = null;
-		this.game.toast( HOME.name, 1400 );
+
+		const d = this.app.missionDirector;
+		if ( d?.available?.( HOME_MISSION ) ) d.accept( HOME_MISSION, { toast: false } );
+		if ( d?.active?.( HOME_MISSION ) ) d.complete( HOME_MISSION, { toast: true } );
+		else this.game.toast( HOME.name, 1400 );
 		return true;
 	}
 
@@ -189,6 +184,8 @@ export class PropertySystem {
 			this.game.toast( `${ HOME.name } costs ${ money( HOME.price ) } · need ${ money( HOME.price - this.state.money ) } more`, 2800 );
 			return false;
 		}
+		const d = this.app.missionDirector;
+		if ( d?.available?.( HOME_MISSION ) ) d.accept( HOME_MISSION, { toast: false } );
 		if ( ! this.state.spend( HOME.price ) ) return false;
 		if ( ! this.state.ownProperty( { id: HOME.id, name: HOME.name, price: HOME.price, garage: true, purchasedAt: Date.now() } ) ) {
 			this.state.addMoney( HOME.price );
@@ -197,7 +194,7 @@ export class PropertySystem {
 		this.state.storyFlags.firstHomePurchased = true;
 		this.state.save(); this.state.emit();
 		this.refreshExterior();
-		this.game.toast( `${ HOME.name } purchased · ${ money( HOME.price ) }`, 3400 );
+		this.game.toast( `${ HOME.name } purchased · ${ money( HOME.price ) } · go inside`, 3400 );
 		return true;
 	}
 
