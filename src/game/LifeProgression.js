@@ -67,8 +67,9 @@ export class LifeProgression {
 	carrying() { return !! this.state?.storyFlags?.marthaDeliveryCarrying; }
 
 	consumeAct() {
-		// Input.hit() is intentionally non-consuming for the engine. Progression interactions are
-		// different: one ACT press must not also open the generic vendor panel later in the same frame.
+		// Input.hit() is intentionally non-consuming elsewhere in the engine. FIRST DAY is different:
+		// the same ACT press must not also fall through into Game.updateVendors and open the legacy
+		// purchase list after the mission conversation has already handled it.
 		this.input?.pressed?.delete?.( 'KeyE' );
 	}
 
@@ -78,19 +79,16 @@ export class LifeProgression {
 	}
 
 	marthaInteractionReady( player ) {
-		if ( ! player || player.mode !== 'walk' ) return false;
-		const shop = this.app.marthaShop;
-		if ( shop ) {
-			// The player must actually enter the open Bait & Tackle shop. Once inside, use a slightly
-			// forgiving counter radius so the mobile capsule/counter collider cannot strand First Day.
-			if ( ! shop.isOpenHours() || ! shop.inside( player.position ) ) return false;
-			return this.distanceToVendor( this.martha, player.position ) <= MARTHA_INTERACTION_M;
-		}
-		return this.martha.inRange( player.position );
+		if ( ! player || player.mode !== 'walk' || ! this.martha ) return false;
+		// Martha is back to Tidewater's open-air chandlery. There is deliberately no walk-in-shop
+		// inside()/opening-hours gate here: that gate was the reason FIRST DAY failed and the generic
+		// shopping list opened instead. The mission interaction gets first refusal while it is available.
+		return this.martha.inRange( player.position ) ||
+			this.distanceToVendor( this.martha, player.position ) <= MARTHA_INTERACTION_M;
 	}
 
 	joeInteractionReady( player ) {
-		if ( ! player || player.mode !== 'walk' ) return false;
+		if ( ! player || player.mode !== 'walk' || ! this.joe ) return false;
 		return this.joe.inRange( player.position ) || this.distanceToVendor( this.joe, player.position ) <= JOE_INTERACTION_M;
 	}
 
@@ -115,11 +113,11 @@ export class LifeProgression {
 			this.parcel.visible = true;
 			if ( p.mode === 'bike' && this.app.bicycle ) {
 				const b = this.app.bicycle.group;
-				TMP.set( 0, 0.83, - 0.52 ).applyAxisAngle( Y, this.app.bicycle.yaw );
+				TMP.set( 0, 0.83, -0.52 ).applyAxisAngle( Y, this.app.bicycle.yaw );
 				this.parcel.position.copy( b.position ).add( TMP );
 				this.parcel.rotation.y = this.app.bicycle.yaw;
 			} else {
-				const side = TMP.set( 0.38, 0.78, - 0.38 ).applyAxisAngle( Y, p.yaw || 0 );
+				const side = TMP.set( 0.38, 0.78, -0.38 ).applyAxisAngle( Y, p.yaw || 0 );
 				this.parcel.position.copy( p.position ).add( side );
 				this.parcel.rotation.y = p.yaw || 0;
 			}
