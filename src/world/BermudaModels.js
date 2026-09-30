@@ -34,6 +34,27 @@ function waitForFirstPlayerGesture() {
 	} );
 }
 
+async function loadWaterfrontAsset( entry, file, tier ) {
+	const url = BASE + ( entry.version || 'mobile-v2' ) + '/' + file;
+	const options = {
+		id: entry.id,
+		maxTriangles: entry.triangles,
+		maxTextureSize: entry.texture,
+	};
+	const attempts = tier === 1 && entry.id === 'dock' && isMobileHardware() ? 3 : 1;
+	let lastError;
+	for ( let attempt = 0; attempt < attempts; attempt ++ ) {
+		try {
+			const retryURL = attempt === 0 ? url : url + '?retry=' + Date.now() + '-' + attempt;
+			return await loadStaticAsset( retryURL, options );
+		} catch ( error ) {
+			lastError = error;
+			if ( attempt + 1 < attempts ) await sleep( 350 * ( attempt + 1 ) );
+		}
+	}
+	throw lastError;
+}
+
 export function installBermudaModels( app ) {
 	if ( ! app ) return Promise.resolve( null );
 	return app.bermudaModelsPromise ||= loadWaterfront( app );
@@ -45,7 +66,7 @@ async function loadWaterfront( app ) {
 	const group = new Group();
 	group.name = 'BermudaMeshyWaterfront';
 	app.scene.add( group );
-	const state = app.bermudaModels = { group, ready: false, loaded: [], errors: [], metrics: {}, assets: [], nodes: [], completedTiers: [] };
+	const state = app.bermudaModels = { group, ready: false, loaded: [], errors: [], warnings: [], fallbacks: [], metrics: {}, assets: [], nodes: [], completedTiers: [] };
 	if ( typeof window !== 'undefined' ) window.__bermudaReferenceModels = state;
 	await loadTier( app, 1 );
 	state.ready = state.errors.length === 0;
@@ -61,11 +82,7 @@ async function loadTier( app, tier ) {
 		try {
 			const file = 'bermuda-' + entry.id + '.glb';
 			if ( tier === 1 ) app.onWaterfrontProgress?.( entries.indexOf( entry ), entries.length, entry.id );
-			asset = await loadStaticAsset( BASE + ( entry.version || 'mobile-v2' ) + '/' + file, {
-				id: entry.id,
-				maxTriangles: entry.triangles,
-				maxTextureSize: entry.texture,
-			} );
+			asset = await loadWaterfrontAsset( entry, file, tier );
 			const placements = entry.placements
 				.filter( ( placement ) => ! placement.desktopOnly || ! app.bermudaBlockout.mobileLite )
 				.map( ( placement ) => fitPlacement( asset, placement, app.terrainData ) );
@@ -131,8 +148,18 @@ async function loadTier( app, tier ) {
 			}
 		} catch ( error ) {
 			asset?.dispose();
-			state.errors.push( { id: entry.id, message: String( error.message || error ) } );
-			console.error( 'Bermuda waterfront asset failed:', entry.id, error );
+			const message = String( error.message || error );
+			if ( tier === 1 && entry.id === 'dock' && app.bermudaBlockout ) {
+				// Safari occasionally reports a transient network "Load failed" for the 1.8 MB dock GLB.
+				// The procedural dock/blockout is already a complete playable fallback, so never trap the
+				// player at 99% because one presentation asset failed to fetch or decode.
+				state.warnings.push( { id: entry.id, message } );
+				state.fallbacks.push( entry.id );
+				console.warn( 'Bermuda dock GLB unavailable; continuing with blockout fallback:', error );
+			} else {
+				state.errors.push( { id: entry.id, message } );
+				console.error( 'Bermuda waterfront asset failed:', entry.id, error );
+			}
 		}
 		if ( tier > 1 ) await sleep( 60 );
 	}
@@ -143,7 +170,8 @@ async function loadTier( app, tier ) {
 
 // Only the dock is boot-critical. On phones, decorative GLBs do not begin decoding until the first
 // in-page player gesture (normally Explore), which avoids a network/decode/GPU spike under the start
-// overlay. Recovery levels progressively skip decorative tiers so recovery is materially cheaper.
+// overlay. If the dock presentation GLB fails, the procedural dock remains playable and boot may
+// continue. Recovery levels progressively skip decorative tiers so recovery is materially cheaper.
 export function startDeferredWaterfront( app ) {
 	if ( ! app.bermudaModels?.ready ) return Promise.resolve( null );
 	if ( ! app.bermudaDeferredPromise ) {
