@@ -16,6 +16,7 @@ import { installNoVisiblePlayer } from './NoVisiblePlayer.js';
 import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
+import { installWaterfrontRepair } from '../game/WaterfrontRepair.js';
 import { installRelicMobileModes } from '../mobile/RelicMobileModes.js';
 import { Whale } from './marine/Whale.js';
 
@@ -86,7 +87,6 @@ function installMobileWhaleBypass() {
 
 export function applyBermudaBootLook( app ) {
 	const look = BERMUDA_LOOK;
-	// BoatModel is created during App.init, so patch the flag shader here before BoatMaterials exists.
 	installBermudaBoatFlag();
 	installBermudaTerrainProfile();
 	installMobileWhaleBypass();
@@ -100,6 +100,8 @@ export function applyBermudaBootLook( app ) {
 
 export function applyBermudaRuntimeLook( app ) {
 	const look = BERMUDA_LOOK;
+	const phone = mobileHardware();
+
 	G.waterAbsorption.value.set( ...look.water.absorption );
 	G.waterScattering.value.set( ...look.water.scattering );
 	G.windSpeed.value = look.wind.speed;
@@ -128,34 +130,43 @@ export function applyBermudaRuntimeLook( app ) {
 		app.fft.foamGain.value = look.water.foamGain; app.fft.foamAdd.value = look.water.foamAdd;
 	}
 
+	// Core Bermuda world remains on every platform.
 	installBermudaBlockout( app );
 	installHarbourShopPolish( app );
 	installReferenceWorldUpgrade( app );
-	installReferenceDetailUpgrade( app );
-	installReferenceStreetLife( app );
 
-	const phone = mobileHardware();
-	const loadStreetLifeModels = () => installReferenceStreetLifeModels( app ).catch( ( error ) =>
-		console.warn( 'Bermuda Meshy street-life pass failed; procedural fallbacks remain active.', error ) );
+	// These detail/street-life passes are decorative. They are kept on desktop, but not on iPhone:
+	// Safari was still allocating their geometry/character resources even after gpuSafe=2 recovery.
+	if ( ! phone ) {
+		installReferenceDetailUpgrade( app );
+		installReferenceStreetLife( app );
+	}
 
 	installRelic001( app );
 	installRelicStory( app );
 	installBermudaGameplayQA( app );
 	installRelicMobileModes( app );
-	installReferenceFinalPass( app );
-	// Set the V1 no-player-body policy before any later reference pass can request a local deck/helm
-	// avatar or another static player. NPC/street-life presentation remains fully available.
 	installNoVisiblePlayer( app );
-	installReferenceFinalRuntimeFix( app );
-	installReferenceExactVideoPass( app );
 
-	const loadProductionWorld = () => installProductionWorldAssetsNoPlayer( app ).catch( ( error ) =>
-		console.warn( 'Production world asset pass failed; validated reference fallbacks remain active.', error ) );
-
-	if ( phone && typeof setTimeout === 'function' ) {
-		setTimeout( loadProductionWorld, 900 );
-		setTimeout( loadStreetLifeModels, 5200 );
+	if ( phone ) {
+		// TRUE mobile core-stable mode. Do not instantiate the reference-final pedestrians/skiffs,
+		// exact-video character/material stack, Meshy street-life pack, or production RELIC/lobster GLBs.
+		// The previous recovery URL only disabled clouds/vegetation/simulation and still loaded these
+		// later, allowing Safari to exhaust the page process after startup.
+		installWaterfrontRepair( app );
+		if ( typeof window !== 'undefined' ) {
+			window.__bermudaMobileWorldMode = 'core-stable-v2';
+			window.__bermudaHeavyWorldAssetsDisabled = true;
+		}
 	} else {
+		installReferenceFinalPass( app );
+		installReferenceFinalRuntimeFix( app );
+		installReferenceExactVideoPass( app );
+
+		const loadProductionWorld = () => installProductionWorldAssetsNoPlayer( app ).catch( ( error ) =>
+			console.warn( 'Production world asset pass failed; validated reference fallbacks remain active.', error ) );
+		const loadStreetLifeModels = () => installReferenceStreetLifeModels( app ).catch( ( error ) =>
+			console.warn( 'Bermuda Meshy street-life pass failed; procedural fallbacks remain active.', error ) );
 		void loadProductionWorld();
 		void loadStreetLifeModels();
 	}
