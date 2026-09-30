@@ -1,6 +1,6 @@
 # Bermuda Simulator — V1 Game Bible
 
-This file is the canonical source of truth for the Bermuda Simulator V1 progression, mission slate, world fantasy and 3D asset plan. Future implementation should preserve completed systems and extend this plan rather than replacing it with disconnected features.
+This file is the canonical source of truth for the Bermuda Simulator V1 progression, mission slate, world fantasy, controls, presentation policy and 3D asset plan. Future implementation should preserve completed systems and extend this plan rather than replacing it with disconnected features.
 
 ## Core fantasy
 
@@ -111,18 +111,44 @@ Do not rebuild working systems merely because a new progression layer is added. 
 - Harbour Jobs
 - current RELIC ROAD/HOVER/AIR/SUB controller functionality for development/testing until story gating is intentionally enabled
 
-## Character presentation requirement
+## Control baseline — Tidewater is authoritative
 
-Target: believable third-person characters approaching the 54-second gameplay reference rather than segmented/stick proxies.
+V1 uses the original Tidewater player/control semantics as the baseline. Bermuda systems may add actions, but they must not replace Tidewater locomotion or camera math.
+
+- `Player.js` remains authoritative for walking, swimming, deck movement, boat driving and camera calculation.
+- Desktop keyboard/mouse input follows Tidewater's `Input.js` behaviour, including normal pointer-lock support.
+- On iPhone/mobile, the touch layer is an adapter only: **left thumb = W/A/S/D**, **right-side drag = Tidewater look**, contextual buttons = ordinary Tidewater/Bermuda key or mouse inputs.
+- The left movement stick must never steer the camera or directly write player yaw/position.
+- Mobile code must not wrap or replace player locomotion/camera logic to create a second control model.
+- Walking/swimming use Tidewater's native first-person camera for V1.
+- Vehicle-specific helm/chase camera behaviour remains available.
+
+## Player / NPC presentation policy
+
+### Local player
+
+For V1, **do not render a visible local player body**. The controller, collision, camera, fishing, diving, bicycle, boat and RELIC gameplay remain fully active, but the local player mesh/skin/animation package is not a runtime dependency.
+
+Reasons:
+
+- avoids player skinning/clothing deformation and camera clipping
+- avoids large player rig + walk/run/swim GLB loads on iPhone
+- leaves more GPU/CPU/memory budget for Bermuda water, wildlife, vegetation, boats, lighting and world density
+- keeps first-person fishing/diving/spearfishing clean
+
+A polished visible player can be reconsidered after V1 if a future character pipeline passes device QA.
+
+### NPCs
+
+NPCs remain visually important. Martha, Joe and island residents should become believable full characters approaching the 54-second gameplay reference.
 
 Acceptance requirements:
 
-- no procedural stick-figure visible when a production character is available
-- no root-motion fighting PlayerController
+- no segmented/stick proxies as final NPC presentation
+- no root-motion fighting NPC route/controller movement
 - no foot skating at route turnarounds
 - no 180-degree snapping
-- no clothing/body inflation or skinning explosions while walking/running/swimming
-- stable waterline/orientation while swimming
+- no clothing/body inflation or skinning explosions
 - NPCs can idle, walk and perform simple contextual actions cleanly on iPhone
 - character animation is visually tested on device; CI/build success alone is not acceptance
 
@@ -137,7 +163,7 @@ Do not make one unique model per mission. Build a reusable asset library.
 - 4–6 additional reusable Bermuda residents: fisherman, fisherwoman, dock/marine worker, older resident, young adult, tourist/diver/shop customer
 - shared animation library where possible
 - custom actions only where needed: wave/call player over, point, carry parcel/crate, inspect fish, sit/lean, work on boat, umbrella/weather reaction
-- do not spend on more characters until the current skinning/clothing and locomotion pipeline passes device QA
+- no local-player character asset work is required for V1
 
 ### Priority B — Mission props
 
@@ -179,7 +205,8 @@ Prefer:
 
 - staggered/lazy heavy asset loading
 - reuse decoded assets/materials
-- avoid duplicate character textures/skins
+- no local-player rig/animation package in V1
+- avoid duplicate NPC textures/skins
 - instancing
 - LOD/remesh for background props
 - culling
@@ -200,7 +227,7 @@ Plus recurring dynamic situations (storms, weather reactions, changing fish acti
 
 Mission count alone is not completion. V1 is complete when the campaign is playable end-to-end and the following pillars are visually and mechanically stable:
 
-1. character movement/cameras
+1. Tidewater-baseline movement/cameras and mobile touch translation
 2. boat persistence/handling
 3. fishing/lobster/diving
 4. populated believable Bermuda environment
@@ -213,6 +240,7 @@ Mission count alone is not completion. V1 is complete when the campaign is playa
 
 1. `Bermuda_Simulator_Gameplay_54s.mp4` — authoritative benchmark for the whole simulator's visual quality, density, water, movement, atmosphere, camera and gameplay feel.
 2. Dedicated RELIC references — authoritative for RELIC design, silhouette, proportions, Stormglass, Red Room and lighting signature.
+3. Original Tidewater input/player semantics — authoritative baseline for locomotion and camera behaviour unless a future deliberate control redesign is separately approved and device-tested.
 
 For major visual work use:
 
