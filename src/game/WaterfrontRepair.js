@@ -2,6 +2,7 @@ import { Vector3 } from '../engine/index.js';
 import { CHANDLERY } from './Chandlery.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
 import { installMobileCorePolish } from './MobileCorePolish.js';
+import { installMobileMoneyFix } from './MobileMoneyFix.js';
 
 const Y = new Vector3( 0, 1, 0 );
 
@@ -12,9 +13,6 @@ function worldPoint( chandlery, x, y, z ) {
 }
 
 function removeBrokenAmbientWalkers( app ) {
-	// Two reference passes independently created procedural pedestrians. They had no navigation mesh,
-	// so they could cross walls/buildings and the segmented fallback read as a stick figure on mobile.
-	// Remove them completely until production, collision-aware pedestrians replace them.
 	const finalWalkers = app.bermudaReferenceFinal?.walkers;
 	if ( Array.isArray( finalWalkers ) ) {
 		for ( const walker of finalWalkers ) walker?.root?.parent?.remove?.( walker.root );
@@ -33,9 +31,6 @@ function suppressLegacyMarthaList( app ) {
 	if ( ! game || game.__physicalMarthaVendorFlow || typeof game.updateVendors !== 'function' ) return;
 	game.__physicalMarthaVendorFlow = true;
 	const legacyUpdateVendors = game.updateVendors.bind( game );
-
-	// Keep Martha's Vendor object alive for her animated character and FIRST DAY mission targeting,
-	// but do not let the generic Vendor HUD open the old vertical upgrade list. Joe remains unchanged.
 	game.updateVendors = ( input, player ) => {
 		const all = game.vendors;
 		game.vendors = all.filter( ( vendor ) => vendor !== game.chandlery?.vendor );
@@ -53,9 +48,6 @@ function installOpenAirMarthaInterior( app ) {
 	if ( ! chandlery ) return null;
 
 	const shop = app.marthaShop || new MarthaShopInterior( app );
-
-	// Preserve the original Tidewater open-air chandlery as the storefront. The physical shopping
-	// area sits behind it; no replacement kiosk facade, fake front wall or modal catalogue is added.
 	shop.isOpenHours = () => true;
 	shop.doorOpen = true;
 	shop.doorTarget = - Math.PI * 0.48;
@@ -65,7 +57,6 @@ function installOpenAirMarthaInterior( app ) {
 	shop.openSign?.parent?.remove?.( shop.openSign );
 	shop.closedSign?.parent?.remove?.( shop.closedSign );
 
-	// Martha belongs behind the physical checkout inside the shop, never standing beside the boat.
 	const martha = chandlery.vendor;
 	const mp = worldPoint( chandlery, 0.92, 0.06, - 0.52 );
 	martha.position.copy( mp );
@@ -75,8 +66,6 @@ function installOpenAirMarthaInterior( app ) {
 	martha.radius = 2.35;
 	shop.vendorRadius = 2.35;
 
-	// The Tidewater counter remains the front-of-shop obstruction. Add only the floor and the
-	// back/side boundaries needed for an actual walk-in space; the customer-facing side stays open.
 	if ( app.colliders && ! app.__marthaInteriorColliders ) {
 		const w = CHANDLERY.width, d = CHANDLERY.depth, yaw = chandlery.group.rotation.y;
 		const made = [];
@@ -109,6 +98,7 @@ export function installWaterfrontRepair( app ) {
 	const marthaShop = installOpenAirMarthaInterior( app );
 	suppressLegacyMarthaList( app );
 	const mobilePolish = installMobileCorePolish( app );
+	installMobileMoneyFix();
 
 	const state = {
 		ready: true,
