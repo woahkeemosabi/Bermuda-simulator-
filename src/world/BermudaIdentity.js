@@ -19,6 +19,7 @@ import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
 import { installWaterfrontRepair } from '../game/WaterfrontRepair.js';
 import { LifeProgression } from '../game/LifeProgression.js';
 import { installRelicMobileModes } from '../mobile/RelicMobileModes.js';
+import { installMobileReferenceParity } from '../mobile/MobileReferenceParity.js';
 import { Whale } from './marine/Whale.js';
 
 export const BERMUDA_LOOK = {
@@ -150,13 +151,13 @@ export function applyBermudaRuntimeLook( app ) {
 	installNoVisiblePlayer( app );
 
 	if ( phone ) {
-		// TRUE mobile core-stable mode. Do not instantiate the reference-final pedestrians/skiffs,
-		// exact-video character/material stack, Meshy street-life pack, or production RELIC/lobster GLBs.
-		// The previous recovery URL only disabled clouds/vegetation/simulation and still loaded these
-		// later, allowing Safari to exhaust the page process after startup.
+		// Keep the crash-prone desktop detail stack disabled on iPhone, but restore the dedicated
+		// instanced mobile reference corridor, proper iconography and cheap local street/window lights.
+		// This is the intended visual replacement for the heavier final/reference passes.
 		installWaterfrontRepair( app );
+		installMobileReferenceParity( app );
 		if ( typeof window !== 'undefined' ) {
-			window.__bermudaMobileWorldMode = 'core-stable-v2';
+			window.__bermudaMobileWorldMode = 'reference-parity-v1';
 			window.__bermudaHeavyWorldAssetsDisabled = true;
 		}
 	} else {
