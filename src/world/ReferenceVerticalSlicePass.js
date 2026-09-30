@@ -78,6 +78,7 @@ function installWorldPersistence( app ) {
 }
 
 function installBoatReferencePresentation( app, assets ) {
+	if ( app.__disableVisiblePlayer ) return null;
 	if ( app.__bermudaBoatReferencePresentation || ! assets?.maleAsset || ! app.player?.boat?.model?.group ) return app.__bermudaBoatReferencePresentation;
 	const player = app.player;
 	const boat = player.boat;
@@ -95,8 +96,6 @@ function installBoatReferencePresentation( app, assets ) {
 	helmAvatar.name = 'ReferenceHelmPlayer';
 	boat.model.group.add( helmAvatar );
 	const deckY = boat.model.lines?.deckY ?? 0.72;
-	// Original Downeast lobster-boat helm: use the wheelhouse constants instead of the removed
-	// centre-console coordinates so the visible captain sits at the actual wheel/seat again.
 	helmAvatar.position.set( HOUSE.helmX, deckY - 0.08, HOUSE.seatZ );
 	helmAvatar.rotation.y = Math.PI;
 	helmAvatar.rotation.x = -0.05;
@@ -116,14 +115,14 @@ function installBoatReferencePresentation( app, assets ) {
 	let lastMode = player.mode;
 	const tick = () => {
 		const third = player.__bermudaReferencePresentation?.thirdPerson !== false;
-		deckAvatar.visible = player.mode === 'deck' && third;
+		deckAvatar.visible = ! app.__disableVisiblePlayer && player.mode === 'deck' && third;
 		if ( deckAvatar.visible ) {
 			deckAvatar.position.copy( player.position );
 			deckAvatar.rotation.y = player.yaw + Math.PI;
 			const speed = Math.hypot( player.deckVel?.x || 0, player.deckVel?.z || 0 );
 			deckAvatar.position.y += Math.abs( Math.sin( performance.now() * 0.008 ) ) * Math.min( 0.025, speed * 0.012 );
 		}
-		helmAvatar.visible = player.mode === 'boat' && player.camMode === 'third';
+		helmAvatar.visible = ! app.__disableVisiblePlayer && player.mode === 'boat' && player.camMode === 'third';
 		if ( player.mode !== lastMode ) {
 			if ( player.mode === 'deck' ) player.camInit = false;
 			if ( player.mode === 'boat' && player.camMode === 'third' ) {
@@ -145,9 +144,11 @@ export function installReferenceVerticalSlicePass( app ) {
 	if ( ! app || app.__bermudaVerticalSlicePass ) return app?.__bermudaVerticalSlicePass;
 	const state = app.__bermudaVerticalSlicePass = { boatPresentation: null, persistence: null };
 	state.persistence = installWorldPersistence( app );
-	void installReferenceStreetLifeModels( app ).then( assets => {
-		state.boatPresentation = installBoatReferencePresentation( app, assets );
-	} ).catch( error => console.warn( 'Reference boat-character pass kept existing fallback.', error ) );
+	if ( ! app.__disableVisiblePlayer ) {
+		void installReferenceStreetLifeModels( app ).then( assets => {
+			state.boatPresentation = installBoatReferencePresentation( app, assets );
+		} ).catch( error => console.warn( 'Reference boat-character pass kept existing fallback.', error ) );
+	}
 	if ( typeof window !== 'undefined' ) window.__bermudaVerticalSlicePass = state;
 	return state;
 }
