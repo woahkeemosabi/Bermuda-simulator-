@@ -148,10 +148,10 @@ export function applyBermudaRuntimeLook( app ) {
 		console.warn( 'Production Meshy asset pass failed; validated reference fallbacks remain active.', error ) );
 
 	if ( phone && typeof setTimeout === 'function' ) {
-		// IMPORTANT: ?desktop only forces the high-quality WORLD path. It must not make iPhone decode the
-		// static street-life pack and the skinned production pack simultaneously. Production characters
-		// go first so the player/NPC replacement appears quickly; background street-life streams later.
-		setTimeout( loadProductionAssets, 1200 );
+		// Start the production player while the opening/world presentation is still being prepared.
+		// The character loader is now sequential, so this does not recreate the old seven-GLB spike.
+		// Background static street life stays delayed and therefore cannot compete with the player rig.
+		void loadProductionAssets();
 		setTimeout( loadStreetLifeModels, 12000 );
 	} else {
 		void loadProductionAssets();
