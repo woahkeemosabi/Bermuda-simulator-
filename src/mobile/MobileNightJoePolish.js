@@ -29,11 +29,12 @@ function localToWorld( s, lx, lz, out ) {
 
 function clearJoeFace( app ) {
 	const vendor = app.game?.stand?.vendor;
-	if ( ! vendor || vendor.__mobileFaceClear ) return !! vendor?.__mobileFaceClear;
+	if ( ! vendor ) return false;
 	vendor.__mobileFaceClear = true;
 
 	// Keep Joe behind the Tidewater counter, but move him sideways out from under the nearby patio
-	// canopy in the mobile reference corridor. This preserves the stall layout and interaction radius.
+	// canopy in the mobile reference corridor. Reapply this briefly during startup because the older
+	// dock HUD repair performs one late Joe relocation of its own.
 	const p = localToWorld( FISH_MARKET, 0.56, 0.12, new Vector3() );
 	p.y += 0.06;
 	vendor.position.copy( p );
@@ -185,6 +186,17 @@ export function installMobileNightJoePolish( app ) {
 			if ( install() || attempts > 40 ) window.clearInterval( timer );
 		}, 250 );
 		window.addEventListener( 'pagehide', () => window.clearInterval( timer ), { once:true } );
+	}
+
+	// DockHudFix has one legacy delayed Joe placement. For the first five seconds, re-assert this final
+	// mobile position so whichever module initializes last cannot put the canopy back over his face.
+	if ( typeof window !== 'undefined' ) {
+		let settles = 0;
+		const settleJoe = window.setInterval( () => {
+			clearJoeFace( app );
+			if ( ++ settles >= 20 ) window.clearInterval( settleJoe );
+		}, 250 );
+		window.addEventListener( 'pagehide', () => window.clearInterval( settleJoe ), { once:true } );
 	}
 	if ( typeof window !== 'undefined' ) window.__mobileNightJoePolish = state;
 	return state;
