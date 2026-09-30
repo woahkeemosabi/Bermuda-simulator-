@@ -17,6 +17,7 @@ import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
 import { installWaterfrontRepair } from '../game/WaterfrontRepair.js';
+import { LifeProgression } from '../game/LifeProgression.js';
 import { installRelicMobileModes } from '../mobile/RelicMobileModes.js';
 import { Whale } from './marine/Whale.js';
 
@@ -170,6 +171,11 @@ export function applyBermudaRuntimeLook( app ) {
 		void loadProductionWorld();
 		void loadStreetLifeModels();
 	}
+
+	// Mission runtime is gameplay, not a desktop-only visual pass. The module existed in source but
+	// was never wired into the live startup graph, so FIRST DAY could silently disappear after a reload.
+	// Install it once after all platform-specific player wrappers are in place.
+	if ( ! app.progression ) new LifeProgression( app );
 
 	const waterfrontReady = installBermudaModels( app );
 
