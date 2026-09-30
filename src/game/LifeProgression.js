@@ -6,6 +6,8 @@ import { MissionDirector } from './MissionDirector.js';
 const DELIVERY_ID = 'martha-first-delivery';
 const TMP = new Vector3();
 const Y = new Vector3( 0, 1, 0 );
+const MARTHA_INTERACTION_M = 3.35;
+const JOE_INTERACTION_M = 3.0;
 
 function buildParcel() {
 	const P = [];
@@ -52,7 +54,7 @@ export class LifeProgression {
 	mountObjectiveUI() {
 		if ( typeof document === 'undefined' || document.getElementById( 'bm-objective' ) ) return;
 		const style = document.createElement( 'style' );
-		style.textContent = `#bm-objective{position:fixed;left:14px;top:max(92px,calc(env(safe-area-inset-top) + 82px));z-index:68;max-width:min(420px,calc(100vw - 28px));padding:8px 11px;border-radius:11px;background:rgba(5,22,31,.74);border:1px solid rgba(130,235,224,.28);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);color:#eaffff;font:600 11px/1.35 system-ui,-apple-system,sans-serif;letter-spacing:.02em;pointer-events:none}.bm-objective-kicker{display:block;font-size:9px;letter-spacing:.14em;color:#83e5db;margin-bottom:2px}`;
+		style.textContent = `#bm-objective{position:fixed;left:14px;top:max(92px,calc(env(safe-area-inset-top) + 82px));z-index:68;max-width:min(420px,calc(100vw - 28px));padding:8px 11px;border-radius:11px;background:rgba(5,22,31,.74);border:1px solid rgba(130,235,224,.28);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);color:#eaffff;font:600 11px/1.35 system-ui,-apple-system,sans-serif;letter-spacing:.02em;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.bm-objective-kicker{display:block;font-size:9px;letter-spacing:.14em;color:#83e5db;margin-bottom:2px}`;
 		document.head.appendChild( style );
 		this.objectiveEl = document.createElement( 'div' );
 		this.objectiveEl.id = 'bm-objective';
@@ -63,6 +65,34 @@ export class LifeProgression {
 	missionActive() { return this.missions.active( DELIVERY_ID ); }
 	missionDone() { return this.missions.completed( DELIVERY_ID ); }
 	carrying() { return !! this.state?.storyFlags?.marthaDeliveryCarrying; }
+
+	consumeAct() {
+		// Input.hit() is intentionally non-consuming for the engine. Progression interactions are
+		// different: one ACT press must not also open the generic vendor panel later in the same frame.
+		this.input?.pressed?.delete?.( 'KeyE' );
+	}
+
+	distanceToVendor( vendor, position ) {
+		if ( ! vendor?.position || ! position ) return Infinity;
+		return Math.hypot( vendor.position.x - position.x, vendor.position.z - position.z );
+	}
+
+	marthaInteractionReady( player ) {
+		if ( ! player || player.mode !== 'walk' ) return false;
+		const shop = this.app.marthaShop;
+		if ( shop ) {
+			// The player must actually enter the open Bait & Tackle shop. Once inside, use a slightly
+			// forgiving counter radius so the mobile capsule/counter collider cannot strand First Day.
+			if ( ! shop.isOpenHours() || ! shop.inside( player.position ) ) return false;
+			return this.distanceToVendor( this.martha, player.position ) <= MARTHA_INTERACTION_M;
+		}
+		return this.martha.inRange( player.position );
+	}
+
+	joeInteractionReady( player ) {
+		if ( ! player || player.mode !== 'walk' ) return false;
+		return this.joe.inRange( player.position ) || this.distanceToVendor( this.joe, player.position ) <= JOE_INTERACTION_M;
+	}
 
 	updateParcelHome() {
 		if ( ! this.martha ) return;
@@ -94,17 +124,22 @@ export class LifeProgression {
 				this.parcel.rotation.y = p.yaw || 0;
 			}
 
-			if ( p.mode === 'walk' && this.joe.inRange( p.position ) ) {
+			if ( this.joeInteractionReady( p ) ) {
 				p.prompt = { key: 'E', text: 'Deliver Martha\'s box to Joe' };
-				if ( this.input.hit( 'KeyE' ) ) this.completeDelivery();
+				if ( this.input.hit( 'KeyE' ) ) {
+					const completed = this.completeDelivery();
+					if ( completed ) this.consumeAct();
+				}
 			}
 		} else if ( this.missionAvailable() ) {
 			this.parcel.visible = true;
 			this.updateParcelHome();
-			const shopReady = ! this.app.marthaShop || this.app.marthaShop.marthaAccessible( p.position );
-			if ( shopReady && p.mode === 'walk' && this.martha.inRange( p.position ) ) {
-				p.prompt = { key: 'E', text: 'Martha: take this box down to Joe' };
-				if ( this.input.hit( 'KeyE' ) ) this.acceptDelivery();
+			if ( this.marthaInteractionReady( p ) ) {
+				p.prompt = { key: 'E', text: 'Talk to Martha · Dock Delivery' };
+				if ( this.input.hit( 'KeyE' ) ) {
+					const accepted = this.acceptDelivery();
+					if ( accepted ) this.consumeAct();
+				}
 			}
 		} else this.parcel.visible = false;
 
@@ -123,6 +158,7 @@ export class LifeProgression {
 		this.state.storyFlags.marthaDeliveryCarrying = false;
 		if ( ! this.missions.complete( DELIVERY_ID, { storyFlags: { metJoe: true }, toast: true } ) ) return false;
 		this.parcel.visible = false;
+		this.game.toast( 'Delivery complete · fishing and harbour work are now your next opportunities.', 3200 );
 		this.refreshObjective();
 		return true;
 	}
