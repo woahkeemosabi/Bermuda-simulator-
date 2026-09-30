@@ -127,6 +127,35 @@ function restoreMobileHud(app) {
     return !!installBermudaDockHudFix(app);
 }
 
+function installDiveLightVisibilityFix(app) {
+    if (!mobileHardware() || !app || typeof document === 'undefined') return true;
+    if (app.__bermudaDiveLightVisibilityFix) return true;
+
+    const styleId = 'bermuda-dive-light-visibility-fix';
+    if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            body.bm-mobile.bm-dive-light-visible #bm-touch-stable button[data-role="light"].bm-hidden{
+                display:block!important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const sync = () => {
+        const p = app.player;
+        const underwater = p?.mode === 'swim' && (p.diveDepth || 0) > 0.18;
+        document.body.classList.toggle('bm-dive-light-visible', !!underwater);
+    };
+
+    sync();
+    const timer = window.setInterval(sync, 100);
+    window.addEventListener('pagehide', () => window.clearInterval(timer), { once: true });
+    app.__bermudaDiveLightVisibilityFix = { sync, timer };
+    return true;
+}
+
 function tick() {
     const app = typeof window !== 'undefined' ? window.__app : null;
     if (!app) return false;
@@ -136,7 +165,8 @@ function tick() {
     const martha = app.__waterfrontRepair ? removeAccidentalMarthaShell(app) : false;
     const board = repairJobBoard(app);
     const hud = restoreMobileHud(app);
-    return detail && dock && martha && board && hud;
+    const diveLight = installDiveLightVisibilityFix(app);
+    return detail && dock && martha && board && hud && diveLight;
 }
 
 if (typeof window !== 'undefined') {
