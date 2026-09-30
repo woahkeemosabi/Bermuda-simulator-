@@ -140,19 +140,17 @@ export function applyBermudaRuntimeLook( app ) {
 	installBermudaGameplayQA( app );
 	installRelicMobileModes( app );
 	installReferenceFinalPass( app );
+	// Set the V1 no-player-body policy before any later reference pass can request a local deck/helm
+	// avatar or another static player. NPC/street-life presentation remains fully available.
+	installNoVisiblePlayer( app );
 	installReferenceFinalRuntimeFix( app );
 	installReferenceExactVideoPass( app );
-	installNoVisiblePlayer( app );
 
-	// V1 deliberately renders no player body. Keep high-value production lobster/RELIC visuals,
-	// while eliminating the local-player GLB, skeleton, walk/run/swim clips and per-frame skinning.
 	const loadProductionWorld = () => installProductionWorldAssetsNoPlayer( app ).catch( ( error ) =>
 		console.warn( 'Production world asset pass failed; validated reference fallbacks remain active.', error ) );
 
 	if ( phone && typeof setTimeout === 'function' ) {
 		setTimeout( loadProductionWorld, 900 );
-		// Full static Bermuda residents/scooters can now arrive earlier because they no longer compete
-		// with a four-clip skinned player upload. NPC quality stays; only the local body is removed.
 		setTimeout( loadStreetLifeModels, 5200 );
 	} else {
 		void loadProductionWorld();
