@@ -1,6 +1,6 @@
 // V1 presentation policy: keep the player controller/collision/cameras fully active,
-// but do not render a player body. This avoids loading/skinning a local avatar on iPhone
-// and permanently suppresses the older procedural/static fallbacks that caused camera clipping.
+// but do not render a player body. Walking/swimming use Tidewater's native first-person camera;
+// vehicle-specific chase/helm cameras remain available.
 
 const PLAYER_NAMES = new Set( [
 	'BermudaPlayerAvatar',
@@ -12,7 +12,19 @@ const PLAYER_NAMES = new Set( [
 	'ReferenceHelmCharacter',
 ] );
 
+function forceTidewaterFootPresentation( app ) {
+	const presentation = app.player?.__bermudaReferencePresentation;
+	if ( presentation ) {
+		// ReferenceFinalPass used this flag to replace Tidewater's first-person walk/swim camera.
+		// With no local player body, keep it false so the underlying Player.js camera remains authoritative.
+		presentation.thirdPerson = false;
+		presentation.cameraReady = false;
+	}
+}
+
 function hideKnownPlayerVisuals( app ) {
+	forceTidewaterFootPresentation( app );
+
 	const finalAvatar = app.bermudaReferenceFinal?.playerPresentation?.avatar?.root;
 	if ( finalAvatar ) finalAvatar.visible = false;
 
@@ -44,9 +56,15 @@ export function installNoVisiblePlayer( app ) {
 	if ( ! app?.player || app.__noVisiblePlayer ) return app?.__noVisiblePlayer;
 
 	app.__disableVisiblePlayer = true;
+	forceTidewaterFootPresentation( app );
+
 	const previousUpdate = app.player.update.bind( app.player );
 	app.player.update = ( dt ) => {
+		// Lock out the old reference third-person foot camera before and after the wrapped update.
+		// Player.js still owns all movement, swimming, collision and its native camera calculation.
+		forceTidewaterFootPresentation( app );
 		previousUpdate( dt );
+		forceTidewaterFootPresentation( app );
 		hideKnownPlayerVisuals( app );
 	};
 
@@ -59,7 +77,12 @@ export function installNoVisiblePlayer( app ) {
 	if ( typeof window !== 'undefined' ) window.addEventListener( 'pagehide', () => raf && cancelAnimationFrame( raf ), { once: true } );
 
 	hideKnownPlayerVisuals( app );
-	const state = { enabled: true, policy: 'no-visible-player-v1' };
+	const state = {
+		enabled: true,
+		policy: 'no-visible-player-v1',
+		footCamera: 'tidewater-first-person',
+		vehicleCameras: true,
+	};
 	app.__noVisiblePlayer = state;
 	if ( typeof window !== 'undefined' ) window.__noVisiblePlayer = state;
 	return state;
