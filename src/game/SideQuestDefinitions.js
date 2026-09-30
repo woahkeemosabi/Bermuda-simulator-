@@ -57,17 +57,18 @@ export const SIDE_QUEST_MISSIONS = Object.freeze( {
 			reputation: Object.freeze( { Joe: 4, marineCommunity: 3 } ),
 			storyFlags: Object.freeze( { completedHarbourBeforeDark: true } ),
 		} ),
+		// Keep the legacy internal ID for save compatibility; the player-facing quest is Mooring 17.
 		unlocks: Object.freeze( [ 'side-strange-signal' ] ),
 	} ),
 	'side-strange-signal': Object.freeze( {
 		id: 'side-strange-signal',
-		title: 'Strange Signal',
-		availableObjective: 'Joe mentions an odd intermittent light below the reef after dark',
-		activeObjective: 'Go out after dark, dive on the signal and inspect what is there',
+		title: 'Mooring 17',
+		availableObjective: 'Joe says Mooring 17 keeps showing occupied on sonar after dark',
+		activeObjective: 'Take the boat to Mooring 17 at night and inspect the unexplained sonar return',
 		rewards: Object.freeze( {
 			money: 350,
 			reputation: Object.freeze( { Joe: 4, marineCommunity: 5 } ),
-			storyFlags: Object.freeze( { relicSignalSeeded: true, strangeSignalInspected: true } ),
+			storyFlags: Object.freeze( { mooring17Investigated: true, relicBreadcrumbMooring17: true } ),
 		} ),
 		unlocks: Object.freeze( [] ),
 	} ),
