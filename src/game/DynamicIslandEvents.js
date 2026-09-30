@@ -5,8 +5,6 @@ import { createPropMaterial } from './GameMaterials.js';
 const STORM_JOB = 'storm-mooring-check';
 const VALID_WEATHER = new Set( [ 'clear', 'overcast', 'storm' ] );
 const NIGHT_LIGHTS = [
-	// Roadside / residential pools of light. These sit on the existing Bermuda lane rather than
-	// creating a second visual streetscape; the lamp/house geometry already exists in the world.
 	{ x: - 103, y: 2.7, z: - 67, intensity: 3.5, range: 13 },
 	{ x: - 88, y: 2.8, z: - 63, intensity: 3.4, range: 13 },
 	{ x: - 72, y: 2.9, z: - 70, intensity: 3.6, range: 14 },
@@ -39,8 +37,6 @@ function nightAmount( hour ) {
 function umbrellaGeometry() {
 	const P = [];
 	const add = ( g, o ) => P.push( prepare( g, o ) );
-	// A shallow red waterproof canopy and dark shaft. It is deliberately compact so it reads as an
-	// NPC weather reaction without becoming another piece of dock clutter.
 	add( cylinder( 0.10, 0.64, 0.23, 18 ), { color: 0x8f2635, rough: 0.72, matrix: mat4( 0, 1.70, 0 ) } );
 	add( cylinder( 0.018, 0.018, 1.32, 8 ), { color: 0x263238, rough: 0.34, metal: 0.72, matrix: mat4( 0.18, 1.04, 0 ) } );
 	add( cylinder( 0.035, 0.035, 0.16, 8 ), { color: 0x2f3437, rough: 0.46, metal: 0.5, matrix: mat4( 0.18, 0.35, 0, 0, 0, 0.18 ) } );
@@ -85,9 +81,6 @@ export class DynamicIslandEvents {
 		this.weatherProps = new Group();
 		this.weatherProps.name = 'DynamicIslandWeatherProps';
 		this.app.scene.add( this.weatherProps );
-
-		// Joe works outdoors. During a storm he gets an umbrella instead of standing motionless in the
-		// rain. Martha is already sheltered by the walk-in chandlery and therefore does not need one.
 		if ( this.joe?.group ) {
 			this.joeUmbrella = new Mesh( umbrellaGeometry(), createPropMaterial( 'joeStormUmbrella' ) );
 			this.joeUmbrella.castShadow = true;
@@ -128,12 +121,12 @@ export class DynamicIslandEvents {
 	onWeatherChanged( next ) {
 		if ( next === 'storm' ) {
 			this.state.storyFlags.lastStormStartedAt = Date.now();
-			if ( this.ownsBoat() && ! this.available() && ! this.active() ) {
-				// Dynamic jobs can recur across later storms after completion, but not repeatedly in the same
-				// storm. Reset the completed marker only after a useful real-time cooldown.
+			const campaignReady = !! this.app.missionDirector?.completed?.( 'martha-reef-table' );
+			const wasCompleted = this.completed();
+			if ( this.ownsBoat() && ( campaignReady || wasCompleted ) && ! this.available() && ! this.active() ) {
 				const last = Number( this.state.storyFlags.lastStormMooringCompletedAt || 0 );
-				if ( ! this.completed() || Date.now() - last > 30 * 60 * 1000 ) {
-					if ( this.completed() ) this.state.missions.completed = this.state.missions.completed.filter( ( id ) => id !== STORM_JOB );
+				if ( ! wasCompleted || Date.now() - last > 30 * 60 * 1000 ) {
+					if ( wasCompleted ) this.state.missions.completed = this.state.missions.completed.filter( ( id ) => id !== STORM_JOB );
 					this.state.unlockMission?.( STORM_JOB );
 					this.game.toast( 'Weather turning nasty · Joe may need help securing boats', 3300 );
 				}
@@ -153,8 +146,6 @@ export class DynamicIslandEvents {
 	}
 
 	updateDialogue( weather, hour ) {
-		// RelationshipSystem owns normal dialogue. Reapply it first, then temporarily layer weather/time
-		// reactions over the top so Trusted/Respected dialogue is restored as soon as conditions clear.
 		this.app.relationshipSystem?.updateGreetings?.();
 		if ( this.joe ) {
 			if ( weather === 'storm' ) this.joe.greeting = 'Weather turning nasty. Secure anything that can move before it gets worse.';
@@ -171,10 +162,6 @@ export class DynamicIslandEvents {
 		const night = nightAmount( hour );
 		for ( const light of this.dynamicLights || [] ) light.scale = night;
 		if ( this.joeUmbrella ) this.joeUmbrella.visible = weather === 'storm';
-
-		// Existing App.updateWeather already raises wind, choppiness and shore-wave amplitude through
-		// overcast/storm profiles. This layer adds gameplay response: low light/cloud cover shortens the
-		// wait for the next bite while the rougher sea makes operating the boat harder.
 		const bite = this.game.bite;
 		if ( bite && bite.phase === 'wait' && ! bite._islandWeatherAdjusted ) {
 			const factor = weather === 'storm' ? 0.68 : weather === 'overcast' ? 0.82 : 1;
@@ -220,7 +207,6 @@ export class DynamicIslandEvents {
 		this.updateDialogue( weather, hour );
 		this.applyAmbientState( weather, hour );
 
-		// Persist the living island state without hammering localStorage every frame.
 		this.saveClock += dt;
 		if ( this.saveClock >= 5 ) {
 			this.saveClock = 0;
