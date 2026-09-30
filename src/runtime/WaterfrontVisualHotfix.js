@@ -1,12 +1,22 @@
 import { BoxGeometry, CylinderGeometry, Mesh } from '../engine/index.js';
 import { Material } from '../engine/render/Material.js';
+import { App } from '../App.js';
+import { installBermudaDockHudFix } from '../mobile/BermudaDockHudFix.js';
 import { installReferenceDetailUpgrade } from '../world/ReferenceDetailUpgrade.js';
 import { WATERFRONT_DECK } from '../world/bermuda/HarbourLayout.js';
 
-// Surgical visual repair for the iPhone waterfront QA build.
-// Keeps the stable gameplay/memory path, but removes the accidental enclosed Martha shell,
-// repairs the malformed horizontal job board, restores low-cost reference detail, and makes the
-// large dock apron read as timber rather than a flat tan placeholder slab.
+// Surgical visual/HUD repair for the iPhone waterfront QA build.
+// This module is loaded before main.js, so expose the App instance as soon as App.init runs. The
+// previous version waited for window.__app even though main.js never assigned it, meaning the entire
+// repair (shop shell removal, job-board relocation, dock planks and detail pass) silently never ran.
+if ( ! App.prototype.__bermudaWaterfrontExposePatched ) {
+    App.prototype.__bermudaWaterfrontExposePatched = true;
+    const originalInit = App.prototype.init;
+    App.prototype.init = async function bermudaWaterfrontInit( ...args ) {
+        if ( typeof window !== 'undefined' ) window.__app = this;
+        return originalInit.apply( this, args );
+    };
+}
 
 function mobileHardware() {
     if (typeof navigator === 'undefined') return false;
@@ -30,13 +40,10 @@ function removeAccidentalMarthaShell(app) {
     const shop = app?.marthaShop;
     if (!shop || shop.__openAirShellRemoved) return !!shop;
 
-    // Martha is an OPEN-AIR dock shop in this build. MarthaShopInterior was retained only for its
-    // physical stock/purchase logic; its white back/side walls were accidentally left rendered,
-    // producing the large featureless white cube seen in iPhone QA.
+    // Martha is an OPEN-AIR dock shop in this build. MarthaShopInterior is retained for stock and
+    // purchasing logic only; its white back/side walls created the featureless white cube seen in QA.
     shop.group?.parent?.remove?.(shop.group);
 
-    // The door/sign objects are already detached by WaterfrontRepair; keep every enclosed-shop
-    // collider non-solid as well so there are no invisible walls around the open stall.
     for (const box of app.colliders?.boxes || []) {
         if (['marthaShopDoor', 'marthaShopBack', 'marthaShopSide'].includes(box.tag)) {
             box.solid = false;
@@ -82,8 +89,8 @@ function repairJobBoard(app) {
         board.add(post);
     }
 
-    // Put the board at the opposite EDGE of the apron from the shops, near the landward end.
-    // It faces inward toward the walking corridor instead of floating beside the boat/water route.
+    // Move it completely off the beach/water sight-line and onto the landward dock edge. The board
+    // faces the pedestrian corridor and does not obstruct either Martha, Joe or the boat route.
     board.position.set(
         WATERFRONT_DECK.x - WATERFRONT_DECK.width * 0.5 + 0.58,
         WATERFRONT_DECK.baseY,
@@ -101,9 +108,8 @@ function repairDockSurface(app) {
     const baseMat = material('dock-base', 0x5f4936, 0.98);
     const plankMat = material('dock-planks', 0x987858, 0.93);
 
-    // The base slab and 120 plank instances were exactly coplanar at y=1.0, so the plank pattern
-    // disappeared and the whole apron read as one enormous tan polygon. Darken the structural slab
-    // and lift the plank layer 3.5 cm so its seams/gaps remain visible on the mobile renderer.
+    // The structural slab and 120 plank instances were coplanar, so the planking disappeared and the
+    // dock looked like a single tan polygon. Separate them enough for mobile depth precision.
     for (const mesh of blockout.visuals?.['shop-apron'] || []) mesh.material = baseMat;
     for (const child of blockout.group.children || []) {
         if (child?.isInstancedMesh && child.count === 120) {
@@ -120,13 +126,19 @@ function restoreBalancedMobileDetail(app) {
     if (!mobileHardware() || !app?.scene || !app?.terrainData || !app?.colliders) return true;
     if (app.__balancedReferenceDetail) return true;
 
-    // ReferenceDetailUpgrade is the deliberately inexpensive authored pass (trim, windows, reef
-    // readability, dock composition). Re-enable ONLY this pass on iPhone; heavy street-life,
-    // production character packs and exact-video stacks remain disabled by the core-stable profile.
+    // Restore the authored low-cost detail pass: house trim/windows, waterfront composition, shallow
+    // reef cues, dock furniture and vegetation accents. Heavy street-life/character packs remain off.
     installReferenceDetailUpgrade(app);
     app.__balancedReferenceDetail = true;
-    if (typeof window !== 'undefined') window.__bermudaMobileWorldMode = 'balanced-detail-v3';
+    if (typeof window !== 'undefined') window.__bermudaMobileWorldMode = 'balanced-detail-v4';
     return true;
+}
+
+function restoreMobileHud(app) {
+    if (!mobileHardware() || !app) return true;
+    // This reuses the live GameHUD money node, labels TIME/WEATHER clearly and keeps the minimap clear
+    // of action buttons. Its internal sync timer waits for AppUI if this runs before the HUD is mounted.
+    return !!installBermudaDockHudFix(app);
 }
 
 function tick() {
@@ -137,7 +149,8 @@ function tick() {
     const dock = repairDockSurface(app);
     const martha = app.__waterfrontRepair ? removeAccidentalMarthaShell(app) : false;
     const board = repairJobBoard(app);
-    return detail && dock && martha && board;
+    const hud = restoreMobileHud(app);
+    return detail && dock && martha && board && hud;
 }
 
 if (typeof window !== 'undefined') {
@@ -145,7 +158,7 @@ if (typeof window !== 'undefined') {
     const timer = window.setInterval(() => {
         tries++;
         const complete = tick();
-        if (complete || tries > 600) window.clearInterval(timer);
+        if (complete || tries > 900) window.clearInterval(timer);
     }, 80);
     window.addEventListener('pagehide', () => window.clearInterval(timer), { once: true });
 }
