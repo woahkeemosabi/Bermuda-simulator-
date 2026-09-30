@@ -53,10 +53,12 @@
 			</div>
 		</div>
 	</div>
-	<!-- Progression QA loads before main so one-shot fresh starts and story gates apply before gameplay begins. -->
+	<!-- Progression QA and the waterfront visual repair load before main so they can correct the
+	     mobile startup/profile and observe the runtime as each world system comes online. -->
 	<script type="module">
 		await import('/src/runtime/MobileVehicleHandling.js');
 		await import('/src/runtime/ProgressionQAMode.js');
+		await import('/src/runtime/WaterfrontVisualHotfix.js');
 		await import('/src/main.js');
 	</script>
 </body>
