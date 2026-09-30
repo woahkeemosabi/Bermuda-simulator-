@@ -15,15 +15,28 @@ const PLAYER_NAMES = new Set( [
 function forceTidewaterFootPresentation( app ) {
 	const presentation = app.player?.__bermudaReferencePresentation;
 	if ( presentation ) {
-		// ReferenceFinalPass used this flag to replace Tidewater's first-person walk/swim camera.
-		// With no local player body, keep it false so the underlying Player.js camera remains authoritative.
 		presentation.thirdPerson = false;
 		presentation.cameraReady = false;
 	}
 }
 
+function disableUnapprovedAmbientWalkers( app ) {
+	// ReferenceFinalPass created three simple procedural humans that moved on fixed X rails. They had
+	// no navmesh or building avoidance, so they visibly walked through architecture. Remove them from
+	// the shared array itself: the FinalPass animation loop then has nothing left to move.
+	const walkers = app.bermudaReferenceFinal?.walkers;
+	if ( Array.isArray( walkers ) && walkers.length ) {
+		for ( const walker of walkers ) if ( walker?.root ) walker.root.visible = false;
+		walkers.length = 0;
+	}
+	// Defensive cleanup for any stale layer created by an older module during the same load.
+	if ( app.bermudaStreetLife?.group ) app.bermudaStreetLife.group.visible = false;
+	if ( app.bermudaStreetLifeModels?.group ) app.bermudaStreetLifeModels.group.visible = false;
+}
+
 function hideKnownPlayerVisuals( app ) {
 	forceTidewaterFootPresentation( app );
+	disableUnapprovedAmbientWalkers( app );
 
 	const finalAvatar = app.bermudaReferenceFinal?.playerPresentation?.avatar?.root;
 	if ( finalAvatar ) finalAvatar.visible = false;
@@ -46,7 +59,6 @@ function hideKnownPlayerVisuals( app ) {
 
 	app.__articulatedReferencePlayerVisible = false;
 
-	// Catch any late-created legacy layer without touching NPCs.
 	app.scene?.traverse?.( ( object ) => {
 		if ( PLAYER_NAMES.has( object.name || '' ) ) object.visible = false;
 	} );
@@ -57,11 +69,10 @@ export function installNoVisiblePlayer( app ) {
 
 	app.__disableVisiblePlayer = true;
 	forceTidewaterFootPresentation( app );
+	disableUnapprovedAmbientWalkers( app );
 
 	const previousUpdate = app.player.update.bind( app.player );
 	app.player.update = ( dt ) => {
-		// Lock out the old reference third-person foot camera before and after the wrapped update.
-		// Player.js still owns all movement, swimming, collision and its native camera calculation.
 		forceTidewaterFootPresentation( app );
 		previousUpdate( dt );
 		forceTidewaterFootPresentation( app );
@@ -82,6 +93,7 @@ export function installNoVisiblePlayer( app ) {
 		policy: 'no-visible-player-v1',
 		footCamera: 'tidewater-first-person',
 		vehicleCameras: true,
+		ambientPlaceholderWalkers: false,
 	};
 	app.__noVisiblePlayer = state;
 	if ( typeof window !== 'undefined' ) window.__noVisiblePlayer = state;
