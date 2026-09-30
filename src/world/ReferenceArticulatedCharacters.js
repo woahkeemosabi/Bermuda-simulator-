@@ -83,7 +83,6 @@ function animateSwim( rig, speed, t ) {
 	const k = Math.max( 0.35, Math.min( 1, speed / 1.8 ) );
 	const phase = t * 5.0;
 	const s = Math.sin( phase ), c = Math.cos( phase );
-	// Freestyle: alternating shoulder sweep, bent recovery elbow and flutter kick.
 	rig.leftArm.shoulder.rotation.x = -0.55 + s * 1.05;
 	rig.rightArm.shoulder.rotation.x = -0.55 - s * 1.05;
 	rig.leftArm.shoulder.rotation.z = -0.38 + c * 0.20;
@@ -126,8 +125,6 @@ export function installReferenceArticulatedCharacters( app ) {
 	playerRig.root.visible = false;
 	root.add( playerRig.root );
 
-	// Replace the older coarse moving proxy/walkers; the high-detail static Meshy NPCs remain as
-	// background residents while these articulated characters provide believable movement.
 	const oldPlayer = app.bermudaReferenceFinal?.playerPresentation?.avatar?.root;
 	if ( oldPlayer ) oldPlayer.scale.setScalar( 0.0001 );
 	for ( const w of app.bermudaReferenceFinal?.walkers || [] ) w.root.scale.setScalar( 0.0001 );
@@ -155,7 +152,12 @@ export function installReferenceArticulatedCharacters( app ) {
 		const speed = footMode ? Math.hypot( player.velocity.x, player.velocity.y, player.velocity.z ) : 0;
 		const camDistance = footMode ? app.camera.position.distanceTo( player.position ) : 0;
 		const movingPose = player?.mode === 'swim' || speed > 0.18;
-		const showPlayer = !! footMode && third && movingPose && camDistance > 1.55;
+
+		// The segmented rig is a last-resort fallback only. As soon as the production character stream
+		// claims presentation, never show this body again while GLBs/animation clips finish loading.
+		// An empty third-person body for a brief moment is preferable to the visibly broken stick swimmer.
+		const productionClaimed = !! app.__productionMeshyAssets || !! app.__productionMeshyCharacters;
+		const showPlayer = !! footMode && third && movingPose && camDistance > 1.55 && ! productionClaimed;
 		playerRig.root.visible = showPlayer;
 		if ( showPlayer ) {
 			playerRig.root.position.copy( player.position );
