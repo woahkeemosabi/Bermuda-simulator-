@@ -5,6 +5,7 @@ import { WORLD } from '../world/WorldLayout.js';
 
 const BOAT_ID = 'lobster-workboat';
 const PRICE = 3200;
+const MISSION = 'main-first-boat';
 
 function signGeometry() {
 	const P = [];
@@ -14,7 +15,6 @@ function signGeometry() {
 	add( rod( new Vector3( - 0.34, 0, 0 ), new Vector3( - 0.34, 1.25, 0 ), 0.035, 7 ), wood );
 	add( rod( new Vector3( 0.34, 0, 0 ), new Vector3( 0.34, 1.25, 0 ), 0.035, 7 ), wood );
 	add( box( 0.92, 0.54, 0.055 ), { ...board, matrix: mat4( 0, 1.05, 0 ) } );
-	// Simple stripes make the sign readable as a sale placard without expensive text geometry.
 	add( box( 0.66, 0.045, 0.012 ), { color: 0x1c5963, rough: 0.5, matrix: mat4( 0, 1.16, 0.035 ) } );
 	add( box( 0.48, 0.045, 0.012 ), { color: 0x1c5963, rough: 0.5, matrix: mat4( 0, 1.02, 0.035 ) } );
 	add( box( 0.58, 0.045, 0.012 ), { color: 0xc89b3c, rough: 0.5, matrix: mat4( 0, 0.88, 0.035 ) } );
@@ -58,7 +58,13 @@ export class BoatOwnership {
 
 	update() {
 		this.refresh();
-		if ( this.ownsBoat() ) return;
+		if ( this.ownsBoat() ) {
+			// Migration: an older save may already own the boat before the mission became formal.
+			const d = this.app.missionDirector;
+			if ( d?.available?.( MISSION ) ) d.accept( MISSION, { toast: false } );
+			if ( d?.active?.( MISSION ) ) d.complete( MISSION, { toast: false } );
+			return;
+		}
 		const p = this.player;
 		if ( p.mode !== 'walk' || p.busy || ! this._realNearBoat() ) return;
 		p.prompt = { key: 'E', text: `Downeast lobster boat · $${ PRICE.toLocaleString() } · buy` };
@@ -67,12 +73,18 @@ export class BoatOwnership {
 			this.game.toast( `Boat costs $${ PRICE.toLocaleString() } · you need $${ ( PRICE - this.state.money ).toLocaleString() } more`, 2600 );
 			return;
 		}
+
+		const d = this.app.missionDirector;
+		if ( d?.available?.( MISSION ) ) d.accept( MISSION, { toast: false } );
 		if ( ! this.state.spend( PRICE ) ) return;
 		this.state.ownBoat( { id: BOAT_ID, name: 'Downeast Lobster Boat', purchasedAt: Date.now() } );
 		this.state.storyFlags.firstBoatPurchased = true;
-		this.state.addReputation( 'Joe', 5 );
+
+		if ( d?.active?.( MISSION ) ) d.complete( MISSION, { toast: false } );
+		else this.state.addReputation( 'Joe', 5 );
+
 		this.state.save(); this.state.emit();
 		this.refresh();
-		this.game.toast( 'Your first boat · Downeast Lobster Boat · Joe +5', 3400 );
+		this.game.toast( 'The First Boat · Downeast Lobster Boat is yours', 3400 );
 	}
 }
