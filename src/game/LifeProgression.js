@@ -2,6 +2,7 @@ import { Group, Mesh, Vector3 } from '../engine/index.js';
 import { prepare, mergePrepared, box, mat4 } from '../world/boat/GeoKit.js';
 import { createPropMaterial, PAT } from './GameMaterials.js';
 import { MissionDirector } from './MissionDirector.js';
+import { installCampaignRuntime } from './CampaignRuntime.js';
 
 const DELIVERY_ID = 'martha-first-delivery';
 const TMP = new Vector3();
@@ -49,6 +50,11 @@ export class LifeProgression {
 		app.progression = this;
 		this.updateParcelHome();
 		this.refreshObjective();
+
+		// FIRST DAY used to be the only campaign system connected to production startup. Install the
+		// existing boat, island-job, weather and property systems plus the late RELIC campaign now that
+		// MissionDirector and the shared objective UI exist. Every installer is idempotent.
+		installCampaignRuntime( app );
 	}
 
 	mountObjectiveUI() {
