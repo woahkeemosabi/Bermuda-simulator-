@@ -13,6 +13,17 @@ const GUIDE_KEY = 'tidewater.guide';
 const NEW_GAME_KEYS = [ 'newgame', 'resetprogress' ];
 const QA_PREFIX = 'bermuda.qa.';
 
+const QA_SPAWNS = Object.freeze( {
+	// These are QA-only staging points, never normal campaign teleports. The late missions otherwise
+	// require several minutes of travel before the tester can even reach the mechanic being checked.
+	'main-keys-to-cottage': { x: -57, z: -56.4, mode: 'walk' },
+	'main-black-car': { x: -65.2, z: -49.3, mode: 'walk' },
+	'main-blue-hole': { x: -86.7, y: -1.15, z: 15.0, mode: 'swim' },
+	'main-strange-signal': { x: -87.1, y: -1.15, z: 8.8, mode: 'swim' },
+	'main-limestone-door': { x: -93.8, y: -1.55, z: 13.5, mode: 'swim' },
+	'main-road-was-never-the-test': { x: 480, y: 32.12, z: -454, mode: 'walk' },
+} );
+
 function params() {
 	try { return new URLSearchParams( location.search ); }
 	catch ( _ ) { return new URLSearchParams(); }
@@ -114,6 +125,23 @@ function installQABadge( missionId ) {
 	document.body.appendChild( el );
 }
 
+function placeQAPlayer( app, missionId ) {
+	const spawn = QA_SPAWNS[ missionId ];
+	const player = app?.player;
+	if ( ! spawn || ! player ) return;
+	const y = Number.isFinite( spawn.y ) ? spawn.y : ( app.terrainData?.heightAt?.( spawn.x, spawn.z ) ?? player.position.y );
+	player.mode = spawn.mode || 'walk';
+	player.position.set( spawn.x, y, spawn.z );
+	player.velocity?.set?.( 0, 0, 0 );
+	player.grounded = player.mode === 'walk';
+	player.floating = player.mode === 'swim' ? false : player.floating;
+	player.oxygen = 1;
+	player.waterMean = null;
+	player.pitch = -0.05;
+	player._camY = null;
+	if ( typeof window !== 'undefined' ) window.__bermudaQASpawn = { missionId, ...spawn };
+}
+
 function seedMissionQACheckpoint( app ) {
 	if ( ! QA_MISSION_ID ) return false;
 	const state = app?.game?.state;
@@ -188,6 +216,7 @@ function seedMissionQACheckpoint( app ) {
 		app.settings.weatherMode = weather;
 	}
 
+	placeQAPlayer( app, QA_MISSION_ID );
 	state.save();
 	state.emit();
 	installQABadge( QA_MISSION_ID );
