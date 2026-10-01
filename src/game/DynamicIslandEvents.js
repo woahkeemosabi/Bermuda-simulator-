@@ -3,6 +3,7 @@ import { prepare, mergePrepared, cylinder, mat4 } from '../world/boat/GeoKit.js'
 import { createPropMaterial } from './GameMaterials.js';
 
 const STORM_JOB = 'storm-mooring-check';
+const RIDE_OUT_SECONDS = 18;
 const VALID_WEATHER = new Set( [ 'clear', 'overcast', 'storm' ] );
 const NIGHT_LIGHTS = [
 	{ x: - 103, y: 2.7, z: - 67, intensity: 3.5, range: 13 },
@@ -173,20 +174,71 @@ export class DynamicIslandEvents {
 	acceptStormJob() {
 		if ( ! this.available() ) return false;
 		const director = this.app.missionDirector;
-		const ok = director?.accept?.( STORM_JOB, { storyFlags: { stormMooringAccepted: true }, toast: false } ) ?? this.state.activateMission?.( STORM_JOB );
+		const ok = director?.accept?.( STORM_JOB, {
+			storyFlags: { stormMooringAccepted: true, stormBoatSecured: false, stormRideOutSeconds: 0 },
+			toast: false,
+		} ) ?? this.state.activateMission?.( STORM_JOB );
 		if ( ! ok ) return false;
-		this.game.toast( 'Joe: “Secure your boat. Berth it or get the anchor down before the squall hits.”', 4200 );
+		this.app.settings.weatherMode = 'storm';
+		this.app.settings.weatherTimer = 0;
+		this.state.world.weather = 'storm';
+		this.state.save(); this.state.emit();
+		this.game.toast( `Joe: “Secure your boat and ride out the squall. Hold her safe for ${ RIDE_OUT_SECONDS } seconds.”`, 4600 );
 		return true;
 	}
 
 	completeStormJob() {
 		if ( ! this.active() ) return false;
 		const director = this.app.missionDirector;
-		const ok = director?.complete?.( STORM_JOB, { storyFlags: { stormMooringAccepted: false }, toast: false } ) ?? this.state.completeMission?.( STORM_JOB );
+		const ok = director?.complete?.( STORM_JOB, {
+			extraMoney: 820,
+			storyFlags: {
+				stormMooringAccepted: false,
+				stormBoatSecured: false,
+				stormRideOutSeconds: 0,
+				weatherUnlocked: true,
+			},
+			toast: false,
+		} ) ?? this.state.completeMission?.( STORM_JOB );
 		if ( ! ok ) return false;
 		this.state.storyFlags.lastStormMooringCompletedAt = Date.now();
+		this.app.settings.weatherMode = 'overcast';
+		this.app.settings.weatherTimer = 0;
+		this.state.world.weather = 'overcast';
 		this.state.save(); this.state.emit();
-		this.game.toast( 'Boat secured · +$180 · Joe +3 · Marine community +2', 3400 );
+		this.game.toast( 'Loose Weather complete · +$1,000 · Weather unlocked', 3800 );
+		return true;
+	}
+
+	updateActiveStormJob( dt, weather ) {
+		if ( ! this.active() ) return false;
+		// The campaign squall must stay active long enough to be a playable event instead of naturally
+		// cycling away while the player is still trying to secure the boat.
+		if ( weather !== 'storm' ) {
+			this.app.settings.weatherMode = 'storm';
+			this.app.settings.weatherTimer = 0;
+			this.state.world.weather = 'storm';
+		}
+
+		const ctl = this.app.boatCtl;
+		const secured = !! ( ctl?.anchored || ctl?.moored );
+		const flags = this.state.storyFlags;
+		if ( ! secured ) {
+			if ( flags.stormBoatSecured || Number( flags.stormRideOutSeconds || 0 ) > 0 ) {
+				flags.stormBoatSecured = false;
+				flags.stormRideOutSeconds = 0;
+				this.game.toast( 'Boat unsecured · get the anchor down or return to the berth', 2600 );
+			}
+			return true;
+		}
+
+		if ( ! flags.stormBoatSecured ) {
+			flags.stormBoatSecured = true;
+			flags.stormRideOutSeconds = 0;
+			this.game.toast( `Boat secured · ride out the squall · ${ RIDE_OUT_SECONDS }s`, 2800 );
+		}
+		flags.stormRideOutSeconds = Math.min( RIDE_OUT_SECONDS, Number( flags.stormRideOutSeconds || 0 ) + Math.max( 0, dt ) );
+		if ( flags.stormRideOutSeconds >= RIDE_OUT_SECONDS ) this.completeStormJob();
 		return true;
 	}
 
@@ -211,20 +263,18 @@ export class DynamicIslandEvents {
 		if ( this.saveClock >= 5 ) {
 			this.saveClock = 0;
 			this.state.world.time = hour;
-			this.state.world.weather = weather;
+			this.state.world.weather = this.app.settings.weatherMode || weather;
 			this.state.save();
 		}
+
+		// Mission 7 must work while the player is aboard the boat. The old code checked this only after
+		// requiring walk mode, which meant anchoring from the helm could never finish until disembarking.
+		if ( this.active() ) this.updateActiveStormJob( dt, weather );
 
 		if ( this.player.mode !== 'walk' || this.player.busy ) return;
 		if ( weather === 'storm' && this.available() && this.joe?.inRange?.( this.player.position ) ) {
 			this.player.prompt = { key: 'E', text: 'Joe · storm mooring job' };
 			if ( this.input.hit( 'KeyE' ) ) this.acceptStormJob();
-			return;
-		}
-
-		if ( this.active() ) {
-			const ctl = this.app.boatCtl;
-			if ( ctl?.anchored || ctl?.moored ) this.completeStormJob();
 		}
 	}
 }
