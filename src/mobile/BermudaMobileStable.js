@@ -192,9 +192,13 @@ export function installStableMobileControls( app ) {
 
 	const buttonAt = ( x, y ) => document.elementFromPoint( x, y )?.closest?.( '#bm-touch-stable button:not(.bm-hidden)' ) || null;
 	const onStartScreen = ( target ) => !! target?.closest?.( '.tw-start,.tw-start-cta' );
+	const capturePointer = ( e ) => {
+		try { e.target?.setPointerCapture?.( e.pointerId ); } catch ( _ ) {}
+	};
 
 	const pointerDown = ( e ) => {
 		if ( e.pointerType === 'mouse' ) return;
+		capturePointer( e );
 		const btn = buttonAt( e.clientX, e.clientY );
 		if ( btn ) {
 			const descriptor = btn.dataset.fish ? fishDescriptor() : { kind: 'key', code: btn.dataset.key };
@@ -263,12 +267,21 @@ export function installStableMobileControls( app ) {
 		input.mouseDown = false;
 		input.rightDown = false;
 	};
+	const touchEndFailSafe = ( e ) => {
+		// iOS Safari occasionally drops a PointerEvent when the browser chrome or a native gesture
+		// steals the touch. If the last physical touch has ended, force-release every synthetic key.
+		if ( ! e.touches || e.touches.length === 0 ) clearAll();
+	};
 
 	window.addEventListener( 'pointerdown', pointerDown, { passive: false, capture: true } );
 	window.addEventListener( 'pointermove', pointerMove, { passive: false, capture: true } );
 	window.addEventListener( 'pointerup', pointerEnd, { passive: false, capture: true } );
 	window.addEventListener( 'pointercancel', pointerEnd, { passive: false, capture: true } );
+	window.addEventListener( 'lostpointercapture', pointerEnd, { passive: true, capture: true } );
+	document.addEventListener( 'touchend', touchEndFailSafe, { passive: true, capture: true } );
+	document.addEventListener( 'touchcancel', clearAll, { passive: true, capture: true } );
 	window.addEventListener( 'blur', clearAll );
+	window.addEventListener( 'orientationchange', clearAll );
 	document.addEventListener( 'visibilitychange', () => { if ( document.hidden ) clearAll(); } );
 
 	const state = app.__bermudaMobileControls = {
@@ -284,10 +297,14 @@ export function installStableMobileControls( app ) {
 		clearAll();
 		document.removeEventListener( 'contextmenu', preventGameCallout );
 		document.removeEventListener( 'selectstart', preventGameCallout );
+		document.removeEventListener( 'touchend', touchEndFailSafe, true );
+		document.removeEventListener( 'touchcancel', clearAll, true );
 		window.removeEventListener( 'pointerdown', pointerDown, true );
 		window.removeEventListener( 'pointermove', pointerMove, true );
 		window.removeEventListener( 'pointerup', pointerEnd, true );
 		window.removeEventListener( 'pointercancel', pointerEnd, true );
+		window.removeEventListener( 'lostpointercapture', pointerEnd, true );
+		window.removeEventListener( 'orientationchange', clearAll );
 	}, { once: true } );
 
 	return state;
