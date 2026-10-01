@@ -56,6 +56,7 @@ export class IslandMissionSystem {
 		this.progress = flags.islandMissionProgress;
 		this.patchEconomy();
 		this.patchVendorAction();
+		this.patchTargetedBites();
 
 		const originalUpdate = this.player.update.bind( this.player );
 		this.player.update = ( dt ) => {
@@ -77,6 +78,42 @@ export class IslandMissionSystem {
 			}
 			return original( input, player );
 		};
+	}
+
+	patchTargetedBites() {
+		if ( this.game.__islandMissionBitePatch || typeof this.game.updateBite !== 'function' ) return;
+		this.game.__islandMissionBitePatch = true;
+		const original = this.game.updateBite.bind( this.game );
+		this.game.updateBite = ( dt ) => {
+			const beforePhase = this.game.bite?.phase || null;
+			const result = original( dt );
+			const bite = this.game.bite;
+			if ( beforePhase !== 'wait' || bite?.phase !== 'nibble' ) return result;
+			const target = this.missionTargetBite();
+			if ( ! target ) return result;
+
+			// Keep the normal cast, bite cues, strike and CatchMinigame. Only the species roll is
+			// mission-directed so story progression never depends on repeatedly winning a rare RNG roll.
+			bite.species = target.species;
+			bite.kg = target.kg;
+			bite.nibbles = Math.min( Number( bite.nibbles || 1 ), 2 );
+			bite._islandMissionTarget = true;
+			return result;
+		};
+	}
+
+	missionTargetBite() {
+		const habitat = this.game.habitat?.() || {};
+		if ( this.active( IDS.night ) && ! this.progress[ IDS.night ]?.tarpon ) {
+			const hour = ( Number( this.app.settings?.timeOfDay || 0 ) + 24 ) % 24;
+			const night = hour >= 20 || hour < 6;
+			const harbourWater = Number( habitat.pier || 0 ) + Number( habitat.bay || 0 ) + Number( habitat.shallows || 0 );
+			if ( night && harbourWater > 0.08 ) return { species: 'tarpon', kg: 10.5 };
+		}
+		if ( this.active( IDS.conservation ) && ! this.progress[ IDS.conservation ]?.released ) {
+			if ( Number( habitat.reef || 0 ) > 0.12 ) return { species: 'parrot', kg: 1.15 };
+		}
+		return null;
 	}
 
 	patchEconomy() {
@@ -142,6 +179,7 @@ export class IslandMissionSystem {
 			this.progress[ IDS.conservation ].released = true;
 			this.state.save();
 			this.director.complete( IDS.conservation, { toast: true } );
+			this.game.toast( 'Protected fish released alive · conservation lesson complete', 2600 );
 		}
 		this.state.save();
 		this.refreshObjective();
@@ -206,8 +244,8 @@ export class IslandMissionSystem {
 			[ IDS.lobster ]: 'Joe: “Three good spiny lobsters. Hand-caught. Don’t bring me undersize ones.”',
 			[ IDS.reef ]: 'Martha: “I want a proper reef table — snapper, hogfish and red hind.”',
 			[ IDS.waters ]: 'Joe: “Show me you know Bermuda water: shallows, reef, then blue water.”',
-			[ IDS.night ]: 'Joe: “Tarpon have been moving after dark. Bring one in if you can handle it.”',
-			[ IDS.conservation ]: 'Joe: “Knowing what to release matters as much as knowing what to keep.”',
+			[ IDS.night ]: 'Joe: “Tarpon have been moving after dark around the harbour. Fish the pier and bay.”',
+			[ IDS.conservation ]: 'Joe: “Find a protected fish on the reef. Hook or spear it, then let it go alive.”',
 		};
 		this.game.toast( lines[ id ] || `${ this.director.definition( id )?.title } started`, 4300 );
 		this.refreshObjective();
@@ -232,7 +270,8 @@ export class IslandMissionSystem {
 		if ( id === IDS.lobster ) text = `Hand-catch Caribbean spiny lobster · ${ Number( this.progress[ id ]?.caught || 0 ) } / 3${ this.isReady( id ) ? ' · return to Joe' : '' }`;
 		else if ( id === IDS.reef ) text = `Reef Table · ${ this.reefTableText() }`;
 		else if ( id === IDS.waters ) text = `Three Waters · ${ this.threeWatersText() }${ this.isReady( id ) ? ' · return to Joe' : '' }`;
-		else if ( id === IDS.night ) text = this.isReady( id ) ? 'After Dark · tarpon landed · return to Joe' : 'Catch a tarpon between 20:00 and 06:00';
+		else if ( id === IDS.night ) text = this.isReady( id ) ? 'After Dark · tarpon landed · return to Joe' : 'After Dark · fish the harbour pier or bay between 20:00 and 06:00 for tarpon';
+		else if ( id === IDS.conservation ) text = 'Leave It Living · find a protected parrotfish or Nassau grouper on the reef and release it alive';
 		el.style.display = '';
 		el.innerHTML = `<span class="bm-objective-kicker">CURRENT JOB</span>${ text }`;
 	}
