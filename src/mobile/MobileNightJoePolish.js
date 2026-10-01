@@ -1,4 +1,4 @@
-import { BoxGeometry, CylinderGeometry, InstancedMesh, Matrix4, Mesh, Vector3 } from '../engine/index.js';
+import { BoxGeometry, Color, CylinderGeometry, InstancedMesh, Matrix4, Mesh, Vector3 } from '../engine/index.js';
 import { Material } from '../engine/render/Material.js';
 import { G } from '../core/Globals.js';
 import { FISH_MARKET } from '../world/bermuda/HarbourLayout.js';
@@ -25,6 +25,29 @@ function localToWorld( s, lx, lz, out ) {
 	const c = Math.cos( s.yaw ), n = Math.sin( s.yaw );
 	out.set( s.x + lx * c + lz * n, s.baseY, s.z - lx * n + lz * c );
 	return out;
+}
+
+function installObjectiveFadeOverride() {
+	if ( typeof document === 'undefined' || document.getElementById( 'bm-objective-final-fade-style' ) ) return;
+	const style = document.createElement( 'style' );
+	style.id = 'bm-objective-final-fade-style';
+	style.textContent = `
+		/* NEXT OPPORTUNITY is introductory guidance, not a permanent HUD strip. The minimizer adds
+		   bm-next-minimized after 6.5 s; on phone that state now fades away completely instead of
+		   leaving a clipped sentence such as “Save for the starter lobster boat and speak…”. */
+		body.bm-mobile #bm-objective.bm-next-minimized{
+			opacity:0!important;
+			transform:translateY(-7px) scale(.97)!important;
+			max-height:0!important;
+			min-height:0!important;
+			padding-top:0!important;
+			padding-bottom:0!important;
+			border-width:0!important;
+			overflow:hidden!important;
+			pointer-events:none!important;
+		}
+	`;
+	document.head.appendChild( style );
 }
 
 function clearJoeFace( app ) {
@@ -85,6 +108,75 @@ function addJoeSign( app ) {
 	return true;
 }
 
+function installJoeStandNightLighting( app ) {
+	if ( app.__mobileJoeStandNightLight ) return app.__mobileJoeStandNightLight;
+	const stand = app.game?.stand;
+	if ( ! stand?.group || ! stand?.material || ! app.localLights ) return null;
+
+	// A dedicated market light must remain useful before the player is standing at the counter.
+	// LocalLights still performs real distance attenuation, but the larger range means Joe's stand
+	// reads as an active business from the approach instead of suddenly switching on at close range.
+	const lightPos = localToWorld( FISH_MARKET, 0.0, 0.42, new Vector3() );
+	lightPos.y = FISH_MARKET.baseY + 2.16;
+	const source = app.localLights.add( {
+		position: lightPos,
+		color: new Color( 1.0, 0.78, 0.53 ),
+		intensity: 46,
+		range: 31,
+		kind: 'bermudaJoeStandLight',
+		flicker: 0.004,
+	} );
+
+	// Visible warm fixture under the roof. This is emissive, so the player can see the market is lit
+	// even when another nearby local light wins one of the renderer's limited dynamic-light slots.
+	const fixtureMat = new Material( {
+		name:'joe-market-strip-light', color:0xffe6bd, emissive:0xffbd74,
+		lit:false, transparent:true, opacity:0, depthWrite:false, receiveShadows:false,
+	} );
+	const fixture = new Mesh( new BoxGeometry( 1.12, 0.035, 0.085 ), fixtureMat );
+	fixture.name = 'JoeMarketStripLight';
+	fixture.position.set( 0, 2.14, 0.38 );
+	stand.group.add( fixture );
+
+	// A subtle baked pool keeps the dock/counter area legible from farther away without adding another
+	// dynamic light. It is intentionally faint; the physical source above still does the real shading.
+	const poolMat = new Material( {
+		name:'joe-market-baked-pool', color:0xffb56f, emissive:0xff8e43,
+		lit:false, transparent:true, opacity:0, depthWrite:false, receiveShadows:false, side:'double',
+	} );
+	const pool = new Mesh( new CylinderGeometry( 1, 1, 0.012, 24 ), poolMat );
+	pool.name = 'JoeMarketBakedPool';
+	pool.position.set( FISH_MARKET.x, FISH_MARKET.baseY + 0.018, FISH_MARKET.z );
+	pool.scale.set( 3.25, 1, 2.45 );
+	app.scene.add( pool );
+
+	const baseEmissive = stand.material.emissive?.clone?.() || new Color( 0, 0, 0 );
+	const baseEmissiveIntensity = Number( stand.material.emissiveIntensity ?? 1 );
+	const sync = () => {
+		const night = clamp01( G.night.value );
+		const lamp = clamp01( ( night - 0.04 ) / 0.46 );
+		fixtureMat.opacity = 0.03 + 0.94 * lamp;
+		poolMat.opacity = 0.005 + 0.095 * lamp;
+		if ( stand.material.emissive ) {
+			stand.material.emissive.setRGB(
+				baseEmissive.r + 0.070 * lamp,
+				baseEmissive.g + 0.031 * lamp,
+				baseEmissive.b + 0.010 * lamp,
+			);
+			stand.material.emissiveIntensity = baseEmissiveIntensity + 0.65 * lamp;
+		}
+	};
+
+	let timer = 0;
+	sync();
+	if ( typeof window !== 'undefined' ) {
+		timer = window.setInterval( sync, 120 );
+		window.addEventListener( 'pagehide', () => timer && window.clearInterval( timer ), { once:true } );
+	}
+	app.__mobileJoeStandNightLight = { source, fixture, fixtureMat, pool, poolMat, sync };
+	return app.__mobileJoeStandNightLight;
+}
+
 function installPersistentLampGlow( app ) {
 	const lightState = app.__mobileReferenceStreetLights;
 	if ( ! lightState?.lamps?.length || app.__mobilePersistentLampGlow ) return app.__mobilePersistentLampGlow;
@@ -129,22 +221,24 @@ function installMoonAmbient( app ) {
 			const night = clamp01( G.night.value );
 			if ( night > 0.001 ) {
 				const storm = app.settings?.weatherMode === 'storm';
-				const key = ( storm ? 0.18 : 0.23 ) * night;
+				// Preserve a dark sky while keeping roads, buildings and faces readable on the phone.
+				// Previous values produced near-black world geometry by ~19:00 even though the sky looked fine.
+				const key = ( storm ? 0.22 : 0.28 ) * night;
 				const sun = G.sunColor.value;
 				sun.r = Math.max( sun.r, key * 0.48 );
 				sun.g = Math.max( sun.g, key * 0.62 );
 				sun.b = Math.max( sun.b, key );
 
-				const amb = ( storm ? 0.028 : 0.038 ) * night;
+				const amb = ( storm ? 0.046 : 0.058 ) * night;
 				const sky = G.skyIrradiance.value;
 				sky.r += amb * 0.55;
 				sky.g += amb * 0.70;
 				sky.b += amb;
 
 				const horizon = G.horizonColor.value;
-				horizon.r = Math.max( horizon.r, 0.012 * night );
-				horizon.g = Math.max( horizon.g, 0.020 * night );
-				horizon.b = Math.max( horizon.b, 0.038 * night );
+				horizon.r = Math.max( horizon.r, 0.016 * night );
+				horizon.g = Math.max( horizon.g, 0.027 * night );
+				horizon.b = Math.max( horizon.b, 0.050 * night );
 			}
 			return result;
 		};
@@ -153,8 +247,8 @@ function installMoonAmbient( app ) {
 	let timer = 0;
 	const sync = () => {
 		const night = clamp01( G.night.value );
-		if ( app.settings ) app.settings.exposure = baseExposure + 0.13 * night;
-		if ( app.__mobilePersistentLampGlow?.material ) app.__mobilePersistentLampGlow.material.opacity = 0.02 + 0.12 * night;
+		if ( app.settings ) app.settings.exposure = baseExposure + 0.21 * night;
+		if ( app.__mobilePersistentLampGlow?.material ) app.__mobilePersistentLampGlow.material.opacity = 0.02 + 0.15 * night;
 	};
 	sync();
 	if ( typeof window !== 'undefined' ) {
@@ -167,8 +261,9 @@ function installMoonAmbient( app ) {
 
 export function installMobileNightJoePolish( app ) {
 	if ( ! app || app.__mobileNightJoePolish ) return app?.__mobileNightJoePolish;
+	installObjectiveFadeOverride();
 	const state = app.__mobileNightJoePolish = {
-		joe:false, sign:false, glow:null, moon:null,
+		joe:false, sign:false, glow:null, moon:null, standLight:null,
 	};
 
 	const install = () => {
@@ -176,7 +271,8 @@ export function installMobileNightJoePolish( app ) {
 		state.sign = addJoeSign( app ) || state.sign;
 		state.glow = installPersistentLampGlow( app ) || state.glow;
 		state.moon = installMoonAmbient( app ) || state.moon;
-		return state.joe && state.sign && !! state.glow && !! state.moon;
+		state.standLight = installJoeStandNightLighting( app ) || state.standLight;
+		return state.joe && state.sign && !! state.glow && !! state.moon && !! state.standLight;
 	};
 	install();
 	if ( ! install() && typeof window !== 'undefined' ) {
