@@ -4,30 +4,63 @@ import { DynamicIslandEvents } from './DynamicIslandEvents.js';
 import { PropertySystem } from './PropertySystem.js';
 import { LateCampaignSystem } from './LateCampaignSystem.js';
 
-function sceneHasNamedNode( root, name ) {
-	if ( ! root ) return false;
-	if ( root.name === name ) return true;
-	for ( const child of root.children || [] ) if ( sceneHasNamedNode( child, name ) ) return true;
-	return false;
+function recoveredMobileGPU() {
+	if ( typeof navigator === 'undefined' ) return false;
+	const mobile = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
+		( navigator.maxTouchPoints > 1 && typeof screen !== 'undefined' && Math.min( screen.width, screen.height ) < 1024 );
+	if ( ! mobile ) return false;
+	try { return Number( new URLSearchParams( location.search ).get( 'gpuSafe' ) || 0 ) > 0; }
+	catch ( _ ) { return false; }
 }
 
-function guardMeshyFallbackVisibility( app, system ) {
+function guardMeshyFallbackVisibility( system ) {
 	if ( ! system || system.__meshyVisibilityGuard ) return;
-	const original = system.syncWorldVisibility.bind( system );
-	system.syncWorldVisibility = () => {
-		original();
-		// A successful lazy Meshy load must replace—not overlap—the procedural safety geometry.
-		// The loader names the replacement nodes deterministically, so this remains correct across
-		// reloads without making the campaign dependent on the optional asset request succeeding.
-		if ( system.component && sceneHasNamedNode( app.scene, 'CampaignMeshy-blue-hole-component' ) ) system.component.visible = false;
-		if ( system.door && sceneHasNamedNode( app.scene, 'CampaignMeshy-limestone-door' ) ) system.door.visible = false;
+	const nodes = new Map();
+	const failed = new Set();
+	const originalEnsure = system.ensureAsset.bind( system );
+	const originalSync = system.syncWorldVisibility.bind( system );
+
+	// Never retry optional Meshy props on an iPhone session that has already entered GPU recovery.
+	// The procedural mission geometry remains authoritative in that case.
+	system.ensureAsset = async ( key ) => {
+		if ( recoveredMobileGPU() ) return null;
+		if ( nodes.has( key ) ) return { node: nodes.get( key ) };
+		if ( failed.has( key ) ) return null;
+		const result = await originalEnsure( key );
+		if ( result?.node ) nodes.set( key, result.node );
+		else failed.add( key );
+		return result;
 	};
-	system.__meshyVisibilityGuard = true;
+
+	system.syncWorldVisibility = () => {
+		originalSync();
+		const flags = system.state?.storyFlags || {};
+
+		const componentNode = nodes.get( 'blue-hole-component' );
+		if ( componentNode ) {
+			const visible = system.active( 'main-blue-hole' ) && ! system.completed( 'main-blue-hole' ) && ! flags.blueHoleComponentRecovered;
+			componentNode.visible = visible;
+			if ( system.component ) system.component.visible = false;
+		}
+
+		const doorNode = nodes.get( 'limestone-door' );
+		if ( doorNode ) {
+			const visible = ( system.available( 'main-limestone-door' ) || system.active( 'main-limestone-door' ) ) && ! flags.limestoneDoorActivated;
+			doorNode.visible = visible;
+			if ( system.door ) system.door.visible = false;
+		}
+
+		const consoleNode = nodes.get( 'red-room-console' );
+		if ( consoleNode ) {
+			consoleNode.visible = !! flags.insideHiddenFacility || system.available( 'main-road-was-never-the-test' ) || system.active( 'main-road-was-never-the-test' ) || system.completed( 'main-road-was-never-the-test' );
+		}
+	};
+
+	system.__meshyVisibilityGuard = { nodes, failed };
 }
 
-// The individual campaign systems existed as independent modules, but only FIRST DAY's
-// LifeProgression was connected to the production startup graph. Install every main-campaign
-// gameplay system once, in sequence, so Missions 2–15 can actually advance in the deployed game.
+// Install the complete campaign once. These systems are deliberately idempotent so normal startup,
+// QA mission links and save migration cannot create duplicate wrappers or duplicate rewards.
 export function installCampaignRuntime( app ) {
 	if ( ! app?.game?.state || ! app.player || ! app.missionDirector ) return null;
 	if ( app.campaignRuntime ) return app.campaignRuntime;
@@ -37,7 +70,7 @@ export function installCampaignRuntime( app ) {
 	if ( ! app.dynamicIslandEvents ) new DynamicIslandEvents( app );
 	if ( ! app.propertySystem ) new PropertySystem( app );
 	if ( ! app.lateCampaign ) new LateCampaignSystem( app );
-	guardMeshyFallbackVisibility( app, app.lateCampaign );
+	guardMeshyFallbackVisibility( app.lateCampaign );
 
 	app.campaignRuntime = {
 		boatOwnership: app.boatOwnership,
