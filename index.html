@@ -53,13 +53,8 @@
 			</div>
 		</div>
 	</div>
-	<!-- Progression QA and the waterfront visual repair load before main so they can correct the
-	     mobile startup/profile and observe the runtime as each world system comes online. -->
-	<script type="module">
-		await import('/src/runtime/MobileVehicleHandling.js');
-		await import('/src/runtime/ProgressionQAMode.js');
-		await import('/src/runtime/WaterfrontVisualHotfix.js');
-		await import('/src/main.js');
-	</script>
+	<!-- Runtime patches are static dependencies of one startup entry so Safari cannot stall at 0%
+	     while waiting on a chain of separate dynamic import requests. -->
+	<script type="module" src="/src/bootstrap.js"></script>
 </body>
 </html>
