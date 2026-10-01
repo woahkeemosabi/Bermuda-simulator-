@@ -43,6 +43,22 @@ export function mobileQualityParameters(input, safeLevel = 0) {
         p.set('scale', safeLevel >= 2 ? '0.70' : '0.80');
         p.set('G','16');
         p.set('mobileFps','30');
+
+        // gpuRecovery is a crash-loop guard, not a permanent quality preference. Previously a phone
+        // that had recovered twice kept gpuRecovery=2 in the address forever; a later unrelated loss
+        // could only show the fatal "close this tab" banner. After a long stable run, clear the stale
+        // recovery markers so the next launch may attempt Mobile High again. This does not change the
+        // quality of the currently-running frame set; it only cleans the URL for a future reload.
+        if (typeof window !== 'undefined' && typeof location !== 'undefined') {
+            window.setTimeout(() => {
+                if (document.visibilityState !== 'visible') return;
+                const url = new URL(location.href);
+                url.searchParams.delete('gpuRecovery');
+                url.searchParams.delete('gpuSafe');
+                url.searchParams.delete('recoveryReason');
+                history.replaceState(null, '', url);
+            }, 90000);
+        }
     }
     return p;
 }
