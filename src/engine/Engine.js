@@ -14,6 +14,16 @@ export class Engine {
 		const params = typeof location !== 'undefined' ? new URLSearchParams( location.search ) : null;
 		this.composeMode = !! ( params && params.has( 'compose' ) );
 		this.benchmarkMode = !! ( params && params.has( 'benchmark' ) );
+		// Mobile Safari continuously changes innerHeight while its browser chrome expands/collapses.
+		// Reallocating every HDR/depth/history target for those toolbar-only resizes causes a large
+		// transient WebGPU memory spike. The high-quality phone profile locks the backing buffer until
+		// the viewport width/orientation actually changes; CSS still follows the live visual viewport.
+		this.stableMobileViewport = !! ( params && params.has( 'stableViewport' ) );
+		this.mobileFrameCap = Math.max( 0, Number( params?.get( 'mobileFps' ) || 0 ) );
+		this._stableBufferWidth = 0;
+		this._stableBufferHeight = 0;
+		this._stableOrientation = '';
+		this._mobileFrameLast = 0;
 		// Compose mode is deliberately a low-load development view. The app's mobile post scale still
 		// applies inside this output size, so ?compose=1&gpuSafe=2 lands at roughly 58% effective linear
 		// resolution while keeping the CSS/camera viewport unchanged for layout decisions.
@@ -58,6 +68,11 @@ export class Engine {
 	setRenderScale( s ) {
 
 		this.renderScale = s;
+		// A deliberate render-scale change must be allowed to resize the locked backing buffer.
+		if ( this.stableMobileViewport ) {
+			this._stableBufferWidth = 0;
+			this._stableBufferHeight = 0;
+		}
 		this.resize();
 
 	}
@@ -79,8 +94,36 @@ export class Engine {
 
 		const w = window.innerWidth, h = window.innerHeight;
 		const dpr = this.renderScale;
-		this.canvas.width = Math.max( 1, Math.floor( w * dpr ) );
-		this.canvas.height = Math.max( 1, Math.floor( h * dpr ) );
+		let bufferW = Math.max( 1, Math.floor( w * dpr ) );
+		let bufferH = Math.max( 1, Math.floor( h * dpr ) );
+
+		if ( this.stableMobileViewport ) {
+
+			const orientation = w >= h ? 'landscape' : 'portrait';
+			const first = ! this._stableBufferWidth || ! this._stableBufferHeight;
+			const orientationChanged = !! this._stableOrientation && orientation !== this._stableOrientation;
+			// Safari toolbar animation is almost entirely height-only. A meaningful width change means
+			// rotation, split view or an actual layout change and is therefore safe to reallocate once.
+			const widthChanged = this._stableBufferWidth && Math.abs( bufferW - this._stableBufferWidth ) > 24;
+			if ( first || orientationChanged || widthChanged ) {
+
+				this._stableBufferWidth = bufferW;
+				this._stableBufferHeight = bufferH;
+				this._stableOrientation = orientation;
+
+			} else {
+
+				bufferW = this._stableBufferWidth;
+				bufferH = this._stableBufferHeight;
+
+			}
+
+		}
+
+		// Do not assign canvas dimensions unless the backing store actually changes. Assigning even the
+		// same size can invalidate the WebGPU presentation surface on iOS and force needless target work.
+		if ( this.canvas.width !== bufferW ) this.canvas.width = bufferW;
+		if ( this.canvas.height !== bufferH ) this.canvas.height = bufferH;
 		this.canvas.style.width = w + 'px';
 		this.canvas.style.height = h + 'px';
 		this.camera.aspect = w / h;
@@ -132,6 +175,17 @@ export class Engine {
 				// sustained iPhone GPU pressure substantially while touch/DOM events continue at full rate.
 				if ( this.composeMode && this._composeLast && t - this._composeLast < 31 ) return;
 				if ( this.composeMode ) this._composeLast = t;
+
+				// High-fidelity mobile keeps the same render detail but can cap presentation frequency. This
+				// lowers sustained GPU/thermal pressure without reducing water, geometry, lighting or texture
+				// quality. 30 fps also maps cleanly to Safari's 60 Hz rAF cadence.
+				if ( this.mobileFrameCap > 0 ) {
+
+					const interval = 1000 / this.mobileFrameCap;
+					if ( this._mobileFrameLast && t - this._mobileFrameLast < interval - 1 ) return;
+					this._mobileFrameLast = t;
+
+				}
 
 				this.clock.update( t );
 				let dt = this.clock.getDelta();
