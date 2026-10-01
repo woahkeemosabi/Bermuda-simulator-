@@ -19,10 +19,13 @@ export function installMobileUnderwaterQualityBoot() {
 	FishSchools.prototype.layout = function bermudaMobileFishLayout( bay ) {
 		originalLayout.call( this, bay );
 		const D = WORLD.boatDock.position;
+		const R = WORLD.reef.center;
 
 		// The opening Bermuda swim area beside the starter dock is commonly only ~1.6–1.9 m deep.
-		// The existing dock population starts at 2 m, so placement can fail and leave the first dive
-		// empty. Add three modest shallow-water schools using the existing batched procedural fish.
+		// The legacy Tidewater schools were authored around the old east-side bay, so after Bermuda's
+		// dock/reef moved west only the near-shore mullets were reliably visible. Keep the shallow life,
+		// then repopulate the actual Bermuda dock -> reef -> outer-reef route with the existing batched
+		// procedural fish. This adds no textures, GLBs or extra render passes.
 		this.addGroup( 'mullet', 8, {
 			x: D.x + 1.5, z: D.z + 5.5, r: 11, band: [ 1.35, 4.5 ],
 		} );
@@ -32,6 +35,43 @@ export function installMobileUnderwaterQualityBoot() {
 		this.addGroup( 'silverside', 28, {
 			x: D.x + 3.5, z: D.z + 9.0, r: 13, band: [ 1.35, 6.0 ],
 		} );
+
+		const alongRoute = ( t ) => ( {
+			x: D.x + ( R.x - D.x ) * t,
+			z: D.z + ( R.z - D.z ) * t,
+		} );
+		const addRouteSchool = ( name, count, t, band, radius = 18 ) => {
+			const target = alongRoute( t );
+			let chosen = null;
+			// Deterministically search around each route marker for water in the species' depth band.
+			// That avoids parking a school on a sandbar while keeping the population stable per save.
+			for ( const rr of [ 0, 6, 12, 18, 24, 30 ] ) {
+				const steps = rr === 0 ? 1 : 12;
+				for ( let i = 0; i < steps; i ++ ) {
+					const a = steps === 1 ? 0 : i / steps * Math.PI * 2;
+					const x = target.x + Math.cos( a ) * rr;
+					const z = target.z + Math.sin( a ) * rr;
+					const depth = this.depthAt( x, z );
+					if ( depth < band[ 0 ] || depth > band[ 1 ] ) continue;
+					if ( depth < this.breakDepth( x, z ) + 0.35 ) continue;
+					chosen = { x, z };
+					break;
+				}
+				if ( chosen ) break;
+			}
+			if ( chosen ) this.addGroup( name, count, { x: chosen.x, z: chosen.z, r: radius, band } );
+		};
+
+		// Mid-harbour / reef approach: large silhouettes should be visible while diving in 5–14 m.
+		addRouteSchool( 'tarpon', 7, 0.42, [ 5, 14 ], 22 );
+		addRouteSchool( 'jack', 9, 0.56, [ 5, 18 ], 22 );
+		addRouteSchool( 'yellowtail', 14, 0.68, [ 3.5, 14 ], 18 );
+
+		// Reef edge and just beyond it: keep larger fish present after the player leaves the harbour.
+		addRouteSchool( 'tarpon', 6, 0.82, [ 5, 16 ], 24 );
+		addRouteSchool( 'jack', 8, 0.96, [ 6, 20 ], 24 );
+		addRouteSchool( 'barracuda', 2, 1.08, [ 5, 18 ], 18 );
+		addRouteSchool( 'tarpon', 5, 1.14, [ 5, 16 ], 24 );
 	};
 
 	const originalLightsUpdate = LocalLights.prototype.update;
@@ -66,7 +106,7 @@ export function installMobileUnderwaterQualityBoot() {
 	};
 
 	if ( typeof window !== 'undefined' ) window.__bermudaMobileUnderwaterBoot = {
-		fish: 'harbour-schools-v1',
+		fish: 'bermuda-route-schools-v2',
 		torch: 'soft-dive-light-v1',
 	};
 }
