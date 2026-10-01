@@ -20,6 +20,7 @@ import { installWaterfrontRepair } from '../game/WaterfrontRepair.js';
 import { LifeProgression } from '../game/LifeProgression.js';
 import { installRelicMobileModes } from '../mobile/RelicMobileModes.js';
 import { installMobileReferenceParity } from '../mobile/MobileReferenceParity.js';
+import { installMobileUnderwaterQualityBoot, applyMobileUnderwaterQualityRuntime } from '../mobile/MobileUnderwaterQuality.js';
 import { Whale } from './marine/Whale.js';
 
 export const BERMUDA_LOOK = {
@@ -92,6 +93,7 @@ export function applyBermudaBootLook( app ) {
 	installBermudaBoatFlag();
 	installBermudaTerrainProfile();
 	installMobileWhaleBypass();
+	installMobileUnderwaterQualityBoot();
 	app.settings.timeOfDay = look.daylight.timeOfDay;
 	app.settings.exposure = look.daylight.exposure;
 	G.waterAbsorption.value.set( ...look.water.absorption );
@@ -151,11 +153,9 @@ export function applyBermudaRuntimeLook( app ) {
 	installNoVisiblePlayer( app );
 
 	if ( phone ) {
-		// Keep the crash-prone desktop detail stack disabled on iPhone, but restore the dedicated
-		// instanced mobile reference corridor, proper iconography and cheap local street/window lights.
-		// This is the intended visual replacement for the heavier final/reference passes.
 		installWaterfrontRepair( app );
 		installMobileReferenceParity( app );
+		applyMobileUnderwaterQualityRuntime( app );
 		if ( typeof window !== 'undefined' ) {
 			window.__bermudaMobileWorldMode = 'reference-parity-v1';
 			window.__bermudaHeavyWorldAssetsDisabled = true;
