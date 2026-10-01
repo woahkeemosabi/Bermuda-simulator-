@@ -120,8 +120,12 @@ export class Engine {
 
 		}
 
-		// Do not assign canvas dimensions unless the backing store actually changes. Assigning even the
-		// same size can invalidate the WebGPU presentation surface on iOS and force needless target work.
+		// The previous mobile fix locked the canvas dimensions, but still fired every GPU resize
+		// listener for Safari's height-only toolbar animation. Those listeners can resize HDR/depth/
+		// history targets even when the canvas backing store is unchanged, recreating the exact memory
+		// spike the stable viewport is meant to prevent. Track the actual backing-store change and only
+		// notify GPU-sized listeners when a real reallocation is required.
+		const backingChanged = this.canvas.width !== bufferW || this.canvas.height !== bufferH;
 		if ( this.canvas.width !== bufferW ) this.canvas.width = bufferW;
 		if ( this.canvas.height !== bufferH ) this.canvas.height = bufferH;
 		this.canvas.style.width = w + 'px';
@@ -129,7 +133,11 @@ export class Engine {
 		this.camera.aspect = w / h;
 		this.camera.updateProjectionMatrix();
 		FrameUniforms.fields.outputResolution.value.set( this.canvas.width, this.canvas.height );
-		for ( const f of this.onResize ) f( w, h );
+		if ( ! this.stableMobileViewport || backingChanged ) {
+
+			for ( const f of this.onResize ) f( w, h );
+
+		}
 
 	}
 
