@@ -17,6 +17,7 @@ import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
 import { installWaterfrontRepair } from '../game/WaterfrontRepair.js';
+import { installStarterBikeIntro } from '../game/StarterBikeIntro.js';
 import { LifeProgression } from '../game/LifeProgression.js';
 import { installRelicMobileModes } from '../mobile/RelicMobileModes.js';
 import { installMobileReferenceParity } from '../mobile/MobileReferenceParity.js';
@@ -172,6 +173,11 @@ export function applyBermudaRuntimeLook( app ) {
 		void loadProductionWorld();
 		void loadStreetLifeModels();
 	}
+
+	// The starter bicycle is the new player's first navigation beat. Keep it outside MissionDirector:
+	// first-time saves spawn in the residential road area, follow the marker to the bike, then ride to
+	// the harbour. Existing saves are left where they are and FIRST DAY remains unchanged underneath.
+	installStarterBikeIntro( app );
 
 	// Mission runtime is gameplay, not a desktop-only visual pass. The module existed in source but
 	// was never wired into the live startup graph, so FIRST DAY could silently disappear after a reload.
