@@ -8,14 +8,56 @@ const fullPrecompile = App.prototype.precompile;
 const ungatedFrame = App.prototype.frame;
 let mobileWarmupPatchQueued = false;
 
+function warmNextDeferredWaterfrontNode(app) {
+    const mr = app.engine?.meshRenderer;
+    const sr = app.sceneRenderer;
+    const nodes = app.bermudaModels?.nodes;
+    if (!mr || !sr || !nodes?.length) return;
+
+    const warmed = app.__bermudaWarmedWaterfrontNodes ||= new WeakSet();
+    const next = nodes.find((entry) => entry?.node && !warmed.has(entry.node));
+    if (!next) return;
+    warmed.add(next.node);
+
+    // Deferred waterfront GLBs arrive after Explore, so they cannot be part of the startup traversal.
+    // Request the exact main opaque pipeline as soon as each node arrives, one node per frame. In
+    // precompile mode MeshRenderer creates the asynchronous pipeline but skips the actual draw and
+    // geometry upload, so a later camera turn does not trigger a synchronous shader/pipeline event.
+    const rt = sr.sceneRT;
+    const previous = mr.precompiling;
+    mr.precompiling = true;
+    try {
+        mr.render(next.node, {
+            label: 'mobile waterfront pipeline warm-up',
+            kind: 'main',
+            camera: app.camera,
+            colorViews: rt.textures.map((texture) => texture.view()),
+            colorFormats: rt.formats,
+            depthView: rt.depthTexture.view(),
+            depthFormat: rt.depthTexture.format,
+            layerMask: 1,
+        });
+    } catch (error) {
+        console.warn('mobile waterfront pipeline warm-up failed', error);
+    } finally {
+        mr.precompiling = previous;
+    }
+}
+
 function queueMobilePipelineWarmup() {
     if (mobileWarmupPatchQueued || typeof queueMicrotask !== 'function') return;
     mobileWarmupPatchQueued = true;
 
-    // main.js applies its mobile App.prototype overrides in the current task. Install this wrapper in
-    // the following microtask so it becomes the final mobile precompile implementation before init
-    // reaches the shader-compilation stage.
+    // main.js applies its mobile App.prototype overrides in the current task. Install these wrappers
+    // in the following microtask so they become the final mobile implementations before init reaches
+    // the shader-compilation stage.
     queueMicrotask(() => {
+        const runtimeFrame = App.prototype.frame;
+        App.prototype.frame = function(...args) {
+            warmNextDeferredWaterfrontNode(this);
+            return runtimeFrame.apply(this, args);
+        };
+
         App.prototype.precompile = async function() {
             const started = performance.now();
             const budgetMs = 25000;
