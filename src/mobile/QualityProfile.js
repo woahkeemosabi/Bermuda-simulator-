@@ -20,6 +20,19 @@ function installMobileMemoryGuards() {
         this.ready = false;
         return this;
     };
+
+    // Martha's photoscanned StallKit is the largest remaining optional mobile allocation. Block only
+    // that /models/props/ package so Chandlery's existing catch path immediately uses its procedural
+    // table instead. Preserve any test/host asset hook and use normal fetch for every other asset.
+    const previousAssetFile = globalThis.__assetFile;
+    globalThis.__assetFile = async (url) => {
+        const text = String(url);
+        if (text.includes('/models/props/')) throw new Error('StallKit disabled on mobile');
+        if (previousAssetFile) return previousAssetFile(url);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(text + ' ' + response.status);
+        return response.arrayBuffer();
+    };
 }
 
 // Mobile quality profile.
