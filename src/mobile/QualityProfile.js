@@ -1,5 +1,8 @@
 import { App } from '../App.js';
 import { GPU } from '../engine/gpu/GPU.js';
+import { ShadowUniforms } from '../engine/render/wgsl/lighting.js';
+import { Vendor } from '../game/Vendor.js';
+import { Whale } from '../world/marine/Whale.js';
 
 // Capture the full desktop precompile + ungated frame before main.js installs its mobile startup
 // overrides. The mobile entry point used to replace App.precompile with a wait-only function, so
@@ -7,6 +10,26 @@ import { GPU } from '../engine/gpu/GPU.js';
 const fullPrecompile = App.prototype.precompile;
 const ungatedFrame = App.prototype.frame;
 let mobileWarmupPatchQueued = false;
+let mobileMemoryGuardsInstalled = false;
+
+function installMobileMemoryGuards() {
+    if (mobileMemoryGuardsInstalled) return;
+    mobileMemoryGuardsInstalled = true;
+
+    // Keep the lightweight procedural vendor figures on phones. The Rocketbox replacements each add
+    // a sizeable texture/skinning allocation during boot but are not required for shop interaction.
+    Vendor.prototype.loadCharacter = async function() {
+        this.character = null;
+        return null;
+    };
+
+    // The whale is already disabled by the mobile gameplay profile after init. Prevent its 4K texture
+    // set from being uploaded first and then hidden; this removes a large block of dead GPU residency.
+    Whale.prototype.load = async function() {
+        this.ready = false;
+        return this;
+    };
+}
 
 function warmNextDeferredWaterfrontNode(app) {
     const mr = app.engine?.meshRenderer;
@@ -66,6 +89,16 @@ function queueMobilePipelineWarmup() {
             const savedPipelineWait = GPU.pipelinesReady;
             const savedRefraction = this.refraction?.enabled;
             const restores = [];
+
+            // Step 3 bypasses the normal mobile frame gate during its hidden warm-up. Resize the lazy
+            // shadow atlas before that happens, otherwise the warm-up materialises the desktop 2048²
+            // three-cascade depth array before main.js gets a chance to apply the 1024² phone profile.
+            if (this.shadows?.texture && !this.shadows.texture.gpu) {
+                this.shadows.size = 1024;
+                this.shadows.texture.width = 1024;
+                this.shadows.texture.height = 1024;
+                if (ShadowUniforms?.fields?.mapSize) ShadowUniforms.fields.mapSize.value = 1024;
+            }
 
             // The original iOS fast-start intentionally prevents the two warm-up frames from running
             // every simulation system before the mobile memory profile is applied. Keep that safety:
@@ -137,6 +170,7 @@ function queueMobilePipelineWarmup() {
 // volumetric/weather simulation. The high profile keeps visual fidelity high while avoiding two
 // iOS-specific failure modes: Safari toolbar resize churn and sustained 60 fps WebGPU pressure.
 export function mobileQualityParameters(input, safeLevel = 0) {
+    installMobileMemoryGuards();
     queueMobilePipelineWarmup();
 
     const p = new URLSearchParams(input);
