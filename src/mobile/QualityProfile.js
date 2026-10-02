@@ -1,3 +1,7 @@
+import { installMobileGPUDiagnostics } from './MobileGPUDiagnostics.js';
+
+installMobileGPUDiagnostics();
+
 // Mobile quality profile.
 // Spend the phone budget on sharpness, water and authored Bermuda assets rather than unstable
 // volumetric/weather simulation. The high profile keeps visual fidelity high while avoiding two
