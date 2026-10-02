@@ -1,8 +1,144 @@
+import { App } from '../App.js';
+import { GPU } from '../engine/gpu/GPU.js';
+
+// Capture the full desktop precompile + ungated frame before main.js installs its mobile startup
+// overrides. The mobile entry point used to replace App.precompile with a wait-only function, so
+// pipelines for meshes first seen after Explore were still requested during gameplay.
+const fullPrecompile = App.prototype.precompile;
+const ungatedFrame = App.prototype.frame;
+let mobileWarmupPatchQueued = false;
+
+function warmNextDeferredWaterfrontNode(app) {
+    const mr = app.engine?.meshRenderer;
+    const sr = app.sceneRenderer;
+    const nodes = app.bermudaModels?.nodes;
+    if (!mr || !sr || !nodes?.length) return;
+
+    const warmed = app.__bermudaWarmedWaterfrontNodes ||= new WeakSet();
+    const next = nodes.find((entry) => entry?.node && !warmed.has(entry.node));
+    if (!next) return;
+    warmed.add(next.node);
+
+    // Deferred waterfront GLBs arrive after Explore, so they cannot be part of the startup traversal.
+    // Request the exact main opaque pipeline as soon as each node arrives, one node per frame. In
+    // precompile mode MeshRenderer creates the asynchronous pipeline but skips the actual draw and
+    // geometry upload, so a later camera turn does not trigger a synchronous shader/pipeline event.
+    const rt = sr.sceneRT;
+    const previous = mr.precompiling;
+    mr.precompiling = true;
+    try {
+        mr.render(next.node, {
+            label: 'mobile waterfront pipeline warm-up',
+            kind: 'main',
+            camera: app.camera,
+            colorViews: rt.textures.map((texture) => texture.view()),
+            colorFormats: rt.formats,
+            depthView: rt.depthTexture.view(),
+            depthFormat: rt.depthTexture.format,
+            layerMask: 1,
+        });
+    } catch (error) {
+        console.warn('mobile waterfront pipeline warm-up failed', error);
+    } finally {
+        mr.precompiling = previous;
+    }
+}
+
+function queueMobilePipelineWarmup() {
+    if (mobileWarmupPatchQueued || typeof queueMicrotask !== 'function') return;
+    mobileWarmupPatchQueued = true;
+
+    // main.js applies its mobile App.prototype overrides in the current task. Install these wrappers
+    // in the following microtask so they become the final mobile implementations before init reaches
+    // the shader-compilation stage.
+    queueMicrotask(() => {
+        const runtimeFrame = App.prototype.frame;
+        App.prototype.frame = function(...args) {
+            warmNextDeferredWaterfrontNode(this);
+            return runtimeFrame.apply(this, args);
+        };
+
+        App.prototype.precompile = async function() {
+            const started = performance.now();
+            const budgetMs = 25000;
+            const mr = this.engine?.meshRenderer;
+            const savedFrame = this.frame;
+            const savedPipelineWait = GPU.pipelinesReady;
+            const savedRefraction = this.refraction?.enabled;
+            const restores = [];
+
+            // The original iOS fast-start intentionally prevents the two warm-up frames from running
+            // every simulation system before the mobile memory profile is applied. Keep that safety:
+            // mute only the secondary systems that the memory profile disables anyway, while allowing
+            // the core scene/render path to request all of its render pipelines behind the loader.
+            const muteUpdate = (system) => {
+                if (!system || typeof system.update !== 'function') return;
+                const update = system.update;
+                system.update = () => {};
+                restores.push(() => { system.update = update; });
+            };
+            [
+                this.wake,
+                this.boatSpray,
+                this.spray,
+                this.breakers,
+                this.marineSnow,
+                this.airMotes,
+                this.whale,
+                this.wildlife,
+            ].forEach(muteUpdate);
+
+            // Bypass the mobile App.frame gate only inside this controlled warm-up. MeshRenderer is in
+            // precompile mode during the original pass, so scene meshes request pipeline variants but
+            // are not actually drawn or forced through synchronous first-use compiles.
+            this.frame = ungatedFrame.bind(this);
+
+            // The desktop precompile waits once before it traverses the scene. On mobile that can spend
+            // the entire 25 s budget waiting for only the pipelines already known at that point. Make
+            // those internal waits non-blocking, run the full traversal immediately, then spend whatever
+            // remains of the same 25 s budget waiting for the complete requested pipeline set.
+            GPU.pipelinesReady = async () => {};
+
+            let warmupFinished = false;
+            try {
+                const warmup = fullPrecompile.call(this).then(() => { warmupFinished = true; }).catch((error) => {
+                    console.warn('mobile pipeline warm-up failed', error);
+                    warmupFinished = true;
+                });
+                await Promise.race([
+                    warmup,
+                    new Promise((resolve) => setTimeout(resolve, budgetMs)),
+                ]);
+            } finally {
+                GPU.pipelinesReady = savedPipelineWait;
+                this.frame = savedFrame;
+                for (let i = restores.length - 1; i >= 0; i--) restores[i]();
+                if (this.waterMaterial) this.waterMaterial.hullOverride = null;
+                if (this.refraction && savedRefraction !== undefined) this.refraction.enabled = savedRefraction;
+                if (mr) {
+                    mr.precompiling = false;
+                    mr.syncPipelines = false;
+                }
+            }
+
+            const remaining = Math.max(0, budgetMs - (performance.now() - started));
+            if (warmupFinished && remaining > 0) {
+                await Promise.race([
+                    savedPipelineWait.call(GPU),
+                    new Promise((resolve) => setTimeout(resolve, remaining)),
+                ]);
+            }
+        };
+    });
+}
+
 // Mobile quality profile.
 // Spend the phone budget on sharpness, water and authored Bermuda assets rather than unstable
 // volumetric/weather simulation. The high profile keeps visual fidelity high while avoiding two
 // iOS-specific failure modes: Safari toolbar resize churn and sustained 60 fps WebGPU pressure.
 export function mobileQualityParameters(input, safeLevel = 0) {
+    queueMobilePipelineWarmup();
+
     const p = new URLSearchParams(input);
     const high = p.get('quality') === 'mobile-high' && safeLevel === 0;
 
