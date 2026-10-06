@@ -20,6 +20,11 @@
 		#fps { position: fixed; top: 10px; left: 12px; z-index: 50; font: 500 12px/1.2 'JetBrains Mono', ui-monospace, monospace;
 			color: #e8f6ff; background: rgba(8, 14, 22, 0.55); padding: 5px 9px; border-radius: 6px; pointer-events: none;
 			backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); letter-spacing: 0.02em; }
+		.loader-countdown { display:flex; align-items:flex-end; justify-content:space-between; gap:14px; margin-top:12px; padding-top:11px; border-top:1px solid rgba(170,235,231,.16); }
+		.loader-countdown-copy { display:flex; flex-direction:column; gap:2px; }
+		.loader-countdown-label { font:700 10px/1.2 system-ui,-apple-system,sans-serif; letter-spacing:.16em; color:rgba(217,245,243,.62); }
+		.loader-elapsed { font:500 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color:rgba(217,245,243,.48); }
+		.loader-eta { font:600 32px/.95 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:-.05em; color:#eafffb; font-variant-numeric:tabular-nums; }
 		.loader-offline { margin-top: 10px; font: 600 11px/1.35 system-ui,-apple-system,sans-serif; letter-spacing: .04em; color: rgba(223,255,250,.76); }
 		.loader-offline[data-ready="1"] { color: #7ff5e3; }
 	</style>
@@ -42,7 +47,14 @@
 					<span class="loader-meta"><span class="loader-pct">0%</span><span class="loader-time">0:00</span></span>
 				</div>
 				<div class="loader-bar"><div class="loader-fill"></div><div class="loader-glint"></div></div>
-				<div class="loader-note">The first launch compiles the WebGPU shaders and can take a minute or two. Later visits load much faster.</div>
+				<div class="loader-countdown" aria-live="polite">
+					<div class="loader-countdown-copy">
+						<span class="loader-countdown-label">EST. READY IN</span>
+						<span class="loader-elapsed">0:00 elapsed</span>
+					</div>
+					<span class="loader-eta">1:30</span>
+				</div>
+				<div class="loader-note">Estimate adapts to this device. First launch takes longest; later launches learn from the previous load.</div>
 				<div id="offline-state" class="loader-offline" data-ready="0">Offline pack: preparing on this device…</div>
 				<div class="loader-tips">
 					<span class="loader-tip-label">Explore</span>
@@ -68,46 +80,59 @@
 
 		window.__bermudaOffline = { supported: 'serviceWorker' in navigator, ready: false };
 
-		if ('serviceWorker' in navigator && location.protocol === 'https:') {
-			navigator.serviceWorker.register('./sw.js', { scope: './' }).then(async registration => {
+		const queryOfflineStatus = async registration => {
+			const worker = navigator.serviceWorker.controller || registration?.active;
+			if (!worker) return null;
+			return new Promise(resolve => {
+				const channel = new MessageChannel();
+				const timer = setTimeout(() => resolve(null), 1800);
+				channel.port1.onmessage = event => {
+					clearTimeout(timer);
+					resolve(event.data);
+				};
+				worker.postMessage({ type: 'BERMUDA_OFFLINE_STATUS' }, [ channel.port2 ]);
+			});
+		};
+
+		const startOfflineInstall = async () => {
+			if (!('serviceWorker' in navigator) || location.protocol !== 'https:' || window.__bermudaOfflineInstallStarted) return;
+			window.__bermudaOfflineInstallStarted = true;
+			setOfflineText('Offline pack: installing after game startup…');
+			try {
+				const registration = await navigator.serviceWorker.register('./sw.js', { scope: './' });
 				window.__bermudaPWARegistration = registration;
 				await navigator.serviceWorker.ready;
-				const askStatus = () => new Promise(resolve => {
-					const worker = navigator.serviceWorker.controller || registration.active;
-					if (!worker) return resolve(null);
-					const channel = new MessageChannel();
-					const timer = setTimeout(() => resolve(null), 2500);
-					channel.port1.onmessage = event => {
-						clearTimeout(timer);
-						resolve(event.data);
-					};
-					worker.postMessage({ type: 'BERMUDA_OFFLINE_STATUS' }, [ channel.port2 ]);
-				});
-				let status = await askStatus();
+				let status = await queryOfflineStatus(registration);
 				if (!status?.ready) {
-					await new Promise(resolve => {
-						const timer = setTimeout(resolve, 3000);
-						navigator.serviceWorker.addEventListener('controllerchange', () => {
-							clearTimeout(timer);
-							resolve();
-						}, { once: true });
-					});
-					status = await askStatus();
+					await new Promise(resolve => setTimeout(resolve, 1200));
+					status = await queryOfflineStatus(registration);
 				}
 				if (status?.ready) {
 					window.__bermudaOffline = { ...status, supported: true };
 					const mb = status.coreBytes ? (status.coreBytes / 1048576).toFixed(1) : '?';
 					setOfflineText('Offline core installed · ' + mb + ' MB ✓', true);
 				} else {
-					setOfflineText('Offline pack installs in the background on first launch.');
+					setOfflineText('Offline pack continues installing in the background.');
 				}
-			}).catch(error => {
+			} catch (error) {
 				window.__bermudaOffline = { supported: true, ready: false, error: String(error) };
-				setOfflineText('Online mode · offline pack not installed yet');
+				setOfflineText('Online mode · offline pack will retry later');
+			}
+		};
+
+		// If a previous install already controls the page, report it immediately without starting a new
+		// 10 MB cache download during the critical game boot. New installs begin only after gameplay is ready.
+		if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+			queryOfflineStatus(null).then(status => {
+				if (!status?.ready) return;
+				window.__bermudaOffline = { ...status, supported: true };
+				const mb = status.coreBytes ? (status.coreBytes / 1048576).toFixed(1) : '?';
+				setOfflineText('Offline core installed · ' + mb + ' MB ✓', true);
 			});
-		} else {
-			setOfflineText('Offline install requires the secure game link.');
 		}
+		window.addEventListener('bermuda-game-ready', startOfflineInstall, { once: true });
+		// Safety fallback: if startup takes unusually long, do not begin the cache install until two minutes.
+		setTimeout(startOfflineInstall, 120000);
 
 		window.addEventListener('offline', () => {
 			if (window.__bermudaOffline?.ready) setOfflineText('OFFLINE MODE ✓', true);
