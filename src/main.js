@@ -226,6 +226,10 @@ function mobileRecoveryURL( reason, prefix = 'gpu-recovery' ) {
 function recoverMobileInitGPUError( error ) {
 
 	if ( ! mobileFastStart ) return false;
+	// Safe level 2 is already the lowest normal iPhone profile. Do not create a visible
+	// reload/reset loop if the safest profile still fails during boot; leave the loader up
+	// with the real error so QA can diagnose it.
+	if ( mobileSafeLevel >= 2 ) return false;
 	const message = String( error && ( error.message || error ) || '' );
 	if ( ! /createBuffer|Unable to create buffer|GPUDevice|device lost|destroyed|out of memory|GPU queue/i.test( message ) ) return false;
 	const url = mobileRecoveryURL( message, 'gpu-init-recovery' );
@@ -237,7 +241,8 @@ function recoverMobileInitGPUError( error ) {
 
 function installMobileGPUWatchdog() {
 
-	if ( ! mobileFastStart || ! GPU.device || ! GPU.queue ) return;
+	if ( ! mobileFastStart || ! GPU.device || ! GPU.queue || window.__bermudaGPUWatchdogInstalled ) return;
+	window.__bermudaGPUWatchdogInstalled = true;
 	let recovering = false;
 	let probeBusy = false;
 
@@ -430,15 +435,64 @@ if ( /[?&]bench\b/.test( location.search ) ) {
 
 }
 
+async function primeMobileCoreFrame( app, ui ) {
+
+	if ( ! mobileFastStart || ! app || app.__bermudaMobilePrimed ) return;
+
+	window.__bermudaBootPhase = 'mobile-core-prime';
+	ui.setLoading( 0.755, 'Priming mobile renderer…', 0.775 );
+
+	let timer = 0;
+	try {
+
+		await Promise.race( [
+			( async () => {
+				app.frame( 1 / 60, 0 );
+				await GPU.queue.onSubmittedWorkDone();
+			} )(),
+			new Promise( ( _, reject ) => {
+				timer = setTimeout( () => reject( new Error( 'Mobile GPU prime timed out' ) ), 8000 );
+			} ),
+		] );
+		app.__bermudaMobilePrimed = true;
+		window.__bermudaBootPhase = 'mobile-core-primed';
+
+	} finally {
+
+		if ( timer ) clearTimeout( timer );
+
+	}
+
+}
+
 const ui = new UI();
 applyBermudaBranding( mobileDevice );
 const app = new App();
 applyBermudaBootLook( app );
 window.__ui = ui;
 
-app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async () => {
+// App.init used to consume almost the whole bar before the genuinely slow harbour/model work
+// began, which made first launch appear stuck around 98%. Reserve explicit progress ranges for the
+// core renderer and the post-init asset phases so the percentage describes real completed work.
+const coreBootEnd = mobileDevice ? 0.74 : 0.88;
+const mapCoreProgress = ( value ) => typeof value === 'number' && isFinite( value )
+	? Math.max( 0, Math.min( coreBootEnd, value * coreBootEnd ) )
+	: value;
 
-	if ( mobileFastStart ) applyMobileMemoryProfile( app );
+app.init( ( p, text, until ) => ui.setLoading(
+	mapCoreProgress( p ),
+	text,
+	typeof until === 'number' ? mapCoreProgress( until ) : undefined,
+) ).then( async () => {
+
+	if ( mobileFastStart ) {
+		applyMobileMemoryProfile( app );
+		// Materialise the safe-profile core render targets before Explore is tappable. Previously the
+		// first real frame happened only after the tap, concentrating the remaining GPU allocations into
+		// that gesture and causing iOS Safari to kill/reload the page on constrained devices.
+		installMobileGPUWatchdog();
+		await primeMobileCoreFrame( app, ui );
+	}
 	// Waterfront is one of the slowest first-launch phases on mobile, so give it a real section of
 	// the progress bar instead of jumping to 99% before the network/model work has happened.
 	const waterfrontStart = mobileDevice ? 0.78 : 0.90;
@@ -502,6 +556,8 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	ui.setLoading( 0.99, 'Final checks…', 0.999 );
 	ui.setLoading( 1, 'Ready' );
 	await ui.hideLoader();
+	window.__bermudaGameReady = true;
+	window.__bermudaBootPhase = 'ready-for-explore';
 	setTimeout( () => window.dispatchEvent( new Event( 'bermuda-game-ready' ) ), mobileDevice ? 60000 : 5000 );
 	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
 	if ( app.qs.has( 'bench' ) ) {
@@ -522,10 +578,14 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 			if ( started ) return;
 			started = true;
+			window.__bermudaBootPhase = 'explore-start';
 			if ( app.audio ) app.audio.resume();
 			installMobileGPUWatchdog();
 			app.start();
 			startMobileDeferredScenery( app );
+			requestAnimationFrame( () => {
+				window.__bermudaBootPhase = 'gameplay-running';
+			} );
 
 		} );
 		return;
