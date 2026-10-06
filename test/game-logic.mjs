@@ -109,7 +109,7 @@ ok( fight( 'tarpon', 35, policies.careful, 50, 2.2 ).st === 'caught', 'the top l
 const mem = new Map();
 const storage = { getItem: ( k ) => mem.get( k ) ?? null, setItem: ( k, v ) => mem.set( k, v ) };
 const s = new GameState( storage );
-ok( s.money === 75 && s.ownsVehicle( 'bicycle' ) && s.equipment.rod === 'basic', 'new player starts with cash, bicycle and basic equipment' );
+ok( s.money === 75 && ! s.ownsVehicle( 'bicycle' ) && s.equipment.rod === 'basic' && s.hasMission( 'main-first-boat', 'available' ), 'new player starts dock-first with cash, basic fishing gear and the first-boat goal' );
 ok( s.stats.holdKg === 30, 'cooler holds 30 kg' );
 const a = s.addFish( 'grunt', 0.84, 9.5 );
 const b = s.addFish( 'yellowtail', 1.31, 10 );
@@ -119,12 +119,12 @@ const value = s.holdValue;
 const beforeSale = s.money;
 const sale = s.sell( [ a.id ] );
 ok( sale.count === 1 && s.money === beforeSale + a.value && s.inventory.length === 1, 'selling one fish adds its value to the wallet' );
-ok( s.activateMission( 'martha-first-delivery' ) && s.hasMission( 'martha-first-delivery' ) && s.completeMission( 'martha-first-delivery' ), 'missions move from available to active to completed' );
+ok( s.activateMission( 'main-first-boat' ) && s.hasMission( 'main-first-boat' ) && s.completeMission( 'main-first-boat' ), 'missions move from available to active to completed' );
 ok( s.addReputation( 'Martha', 10 ) === 10 && s.relationships.Martha.points === 10, 'relationship reputation is persistent progression state' );
 s.upgrades.hold = 1;
 const s2 = new GameState( storage );
 s.save();
-ok( s2.load() && s2.money === s.money && s2.inventory.length === 1 && s2.log.grunt.bestKg === 0.84 && s2.stats.holdKg === 70 && s2.missions.completed.includes( 'martha-first-delivery' ), 'save / load round trip' );
+ok( s2.load() && s2.money === s.money && s2.inventory.length === 1 && s2.log.grunt.bestKg === 0.84 && s2.stats.holdKg === 70 && s2.missions.completed.includes( 'main-first-boat' ), 'save / load round trip' );
 ok( s2.addFish( 'grunt', 0.5 ).id > b.id, 'ids keep counting after a load' );
 
 // ---- reusable mission director: rewards and unlocks are data-driven rather than hard-coded in a world interaction.
@@ -134,12 +134,12 @@ ok( s2.addFish( 'grunt', 0.5 ).id > b.id, 'ids keep counting after a load' );
 	const game = { state: st, toast() {} };
 	const app = { game };
 	const director = new MissionDirector( app );
-	ok( director.available( 'martha-first-delivery' ) && director.accept( 'martha-first-delivery', { toast: false } ), 'mission director accepts registered available mission' );
-	ok( director.active( 'martha-first-delivery' ) && director.objective()?.bucket === 'active', 'mission director exposes current active objective' );
+	ok( director.available( 'main-first-boat' ) && director.accept( 'main-first-boat', { toast: false } ), 'mission director accepts the dock-first boat goal' );
+	ok( director.active( 'main-first-boat' ) && director.objective()?.bucket === 'active', 'mission director exposes current active objective' );
 	const before = st.money;
-	ok( director.complete( 'martha-first-delivery', { toast: false } ), 'mission director completes active mission' );
-	ok( st.money === before + 65 && st.reputation.Martha === 5 && st.reputation.Joe === 5, 'mission director applies declared money and reputation rewards' );
-	ok( st.hasMission( 'martha-fishing-intro', 'available' ) && st.storyFlags.metMartha && st.storyFlags.metJoe, 'mission director applies story flags and unlocks next mission' );
+	ok( director.complete( 'main-first-boat', { toast: false } ), 'mission director completes the first-boat goal' );
+	ok( st.money === before && st.reputation.Joe === 4 && st.reputation.marineCommunity === 2, 'first-boat completion applies its reputation rewards' );
+	ok( st.hasMission( 'joe-three-waters', 'available' ) && st.storyFlags.firstBoatPurchased, 'first-boat completion unlocks the post-purchase campaign' );
 }
 
 // ---- lengths and the catch card's record logic
@@ -170,7 +170,7 @@ ok( s2.addFish( 'grunt', 0.5 ).id > b.id, 'ids keep counting after a load' );
 	ok( st.lastCatch.kept === false && st.lastCatch.newSpecies, 'a fish that does not fit: logged, card says released' );
 	const old = { v: 1, money: 5, inventory: [ { id: 1, species: 'grunt', kg: 0.84, value: 6, caughtAt: 9 } ], log: { grunt: { count: 1, bestKg: 0.84 } }, upgrades: {}, fuel: null, nextId: 2 };
 	const st2 = new GameState( { getItem: () => JSON.stringify( old ), setItem: () => {} } );
-	ok( st2.load() && st2.money === 5 && st2.inventory[ 0 ].cm === 36 && st2.log.grunt.bestCm === 36 && st2.ownsVehicle( 'bicycle' ), 'old saves migrate without losing progress' );
+	ok( st2.load() && st2.money === 5 && st2.inventory[ 0 ].cm === 36 && st2.log.grunt.bestCm === 36 && ! st2.ownsVehicle( 'bicycle' ), 'old saves migrate without losing fishing progress or restoring the removed starter bicycle' );
 
 }
 ok( new GameState( { getItem: () => { throw new Error( 'blocked' ); }, setItem: () => { throw new Error( 'blocked' ); } } ).load() === false, 'blocked storage does not throw' );

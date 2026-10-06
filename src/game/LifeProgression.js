@@ -1,26 +1,15 @@
-import { Group, Mesh, Vector3 } from '../engine/index.js';
-import { prepare, mergePrepared, box, mat4 } from '../world/boat/GeoKit.js';
-import { createPropMaterial, PAT } from './GameMaterials.js';
 import { MissionDirector } from './MissionDirector.js';
 
-const DELIVERY_ID = 'martha-first-delivery';
-const TMP = new Vector3();
-const Y = new Vector3( 0, 1, 0 );
-const MARTHA_INTERACTION_M = 3.35;
-const JOE_INTERACTION_M = 3.0;
+const LEGACY_ONBOARDING = new Set( [
+	'martha-first-delivery',
+	'martha-fishing-intro',
+	'joe-spiny-business',
+] );
+const FIRST_BOAT = 'main-first-boat';
 
-function buildParcel() {
-	const P = [];
-	const add = ( g, o ) => P.push( prepare( g, o ) );
-	const cardboard = { color: 0x9c7046, rough: 0.93, pattern: PAT.woodX };
-	const rope = { color: 0xd0b58b, rough: 0.9, pattern: PAT.cloth };
-	add( box( 0.48, 0.34, 0.36 ), { ...cardboard, matrix: mat4( 0, 0.17, 0 ) } );
-	add( box( 0.05, 0.345, 0.365 ), { ...rope, matrix: mat4( 0, 0.17, 0 ) } );
-	add( box( 0.485, 0.345, 0.05 ), { ...rope, matrix: mat4( 0, 0.17, 0 ) } );
-	add( box( 0.24, 0.006, 0.12 ), { color: 0xe9e2ce, rough: 0.8, matrix: mat4( 0.08, 0.346, 0.02 ) } );
-	return mergePrepared( P );
-}
-
+// Lightweight progression host for the public Bermuda Simulator opening.
+// New players begin at the harbour with fishing immediately available; this class only owns the
+// objective HUD and migrates any unfinished bicycle/parcel onboarding save into the dock-first loop.
 export class LifeProgression {
 	constructor( app ) {
 		this.app = app;
@@ -29,26 +18,44 @@ export class LifeProgression {
 		this.player = app.player;
 		this.input = app.input;
 		this.missions = app.missionDirector || new MissionDirector( app );
-		this.martha = app.game?.chandlery?.vendor || null;
-		this.joe = app.game?.stand?.vendor || null;
 
-		this.parcel = new Group();
-		this.parcel.name = 'MarthaDeliveryParcel';
-		const mesh = new Mesh( buildParcel(), createPropMaterial( 'marthaDeliveryParcel' ) );
-		mesh.castShadow = true;
-		mesh.receiveShadow = true;
-		this.parcel.add( mesh );
-		app.scene.add( this.parcel );
-
-		this.originalPlayerUpdate = this.player.update.bind( this.player );
-		this.player.update = ( dt ) => {
-			this.originalPlayerUpdate( dt );
-			this.update( dt );
-		};
+		this.normalizeDockStart();
 		this.mountObjectiveUI();
 		app.progression = this;
-		this.updateParcelHome();
 		this.refreshObjective();
+	}
+
+	normalizeDockStart() {
+		const state = this.state;
+		const missions = state?.missions;
+		if ( ! state || ! missions || ( state.boats?.owned?.length || 0 ) > 0 ) return;
+
+		let changed = false;
+		for ( const bucket of [ 'available', 'active' ] ) {
+			const before = Array.isArray( missions[ bucket ] ) ? missions[ bucket ] : [];
+			const after = before.filter( ( id ) => ! LEGACY_ONBOARDING.has( id ) );
+			if ( after.length !== before.length ) changed = true;
+			missions[ bucket ] = after;
+		}
+
+		const hasFirstBoat =
+			missions.available?.includes( FIRST_BOAT ) ||
+			missions.active?.includes( FIRST_BOAT ) ||
+			missions.completed?.includes( FIRST_BOAT );
+		if ( ! hasFirstBoat ) {
+			missions.available.push( FIRST_BOAT );
+			changed = true;
+		}
+
+		if ( state.storyFlags?.marthaDeliveryCarrying ) {
+			state.storyFlags.marthaDeliveryCarrying = false;
+			changed = true;
+		}
+
+		if ( changed ) {
+			state.save?.();
+			state.emit?.();
+		}
 	}
 
 	mountObjectiveUI() {
@@ -61,112 +68,18 @@ export class LifeProgression {
 		document.body.appendChild( this.objectiveEl );
 	}
 
-	missionAvailable() { return this.missions.available( DELIVERY_ID ); }
-	missionActive() { return this.missions.active( DELIVERY_ID ); }
-	missionDone() { return this.missions.completed( DELIVERY_ID ); }
-	carrying() { return !! this.state?.storyFlags?.marthaDeliveryCarrying; }
-
-	consumeAct() {
-		// Input.hit() is intentionally non-consuming elsewhere in the engine. FIRST DAY is different:
-		// the same ACT press must not also fall through into Game.updateVendors and open the legacy
-		// purchase list after the mission conversation has already handled it.
-		this.input?.pressed?.delete?.( 'KeyE' );
-	}
-
-	distanceToVendor( vendor, position ) {
-		if ( ! vendor?.position || ! position ) return Infinity;
-		return Math.hypot( vendor.position.x - position.x, vendor.position.z - position.z );
-	}
-
-	marthaInteractionReady( player ) {
-		if ( ! player || player.mode !== 'walk' || ! this.martha ) return false;
-		// Martha is back to Tidewater's open-air chandlery. There is deliberately no walk-in-shop
-		// inside()/opening-hours gate here: that gate was the reason FIRST DAY failed and the generic
-		// shopping list opened instead. The mission interaction gets first refusal while it is available.
-		return this.martha.inRange( player.position ) ||
-			this.distanceToVendor( this.martha, player.position ) <= MARTHA_INTERACTION_M;
-	}
-
-	joeInteractionReady( player ) {
-		if ( ! player || player.mode !== 'walk' || ! this.joe ) return false;
-		return this.joe.inRange( player.position ) || this.distanceToVendor( this.joe, player.position ) <= JOE_INTERACTION_M;
-	}
-
-	updateParcelHome() {
-		if ( ! this.martha ) return;
-		const p = this.martha.position;
-		this.parcel.position.set( p.x - 0.78, p.y + 0.04, p.z + 0.48 );
-		this.parcel.rotation.y = this.martha.yaw || 0;
-	}
-
-	update() {
-		if ( ! this.state || ! this.martha || ! this.joe ) return;
-		const p = this.player;
-
-		if ( this.missionDone() ) {
-			this.parcel.visible = false;
-			this.refreshObjective();
-			return;
-		}
-
-		if ( this.missionActive() && this.carrying() ) {
-			this.parcel.visible = true;
-			if ( p.mode === 'bike' && this.app.bicycle ) {
-				const b = this.app.bicycle.group;
-				TMP.set( 0, 0.83, -0.52 ).applyAxisAngle( Y, this.app.bicycle.yaw );
-				this.parcel.position.copy( b.position ).add( TMP );
-				this.parcel.rotation.y = this.app.bicycle.yaw;
-			} else {
-				const side = TMP.set( 0.38, 0.78, -0.38 ).applyAxisAngle( Y, p.yaw || 0 );
-				this.parcel.position.copy( p.position ).add( side );
-				this.parcel.rotation.y = p.yaw || 0;
-			}
-
-			if ( this.joeInteractionReady( p ) ) {
-				p.prompt = { key: 'E', text: 'Deliver Martha\'s box to Joe' };
-				if ( this.input.hit( 'KeyE' ) ) {
-					const completed = this.completeDelivery();
-					if ( completed ) this.consumeAct();
-				}
-			}
-		} else if ( this.missionAvailable() ) {
-			this.parcel.visible = true;
-			this.updateParcelHome();
-			if ( this.marthaInteractionReady( p ) ) {
-				p.prompt = { key: 'E', text: 'Talk to Martha · Dock Delivery' };
-				if ( this.input.hit( 'KeyE' ) ) {
-					const accepted = this.acceptDelivery();
-					if ( accepted ) this.consumeAct();
-				}
-			}
-		} else this.parcel.visible = false;
-
-		this.refreshObjective();
-	}
-
-	acceptDelivery() {
-		if ( ! this.missions.accept( DELIVERY_ID, { storyFlags: { marthaDeliveryCarrying: true, metMartha: true }, toast: false } ) ) return false;
-		this.game.toast( 'Martha: “Joe needs this box down at the dock.”', 3400 );
-		this.refreshObjective();
-		return true;
-	}
-
-	completeDelivery() {
-		if ( ! this.missionActive() || ! this.carrying() ) return false;
-		this.state.storyFlags.marthaDeliveryCarrying = false;
-		if ( ! this.missions.complete( DELIVERY_ID, { storyFlags: { metJoe: true }, toast: true } ) ) return false;
-		this.parcel.visible = false;
-		this.game.toast( 'Delivery complete · fishing and harbour work are now your next opportunities.', 3200 );
-		this.refreshObjective();
-		return true;
-	}
+	// Kept for the mobile-polish compatibility check. The removed FIRST DAY onboarding is always done.
+	missionDone() { return true; }
 
 	refreshObjective() {
 		if ( ! this.objectiveEl ) return;
 		const objective = this.missions.objective();
-		if ( ! objective ) { this.objectiveEl.style.display = 'none'; return; }
+		if ( ! objective ) {
+			this.objectiveEl.style.display = 'none';
+			return;
+		}
 		this.objectiveEl.style.display = '';
-		const kicker = objective.bucket === 'active' ? 'CURRENT JOB' : objective.id === DELIVERY_ID ? 'FIRST DAY' : 'NEXT OPPORTUNITY';
+		const kicker = objective.bucket === 'active' ? 'CURRENT GOAL' : 'NEXT GOAL';
 		this.objectiveEl.innerHTML = `<span class="bm-objective-kicker">${ kicker }</span>${ objective.text }`;
 	}
 }

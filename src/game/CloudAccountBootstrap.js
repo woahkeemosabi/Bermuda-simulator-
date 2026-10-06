@@ -16,7 +16,6 @@ import { HarbourJobBoard } from './HarbourJobBoard.js';
 import { MarthaShopInterior } from './MarthaShopInterior.js';
 import { BoatOwnership } from './BoatOwnership.js';
 import { BoatUpgradeVisuals } from './BoatUpgradeVisuals.js';
-import { Bicycle } from '../player/Bicycle.js';
 import { CharacterMotionStability } from '../world/CharacterMotionStability.js';
 
 // main.js creates the App asynchronously and exposes it as window.__app once core gameplay systems
@@ -28,12 +27,6 @@ if ( typeof window !== 'undefined' ) {
 		const app = window.__app;
 		if ( app?.game?.state && app?.player ) {
 			clearInterval( timer );
-
-			try {
-				if ( ! app.bicycle ) app.bicycle = new Bicycle( app );
-			} catch ( error ) {
-				console.warn( 'starter bicycle unavailable; continuing on foot', error );
-			}
 
 			try {
 				if ( ! app.vehiclePersistence ) app.vehiclePersistence = new VehiclePersistence( app );

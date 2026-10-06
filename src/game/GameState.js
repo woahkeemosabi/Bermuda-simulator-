@@ -20,7 +20,7 @@ function defaultProgression() {
 			divingMask: 'basic',
 		},
 		vehicles: {
-			bicycle: { owned: true, id: 'starter-bicycle', parked: null },
+			bicycle: { owned: false, id: null, parked: null },
 			scooter: { owned: false, id: null, parked: null },
 			cars: [],
 			relic: { owned: false, discovered: false, parked: null },
@@ -37,7 +37,7 @@ function defaultProgression() {
 			marinaBerth: null,
 		},
 		missions: {
-			available: [ 'martha-first-delivery' ],
+			available: [ 'main-first-boat' ],
 			active: [],
 			completed: [],
 		},

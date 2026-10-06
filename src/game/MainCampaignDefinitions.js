@@ -2,9 +2,6 @@
 // only the missing ownership/story beats are declared below.
 
 export const MAIN_CAMPAIGN_SEQUENCE = Object.freeze( [
-	'martha-first-delivery',
-	'martha-fishing-intro',
-	'joe-spiny-business',
 	'main-first-boat',
 	'joe-three-waters',
 	'martha-reef-table',
@@ -23,7 +20,7 @@ export const MAIN_CAMPAIGN_NEW_MISSIONS = Object.freeze( {
 	'main-first-boat': Object.freeze( {
 		id: 'main-first-boat',
 		title: 'The First Boat',
-		availableObjective: 'Save for the starter lobster boat and speak to Joe at the dock',
+		availableObjective: 'Catch fish, sell your catch to Joe, and save $3,200 for the starter lobster boat',
 		activeObjective: 'Purchase the starter lobster boat',
 		rewards: Object.freeze( {
 			money: 0,
