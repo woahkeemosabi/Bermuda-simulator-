@@ -26,6 +26,13 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Game tests
+        id: tests
+        continue-on-error: true
         run: npm test
       - name: Production build and offline bundle
         run: npm run build
+      - name: Preserve test failure
+        if: steps.tests.outcome != 'success'
+        run: |
+          echo "Game tests failed before/alongside this stability pass; build result above is still authoritative for syntax/bundling."
+          exit 1
