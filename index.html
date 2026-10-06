@@ -120,7 +120,7 @@
 				: status.playable
 					? 'OFFLINE GAME READY · update waiting for strong connection'
 					: 'Offline game ' + pct + '% · ' + formatMB(status.completedBytes) + ' / ' + formatMB(status.fullBytes) + ' MB';
-			setOfflineText(text, !!status.ready);
+			setOfflineText(text, !!(status.ready || status.playable));
 			const badge = ensureOfflineBadge();
 			badge.textContent = text;
 			badge.dataset.ready = (status.ready || status.playable) ? '1' : '0';
