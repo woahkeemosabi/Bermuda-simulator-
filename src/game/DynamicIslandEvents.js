@@ -84,7 +84,8 @@ export class DynamicIslandEvents {
 		if ( this.joe?.group ) {
 			this.joeUmbrella = new Mesh( umbrellaGeometry(), createPropMaterial( 'joeStormUmbrella' ) );
 			this.joeUmbrella.castShadow = true;
-			this.joeUmbrella.position.set( 0.22, 0.02, - 0.10 );
+			// Keep the storm canopy above head height and its pole beside Joe, clear of the counter view.
+			this.joeUmbrella.position.set( - 0.8, 0.5, - 0.10 );
 			this.joeUmbrella.visible = false;
 			this.joe.group.add( this.joeUmbrella );
 		}

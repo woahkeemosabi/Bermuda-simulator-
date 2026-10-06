@@ -105,9 +105,10 @@ function buildStall() {
 	for ( let i = 0; i < 4; i ++ ) add( corrugated( 0.8, 2.1 ), { ...TIN, matrix: mat4( -1.14 + i * 0.76, 2.4 + ( i === 3 ? 0.03 : 0 ), 0.04, -0.16 + ( i === 3 ? 0.03 : 0 ), jit( 0.02 ), jit( 0.02 ) ) } );
 	add( box( 0.9, 0.22, 0.5 ), { color: 0x2f6f8f, rough: 0.5, matrix: mat4( -0.55, 1.15, 0.85 ) } );
 	add( box( 0.84, 0.03, 0.44 ), { color: 0xe7eef0, rough: 0.15, matrix: mat4( -0.55, 1.255, 0.85 ) } );
-	add( rod( V( 0.6, 2.25, 0.62 ), V( 0.6, 1.75, 0.62 ), 0.006, 4 ), { color: 0x555a5c, rough: 0.4, metal: 1 } );
-	add( cylinder( 0.1, 0.1, 0.05, 18 ), { color: 0xc9c2b0, rough: 0.5, metal: 0.4, pattern: PAT.rusty, matrix: mat4( 0.6, 1.66, 0.62, Math.PI / 2, 0, 0 ) } );
-	add( cylinder( 0.14, 0.11, 0.05, 16 ), { color: 0xa9b0b3, rough: 0.35, metal: 1, matrix: mat4( 0.6, 1.45, 0.62 ) } );
+	// Hang the scale by the right post, above Joe's face line from the dock approach.
+	add( rod( V( 1.05, 2.25, 0.62 ), V( 1.05, 2.07, 0.62 ), 0.006, 4 ), { color: 0x555a5c, rough: 0.4, metal: 1 } );
+	add( cylinder( 0.1, 0.1, 0.05, 18 ), { color: 0xc9c2b0, rough: 0.5, metal: 0.4, pattern: PAT.rusty, matrix: mat4( 1.05, 1.98, 0.62, Math.PI / 2, 0, 0 ) } );
+	add( cylinder( 0.14, 0.11, 0.05, 16 ), { color: 0xa9b0b3, rough: 0.35, metal: 1, matrix: mat4( 1.05, 1.77, 0.62 ) } );
 	for ( let i = 0; i < 5; i ++ ) add( sphere( 0.06, 10, 8 ), { color: [ 0xe2552a, 0xf2c230, 0xe8e2d0, 0x2f8f6f, 0xe2552a ][ i ], rough: 0.5, matrix: mat4( -1.1 + i * 0.5, 2.05 + jit( 0.1 ), 0.95 ) } );
 	return mergePrepared( P );
 }

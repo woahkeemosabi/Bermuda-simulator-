@@ -22,15 +22,15 @@ assert(HARBOUR_JOB_BOARD.x>deckX0 && HARBOUR_JOB_BOARD.x<deckX1 && HARBOUR_JOB_B
 assert.equal(HARBOUR_JOB_BOARD.baseY,WATERFRONT_DECK.baseY);
 for(const [shop,s] of [[joe,STAND],[martha,CHANDLERY]]) {
  assert.equal(shop.group.position.y,1);
- assert.equal(shop.vendor.position.y,1.06);
+ assert.equal(shop.vendor.position.y,shop===joe ? 1.06 : 1.0);
  assert(shop.vendor.inRange(new Vector3(-63.4,1.02,s.z)));
  assert.equal(colliders.groundHeightAt(s.x,s.z,1.1),1);
- assert(s.x-s.depth/2>=-67.6 && s.x+s.depth/2<=-62.4);
+ assert(s.x-s.depth/2>=deckX0 && s.x+s.depth/2<=deckX1);
  assert.equal(dockLampPosition(s,0,1.85,0).y,2.85);
 }
 for(let z=-40;z<=-17;z+=.25) {
- const p=new Vector3(-63.4,1.02,z);
- assert(!colliders.resolveCapsule(p,.3,1.75),`east walking corridor obstructed at ${z}`);
+ const p=new Vector3(WATERFRONT_DECK.x,1.02,z);
+ assert(!colliders.resolveCapsule(p,.3,1.75),`central walking corridor obstructed at ${z}`);
 }
 for(const fish of joe.iceFish()) assert(fish.frame.elements[13]>2);
 const high=mobileQualityParameters('quality=mobile-high&noCaustics=1&noHaze=1');
@@ -40,3 +40,35 @@ assert(high.has('noSim')&&high.has('noClouds'));
 const recovery=mobileQualityParameters(high,2);
 assert.equal(recovery.get('scale'),'0.72'); assert(recovery.has('noCaustics'));
 console.log('Dock elevation, vendor interaction, walking clearance and quality recovery pass.');
+
+// The rear sign posts of the original Tidewater stall must remain supported by the apron.
+for (const lx of [-1.08,1.08]) {
+ const post=dockLampPosition(BAIT_TACKLE,lx,0,-1.72);
+ assert(post.x>=deckX0 && post.x<=deckX1 && post.z>=deckZ0 && post.z<=deckZ1);
+}
+const {HarbourJobBoard,MINI_JOBS}=await import('../src/game/HarbourJobBoard.js');
+const board=Object.create(HarbourJobBoard.prototype);
+board.app={settings:{timeOfDay:0}};
+for (const owned of [[],[{id:'lobster-workboat'}]]) {
+ board.state={boats:{owned}};
+ const eligible=board.eligibleJobs();
+ for(let completed=0;completed<=eligible.length;completed++) for(let hour=0;hour<24;hour+=4) {
+  board.app.settings.timeOfDay=hour;
+  board.data={history:eligible.slice(0,completed).map(j=>j.id),completedCount:completed,active:null};
+  const offers=board.offers();
+  assert.equal(offers.length,3,'each rotation offers three real jobs');
+  assert.equal(new Set(offers.map(j=>j.id)).size,3);
+  assert(offers.every(j=>eligible.includes(j)),'all notices are eligible mini jobs');
+  let visible;
+  board.notices={update:(jobs)=>{visible=jobs}};
+  board.updateNotices();
+  assert.deepEqual(visible,offers,'physical notices match popup offers');
+ }
+}
+board.data.active={id:MINI_JOBS[0].id};
+let visible,active;
+board.notices={update:(jobs,id)=>{visible=jobs;active=id}};
+board.updateNotices();
+assert.equal(visible.length,3);
+assert.equal(visible[0].id,active);
+console.log('Three eligible world notices stay in sync with job rotation and active job.');

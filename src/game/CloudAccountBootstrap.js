@@ -13,7 +13,6 @@ import { DynamicIslandEvents } from './DynamicIslandEvents.js';
 import { IslandMissionSystem } from './IslandMissionSystem.js';
 import { SideQuestSystem } from './SideQuestSystem.js';
 import { HarbourJobBoard } from './HarbourJobBoard.js';
-import { MarthaShopInterior } from './MarthaShopInterior.js';
 import { BoatOwnership } from './BoatOwnership.js';
 import { BoatUpgradeVisuals } from './BoatUpgradeVisuals.js';
 import { CharacterMotionStability } from '../world/CharacterMotionStability.js';
@@ -45,12 +44,6 @@ if ( typeof window !== 'undefined' ) {
 				if ( ! app.relationshipSystem ) app.relationshipSystem = new RelationshipSystem( app );
 			} catch ( error ) {
 				console.warn( 'relationship progression unavailable; mission state remains intact', error );
-			}
-
-			try {
-				if ( ! app.marthaShop ) app.marthaShop = new MarthaShopInterior( app );
-			} catch ( error ) {
-				console.warn( 'Martha shop interior unavailable; vendor menu remains usable', error );
 			}
 
 			try {

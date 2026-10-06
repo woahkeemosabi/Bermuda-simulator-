@@ -2,6 +2,7 @@ import { Group, Mesh } from '../engine/index.js';
 import { prepare, mergePrepared, box, cylinder, mat4 } from '../world/boat/GeoKit.js';
 import { createPropMaterial } from './GameMaterials.js';
 import { HARBOUR_JOB_BOARD } from '../world/bermuda/HarbourLayout.js';
+import { HarbourNotices } from './HarbourNotices.js';
 
 const GROUPS = Object.freeze( {
 	bait: new Set( [ 'silverside', 'mullet', 'needlefish' ] ),
@@ -102,6 +103,10 @@ export class HarbourJobBoard {
 		app.scene.add( this.waypoint );
 
 		this.placeBoard();
+		if ( typeof document !== 'undefined' ) {
+			this.notices = new HarbourNotices( this.board, app.localLights );
+			this.updateNotices();
+		}
 		this.mountUI();
 		this.patchEconomy();
 		const realUpdate = this.player.update.bind( this.player );
@@ -151,11 +156,17 @@ export class HarbourJobBoard {
 			const job = source[ ( start + i * 5 ) % source.length ];
 			if ( ! out.some( ( x ) => x.id === job.id ) ) out.push( job );
 		}
+		// A pool of ten cycles through only two entries at stride five. Fill from that same pool.
+		for ( let i = 0; i < source.length && out.length < 3; i ++ ) {
+			const job = source[ ( start + i ) % source.length ];
+			if ( ! out.some( ( x ) => x.id === job.id ) ) out.push( job );
+		}
 		return out;
 	}
 
 	openBoard() {
 		if ( ! this.overlay ) return;
+		this.updateNotices();
 		const card = this.overlay.querySelector( '#bm-job-card' );
 		card.innerHTML = '';
 		const close = document.createElement( 'button' );
@@ -184,6 +195,14 @@ export class HarbourJobBoard {
 
 	job( id ) { return MINI_JOBS.find( ( j ) => j.id === id ) || null; }
 	progress() { return this.data.active?.progress || {}; }
+
+	updateNotices() {
+		if ( ! this.notices ) return;
+		const active = this.job( this.data.active?.id );
+		const offers = this.offers();
+		const jobs = active ? [ active, ...offers.filter( ( j ) => j.id !== active.id ) ].slice( 0, 3 ) : offers;
+		this.notices.update( jobs, active?.id );
+	}
 
 	accept( id ) {
 		if ( this.data.active ) return false;
@@ -334,6 +353,7 @@ export class HarbourJobBoard {
 	}
 
 	update() {
+		this.updateNotices();
 		this.updateHUD();
 		this.waypoint.visible = false;
 		const active = this.data.active, job = active && this.job( active.id );
