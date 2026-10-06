@@ -2,6 +2,7 @@ import {
 	BoxGeometry, Color, CylinderGeometry, Group, Mesh, SphereGeometry, TorusGeometry, Vector3,
 } from '../engine/index.js';
 import { Material } from '../engine/render/Material.js';
+import { BoatModel } from './BoatModel.js';
 
 const _fwd = new Vector3();
 const _eye = new Vector3();
@@ -158,27 +159,28 @@ function makeWalker( root, materials, geometry, x0, z0, range, speed, phase, shi
 	return { ...human, x0, z0, range, speed, phase };
 }
 
-function makeHarbourSkiff( root, materials, geometry, phase, rx, rz, speed, stripe ) {
-	const g = new Group();
+function makeHarbourTrafficBoat( root, materials, geometry, config ) {
+	// Desktop/reference traffic now uses the same complete procedural boat asset as gameplay instead
+	// of the old box-built placeholder skiffs. Three of these are still inexpensive on a capable GPU,
+	// but the result reads as an actual boat from every camera angle.
+	const model = new BoatModel();
+	const g = model.group;
 	g.name = 'BermudaHarbourTrafficBoat';
+	g.scale.setScalar( config.scale ?? 0.78 );
 	root.add( g );
 
-	mesh( g, geometry.box, materials.boatHull, [ 0, 0.12, 0 ], [ 1.55, 0.34, 4.6 ], [ 0.03, 0, 0 ] );
-	mesh( g, geometry.box, stripe, [ 0, 0.32, 0.18 ], [ 1.62, 0.12, 3.9 ] );
-	mesh( g, geometry.box, materials.boatWhite, [ 0, 0.54, -0.10 ], [ 1.18, 0.12, 2.55 ] );
-	mesh( g, geometry.box, materials.console, [ 0, 1.03, 0.35 ], [ 0.82, 0.82, 0.58 ], [ -0.06, 0, 0 ] );
-	mesh( g, geometry.box, materials.glass, [ 0, 1.48, 0.54 ], [ 0.92, 0.32, 0.08 ], [ -0.12, 0, 0 ] );
-	mesh( g, geometry.box, materials.dark, [ 0, 0.72, -1.18 ], [ 1.04, 0.40, 0.62 ] );
-	mesh( g, geometry.box, materials.dark, [ 0, 0.30, -2.48 ], [ 0.52, 0.66, 0.34 ], [ 0.05, 0, 0 ] );
+	model.setThrottle( 0.30 );
+	model.setPropellerRPM( 820 );
 
+	// Lightweight wake cards remain attached to the visual boat. They do not participate in physics.
 	const wake = new Group();
-	wake.position.set( 0, 0.02, -2.7 );
+	wake.position.set( 0, 0.02, -4.0 );
 	g.add( wake );
-	const l = mesh( wake, geometry.box, materials.wake, [ -0.72, 0, -2.0 ], [ 0.18, 0.025, 4.8 ], [ 0, 0.22, 0 ] );
-	const r = mesh( wake, geometry.box, materials.wake, [ 0.72, 0, -2.0 ], [ 0.18, 0.025, 4.8 ], [ 0, -0.22, 0 ] );
+	const l = mesh( wake, geometry.box, materials.wake, [ -0.82, 0, -2.4 ], [ 0.16, 0.025, 5.4 ], [ 0, 0.18, 0 ] );
+	const r = mesh( wake, geometry.box, materials.wake, [ 0.82, 0, -2.4 ], [ 0.16, 0.025, 5.4 ], [ 0, -0.18, 0 ] );
 	l.castShadow = r.castShadow = false;
 
-	return { group: g, phase, rx, rz, speed, wake };
+	return { ...config, group: g, model, wake };
 }
 
 function addDynamicLight( app, object, localPosition, color, range, intensityFn, localDir = null ) {
@@ -343,10 +345,12 @@ export function installReferenceFinalPass( app ) {
 		makeWalker( root, materials, geometry, -30, -56.0, 4.8, 0.56, 3.2, materials.shirt ),
 	];
 
+	// Keep all ambient marine traffic well outside the working dock / starter-boat berth.
+	// The previous ellipse swept too close to the harbour apron and could visually intersect it.
 	const boats = [
-		makeHarbourSkiff( root, materials, geometry, 0.3, 38, 24, 0.060, materials.boatTeal ),
-		makeHarbourSkiff( root, materials, geometry, 2.5, 50, 34, 0.043, materials.boatBlue ),
-		makeHarbourSkiff( root, materials, geometry, 4.6, 61, 43, 0.034, materials.boatCoral ),
+		makeHarbourTrafficBoat( root, materials, geometry, { phase: 0.3, cx: -31, cz: 44, rx: 26, rz: 17, speed: 0.050, scale: 0.76 } ),
+		makeHarbourTrafficBoat( root, materials, geometry, { phase: 2.5, cx: -18, cz: 61, rx: 40, rz: 23, speed: 0.039, scale: 0.80 } ),
+		makeHarbourTrafficBoat( root, materials, geometry, { phase: 4.6, cx: -45, cz: 78, rx: 49, rz: 28, speed: 0.032, scale: 0.84 } ),
 	];
 
 	for ( const b of boats ) addDynamicLight(
@@ -376,18 +380,18 @@ export function installReferenceFinalPass( app ) {
 			animateHuman( w, 1.6, t + w.phase, false );
 		}
 
-		const harbourX = -64, harbourZ = 18;
 		for ( let i = 0; i < boats.length; i ++ ) {
 			const b = boats[ i ];
 			const a = t * b.speed + b.phase;
-			const x = harbourX + Math.cos( a ) * b.rx;
-			const z = harbourZ + Math.sin( a ) * b.rz;
+			const x = b.cx + Math.cos( a ) * b.rx;
+			const z = b.cz + Math.sin( a ) * b.rz;
 			const dx = - Math.sin( a ) * b.rx;
 			const dz = Math.cos( a ) * b.rz;
-			b.group.position.set( x, 0.10 + Math.sin( t * 1.65 + i ) * 0.045, z );
+			b.group.position.set( x, 0.08 + Math.sin( t * 1.45 + i ) * 0.035, z );
 			b.group.rotation.y = Math.atan2( dx, dz );
-			b.group.rotation.z = Math.sin( t * 1.45 + i * 0.7 ) * 0.018;
-			b.group.rotation.x = Math.sin( t * 1.25 + i * 1.1 ) * 0.012;
+			b.group.rotation.z = Math.sin( t * 1.20 + i * 0.7 ) * 0.014;
+			b.group.rotation.x = Math.sin( t * 1.05 + i * 1.1 ) * 0.010;
+			b.model?.update( dt );
 		}
 
 		relicFX?.update( dt, t );
