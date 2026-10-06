@@ -20,7 +20,10 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
 const forceDesktop = initialParams.has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
-const mobileSafeLevel = mobileFastStart ? Math.max( 0, Number( initialParams.get( 'gpuSafe' ) || 0 ) ) : 0;
+const requestedMobileHigh = initialParams.get( 'quality' ) === 'mobile-high';
+const mobileSafeLevel = mobileFastStart
+	? Math.max( 0, Number( initialParams.get( 'gpuSafe' ) ?? ( requestedMobileHigh ? 0 : 2 ) ) )
+	: 0;
 
 if ( mobileFastStart ) {
 
@@ -71,7 +74,7 @@ function applyMobileMemoryProfile( app ) {
 	// The 3-cascade 2048² depth array alone is expensive on iOS. Keep the lazy allocation tiny for
 	// the first playable frame; 512² shadows are still useful on a phone and leave substantially more
 	// headroom for the water/post render targets Safari allocates when Explore starts the frame loop.
-	if ( app.shadows && app.shadows.texture && ! app.shadows.texture.gpu ) {
+	if ( app.shadows && app.shadows.enabled && app.shadows.texture && ! app.shadows.texture.gpu ) {
 
 		app.shadows.size = 512;
 		app.shadows.texture.width = 512;
@@ -130,8 +133,25 @@ function applyMobileMemoryProfile( app ) {
 
 	}
 
+	// Normal iPhone boot is safe-level 2. Keep the expensive first-use render passes out of the
+	// first playable frame; desktop and explicit mobile-high are unaffected.
+	if ( mobileSafeLevel >= 2 ) {
+
+		if ( app.shadows ) app.shadows.enabled = false;
+		if ( app.refraction ) app.refraction.enabled = false;
+		if ( app.sceneRenderer ) app.sceneRenderer.onBeforeWater = null;
+		if ( app.post ) {
+
+			app.post.aaMode = 'fxaa';
+			if ( app.post.params?.aoStrength ) app.post.params.aoStrength.value = 0;
+			if ( app.post.params?.bloom ) app.post.params.bloom.value = 0;
+
+		}
+
+	}
+
 	app.__bermudaMobileReady = true;
-	window.__bermudaMobileMemoryProfile = 'core-gameplay-v1';
+	window.__bermudaMobileMemoryProfile = mobileSafeLevel >= 2 ? 'core-gameplay-safe-v3' : 'core-gameplay-v1';
 
 }
 
@@ -189,6 +209,14 @@ function installMobileGPUWatchdog() {
 		if ( recovering ) return;
 		recovering = true;
 		window.__bermudaGPUStall = reason;
+		// Safe level 2 is already the lowest normal iPhone profile. Reloading the page here only creates
+		// the visible Explore -> reset loop without reducing GPU work any further.
+		if ( mobileSafeLevel >= 2 ) {
+
+			showRecoveryFailure( reason );
+			return;
+
+		}
 		const url = mobileRecoveryURL( reason );
 		if ( url ) {
 
