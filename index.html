@@ -131,8 +131,12 @@
 			});
 		}
 		window.addEventListener('bermuda-game-ready', startOfflineInstall, { once: true });
-		// Safety fallback: if startup takes unusually long, do not begin the cache install until two minutes.
-		setTimeout(startOfflineInstall, 120000);
+		// Never compete with the critical first boot. A previous fallback started the offline cache at
+		// two minutes even when the game was still loading, which could add network/storage pressure to
+		// an already constrained iPhone. Only retry after the game has actually reached Explore.
+		setTimeout(() => {
+			if (window.__bermudaGameReady) startOfflineInstall();
+		}, 180000);
 
 		window.addEventListener('offline', () => {
 			if (window.__bermudaOffline?.ready) setOfflineText('OFFLINE MODE ✓', true);
