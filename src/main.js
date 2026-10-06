@@ -15,6 +15,20 @@ import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
 // iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
 // Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
 // Add ?desktop to the URL to force the full desktop path on a mobile device for diagnostics.
+// Automatic GPU-recovery URLs were too persistent on iOS: Safari could reopen
+// ?gpuSafe=2&gpuRecovery=2&scale=0.72 and trap the game in a degraded reload/crash loop.
+// Strip only parameters that came from that legacy recovery mechanism before selecting quality.
+{
+	const clean = new URL( location.href );
+	const hadLegacyRecovery = clean.searchParams.has( 'gpuRecovery' ) || clean.searchParams.has( 'recoveryReason' );
+	if ( hadLegacyRecovery ) {
+
+		for ( const key of [ 'gpuSafe', 'gpuRecovery', 'recoveryReason', 'scale' ] ) clean.searchParams.delete( key );
+		history.replaceState( null, '', clean.href );
+		try { sessionStorage.removeItem( 'bermudaLastGPUError' ); } catch ( _ ) {}
+
+	}
+}
 const initialParams = new URLSearchParams( location.search );
 const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
@@ -134,23 +148,11 @@ function applyMobileMemoryProfile( app ) {
 
 }
 
-function mobileRecoveryURL( reason, prefix = 'gpu-recovery' ) {
+function mobileRecoveryURL() {
 
-	if ( ! mobileFastStart ) return null;
-	const url = new URL( location.href );
-	const attempts = Number( url.searchParams.get( 'gpuRecovery' ) || 0 );
-	if ( attempts >= 2 ) return null;
-	const next = Math.min( 2, Math.max( attempts + 1, Number( url.searchParams.get( 'gpuSafe' ) || 0 ) ) );
-	url.searchParams.set( 'gpuSafe', String( next ) );
-	url.searchParams.set( 'gpuRecovery', String( next ) );
-	url.searchParams.set( 'scale', next === 1 ? '0.82' : '0.72' );
-	url.searchParams.set( 'noSim', '1' );
-	url.searchParams.set( 'G', '16' );
-	if ( next >= 2 ) url.searchParams.set( 'noVeg', '1' );
-	// Keep the deployed build identifier across recovery.
-	url.searchParams.set( 'recoveryReason', prefix );
-	try { sessionStorage.setItem( 'bermudaLastGPUError', String( reason || 'unknown' ) ); } catch ( _ ) {}
-	return url;
+	// Kept only as a compatibility shim for diagnostics. Mobile failures must never rewrite the URL
+	// or reload the page automatically; Safari's page process can otherwise repeat-crash indefinitely.
+	return null;
 
 }
 
@@ -159,10 +161,8 @@ function recoverMobileInitGPUError( error ) {
 	if ( ! mobileFastStart ) return false;
 	const message = String( error && ( error.message || error ) || '' );
 	if ( ! /createBuffer|Unable to create buffer|GPUDevice|device lost|destroyed|out of memory|GPU queue/i.test( message ) ) return false;
-	const url = mobileRecoveryURL( message, 'gpu-init-recovery' );
-	if ( ! url ) return false;
-	location.replace( url.href );
-	return true;
+	try { sessionStorage.setItem( 'bermudaLastGPUError', message || 'mobile GPU init error' ); } catch ( _ ) {}
+	return false;
 
 }
 
@@ -188,21 +188,9 @@ function installMobileGPUWatchdog() {
 		if ( recovering ) return;
 		recovering = true;
 		window.__bermudaGPUStall = reason;
-		// Safe level 2 is already the lowest normal iPhone profile. Reloading the page here only creates
-		// the visible Explore -> reset loop without reducing GPU work any further.
-		if ( mobileSafeLevel >= 2 ) {
-
-			showRecoveryFailure( reason );
-			return;
-
-		}
-		const url = mobileRecoveryURL( reason );
-		if ( url ) {
-
-			location.replace( url.href );
-			return;
-
-		}
+		try { sessionStorage.setItem( 'bermudaLastGPUError', String( reason || 'unknown' ) ); } catch ( _ ) {}
+		// Do not reload or mutate the URL. Keep the failure visible in-place so one GPU fault cannot
+		// become a Safari "problem repeatedly occurred" loop.
 		showRecoveryFailure( reason );
 
 	};
