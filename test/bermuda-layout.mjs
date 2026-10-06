@@ -38,7 +38,7 @@ assert.equal(high.get('scale'),'0.80');assert.equal(high.get('G'),'20');
 assert(!high.has('noHaze')&&!high.has('noCaustics'));
 assert(high.has('noSim')&&high.has('noClouds'));
 const recovery=mobileQualityParameters(high,2);
-assert.equal(recovery.get('scale'),'0.68');assert.equal(recovery.get('G'),'18'); assert(recovery.has('noCaustics'));
+assert.equal(recovery.get('scale'),'0.70');assert.equal(recovery.get('outputScale'),'1.00');assert.equal(recovery.get('G'),'14');assert.equal(recovery.get('oceanCascades'),'1'); assert(recovery.has('noCaustics'));
 console.log('Dock elevation, vendor interaction, walking clearance and quality recovery pass.');
 
 // The rear sign posts of the original Tidewater stall must remain supported by the apron.
