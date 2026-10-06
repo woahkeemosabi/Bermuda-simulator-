@@ -1,4 +1,4 @@
-import { startDeferredWaterfront, updateWaterfrontVisibility } from './world/BermudaModels.js';
+import { startDeferredWaterfront, preloadCompleteMobileWaterfront, updateWaterfrontVisibility } from './world/BermudaModels.js';
 import { mobileQualityParameters } from './mobile/QualityProfile.js';
 import './core/BenchSeed.js';
 import { App } from './App.js';
@@ -363,11 +363,15 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	const waterfrontStart = mobileDevice ? 0.78 : 0.90;
 	const waterfrontEnd = mobileDevice ? 0.94 : 0.975;
 	ui.setLoading( waterfrontStart, 'Loading harbour assets…', waterfrontEnd );
-	app.onWaterfrontProgress = ( done, total, id ) => {
-		const ratio = total > 0 ? Math.max( 0, Math.min( 1, done / total ) ) : 0;
-		const p = waterfrontStart + ( waterfrontEnd - waterfrontStart ) * ratio;
-		ui.setLoading( p, id ? `Loading harbour · ${ id }` : 'Harbour assets ready', waterfrontEnd );
-		if ( total > 0 ) ui.setLoadingDetail( done, total );
+	app.onWaterfrontProgress = info => {
+		if ( ! info || typeof info !== 'object' ) return;
+		const tierBase = info.tier === 1 ? 0.78 : info.tier === 2 ? 0.84 : 0.92;
+		const tierSpan = info.tier === 1 ? 0.06 : info.tier === 2 ? 0.08 : 0.06;
+		const ratio = info.total > 0 ? Math.max( 0, Math.min( 1, info.index / info.total ) ) : 0;
+		const p = Math.min( 0.985, tierBase + tierSpan * ratio );
+		const label = info.tier === 1 ? 'Loading harbour' : info.tier === 2 ? 'Building waterfront' : 'Finishing island backdrop';
+		ui.setLoading( p, `${ label } · ${ info.id || '' }`, Math.min( 0.99, tierBase + tierSpan ) );
+		if ( info.total > 0 ) ui.setLoadingDetail( info.index, info.total );
 	};
 	app.onWaterfrontRetry = ( id, attempt, total ) => {
 		ui.setLoading( undefined, `Connection retry ${ attempt }/${ total - 1 } · ${ id }` );
@@ -420,11 +424,12 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	}
 	if ( mobileDevice ) {
 
-		// No heavy harbour GLB decode/upload during live play. Finish the mobile waterfront replacement
-		// tier behind the loader, while the frame loop is still stopped.
-		ui.setLoading( 0.965, 'Finishing harbour scenery…', 0.992 );
-		await startDeferredWaterfront( app, { initialDelay: 0, tierDelay: 0, entryDelay: 180, maxTier: 2 } );
-		window.__bermudaDeferredScenery = 'preloaded-before-explore';
+		// Build every mobile waterfront tier while the frame loop is still stopped. The 161 MB package
+		// is already local at this point, so this stage is decode/place/upload only—no runtime streaming.
+		ui.setLoading( 0.84, 'Building complete mobile environment…', 0.988 );
+		await preloadCompleteMobileWaterfront( app, { entryDelay: 120 } );
+		window.__bermudaDeferredScenery = 'all-mobile-tiers-preloaded-before-explore';
+		window.__bermudaRuntimeStreamingDisabled = true;
 
 	}
 
