@@ -1,6 +1,7 @@
 import { Group, Mesh } from '../engine/index.js';
 import { prepare, mergePrepared, box, cylinder, mat4 } from '../world/boat/GeoKit.js';
 import { createPropMaterial } from './GameMaterials.js';
+import { HARBOUR_JOB_BOARD } from '../world/bermuda/HarbourLayout.js';
 
 const GROUPS = Object.freeze( {
 	bait: new Set( [ 'silverside', 'mullet', 'needlefish' ] ),
@@ -39,8 +40,9 @@ export const MINI_JOBS = Object.freeze( [
 function boardGeometry() {
 	const P = [];
 	const add = ( g, o ) => P.push( prepare( g, o ) );
-	add( box( 1.55, 0.09, 1.05 ), { color: 0x5e4632, rough: 0.86, matrix: mat4( 0, 1.45, 0 ) } );
-	add( box( 1.40, 0.04, 0.90 ), { color: 0xd7c49b, rough: 0.92, matrix: mat4( 0, 1.43, - 0.07 ) } );
+	// Vertical noticeboard panel. The old dimensions made these two slabs horizontal.
+	add( box( 1.55, 1.05, 0.09 ), { color: 0x5e4632, rough: 0.86, matrix: mat4( 0, 1.45, 0 ) } );
+	add( box( 1.40, 0.90, 0.04 ), { color: 0xd7c49b, rough: 0.92, matrix: mat4( 0, 1.43, - 0.07 ) } );
 	add( cylinder( 0.055, 0.055, 1.85, 8 ), { color: 0x4a3829, rough: 0.88, matrix: mat4( - 0.62, 0.92, 0 ) } );
 	add( cylinder( 0.055, 0.055, 1.85, 8 ), { color: 0x4a3829, rough: 0.88, matrix: mat4( 0.62, 0.92, 0 ) } );
 	return mergePrepared( P );
@@ -111,9 +113,8 @@ export class HarbourJobBoard {
 	}
 
 	placeBoard() {
-		const p = this.joe?.position;
-		if ( p ) this.board.position.set( p.x + 2.8, p.y, p.z + 1.6 );
-		else this.board.position.set( - 48, 0, - 52 );
+		this.board.position.set( HARBOUR_JOB_BOARD.x, HARBOUR_JOB_BOARD.baseY, HARBOUR_JOB_BOARD.z );
+		this.board.rotation.set( 0, HARBOUR_JOB_BOARD.yaw, 0 );
 	}
 
 	mountUI() {

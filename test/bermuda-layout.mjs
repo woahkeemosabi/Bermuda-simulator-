@@ -6,7 +6,7 @@ import {Chandlery,CHANDLERY} from '../src/game/Chandlery.js';
 import {Colliders} from '../src/world/Colliders.js';
 import {installBermudaBlockout} from '../src/world/BermudaBlockout.js';
 import {mobileQualityParameters} from '../src/mobile/QualityProfile.js';
-import {dockLampPosition} from '../src/world/bermuda/HarbourLayout.js';
+import {WATERFRONT_DECK,FISH_MARKET,BAIT_TACKLE,HARBOUR_JOB_BOARD,dockLampPosition} from '../src/world/bermuda/HarbourLayout.js';
 // Character download is unrelated to dock-space collision and interaction tests.
 Vendor.prototype.loadCharacter = async () => {};
 const scene=new Scene(), colliders=new Colliders();
@@ -14,6 +14,12 @@ const terrain={heightAt:()=>-4};
 const joe=new FishStand({scene,terrain,colliders});
 const martha=new Chandlery({scene,terrain,colliders});
 installBermudaBlockout({scene,colliders,terrainData:terrain});
+assert.equal(FISH_MARKET.yaw,-Math.PI/2);
+assert.equal(BAIT_TACKLE.yaw,-Math.PI/2);
+const deckX0=WATERFRONT_DECK.x-WATERFRONT_DECK.width/2, deckX1=WATERFRONT_DECK.x+WATERFRONT_DECK.width/2;
+const deckZ0=WATERFRONT_DECK.z-WATERFRONT_DECK.depth/2, deckZ1=WATERFRONT_DECK.z+WATERFRONT_DECK.depth/2;
+assert(HARBOUR_JOB_BOARD.x>deckX0 && HARBOUR_JOB_BOARD.x<deckX1 && HARBOUR_JOB_BOARD.z>deckZ0 && HARBOUR_JOB_BOARD.z<deckZ1);
+assert.equal(HARBOUR_JOB_BOARD.baseY,WATERFRONT_DECK.baseY);
 for(const [shop,s] of [[joe,STAND],[martha,CHANDLERY]]) {
  assert.equal(shop.group.position.y,1);
  assert.equal(shop.vendor.position.y,1.06);

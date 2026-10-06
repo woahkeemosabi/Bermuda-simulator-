@@ -1,6 +1,7 @@
 import { Color, Group, Mesh, Vector3 } from '../engine/index.js';
 import { prepare, mergePrepared, box, cylinder, torus, mat4 } from '../world/boat/GeoKit.js';
 import { createPropMaterial } from './GameMaterials.js';
+import { HARBOUR_JOB_BOARD } from '../world/bermuda/HarbourLayout.js';
 
 const Y = new Vector3( 0, 1, 0 );
 const TMP = new Vector3();
@@ -129,10 +130,8 @@ function patchJobBoard( app ) {
 
 	// The board must be a separate world object, not something that appears to belong to Joe.
 	const place = () => {
-		const joe = jobs.joe?.position;
-		if ( joe ) jobs.board.position.set( joe.x + 5.6, joe.y, joe.z + 3.4 );
-		else jobs.board.position.set( - 62.4, 1.0, - 17.2 );
-		jobs.board.rotation.y = Math.PI * 0.12;
+		jobs.board.position.set( HARBOUR_JOB_BOARD.x, HARBOUR_JOB_BOARD.baseY, HARBOUR_JOB_BOARD.z );
+		jobs.board.rotation.set( 0, HARBOUR_JOB_BOARD.yaw, 0 );
 	};
 	jobs.placeBoard = place;
 	place();
