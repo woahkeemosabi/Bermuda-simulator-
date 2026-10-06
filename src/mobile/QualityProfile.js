@@ -27,9 +27,9 @@ export function mobileQualityParameters(input, safeLevel = 0) {
         p.set('noShadows','1');
         p.set('noRefraction','1');
         p.set('noEnvRefresh','1');
-        p.set('scale','0.60');
-        p.set('outputScale','0.75');
-        p.set('G','16');
+        p.set('scale','0.68');
+        p.set('outputScale','0.82');
+        p.set('G','18');
         p.set('oceanCascades','2');
         p.set('envSize','64');
     }
