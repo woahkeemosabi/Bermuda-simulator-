@@ -233,6 +233,53 @@ function installMobileGPUWatchdog() {
 
 }
 
+function installDesktopQualityGovernor( app ) {
+
+	if ( mobileDevice || ! app || app.qs?.has?.( 'bench' ) || app.qs?.has?.( 'scale' ) ) return;
+
+	const requested = initialParams.get( 'quality' );
+	const lockedUltra = requested === 'ultra' || initialParams.has( 'ultra' );
+	if ( requested === 'performance' ) {
+		app.setRenderScale( 0.70 );
+		window.__bermudaGraphicsProfile = 'performance';
+		return;
+	}
+
+	// A normal shared desktop URL starts at full native internal resolution with the complete
+	// desktop world stack. Capable machines therefore see the maximum-quality presentation
+	// immediately; only sustained poor frame rate can trigger a local render-scale fallback.
+	app.setRenderScale( 1 );
+	window.__bermudaGraphicsProfile = lockedUltra ? 'ultra-locked' : 'ultra';
+	if ( lockedUltra ) return;
+
+	let low = 0, critical = 0, healthy = 0;
+	const timer = setInterval( () => {
+		if ( document.visibilityState !== 'visible' || ! Number.isFinite( app.fps ) ) return;
+		const fps = app.fps;
+
+		critical = fps < 18 ? critical + 1 : 0;
+		low = fps < 28 ? low + 1 : 0;
+		healthy = fps > 52 ? healthy + 1 : 0;
+
+		if ( critical >= 3 && app.settings.renderScale > 0.65 ) {
+			app.setRenderScale( 0.65 );
+			window.__bermudaGraphicsProfile = 'adaptive-low';
+			critical = low = healthy = 0;
+		} else if ( low >= 5 && app.settings.renderScale > 0.80 ) {
+			app.setRenderScale( 0.80 );
+			window.__bermudaGraphicsProfile = 'adaptive-balanced';
+			critical = low = healthy = 0;
+		} else if ( healthy >= 10 && app.settings.renderScale < 1 ) {
+			app.setRenderScale( Math.min( 1, app.settings.renderScale + 0.15 ) );
+			window.__bermudaGraphicsProfile = app.settings.renderScale >= 0.99 ? 'ultra' : 'adaptive-balanced';
+			critical = low = healthy = 0;
+		}
+	}, 1000 );
+
+	window.addEventListener( 'pagehide', () => clearInterval( timer ), { once: true } );
+
+}
+
 function installMobileAudioResume( app ) {
 
 	if ( ! app.audio ) return;
@@ -360,6 +407,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	} else {
 
 		app.start();
+		installDesktopQualityGovernor( app );
             startDeferredWaterfront(app);
 
 	}
