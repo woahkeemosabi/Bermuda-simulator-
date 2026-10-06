@@ -148,6 +148,54 @@ function applyMobileMemoryProfile( app ) {
 
 		}
 
+		// iOS diving stability: the desktop underwater path adds a half-resolution ray-marched
+		// torch/caustic shaft target and pass. Keep the normal underwater colour/attenuation and the
+		// flashlight's surface illumination, but do not allocate or execute the volumetric march.
+		if ( app.underwater ) {
+
+			app.underwater.renderShafts = null;
+			app.underwater.setSize = () => {};
+			if ( app.underwater.uniforms?.fields?.hasShafts ) app.underwater.uniforms.fields.hasShafts.value = 0;
+			if ( app.underwater.torchBeam ) app.underwater.torchBeam.value = 0;
+
+		}
+
+		// At night the desktop path shades against every nearby village/boat lamp. On phone, preserve the
+		// diver flashlight but leave static lamp appearance to their emissive materials.
+		if ( app.localLights?.sources ) app.localLights.sources.length = 0;
+
+		// Preserve the first-person spear itself but drop the pooled transparent bubble meshes on the
+		// constrained path. Transparent underwater particles are disproportionately expensive on iOS.
+		if ( app.game?.spear ) {
+
+			app.game.spear.burst = () => {};
+			if ( app.game.spear.fxRoot ) app.game.spear.fxRoot.visible = false;
+
+		}
+
+		// Ocean displacement remains live, but mobile does not need to run the multi-pass FFT at display
+		// refresh rate. Above water update every other frame; while actively diving update every third
+		// frame and advance by the accumulated dt so wave timing remains correct.
+		if ( app.fft?.update && ! app.fft.__bermudaMobileThrottled ) {
+
+			const fullFFTUpdate = app.fft.update.bind( app.fft );
+			let fftAccum = 0, fftFrame = 0;
+			app.fft.update = ( dt ) => {
+
+				fftAccum += dt;
+				fftFrame ++;
+				const diving = app.player?.mode === 'swim' && ( app.player?.diveDepth || 0 ) > 0.18;
+				const cadence = diving ? 3 : 2;
+				if ( fftFrame % cadence !== 0 ) return;
+				const step = Math.min( fftAccum, 0.12 );
+				fftAccum = 0;
+				fullFFTUpdate( step );
+
+			};
+			app.fft.__bermudaMobileThrottled = true;
+
+		}
+
 	}
 
 	app.__bermudaMobileReady = true;
@@ -454,7 +502,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	ui.setLoading( 0.99, 'Final checks…', 0.999 );
 	ui.setLoading( 1, 'Ready' );
 	await ui.hideLoader();
-	window.dispatchEvent( new Event( 'bermuda-game-ready' ) );
+	setTimeout( () => window.dispatchEvent( new Event( 'bermuda-game-ready' ) ), mobileDevice ? 60000 : 5000 );
 	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
 	if ( app.qs.has( 'bench' ) ) {
 
