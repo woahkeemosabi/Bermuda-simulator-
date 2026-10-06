@@ -1,0 +1,52 @@
+name: Alpha stability verify
+
+on:
+  push:
+    branches: [bermuda-alpha-stability-pass]
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - 'index.html'
+      - 'scripts/**'
+      - 'package*.json'
+      - '.github/workflows/alpha-stability-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install software WebGPU driver
+        run: sudo apt-get update -qq && sudo apt-get install -y mesa-vulkan-drivers libvulkan1
+      - run: npm ci
+      - name: Game tests
+        id: tests
+        continue-on-error: true
+        run: |
+          ICD="$(find /usr/share/vulkan/icd.d -maxdepth 1 -type f -name '*lvp*.json' -print -quit 2>/dev/null || true)"
+          if [ -z "$ICD" ]; then ICD="$(find /usr/share/vulkan/icd.d -maxdepth 1 -type f -name '*.json' -print -quit 2>/dev/null || true)"; fi
+          if [ -n "$ICD" ]; then
+            echo "Using Vulkan ICD: $ICD"
+            export VK_ICD_FILENAMES="$ICD"
+          else
+            echo "No Vulkan ICD file found; engine smoke may be unavailable on this runner."
+          fi
+          npm test
+        env:
+          XDG_RUNTIME_DIR: /tmp
+      - name: Production build and offline bundle
+        run: npm run build
+      - name: Preserve test failure
+        if: steps.tests.outcome != 'success'
+        run: |
+          echo "Game tests failed; production build result above is still recorded, but this branch remains blocked."
+          exit 1
