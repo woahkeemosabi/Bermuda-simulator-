@@ -20,10 +20,7 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
 const forceDesktop = initialParams.has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
-const requestedMobileHigh = initialParams.get( 'quality' ) === 'mobile-high';
-const mobileSafeLevel = mobileFastStart
-	? Math.max( 0, Number( initialParams.get( 'gpuSafe' ) ?? ( requestedMobileHigh ? 0 : 2 ) ) )
-	: 0;
+const mobileSafeLevel = mobileFastStart ? Math.max( 0, Number( initialParams.get( 'gpuSafe' ) || 0 ) ) : 0;
 
 if ( mobileFastStart ) {
 
@@ -71,15 +68,14 @@ function applyMobileMemoryProfile( app ) {
 
 	if ( ! mobileFastStart || ! app ) return;
 
-	// The 3-cascade 2048² depth array alone is expensive on iOS. Keep the lazy allocation tiny for
-	// the first playable frame; 512² shadows are still useful on a phone and leave substantially more
-	// headroom for the water/post render targets Safari allocates when Explore starts the frame loop.
-	if ( app.shadows && app.shadows.enabled && app.shadows.texture && ! app.shadows.texture.gpu ) {
+	// The 3-cascade 2048² depth array alone is about 48 MB. Resize the lazy texture before its first
+	// GPU allocation; 1024² keeps useful shadows while cutting that allocation to one quarter.
+	if ( app.shadows && app.shadows.texture && ! app.shadows.texture.gpu ) {
 
-		app.shadows.size = 512;
-		app.shadows.texture.width = 512;
-		app.shadows.texture.height = 512;
-		if ( ShadowUniforms && ShadowUniforms.fields && ShadowUniforms.fields.mapSize ) ShadowUniforms.fields.mapSize.value = 512;
+		app.shadows.size = 1024;
+		app.shadows.texture.width = 1024;
+		app.shadows.texture.height = 1024;
+		if ( ShadowUniforms && ShadowUniforms.fields && ShadowUniforms.fields.mapSize ) ShadowUniforms.fields.mapSize.value = 1024;
 
 	}
 
@@ -133,93 +129,8 @@ function applyMobileMemoryProfile( app ) {
 
 	}
 
-	// Normal iPhone boot is safe-level 2. Keep the expensive first-use render passes out of the
-	// first playable frame; desktop and explicit mobile-high are unaffected.
-	if ( mobileSafeLevel >= 2 ) {
-
-		if ( app.shadows ) app.shadows.enabled = false;
-		if ( app.refraction ) app.refraction.enabled = false;
-		if ( app.sceneRenderer ) app.sceneRenderer.onBeforeWater = null;
-		if ( app.post ) {
-
-			app.post.mobileLite = true;
-			app.post.aaMode = 'fxaa';
-			if ( app.post.params?.aoStrength ) app.post.params.aoStrength.value = 0;
-			if ( app.post.params?.bloom ) app.post.params.bloom.value = 0;
-			if ( app.post.params?.sharpen ) app.post.params.sharpen.value = 0.72;
-			if ( app.post.params?.saturation ) app.post.params.saturation.value = 1.02;
-			if ( app.post.params?.contrast ) app.post.params.contrast.value = 1.07;
-			if ( app.post.params?.warmth ) app.post.params.warmth.value = 0.045;
-			if ( app.post.params?.grain ) app.post.params.grain.value = 0.002;
-			if ( app.post.params?.vignette ) app.post.params.vignette.value = 0.18;
-			if ( app.post.autoExposure?.enabled ) app.post.autoExposure.enabled.value = 0;
-			if ( app.post.motionBlur?.shutter ) app.post.motionBlur.shutter.value = 0;
-
-		}
-
-		// iOS diving stability: the desktop underwater path adds a half-resolution ray-marched
-		// torch/caustic shaft target and pass. Keep the normal underwater colour/attenuation and the
-		// flashlight's surface illumination, but do not allocate or execute the volumetric march.
-		if ( app.underwater ) {
-
-			app.underwater.renderShafts = null;
-			app.underwater.setSize = () => {};
-			if ( app.underwater.uniforms?.fields?.hasShafts ) app.underwater.uniforms.fields.hasShafts.value = 0;
-			if ( app.underwater.torchBeam ) app.underwater.torchBeam.value = 0;
-			if ( app.underwater.band ) app.underwater.band.value = 5;
-			const updateUnderwaterCamera = app.underwater.updateCamera.bind( app.underwater );
-			app.underwater.updateCamera = camera => {
-
-				updateUnderwaterCamera( camera );
-				const waterH = Number.isFinite( app.cameraWaterHeight ) ? app.cameraWaterHeight : 0;
-				// Above-water mobile frames must never inherit an erroneous underwater medium classification.
-				// Re-enable the full attenuation only once the lens is actually at the surface.
-				if ( app.underwater.enabled ) app.underwater.enabled.value = camera.position.y < waterH + 0.42 ? 1 : 0;
-
-			};
-
-		}
-
-		// At night the desktop path shades against every nearby village/boat lamp. On phone, preserve the
-		// diver flashlight but leave static lamp appearance to their emissive materials.
-		if ( app.localLights?.sources ) app.localLights.sources.length = 0;
-
-		// Preserve the first-person spear itself but drop the pooled transparent bubble meshes on the
-		// constrained path. Transparent underwater particles are disproportionately expensive on iOS.
-		if ( app.game?.spear ) {
-
-			app.game.spear.burst = () => {};
-			if ( app.game.spear.fxRoot ) app.game.spear.fxRoot.visible = false;
-
-		}
-
-		// Ocean displacement remains live, but mobile does not need to run the multi-pass FFT at display
-		// refresh rate. Above water update every other frame; while actively diving update every third
-		// frame and advance by the accumulated dt so wave timing remains correct.
-		if ( app.fft?.update && ! app.fft.__bermudaMobileThrottled ) {
-
-			const fullFFTUpdate = app.fft.update.bind( app.fft );
-			let fftAccum = 0, fftFrame = 0;
-			app.fft.update = ( dt ) => {
-
-				fftAccum += dt;
-				fftFrame ++;
-				const diving = app.player?.mode === 'swim' && ( app.player?.diveDepth || 0 ) > 0.18;
-				const cadence = diving ? 3 : 2;
-				if ( fftFrame % cadence !== 0 ) return;
-				const step = Math.min( fftAccum, 0.12 );
-				fftAccum = 0;
-				fullFFTUpdate( step );
-
-			};
-			app.fft.__bermudaMobileThrottled = true;
-
-		}
-
-	}
-
 	app.__bermudaMobileReady = true;
-	window.__bermudaMobileMemoryProfile = mobileSafeLevel >= 2 ? 'core-gameplay-safe-v3' : 'core-gameplay-v1';
+	window.__bermudaMobileMemoryProfile = 'core-gameplay-v1';
 
 }
 
@@ -499,7 +410,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 		// A little extra RCAS sharpening compensates for mobile render scaling without increasing the
 		// internal render resolution enough to recreate the WebGPU device-loss problem.
-		if ( app.post && app.post.params && app.post.params.sharpen ) app.post.params.sharpen.value = mobileSafeLevel ? 0.62 : 0.54;
+		if ( app.post && app.post.params && app.post.params.sharpen ) app.post.params.sharpen.value = 0.54;
 
 		// Keep the gameplay logic active, but hide the desktop prompt/widget layer on phones.
 		// Mobile interaction buttons send the same underlying E/R/C/V/Space/mouse inputs directly.
