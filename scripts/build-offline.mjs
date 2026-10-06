@@ -117,6 +117,7 @@ const CORE_BYTES = ${coreBytes};
 const FULL_BYTES = ${fullBytes};
 const FULL_FILE_COUNT = ${mobileFullFiles.length};
 const FULL_MANIFEST_KEY = '__bermuda_full_manifest_v1__';
+const LEGACY_READY_KEY = '__bermuda_full_ready__';
 
 const scoped = p => new URL(p, self.registration.scope).href;
 
@@ -199,9 +200,15 @@ async function cacheMatch(request) {
 async function fullStatus() {
   const cache = await caches.open(FULL_CACHE);
   const manifest = await readFullManifest(cache);
-  if (manifest?.version === VERSION) {
+  const legacyReady = !!(await cache.match(scoped(LEGACY_READY_KEY)));
+  const playable = !!manifest || legacyReady;
+  const current = manifest?.version === VERSION;
+
+  if (current) {
     return {
       ready: true,
+      playable: true,
+      updateNeeded: false,
       completedBytes: FULL_BYTES,
       completedFiles: FULL_FILE_COUNT,
       fullBytes: FULL_BYTES,
@@ -219,8 +226,8 @@ async function fullStatus() {
     const cached = await cache.match(url, { ignoreSearch: true });
     if (!cached) continue;
 
-    // On the first migration from the old versioned cache we do not have per-file hashes yet.
-    // Those public assets are reused once; subsequent releases compare hashes exactly.
+    // A previous completed package remains playable even when a newer release exists. Exact hash
+    // comparison is only used to calculate what a future delta update needs.
     const reusable = !oldHashes || oldHashes[file] === FULL_EXTRA_HASHES[file];
     if (!reusable) continue;
     completedBytes += FULL_EXTRA_SIZES[file] || 0;
@@ -229,6 +236,8 @@ async function fullStatus() {
 
   return {
     ready: false,
+    playable,
+    updateNeeded: true,
     completedBytes,
     completedFiles,
     fullBytes: FULL_BYTES,
