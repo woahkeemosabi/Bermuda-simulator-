@@ -147,31 +147,69 @@
 			return registration.active || navigator.serviceWorker.controller;
 		};
 
-		const startOfflineInstall = async () => {
-			if (!('serviceWorker' in navigator) || location.protocol !== 'https:' || window.__bermudaOfflineInstallStarted) return;
+		const startOfflineInstall = async ({ blockUntilReady = false } = {}) => {
+			if (!('serviceWorker' in navigator) || location.protocol !== 'https:') return false;
+			if (window.__bermudaOfflineInstallPromise) return window.__bermudaOfflineInstallPromise;
+
 			window.__bermudaOfflineInstallStarted = true;
-			setOfflineText('Preparing full offline game…');
-			try {
-				const registration = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-				window.__bermudaPWARegistration = registration;
-				try { await registration.update(); } catch (_) {}
-				const worker = await waitForActiveWorker(registration);
-				let status = await queryOfflineStatus(registration);
-				if (status?.fullBytes) {
-					window.__bermudaOffline = { ...status, supported: true };
-					showFullProgress(status);
+			window.__bermudaOfflineInstallPromise = (async () => {
+				setOfflineText('Preparing full offline game…');
+				try {
+					const registration = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+					window.__bermudaPWARegistration = registration;
+					try { await registration.update(); } catch (_) {}
+					const worker = await waitForActiveWorker(registration);
+					let status = await queryOfflineStatus(registration);
+					if (status?.fullBytes) {
+						window.__bermudaOffline = { ...status, supported: true };
+						showFullProgress(status);
+					}
+					if (status?.ready) return true;
+
+					const active = worker || registration.active || navigator.serviceWorker.controller;
+					if (!active) throw new Error('Offline worker unavailable');
+					active.postMessage({ type: 'INSTALL_FULL_OFFLINE' });
+
+					if (!blockUntilReady) return false;
+					return await new Promise(resolve => {
+						let done = false;
+						const finish = value => { if (done) return; done = true; clearTimeout(timeout); navigator.serviceWorker.removeEventListener('message', onMessage); resolve(value); };
+						const onMessage = event => {
+							const data = event.data || {};
+							if (data.type === 'BERMUDA_OFFLINE_PROGRESS') {
+								window.__bermudaOffline = { ...data, supported: true };
+								showFullProgress(data);
+								// During preboot, make the main loader itself reflect the real offline download.
+								const pct = data.fullBytes ? Math.floor((data.completedBytes || 0) / data.fullBytes * 100) : 0;
+								const statusEl = document.querySelector('.loader-status');
+								const pctEl = document.querySelector('.loader-pct');
+								const fill = document.querySelector('.loader-fill');
+								if (statusEl) statusEl.textContent = data.ready ? 'Full offline game ready' : 'Installing offline game · ' + formatMB(data.completedBytes) + ' / ' + formatMB(data.fullBytes) + ' MB';
+								if (pctEl) pctEl.textContent = pct + '%';
+								if (fill) fill.style.transform = 'scaleX(' + Math.max(.02, pct / 100).toFixed(4) + ')';
+								if (data.ready) finish(true);
+							} else if (data.type === 'BERMUDA_OFFLINE_ERROR') {
+								setOfflineText('Offline download paused · continuing online');
+								finish(false);
+							}
+						};
+						navigator.serviceWorker.addEventListener('message', onMessage);
+						const timeout = setTimeout(() => finish(false), 12 * 60 * 1000);
+					});
+				} catch (error) {
+					window.__bermudaOffline = { supported: true, ready: false, error: String(error) };
+					setOfflineText('Online mode · offline package unavailable');
+					return false;
 				}
-				if (status?.ready) return;
-				(worker || registration.active || navigator.serviceWorker.controller)?.postMessage({ type: 'INSTALL_FULL_OFFLINE' });
-				if (!status?.fullBytes) setOfflineText('Full offline package starting…');
-			} catch (error) {
-				window.__bermudaOffline = { supported: true, ready: false, error: String(error) };
-				setOfflineText('Online mode · offline package will retry later');
-			}
+			})();
+
+			return window.__bermudaOfflineInstallPromise;
 		};
 
-		// A previously completed full package is reported immediately; upgrades/resume begin after the
-		// game has proven stable so cache writes do not compete with the critical WebGPU startup.
+		window.__bermudaEnsureFullOffline = () => startOfflineInstall({ blockUntilReady: true });
+
+		// Report an existing package immediately, but do not start/continue the 161 MB write job during
+		// gameplay. On phones the package is completed before the WebGPU game is imported.
 		if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
 			queryOfflineStatus(null).then(status => {
 				if (!status?.fullBytes) return;
@@ -179,8 +217,6 @@
 				showFullProgress(status);
 			});
 		}
-		window.addEventListener('bermuda-game-ready', startOfflineInstall, { once: true });
-		setTimeout(startOfflineInstall, 120000);
 
 		window.addEventListener('offline', () => {
 			if (window.__bermudaOffline?.ready) setOfflineText('FULL OFFLINE MODE ✓', true);
@@ -189,6 +225,9 @@
 			if (window.__bermudaOffline?.ready) setOfflineText('FULL OFFLINE READY ✓', true);
 		});
 
+		const mobilePreboot = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+			(navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) < 1024);
+		if (mobilePreboot) await window.__bermudaEnsureFullOffline();
 		await import('/src/runtime/MobileVehicleHandling.js');
 		await import('/src/main.js');
 	</script>
