@@ -17,7 +17,10 @@ export class Engine {
 		// Compose mode is deliberately a low-load development view. The app's mobile post scale still
 		// applies inside this output size, so ?compose=1&gpuSafe=2 lands at roughly 58% effective linear
 		// resolution while keeping the CSS/camera viewport unchanged for layout decisions.
-		this.renderScale = this.composeMode ? 0.8 : 1;
+		const requestedOutputScale = Number( params && params.get( 'outputScale' ) );
+		this.renderScale = Number.isFinite( requestedOutputScale ) && requestedOutputScale > 0
+			? Math.max( 0.5, Math.min( 1, requestedOutputScale ) )
+			: ( this.composeMode ? 0.8 : 1 );
 		this.clock = new Timer();
 		this.frame = 0;
 		this.onResize = [];
