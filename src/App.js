@@ -529,7 +529,18 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		if ( this.fft?.local ) {
 
 			this.fft.local.windSpeed += ( profile.wind - this.fft.local.windSpeed ) * Math.min( 1, dt * 0.45 );
-			if ( this.fft.updateSpectrumUniforms ) this.fft.updateSpectrumUniforms();
+			// Rebuilding the whole Tessendorf/JONSWAP spectrum every frame is unnecessary and especially
+			// expensive on mobile. Refresh only after the eased wind has moved materially; the per-frame
+			// FFT still animates normally between spectrum updates.
+			this._spectrumRefreshT = ( this._spectrumRefreshT || 0 ) + dt;
+			const lastWind = Number.isFinite( this._lastSpectrumWind ) ? this._lastSpectrumWind : this.fft.local.windSpeed + 1;
+			if ( this.fft.updateSpectrumUniforms && this._spectrumRefreshT >= 0.35 && Math.abs( this.fft.local.windSpeed - lastWind ) >= 0.08 ) {
+
+				this.fft.updateSpectrumUniforms();
+				this._lastSpectrumWind = this.fft.local.windSpeed;
+				this._spectrumRefreshT = 0;
+
+			}
 
 		}
 		if ( this.fft?.choppiness ) this.fft.choppiness.value += ( profile.chop - this.fft.choppiness.value ) * Math.min( 1, dt * 0.7 );
