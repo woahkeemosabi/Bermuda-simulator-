@@ -117,12 +117,14 @@
 			const pct = Math.max(0, Math.min(100, Math.floor((status.completedBytes || 0) / status.fullBytes * 100)));
 			const text = status.ready
 				? 'FULL OFFLINE READY · ' + formatMB(status.fullBytes) + ' MB ✓'
-				: 'Offline game ' + pct + '% · ' + formatMB(status.completedBytes) + ' / ' + formatMB(status.fullBytes) + ' MB';
+				: status.playable
+					? 'OFFLINE GAME READY · update waiting for strong connection'
+					: 'Offline game ' + pct + '% · ' + formatMB(status.completedBytes) + ' / ' + formatMB(status.fullBytes) + ' MB';
 			setOfflineText(text, !!status.ready);
 			const badge = ensureOfflineBadge();
 			badge.textContent = text;
-			badge.dataset.ready = status.ready ? '1' : '0';
-			if (status.ready) {
+			badge.dataset.ready = (status.ready || status.playable) ? '1' : '0';
+			if (status.ready || status.playable) {
 				requestPersistentGameStorage();
 				setTimeout(() => { if (offlineBadge) offlineBadge.style.opacity = '0'; }, 7000);
 			}
@@ -185,6 +187,13 @@
 						showFullProgress(status);
 					}
 					if (status?.ready) return true;
+					// A previously completed package is more valuable than a risky live update on mobile.
+					// Launch it immediately; do not touch the network again until the user has a stronger
+					// connection and explicitly refreshes/updates later.
+					if (status?.playable) {
+						setOfflineText('OFFLINE GAME READY ✓', true);
+						return true;
+					}
 
 					const active = worker || registration.active || navigator.serviceWorker.controller;
 					if (!active) throw new Error('Offline worker unavailable');
@@ -239,10 +248,10 @@
 		}
 
 		window.addEventListener('offline', () => {
-			if (window.__bermudaOffline?.ready) setOfflineText('FULL OFFLINE MODE ✓', true);
+			if (window.__bermudaOffline?.ready || window.__bermudaOffline?.playable) setOfflineText('OFFLINE GAME READY ✓', true);
 		});
 		window.addEventListener('online', () => {
-			if (window.__bermudaOffline?.ready) setOfflineText('FULL OFFLINE READY ✓', true);
+			if (window.__bermudaOffline?.ready || window.__bermudaOffline?.playable) setOfflineText('OFFLINE GAME READY ✓', true);
 		});
 
 		const mobilePreboot = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
