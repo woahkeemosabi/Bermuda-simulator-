@@ -10,6 +10,7 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { RelicVehicle } from './player/RelicVehicle.js';
+import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
 
 // iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
 // Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
@@ -302,6 +303,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	if ( mobileDevice ) {
 
 		installStableMobileControls( app );
+		installMobileScreenshotHUD( app );
 		installMobileAudioResume( app );
 
 		// A little extra RCAS sharpening compensates for mobile render scaling without increasing the
