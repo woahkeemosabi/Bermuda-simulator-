@@ -3265,6 +3265,7 @@ export class UI {
 		L.classList.remove( 'is-compiling' );
 		ld.status = String( message );
 		if ( ld.statusEl ) ld.statusEl.textContent = ld.status;
+		if ( ld.eta ) ld.eta.textContent = 'LOAD INTERRUPTED';
 		ld.stopped = true;
 
 	}
@@ -3274,12 +3275,17 @@ export class UI {
 		if ( this._ld ) return this._ld;
 		const L = document.getElementById( 'loader' );
 		const q = ( sel ) => L && L.querySelector( sel );
+		const mobile = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
+			( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
+		let learned = NaN;
+		try { learned = Number( localStorage.getItem( 'bermuda-loader-total-ms-v3' ) ); } catch ( _ ) {}
+		if ( ! Number.isFinite( learned ) || learned < 8000 || learned > 240000 ) learned = mobile ? 90000 : 45000;
 		const ld = this._ld = {
 			from: 0, until: 0.05, shown: 0, stageT: performance.now(), tau: 6000, detail: - 1, status: '',
-			t0: performance.now(), stopped: false,
-			fill: q( '.loader-fill' ), pct: q( '.loader-pct' ), time: q( '.loader-time' ), statusEl: q( '.loader-status' ),
+			t0: performance.now(), stopped: false, targetMs: learned, learnedMs: learned,
+			fill: q( '.loader-fill' ), pct: q( '.loader-pct' ), time: q( '.loader-time' ),
+			eta: q( '.loader-eta' ), elapsed: q( '.loader-elapsed' ), statusEl: q( '.loader-status' ),
 		};
-		// eased bar + elapsed clock while scripts run (the CSS glint and tips keep moving when they don't)
 		const tick = () => {
 
 			if ( ld.stopped ) return;
@@ -3303,18 +3309,50 @@ export class UI {
 			: ld.from + ( ld.until - ld.from ) * ( 1 - Math.exp( - ( now - ld.stageT ) / ld.tau ) );
 		const dt = Math.min( 0.1, ( now - ( ld.lastT || now ) ) / 1000 );
 		ld.lastT = now;
-		// ease toward the goal; a jump after a blocked stretch settles in ~0.3 s instead of snapping
 		ld.shown += ( Math.max( goal, ld.shown ) - ld.shown ) * ( dt > 0 ? 1 - Math.exp( - dt * 9 ) : 0 );
 		if ( ld.fill ) ld.fill.style.transform = `scaleX(${ Math.max( 0.02, ld.shown ).toFixed( 4 ) })`;
 		if ( ld.pct ) ld.pct.textContent = Math.floor( ld.shown * 100 ) + '%';
-		if ( ld.time ) {
 
-			const s = Math.floor( ( now - ld.t0 ) / 1000 );
-			ld.time.textContent = Math.floor( s / 60 ) + ':' + String( s % 60 ).padStart( 2, '0' );
+		const elapsedMs = now - ld.t0;
+		const stageMs = now - ld.stageT;
+		const status = ld.status.toLowerCase();
+		let stageBudget = 4500;
+		if ( /shader|pipeline|compil/.test( status ) ) stageBudget = 28000;
+		else if ( /waterfront|dock|asset|model/.test( status ) ) stageBudget = 22000;
+		else if ( /warming/.test( status ) ) stageBudget = 10000;
+		else if ( /preparing bermuda|final/.test( status ) ) stageBudget = 9000;
+		else if ( /webgpu|atmosphere|island|reef|ocean/.test( status ) ) stageBudget = 7000;
 
+		// Do not let the estimate hit 0:00 while an expensive phase is visibly still running.
+		// If a stage exceeds its normal budget, extend the prediction gradually instead of jumping.
+		if ( stageMs > stageBudget * 0.8 ) {
+			const extension = Math.max( 4000, stageBudget * 0.35 );
+			ld.targetMs = Math.max( ld.targetMs, elapsedMs + extension );
 		}
 
+		const remainingMs = ld.shown >= 0.9999 ? 0 : Math.max( 1000, ld.targetMs - elapsedMs );
+		const fmt = ( ms ) => {
+			const s = Math.max( 0, Math.ceil( ms / 1000 ) );
+			return Math.floor( s / 60 ) + ':' + String( s % 60 ).padStart( 2, '0' );
+		};
+		if ( ld.eta ) ld.eta.textContent = remainingMs > 0 ? fmt( remainingMs ) : '0:00';
+		if ( ld.elapsed ) ld.elapsed.textContent = fmt( elapsedMs ) + ' elapsed';
+		if ( ld.time ) ld.time.textContent = remainingMs > 0 ? '≈ ' + fmt( remainingMs ) + ' left' : 'Ready';
+
 	}
+
+	_recordLoaderTiming() {
+
+		const ld = this._ld;
+		if ( ! ld ) return;
+		const actual = performance.now() - ld.t0;
+		if ( actual < 5000 || actual > 240000 ) return;
+		const previous = Number.isFinite( ld.learnedMs ) ? ld.learnedMs : actual;
+		const learned = previous * 0.6 + actual * 0.4;
+		try { localStorage.setItem( 'bermuda-loader-total-ms-v3', String( Math.round( learned ) ) ); } catch ( _ ) {}
+
+	}
+
 
 	// Fades the loader out; the returned promise resolves once it is gone.
 	hideLoader() {
@@ -3322,6 +3360,7 @@ export class UI {
 		const L = document.getElementById( 'loader' );
 		if ( ! L ) return Promise.resolve();
 		if ( this._loaderGone ) return this._loaderGone;
+		this._recordLoaderTiming();
 		this.setLoading( 1, 'Ready' );
 		L.classList.remove( 'is-compiling' );
 		L.classList.add( 'tw-hidden' );
