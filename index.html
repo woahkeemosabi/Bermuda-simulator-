@@ -6,9 +6,11 @@
 	<meta name="theme-color" content="#061820" />
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-	<meta name="apple-mobile-web-app-title" content="Bermuda" />
+	<meta name="apple-mobile-web-app-title" content="Bermuda Simulator" />
+	<meta name="mobile-web-app-capable" content="yes" />
 	<link rel="manifest" href="./manifest.webmanifest" />
 	<link rel="icon" href="./ui/app-icon.svg" type="image/svg+xml" />
+	<link rel="apple-touch-icon" href="./ui/app-icon.svg" />
 	<meta name="description" content="Bermuda Simulator — explore a living island world by land, boat and sea." />
 	<title>Bermuda Simulator</title>
 	<link rel="preload" as="image" href="ui/keyart-720.jpg" imagesrcset="ui/keyart-720.jpg 1280w, ui/keyart.jpg 2560w" imagesizes="100vw" />
@@ -84,6 +86,21 @@
 		};
 
 		window.__bermudaOffline = { supported: 'serviceWorker' in navigator, ready: false };
+		const installedStandalone = window.matchMedia?.('(display-mode: standalone)')?.matches || navigator.standalone === true;
+		document.documentElement.classList.toggle('bermuda-installed-app', !!installedStandalone);
+		window.__bermudaInstalledApp = !!installedStandalone;
+
+		const requestPersistentGameStorage = async () => {
+			if (!navigator.storage?.persist) return false;
+			try {
+				const persisted = navigator.storage.persisted ? await navigator.storage.persisted() : false;
+				const granted = persisted || await navigator.storage.persist();
+				window.__bermudaPersistentStorage = !!granted;
+				return !!granted;
+			} catch (_) {
+				return false;
+			}
+		};
 
 		let offlineBadge = null;
 		const ensureOfflineBadge = () => {
@@ -105,7 +122,10 @@
 			const badge = ensureOfflineBadge();
 			badge.textContent = text;
 			badge.dataset.ready = status.ready ? '1' : '0';
-			if (status.ready) setTimeout(() => { if (offlineBadge) offlineBadge.style.opacity = '0'; }, 7000);
+			if (status.ready) {
+				requestPersistentGameStorage();
+				setTimeout(() => { if (offlineBadge) offlineBadge.style.opacity = '0'; }, 7000);
+			}
 		};
 
 		const queryOfflineStatus = async registration => {
