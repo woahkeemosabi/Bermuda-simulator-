@@ -27,9 +27,10 @@ function installStyle() {
 	const style = document.createElement( 'style' );
 	style.id = STYLE_ID;
 	style.textContent = `
-		#bm-wallet-live{position:fixed;top:max(12px,env(safe-area-inset-top));right:max(18px,env(safe-area-inset-right));z-index:96;display:flex;align-items:center;gap:8px;padding:8px 13px;border-radius:18px;background:rgba(7,39,60,.82);border:1px solid rgba(139,243,234,.35);box-shadow:0 7px 22px rgba(0,0,0,.22);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);color:#fff;font:700 15px/1 system-ui,-apple-system,sans-serif;letter-spacing:.01em;pointer-events:none}
-		#bm-wallet-live .bm-wallet-icon{display:block;width:23px;height:18px;flex:0 0 23px;background:${ ICONS.wallet } center/contain no-repeat}
-		#bm-wallet-live .bm-wallet-value{min-width:50px;text-align:right}
+		#bm-wallet-live{display:flex;align-items:center;gap:6px;color:#fff;font:700 12px/1 system-ui,-apple-system,sans-serif;letter-spacing:.01em;pointer-events:none;white-space:nowrap}
+		body.bm-mobile #bm-wallet-live{position:static!important;order:-3;flex:0 0 auto;padding:0 5px 0 0!important;border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+		#bm-wallet-live .bm-wallet-icon{display:block;width:17px;height:15px;flex:0 0 17px;background:${ ICONS.wallet } center/contain no-repeat}
+		#bm-wallet-live .bm-wallet-value{min-width:34px;text-align:left}
 		body.bm-mobile .gm-money{display:none!important}
 		body.bm-mobile .gm-cooler::before{content:''!important;display:inline-block!important;width:18px;height:18px;flex:0 0 18px;background:${ ICONS.bag } center/contain no-repeat!important}
 		body.bm-mobile .gm-clock-time::before{content:''!important;display:inline-block!important;width:16px;height:16px;margin-right:5px;vertical-align:-3px;background:${ ICONS.clock } center/contain no-repeat!important}
@@ -45,7 +46,10 @@ function installStyle() {
 		#bm-touch-stable button[data-role='light']::before{background-image:${ ICONS.light }}
 		#bm-touch-stable button[data-role='fish']::before{background-image:${ ICONS.fish }}
 		#bm-touch-stable button[data-role='dive']::before{background-image:${ ICONS.up };transform:rotate(180deg)}
-		@media(max-width:700px){body.bm-mobile .gm-map{width:96px!important;height:96px!important;right:max(14px,env(safe-area-inset-right))!important;bottom:188px!important;opacity:.94!important}}
+		@media(max-width:700px){
+			body.bm-mobile .gm-map{width:84px!important;height:84px!important;right:max(12px,env(safe-area-inset-right))!important;bottom:var(--bm-map-safe-bottom,260px)!important;opacity:.92!important}
+			body.bm-mobile .bm-account-btn{top:max(12px,env(safe-area-inset-top))!important;right:max(12px,env(safe-area-inset-right))!important;padding:7px 10px!important;font-size:10px!important}
+		}
 	`;
 	document.head.appendChild( style );
 }
@@ -56,10 +60,12 @@ function ensureWallet( app ) {
 		el = document.createElement( 'div' );
 		el.id = 'bm-wallet-live';
 		el.innerHTML = '<span class="bm-wallet-icon" aria-hidden="true"></span><span class="bm-wallet-value">$0</span>';
-		document.body.appendChild( el );
 	}
+	const statusRow = document.querySelector( '.gm-purse' );
+	if ( statusRow && el.parentElement !== statusRow ) statusRow.prepend( el );
+	else if ( ! el.parentElement ) document.body.appendChild( el );
 	const value = el.querySelector( '.bm-wallet-value' );
-	if ( value ) value.textContent = `$${ Math.round( Number( app.game?.state?.money || 0 ) ).toLocaleString() }`;
+	if ( value ) value.textContent = `${ Math.round( Number( app.game?.state?.money || 0 ) ).toLocaleString() }`;
 }
 
 function syncWeatherIcon() {
@@ -70,6 +76,16 @@ function syncWeatherIcon() {
 	el.style.setProperty( '--bm-weather-icon', icon );
 }
 
+function syncMobileMapLayout() {
+	const map = document.querySelector( '.gm-map' );
+	const actions = document.querySelector( '#bm-touch-stable .bm-actions' );
+	if ( ! map || ! actions ) return;
+	const r = actions.getBoundingClientRect();
+	if ( r.height <= 0 ) return;
+	const safeBottom = Math.max( 236, Math.ceil( window.innerHeight - r.top + 18 ) );
+	map.style.setProperty( '--bm-map-safe-bottom', `${ safeBottom }px` );
+}
+
 export function installMobileScreenshotHUD( app ) {
 	if ( ! app || ! mobileHardware() || typeof document === 'undefined' || app.__mobileScreenshotHUD ) return app?.__mobileScreenshotHUD || null;
 	installStyle();
@@ -77,10 +93,17 @@ export function installMobileScreenshotHUD( app ) {
 	const sync = () => {
 		ensureWallet( app );
 		syncWeatherIcon();
+		syncMobileMapLayout();
 	};
 	sync();
 	const timer = window.setInterval( sync, 180 );
-	window.addEventListener( 'pagehide', () => window.clearInterval( timer ), { once:true } );
+	window.addEventListener( 'resize', syncMobileMapLayout, { passive:true } );
+	window.addEventListener( 'orientationchange', syncMobileMapLayout, { passive:true } );
+	window.addEventListener( 'pagehide', () => {
+		window.clearInterval( timer );
+		window.removeEventListener( 'resize', syncMobileMapLayout );
+		window.removeEventListener( 'orientationchange', syncMobileMapLayout );
+	}, { once:true } );
 
 	const state = app.__mobileScreenshotHUD = { sync, wallet:true, actionIcons:true };
 	window.__mobileScreenshotHUD = state;
