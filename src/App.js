@@ -82,7 +82,7 @@ export class App {
 			exposure: 0.55,
 			renderScale: 1, // internal resolution (the temporal upscaler reconstructs the output), Performance tab
 		};
-		this.qs = new URLSearchParams( location.search );
+		this.qs = new URLSearchParams( window.__bermudaRuntimeQuery || location.search );
 
 	}
 
