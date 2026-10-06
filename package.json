@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5189",
-    "build": "vite build",
+    "build": "vite build && node scripts/build-offline.mjs",
     "preview": "vite preview",
     "test": "node test/game-logic.mjs && node test/bermuda-layout.mjs && node test/engine-smoke.mjs"
   },
