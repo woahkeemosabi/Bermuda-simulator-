@@ -184,19 +184,6 @@ function applyMobileMemoryProfile( app ) {
 		// diver flashlight but leave static lamp appearance to their emissive materials.
 		if ( app.localLights?.sources ) app.localLights.sources.length = 0;
 
-		// Bermuda water should stay dark and reflective at night, not glow cyan. Preserve the clear
-		// daytime character while reducing mobile night wash and over-bright subsurface scattering.
-		if ( app.waterMaterial?.params ) {
-
-			if ( app.waterMaterial.params.reflectionStrength ) app.waterMaterial.params.reflectionStrength.value = 0.72;
-			if ( app.waterMaterial.params.sss ) app.waterMaterial.params.sss.value = 0.68;
-			if ( app.waterMaterial.params.roughness ) app.waterMaterial.params.roughness.value = 0.055;
-			if ( app.waterMaterial.params.foamIntensity ) app.waterMaterial.params.foamIntensity.value = 0.86;
-
-		}
-		if ( G.waterAbsorption?.value?.set ) G.waterAbsorption.value.set( 0.36, 0.09, 0.052 );
-		if ( G.waterScattering?.value?.set ) G.waterScattering.value.set( 0.009, 0.013, 0.017 );
-
 		// Preserve the first-person spear itself but drop the pooled transparent bubble meshes on the
 		// constrained path. Transparent underwater particles are disproportionately expensive on iOS.
 		if ( app.game?.spear ) {
