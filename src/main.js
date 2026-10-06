@@ -2,6 +2,7 @@ import { startDeferredWaterfront, updateWaterfrontVisibility } from './world/Ber
 import { mobileQualityParameters } from './mobile/QualityProfile.js';
 import './core/BenchSeed.js';
 import { App } from './App.js';
+import { G } from './core/Globals.js';
 import { GPU } from './engine/gpu/GPU.js';
 import { ShadowUniforms } from './engine/render/wgsl/lighting.js';
 import { UI } from './ui/UI.js';
