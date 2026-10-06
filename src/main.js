@@ -430,10 +430,20 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 		}
 
 	}
+	if ( mobileDevice ) {
+
+		// No heavy harbour GLB decode/upload during live play. Finish the mobile waterfront replacement
+		// tier behind the loader, while the frame loop is still stopped.
+		ui.setLoading( 0.965, 'Finishing harbour scenery…', 0.992 );
+		await startDeferredWaterfront( app, { initialDelay: 0, tierDelay: 0, entryDelay: 180, maxTier: 2 } );
+		window.__bermudaDeferredScenery = 'preloaded-before-explore';
+
+	}
+
 	ui.setLoading( 0.99, 'Final checks…', 0.999 );
 	ui.setLoading( 1, 'Ready' );
 	await ui.hideLoader();
-	setTimeout( () => window.dispatchEvent( new Event( 'bermuda-game-ready' ) ), mobileDevice ? 60000 : 5000 );
+	window.dispatchEvent( new Event( 'bermuda-game-ready' ) );
 	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
 	if ( app.qs.has( 'bench' ) ) {
 
@@ -456,7 +466,6 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 			if ( app.audio ) app.audio.resume();
 			installMobileGPUWatchdog();
 			app.start();
-			startMobileDeferredScenery( app );
 
 		} );
 		return;
