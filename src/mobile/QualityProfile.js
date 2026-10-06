@@ -27,11 +27,15 @@ export function mobileQualityParameters(input, safeLevel = 0) {
         p.set('noShadows','1');
         p.set('noRefraction','1');
         p.set('noEnvRefresh','1');
-        p.set('scale','0.68');
-        p.set('outputScale','0.82');
-        p.set('G','18');
-        p.set('oceanCascades','2');
-        p.set('envSize','64');
+
+        // Mobile native profile: do not make the entire game look soft just to save GPU memory.
+        // Keep the canvas at one CSS pixel per output pixel and save memory where it is actually
+        // expensive: ocean FFT storage/compute, water mesh density and environment maps.
+        p.set('scale','0.70');
+        p.set('outputScale','1.00');
+        p.set('G','14');
+        p.set('oceanCascades','1');
+        p.set('envSize','48');
     }
     return p;
 }
