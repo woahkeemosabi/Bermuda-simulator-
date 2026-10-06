@@ -1,15 +1,22 @@
 {
   "name": "Bermuda Simulator",
-  "short_name": "Bermuda",
+  "short_name": "Bermuda Sim",
   "description": "Explore Bermuda by land, boat and sea.",
   "id": "./",
-  "start_url": "./?pwa=1",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": [
+    "standalone"
+  ],
   "background_color": "#02070c",
   "theme_color": "#061820",
   "orientation": "any",
-  "categories": ["games", "entertainment"],
+  "categories": [
+    "games",
+    "entertainment"
+  ],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "ui/app-icon.svg",
