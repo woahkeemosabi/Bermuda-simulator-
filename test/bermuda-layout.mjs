@@ -34,11 +34,11 @@ for(let z=-40;z<=-17;z+=.25) {
 }
 for(const fish of joe.iceFish()) assert(fish.frame.elements[13]>2);
 const high=mobileQualityParameters('quality=mobile-high&noCaustics=1&noHaze=1');
-assert.equal(high.get('scale'),'0.85');assert.equal(high.get('G'),'24');
+assert.equal(high.get('scale'),'0.80');assert.equal(high.get('G'),'20');
 assert(!high.has('noHaze')&&!high.has('noCaustics'));
 assert(high.has('noSim')&&high.has('noClouds'));
 const recovery=mobileQualityParameters(high,2);
-assert.equal(recovery.get('scale'),'0.72'); assert(recovery.has('noCaustics'));
+assert.equal(recovery.get('scale'),'0.60');assert.equal(recovery.get('G'),'16'); assert(recovery.has('noCaustics'));
 console.log('Dock elevation, vendor interaction, walking clearance and quality recovery pass.');
 
 // The rear sign posts of the original Tidewater stall must remain supported by the apron.
