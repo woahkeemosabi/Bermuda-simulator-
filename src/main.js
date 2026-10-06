@@ -142,9 +142,18 @@ function applyMobileMemoryProfile( app ) {
 		if ( app.sceneRenderer ) app.sceneRenderer.onBeforeWater = null;
 		if ( app.post ) {
 
+			app.post.mobileLite = true;
 			app.post.aaMode = 'fxaa';
 			if ( app.post.params?.aoStrength ) app.post.params.aoStrength.value = 0;
 			if ( app.post.params?.bloom ) app.post.params.bloom.value = 0;
+			if ( app.post.params?.sharpen ) app.post.params.sharpen.value = 0.72;
+			if ( app.post.params?.saturation ) app.post.params.saturation.value = 1.02;
+			if ( app.post.params?.contrast ) app.post.params.contrast.value = 1.07;
+			if ( app.post.params?.warmth ) app.post.params.warmth.value = 0.045;
+			if ( app.post.params?.grain ) app.post.params.grain.value = 0.002;
+			if ( app.post.params?.vignette ) app.post.params.vignette.value = 0.18;
+			if ( app.post.autoExposure?.enabled ) app.post.autoExposure.enabled.value = 0;
+			if ( app.post.motionBlur?.shutter ) app.post.motionBlur.shutter.value = 0;
 
 		}
 
@@ -157,12 +166,36 @@ function applyMobileMemoryProfile( app ) {
 			app.underwater.setSize = () => {};
 			if ( app.underwater.uniforms?.fields?.hasShafts ) app.underwater.uniforms.fields.hasShafts.value = 0;
 			if ( app.underwater.torchBeam ) app.underwater.torchBeam.value = 0;
+			if ( app.underwater.band ) app.underwater.band.value = 5;
+			const updateUnderwaterCamera = app.underwater.updateCamera.bind( app.underwater );
+			app.underwater.updateCamera = camera => {
+
+				updateUnderwaterCamera( camera );
+				const waterH = Number.isFinite( app.cameraWaterHeight ) ? app.cameraWaterHeight : 0;
+				// Above-water mobile frames must never inherit an erroneous underwater medium classification.
+				// Re-enable the full attenuation only once the lens is actually at the surface.
+				if ( app.underwater.enabled ) app.underwater.enabled.value = camera.position.y < waterH + 0.42 ? 1 : 0;
+
+			};
 
 		}
 
 		// At night the desktop path shades against every nearby village/boat lamp. On phone, preserve the
 		// diver flashlight but leave static lamp appearance to their emissive materials.
 		if ( app.localLights?.sources ) app.localLights.sources.length = 0;
+
+		// Bermuda water should stay dark and reflective at night, not glow cyan. Preserve the clear
+		// daytime character while reducing mobile night wash and over-bright subsurface scattering.
+		if ( app.waterMaterial?.params ) {
+
+			if ( app.waterMaterial.params.reflectionStrength ) app.waterMaterial.params.reflectionStrength.value = 0.72;
+			if ( app.waterMaterial.params.sss ) app.waterMaterial.params.sss.value = 0.68;
+			if ( app.waterMaterial.params.roughness ) app.waterMaterial.params.roughness.value = 0.055;
+			if ( app.waterMaterial.params.foamIntensity ) app.waterMaterial.params.foamIntensity.value = 0.86;
+
+		}
+		if ( G.waterAbsorption?.value?.set ) G.waterAbsorption.value.set( 0.36, 0.09, 0.052 );
+		if ( G.waterScattering?.value?.set ) G.waterScattering.value.set( 0.009, 0.013, 0.017 );
 
 		// Preserve the first-person spear itself but drop the pooled transparent bubble meshes on the
 		// constrained path. Transparent underwater particles are disproportionately expensive on iOS.
