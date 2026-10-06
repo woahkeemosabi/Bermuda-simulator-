@@ -1,0 +1,31 @@
+name: Alpha stability verify
+
+on:
+  push:
+    branches: [alpha-stability-pass]
+    paths:
+      - 'src/**'
+      - 'index.html'
+      - 'scripts/**'
+      - 'package*.json'
+      - '.github/workflows/alpha-stability-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Game tests
+        run: npm test
+      - name: Production build and offline bundle
+        run: npm run build
