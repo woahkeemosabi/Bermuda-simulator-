@@ -9,6 +9,7 @@ export function mobileQualityParameters(input, safeLevel = 0) {
     // Keep the two most expensive independent GPU systems conservative, but restore the environment
     // features that define Bermuda visually: vegetation, marine haze and caustics.
     p.set('noClouds','1');
+    p.set('noRefraction','1');
     p.delete('noVeg');
 
     if (high) {
