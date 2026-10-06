@@ -68,14 +68,15 @@ function applyMobileMemoryProfile( app ) {
 
 	if ( ! mobileFastStart || ! app ) return;
 
-	// The 3-cascade 2048² depth array alone is about 48 MB. Resize the lazy texture before its first
-	// GPU allocation; 1024² keeps useful shadows while cutting that allocation to one quarter.
+	// The 3-cascade 2048² depth array alone is expensive on iOS. Keep the lazy allocation tiny for
+	// the first playable frame; 512² shadows are still useful on a phone and leave substantially more
+	// headroom for the water/post render targets Safari allocates when Explore starts the frame loop.
 	if ( app.shadows && app.shadows.texture && ! app.shadows.texture.gpu ) {
 
-		app.shadows.size = 1024;
-		app.shadows.texture.width = 1024;
-		app.shadows.texture.height = 1024;
-		if ( ShadowUniforms && ShadowUniforms.fields && ShadowUniforms.fields.mapSize ) ShadowUniforms.fields.mapSize.value = 1024;
+		app.shadows.size = 512;
+		app.shadows.texture.width = 512;
+		app.shadows.texture.height = 512;
+		if ( ShadowUniforms && ShadowUniforms.fields && ShadowUniforms.fields.mapSize ) ShadowUniforms.fields.mapSize.value = 512;
 
 	}
 
@@ -233,6 +234,40 @@ function installMobileGPUWatchdog() {
 
 }
 
+function startMobileDeferredScenery( app ) {
+
+	if ( ! mobileFastStart || ! app ) return;
+
+	// Never allocate decorative GLBs behind the Explore overlay. The first real WebGPU frames must
+	// prove stable before Safari is asked for more geometry/textures. On recovery level 2 we keep the
+	// procedural/reference fallbacks for the whole session rather than risking another device loss.
+	if ( mobileSafeLevel >= 2 ) {
+
+		window.__bermudaDeferredScenery = 'held-safe-mode';
+		return;
+
+	}
+
+	const timer = setTimeout( () => {
+
+		if ( document.visibilityState !== 'visible' || window.__bermudaGPUStall ) return;
+		const fps = Number( app.fps || 0 );
+		if ( fps > 0 && fps < 24 ) {
+
+			window.__bermudaDeferredScenery = 'held-low-fps';
+			return;
+
+		}
+
+		window.__bermudaDeferredScenery = 'tier2-streaming';
+		startDeferredWaterfront( app, { initialDelay: 0, tierDelay: 8000, entryDelay: 350, maxTier: 2 } );
+
+	}, 12000 );
+
+	window.addEventListener( 'pagehide', () => clearTimeout( timer ), { once: true } );
+
+}
+
 function installDesktopQualityGovernor( app ) {
 
 	if ( mobileDevice || ! app || app.qs?.has?.( 'bench' ) || app.qs?.has?.( 'scale' ) ) return;
@@ -342,8 +377,9 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
         throw new Error( 'Waterfront failed to load: ' + ( details || 'scene unavailable' ) );
     }
     if ( mobileDevice ) {
-        ui.setLoading( 0.992, 'Preparing Bermuda scenery', 0.998 );
-        await startDeferredWaterfront( app );
+        // Boot-critical waterfront assets are ready. Decorative tiers intentionally wait until
+        // after Explore and several seconds of stable frames.
+        ui.setLoading( 0.992, 'Preparing Bermuda', 0.998 );
     }
 	app.ui = new AppUI( app, ui );
 	applyBermudaBranding( mobileDevice );
@@ -399,7 +435,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 			if ( app.audio ) app.audio.resume();
 			installMobileGPUWatchdog();
 			app.start();
-            startDeferredWaterfront(app);
+			startMobileDeferredScenery( app );
 
 		} );
 		return;
