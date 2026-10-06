@@ -43,9 +43,9 @@ if ( mobileFastStart ) {
 
 	// Keep the shared/browser URL clean. Runtime quality flags stay internal instead of exposing
 	// implementation switches like noVeg/noHaze/scale in Safari history.
-	if ( /(?:gpuSafe|gpuRecovery|recoveryReason|noClouds|noVeg|noHaze|noCaustics|noSim|scale|G)=/.test( location.search ) ) {
+	if ( /(?:gpuSafe|gpuRecovery|recoveryReason|noClouds|noVeg|noHaze|noCaustics|noSim|noRefraction|scale|G)=/.test( location.search ) ) {
 		const clean = new URL( location.href );
-		for ( const key of [ 'gpuSafe','gpuRecovery','recoveryReason','noClouds','noVeg','noHaze','noCaustics','noSim','scale','G' ] ) clean.searchParams.delete( key );
+		for ( const key of [ 'gpuSafe','gpuRecovery','recoveryReason','noClouds','noVeg','noHaze','noCaustics','noSim','noRefraction','scale','G' ] ) clean.searchParams.delete( key );
 		if ( clean.searchParams.get( 'quality' ) === 'mobile-high' ) clean.searchParams.delete( 'quality' );
 		history.replaceState( null, '', clean.href );
 	}
