@@ -130,10 +130,14 @@ export class App {
 		// contact-hardening filter sized by the sun's disc on the near cascade. Each cascade's depth range
 		// is its light margin (200 m) + its extent, which keeps the depth bias small in metres.
 		// Shadows come from the opaque and the late (transparent-pass) layers.
-		this.csm = this.shadows = new SunShadows( { size: 2048, splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
+		const shadowSize = qs.has( 'noShadows' ) ? 256 : 2048;
+		this.csm = this.shadows = new SunShadows( { size: shadowSize, splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
 		this.shadows.layerMask = ( 1 << LAYERS.OPAQUE ) | ( 1 << LAYERS.TRANSPARENT );
+		if ( qs.has( 'noShadows' ) ) this.shadows.enabled = false;
 
-		this.environment = new Environment( renderer, scene, this.sky );
+		const envSize = Math.max( 32, Math.min( 128, Number( qs.get( 'envSize' ) || 128 ) ) );
+		this.environment = new Environment( renderer, scene, this.sky, envSize );
+		if ( qs.has( 'noEnvRefresh' ) ) this.environment.update = () => {};
 
 		// ---------------------------------------------------------------- island
 		await progress( 0.06, 'Shaping the island…' );
@@ -175,7 +179,8 @@ export class App {
 
 		// ---------------------------------------------------------------- ocean
 		await progress( 0.3, 'Simulating the ocean…' );
-		this.fft = new OceanFFT( renderer );
+		const oceanCascades = Math.max( 1, Math.min( 4, Number( qs.get( 'oceanCascades' ) || 4 ) ) );
+		this.fft = new OceanFFT( renderer, { cascades: oceanCascades } );
 		if ( this.reef.setOcean ) this.reef.setOcean( this.fft ); // coral / sea fan sway follows the simulated swell
 		this.foamTexture = createFoamTexture( renderer );
 		this.oceanLOD = new CDLOD( { gridSize: Number( qs.get( 'G' ) || 32 ), leafSize: 8, levels: 12, minY: - 25, maxY: 25 } );
@@ -232,7 +237,16 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.sceneRenderer = new SceneRenderer( engine.meshRenderer, scene, camera );
 		// the water's refraction source: the scene below the water only, half resolution
 		this.refraction = new RefractionPass( { meshRenderer: engine.meshRenderer, scene, camera, sceneRenderer: this.sceneRenderer, scale: 0.5 } );
-		this.sceneRenderer.onBeforeWater = () => this.refraction.render( G.seaLevel.value );
+		if ( qs.has( 'noRefraction' ) ) {
+
+			this.refraction.enabled = false;
+			this.sceneRenderer.onBeforeWater = null;
+
+		} else {
+
+			this.sceneRenderer.onBeforeWater = () => this.refraction.render( G.seaLevel.value );
+
+		}
 		if ( this.sky.background ) this.sceneRenderer.background = this.sky.background;
 		// lanterns, lamp posts, path lights, lit windows, the boat's cabin / navigation lights and the
 		// flashlight (L): nearest few packed into one small uniform array each frame
