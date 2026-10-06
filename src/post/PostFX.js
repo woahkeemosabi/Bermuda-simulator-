@@ -65,6 +65,7 @@ export class PostFX {
 		this.sceneRenderer = sceneRenderer;
 		this.underwater = underwater;
 		this.scale = 1;
+		this.mobileLite = false;
 		// headless / tests: a Texture to draw into instead of the canvas, and its size
 		this.outputTexture = null;
 		this.outputSize = null;
@@ -566,19 +567,40 @@ fn fragment( in: FSIn ) -> vec4f {
 		this.smaaIn.setSize( iw, ih );
 		this.medium.setSize( iw, ih );
 		if ( this.underwater.setSize ) this.underwater.setSize( iw, ih );
-		// rtt resolution scales of the original are relative to the drawing buffer (output) size
-		this.aoPass.resolutionScale = 0.5 * this.scale;
-		this.aoPass.setSize( ow, oh );
-		const aw = Math.round( ow * 0.5 * this.scale ), ah = Math.round( oh * 0.5 * this.scale );
-		this.aoDepth.setSize( aw, ah );
-		this.aoBlurX.setSize( aw, ah );
-		this.aoBlurY.setSize( aw, ah );
+		// On the constrained mobile path AO is disabled visually, so keep its backing textures at
+		// 1x1 and do not resize the GTAO history. This frees several full/half-resolution allocations
+		// that were costing quality elsewhere without contributing to the final image.
+		if ( this.mobileLite ) {
+
+			this.aoDepth.setSize( 1, 1 );
+			this.aoBlurX.setSize( 1, 1 );
+			this.aoBlurY.setSize( 1, 1 );
+
+		} else {
+
+			this.aoPass.resolutionScale = 0.5 * this.scale;
+			this.aoPass.setSize( ow, oh );
+			const aw = Math.round( ow * 0.5 * this.scale ), ah = Math.round( oh * 0.5 * this.scale );
+			this.aoDepth.setSize( aw, ah );
+			this.aoBlurX.setSize( aw, ah );
+			this.aoBlurY.setSize( aw, ah );
+
+		}
 		if ( this.haze ) this.haze.setSize( ow, oh );
 		this.taau.setSize( ow, oh );
 		if ( this.bloomDown ) {
 
-			this.bloomScales.forEach( ( s, i ) => this.bloomDown[ i ].setSize( Math.round( ow * s ), Math.round( oh * s ) ) );
-			this.bloomScales.slice( 0, 4 ).forEach( ( s, i ) => this.bloomUp[ i ].setSize( Math.round( ow * s ), Math.round( oh * s ) ) );
+			if ( this.mobileLite ) {
+
+				this.bloomDown.forEach( rt => rt.setSize( 1, 1 ) );
+				this.bloomUp.forEach( rt => rt.setSize( 1, 1 ) );
+
+			} else {
+
+				this.bloomScales.forEach( ( s, i ) => this.bloomDown[ i ].setSize( Math.round( ow * s ), Math.round( oh * s ) ) );
+				this.bloomScales.slice( 0, 4 ).forEach( ( s, i ) => this.bloomUp[ i ].setSize( Math.round( ow * s ), Math.round( oh * s ) ) );
+
+			}
 
 		}
 
@@ -647,11 +669,15 @@ fn fragment( in: FSIn ) -> vec4f {
 
 		if ( ! this._built ) this.beginFrame();
 		const T = this._timers || null;
-		this.motionBlur.compute( this._outW, this._outH );
-		this._aoDepthPass.render( { colorViews: [ this.aoDepth.texture ], clear: CLR } );
-		this.aoPass.render();
-		this._aoBlurXPass.render( { colorViews: [ this.aoBlurX.texture ], clear: CLR } );
-		this._aoBlurYPass.render( { colorViews: [ this.aoBlurY.texture ], clear: CLR } );
+		if ( ! this.mobileLite ) {
+
+			this.motionBlur.compute( this._outW, this._outH );
+			this._aoDepthPass.render( { colorViews: [ this.aoDepth.texture ], clear: CLR } );
+			this.aoPass.render();
+			this._aoBlurXPass.render( { colorViews: [ this.aoBlurX.texture ], clear: CLR } );
+			this._aoBlurYPass.render( { colorViews: [ this.aoBlurY.texture ], clear: CLR } );
+
+		}
 		this._mediumPass.render( { colorViews: [ this.medium.texture ], clear: CLR } );
 		// caustic shafts / torch beam march (half res): only while the lens can be under water (the CPU
 		// water height lags the GPU's by a frame: 1 m of margin)
@@ -678,11 +704,11 @@ fn fragment( in: FSIn ) -> vec4f {
 			t._needsRestart = true;
 
 		}
-		for ( const [ pass, rt ] of this._bloomPasses ) pass.render( { colorViews: [ rt.texture ], clear: CLR } );
+		if ( ! this.mobileLite ) for ( const [ pass, rt ] of this._bloomPasses ) pass.render( { colorViews: [ rt.texture ], clear: CLR } );
 		const out = this.outputTexture ? this.outputTexture.view( { dimension: '2d', mipLevelCount: 1 } ) : GPU.context.getCurrentTexture().createView();
 		this._finalPass.render( { colorViews: [ out ], clear: CLR } );
 		// meter this frame's image; the result is used from the next frame on
-		this.meterKernel.dispatch( [ 1, 1, 1 ] );
+		if ( ! this.mobileLite ) this.meterKernel.dispatch( [ 1, 1, 1 ] );
 		void T;
 
 	}
