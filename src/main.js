@@ -391,10 +391,20 @@ window.__ui = ui;
 app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async () => {
 
 	if ( mobileFastStart ) applyMobileMemoryProfile( app );
+	// Waterfront is one of the slowest first-launch phases on mobile, so give it a real section of
+	// the progress bar instead of jumping to 99% before the network/model work has happened.
+	const waterfrontStart = mobileDevice ? 0.78 : 0.90;
+	const waterfrontEnd = mobileDevice ? 0.94 : 0.975;
+	ui.setLoading( waterfrontStart, 'Loading harbour assets…', waterfrontEnd );
 	app.onWaterfrontProgress = ( done, total, id ) => {
-        // Exact completed asset count; do not simulate progress during asset loading.
-        ui.setLoading( 0.99, `Waterfront ${ done }/${ total }${ id ? ': ' + id : '' }`, 0.99 );
-    };
+		const ratio = total > 0 ? Math.max( 0, Math.min( 1, done / total ) ) : 0;
+		const p = waterfrontStart + ( waterfrontEnd - waterfrontStart ) * ratio;
+		ui.setLoading( p, id ? `Loading harbour · ${ id }` : 'Harbour assets ready', waterfrontEnd );
+		if ( total > 0 ) ui.setLoadingDetail( done, total );
+	};
+	app.onWaterfrontRetry = ( id, attempt, total ) => {
+		ui.setLoading( undefined, `Connection retry ${ attempt }/${ total - 1 } · ${ id }` );
+	};
     const waterfront = await applyBermudaRuntimeLook( app );
     if ( app.relic001 && ! app.relic ) {
         app.relic = new RelicVehicle( { app, vehicle: app.relic001 } );
@@ -402,12 +412,14 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
     }
     if ( ! waterfront?.ready ) {
         const details = waterfront?.errors.map( e => e.id + ': ' + e.message ).join( '; ' );
-        throw new Error( 'Waterfront failed to load: ' + ( details || 'scene unavailable' ) );
+        throw new Error( 'Waterfront failed to initialize: ' + ( details || 'scene unavailable' ) );
+    }
+    if ( waterfront?.degraded ) {
+        ui.setLoading( 0.945, 'Using stable harbour fallback', 0.97 );
     }
     if ( mobileDevice ) {
-        // Boot-critical waterfront assets are ready. Decorative tiers intentionally wait until
-        // after Explore and several seconds of stable frames.
-        ui.setLoading( 0.992, 'Preparing Bermuda', 0.998 );
+        // Boot-critical waterfront is now either loaded or safely represented by the procedural fallback.
+        ui.setLoading( 0.96, 'Finalizing mobile controls…', 0.99 );
     }
 	app.ui = new AppUI( app, ui );
 	applyBermudaBranding( mobileDevice );
@@ -439,8 +451,10 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 		}
 
 	}
+	ui.setLoading( 0.99, 'Final checks…', 0.999 );
 	ui.setLoading( 1, 'Ready' );
 	await ui.hideLoader();
+	window.dispatchEvent( new Event( 'bermuda-game-ready' ) );
 	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
 	if ( app.qs.has( 'bench' ) ) {
 
