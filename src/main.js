@@ -147,9 +147,9 @@ function applyMobileMemoryProfile( app ) {
 			app.post.aaMode = 'fxaa';
 			if ( app.post.params?.aoStrength ) app.post.params.aoStrength.value = 0;
 			if ( app.post.params?.bloom ) app.post.params.bloom.value = 0;
-			if ( app.post.params?.sharpen ) app.post.params.sharpen.value = 0.72;
-			if ( app.post.params?.saturation ) app.post.params.saturation.value = 1.02;
-			if ( app.post.params?.contrast ) app.post.params.contrast.value = 1.07;
+			if ( app.post.params?.sharpen ) app.post.params.sharpen.value = 0.52;
+			if ( app.post.params?.saturation ) app.post.params.saturation.value = 1.04;
+			if ( app.post.params?.contrast ) app.post.params.contrast.value = 1.055;
 			if ( app.post.params?.warmth ) app.post.params.warmth.value = 0.045;
 			if ( app.post.params?.grain ) app.post.params.grain.value = 0.002;
 			if ( app.post.params?.vignette ) app.post.params.vignette.value = 0.18;
@@ -219,7 +219,7 @@ function applyMobileMemoryProfile( app ) {
 				fftAccum += dt;
 				fftFrame ++;
 				const diving = app.player?.mode === 'swim' && ( app.player?.diveDepth || 0 ) > 0.18;
-				const cadence = diving ? 3 : 2;
+				const cadence = diving ? 4 : 3;
 				if ( fftFrame % cadence !== 0 ) return;
 				const step = Math.min( fftAccum, 0.12 );
 				fftAccum = 0;
