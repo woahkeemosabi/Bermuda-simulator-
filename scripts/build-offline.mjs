@@ -118,8 +118,33 @@ const FULL_BYTES = ${fullBytes};
 const FULL_FILE_COUNT = ${mobileFullFiles.length};
 const FULL_MANIFEST_KEY = '__bermuda_full_manifest_v1__';
 const LEGACY_READY_KEY = '__bermuda_full_ready__';
+const NETWORK_MODE_KEY = '__bermuda_network_mode_v1__';
 
 const scoped = p => new URL(p, self.registration.scope).href;
+
+let networkModeMemo = null;
+async function getNetworkMode() {
+  if (networkModeMemo === 'offline' || networkModeMemo === 'online') return networkModeMemo;
+  try {
+    const cache = await caches.open(FULL_CACHE);
+    const response = await cache.match(scoped(NETWORK_MODE_KEY));
+    const value = response ? await response.text() : 'online';
+    networkModeMemo = value === 'offline' ? 'offline' : 'online';
+  } catch (_) {
+    networkModeMemo = 'online';
+  }
+  return networkModeMemo;
+}
+
+async function setNetworkMode(mode) {
+  networkModeMemo = mode === 'offline' ? 'offline' : 'online';
+  const cache = await caches.open(FULL_CACHE);
+  await cache.put(
+    scoped(NETWORK_MODE_KEY),
+    new Response(networkModeMemo, { headers: { 'Content-Type': 'text/plain' } }),
+  );
+  return networkModeMemo;
+}
 
 async function postToClients(message) {
   const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
@@ -305,6 +330,12 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       const index = await (await caches.open(CORE_CACHE)).match(scoped('index.html'));
       if (index) return index;
+      if (await getNetworkMode() === 'offline') {
+        return new Response('Bermuda Simulator offline package is not available on this device.', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      }
       try { return await fetch(request); }
       catch (_) {
         return new Response('Bermuda Simulator is not installed for offline use yet.', {
@@ -319,6 +350,13 @@ self.addEventListener('fetch', event => {
   event.respondWith((async () => {
     const cached = await cacheMatch(request);
     if (cached) return cached;
+
+    // OFFLINE is a hard session mode: never let weak/intermittent service substitute partial
+    // network responses for the installed game.
+    if (await getNetworkMode() === 'offline') {
+      return new Response('', { status: 504, statusText: 'Offline mode: asset not installed' });
+    }
+
     try {
       const response = await fetch(request);
       if (response.ok && response.type !== 'opaque') {
@@ -341,8 +379,18 @@ self.addEventListener('message', event => {
         coreReady: true,
         version: VERSION,
         coreBytes: CORE_BYTES,
+        networkMode: await getNetworkMode(),
         ...full,
       };
+      if (event.ports?.[0]) event.ports[0].postMessage(reply);
+      else event.source?.postMessage(reply);
+    })());
+  }
+
+  if (event.data?.type === 'SET_NETWORK_MODE') {
+    event.waitUntil((async () => {
+      const mode = await setNetworkMode(event.data?.mode);
+      const reply = { type: 'BERMUDA_NETWORK_MODE', mode };
       if (event.ports?.[0]) event.ports[0].postMessage(reply);
       else event.source?.postMessage(reply);
     })());
