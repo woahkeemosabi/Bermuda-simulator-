@@ -164,8 +164,8 @@ export class Player {
 		}
 
 		const look = inp.consumeLook();
-		this.yaw -= look.x * 0.0022;
-		this.pitch = THREE.MathUtils.clamp( this.pitch - look.y * 0.0022, - 1.5, 1.5 );
+		this.yaw -= look.x * 0.00135;
+		this.pitch = THREE.MathUtils.clamp( this.pitch - look.y * 0.00125, - 1.18, 1.12 );
 
 		// RELIC is a road vehicle, entered from the driver side. Keep the pedestrian route clear.
 		if ( this.relic && this.mode === 'walk' && this.relic.near( this.position ) && ! this.busy ) {
@@ -626,8 +626,8 @@ export class Player {
 		const b = this.boat;
 		const L = b.model.lines;
 		const look = inp.consumeLook();
-		this.deckYaw -= look.x * 0.0022;
-		this.pitch = THREE.MathUtils.clamp( this.pitch - look.y * 0.0022, - 1.5, 1.5 );
+		this.deckYaw -= look.x * 0.00135;
+		this.pitch = THREE.MathUtils.clamp( this.pitch - look.y * 0.00125, - 1.18, 1.12 );
 
 		// movement in the boat frame (camera base looks along +Z at deckYaw 0)
 		const sy = Math.sin( this.deckYaw ), cy = Math.cos( this.deckYaw );
@@ -798,8 +798,8 @@ export class Player {
 
 		if ( this.camMode === 'first' ) {
 
-			this.helmYaw = THREE.MathUtils.clamp( this.helmYaw - look.x * 0.0022, - 2.2, 2.2 );
-			this.helmPitch = THREE.MathUtils.clamp( this.helmPitch - look.y * 0.0022, - 1.2, 1.0 );
+			this.helmYaw = THREE.MathUtils.clamp( this.helmYaw - look.x * 0.00125, - 1.65, 1.65 );
+			this.helmPitch = THREE.MathUtils.clamp( this.helmPitch - look.y * 0.00115, - 0.92, 0.78 );
 			const eye = b.toWorld( b.model.helmEye, new THREE.Vector3() );
 			this.camera.position.copy( eye );
 			// head partially stabilises against roll and pitch (feels natural, less nausea)
@@ -811,8 +811,8 @@ export class Player {
 
 		} else {
 
-			this.orbitYaw -= look.x * 0.003;
-			this.orbitPitch = THREE.MathUtils.clamp( this.orbitPitch + look.y * 0.003, - 0.05, 1.2 );
+			this.orbitYaw -= look.x * 0.00135;
+			this.orbitPitch = THREE.MathUtils.clamp( this.orbitPitch + look.y * 0.0012, 0.04, 0.92 );
 			this.orbitDist = THREE.MathUtils.clamp( this.orbitDist * ( 1 + wheel * 0.08 ), 6, 40 );
 			// gently swing behind the boat when moving
 			if ( b.speed > 2 && Math.abs( look.x ) < 0.5 ) {
