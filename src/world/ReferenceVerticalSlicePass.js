@@ -5,6 +5,7 @@ import { HOUSE } from './boat/Wheelhouse.js';
 import { WORLD } from './WorldLayout.js';
 
 const WORLD_SAVE_KEY = 'bermuda.world.v1';
+const BOAT_BERTH_MIGRATION_KEY = 'bermuda.boatBerthFix.v2';
 const _forward = new Vector3();
 const _eye = new Vector3();
 const _target = new Vector3();
@@ -31,8 +32,23 @@ function installWorldPersistence( app ) {
 			if ( ! d || d.v !== 1 ) return true;
 			const b = app.player.boat;
 			const ownsStarterBoat = !! app.game?.state?.boats?.owned?.some?.( boat => boat?.id === 'lobster-workboat' );
+			const migrateBoatToBerth = storage.getItem( BOAT_BERTH_MIGRATION_KEY ) !== '1';
 
-			if ( ownsStarterBoat ) {
+			if ( migrateBoatToBerth ) {
+				// Repair existing desktop/browser saves created while the visual/persistence stack could
+				// leave the starter boat offshore. This runs once per browser, then normal owned-boat
+				// persistence resumes on subsequent sessions.
+				if ( typeof b.reset === 'function' ) b.reset();
+				else {
+					b.position.copy( WORLD.boatDock.position );
+					b.quaternion.setFromAxisAngle( new Vector3( 0, 1, 0 ), WORLD.boatDock.heading );
+					b.moored = true;
+					b.anchored = false;
+				}
+				b.anchorPosition?.copy?.( WORLD.boatDock.position );
+				b.anchorHeading = WORLD.boatDock.heading;
+				storage.setItem( BOAT_BERTH_MIGRATION_KEY, '1' );
+			} else if ( ownsStarterBoat ) {
 				if ( Array.isArray( d.boat?.p ) && d.boat.p.length === 3 ) b.position.set( ...d.boat.p );
 				if ( Array.isArray( d.boat?.q ) && d.boat.q.length === 4 ) b.quaternion.set( ...d.boat.q );
 				b.anchored = !! d.boat?.anchored;
