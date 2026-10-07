@@ -34,6 +34,15 @@
 			color:#dffefa; font:600 11px/1.3 system-ui,-apple-system,sans-serif; letter-spacing:.025em; box-shadow:0 8px 30px rgba(0,0,0,.28);
 			pointer-events:none; transition:opacity .25s ease; }
 		.offline-download-badge[data-ready="1"] { color:#7ff5e3; }
+		.launch-mode{display:none;margin-top:12px;padding:12px;border:1px solid rgba(126,239,226,.24);border-radius:14px;background:rgba(4,20,29,.72)}
+		.launch-mode[data-open="1"]{display:block}
+		.launch-mode-title{font:700 10px/1.2 system-ui,-apple-system,sans-serif;letter-spacing:.16em;color:#91eee3;margin-bottom:8px}
+		.launch-mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+		.launch-mode-btn{appearance:none;border:1px solid rgba(138,236,226,.32);border-radius:12px;background:rgba(10,37,47,.82);color:#effffd;padding:10px 9px;text-align:left;font:700 12px/1.15 system-ui,-apple-system,sans-serif;letter-spacing:.04em}
+		.launch-mode-btn small{display:block;margin-top:4px;color:rgba(226,246,244,.64);font:500 9px/1.25 system-ui,-apple-system,sans-serif;letter-spacing:0}
+		.launch-mode-btn:disabled{opacity:.38}
+		.launch-mode-btn[data-mode="offline"]{border-color:rgba(102,238,222,.5)}
+		.launch-mode-note{margin-top:7px;color:rgba(226,246,244,.58);font:500 9px/1.3 system-ui,-apple-system,sans-serif}
 	</style>
 </head>
 <body>
@@ -63,6 +72,20 @@
 				</div>
 				<div class="loader-note">Estimate adapts to this device. First launch takes longest; later launches learn from the previous load.</div>
 				<div id="offline-state" class="loader-offline" data-ready="0">Offline pack: preparing on this device…</div>
+				<div id="launch-mode" class="launch-mode" data-open="0">
+					<div class="launch-mode-title">PLAY MODE</div>
+					<div class="launch-mode-grid">
+						<button id="launch-offline" class="launch-mode-btn" data-mode="offline" type="button">
+							OFFLINE
+							<small>Installed game only. No network requests.</small>
+						</button>
+						<button id="launch-online" class="launch-mode-btn" data-mode="online" type="button">
+							ONLINE
+							<small>Internet allowed. Local files still preferred.</small>
+						</button>
+					</div>
+					<div id="launch-mode-note" class="launch-mode-note"></div>
+				</div>
 				<div class="loader-tips">
 					<span class="loader-tip-label">Explore</span>
 					<div class="loader-tip-list">
@@ -89,6 +112,8 @@
 		const installedStandalone = window.matchMedia?.('(display-mode: standalone)')?.matches || navigator.standalone === true;
 		document.documentElement.classList.toggle('bermuda-installed-app', !!installedStandalone);
 		window.__bermudaInstalledApp = !!installedStandalone;
+		const mobilePreboot = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+			(navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) < 1024);
 
 		const requestPersistentGameStorage = async () => {
 			if (!navigator.storage?.persist) return false;
@@ -141,6 +166,20 @@
 					resolve(event.data);
 				};
 				worker.postMessage({ type: 'BERMUDA_OFFLINE_STATUS' }, [ channel.port2 ]);
+			});
+		};
+
+		const setServiceWorkerNetworkMode = async (mode, registration = null) => {
+			const worker = registration?.active || navigator.serviceWorker.controller;
+			if (!worker) return false;
+			return new Promise(resolve => {
+				const channel = new MessageChannel();
+				const timer = setTimeout(() => resolve(false), 1800);
+				channel.port1.onmessage = event => {
+					clearTimeout(timer);
+					resolve(event.data?.mode === mode);
+				};
+				worker.postMessage({ type: 'SET_NETWORK_MODE', mode }, [ channel.port2 ]);
 			});
 		};
 
@@ -247,6 +286,56 @@
 			});
 		}
 
+		const chooseMobileLaunchMode = async () => {
+			if (!mobilePreboot) return { mode: 'online', status: null, registration: null };
+
+			let registration = null;
+			try { registration = await navigator.serviceWorker?.getRegistration('./'); } catch (_) {}
+			let status = null;
+			if (registration?.active || navigator.serviceWorker?.controller) {
+				status = await queryOfflineStatus(registration);
+				if (status?.fullBytes) {
+					window.__bermudaOffline = { ...status, supported: true };
+					showFullProgress(status);
+				}
+			}
+
+			const offlineAvailable = !!(status?.ready || status?.playable);
+			const box = document.getElementById('launch-mode');
+			const offlineBtn = document.getElementById('launch-offline');
+			const onlineBtn = document.getElementById('launch-online');
+			const note = document.getElementById('launch-mode-note');
+			if (!box || !offlineBtn || !onlineBtn) return { mode: 'online', status, registration };
+
+			offlineBtn.disabled = !offlineAvailable;
+			note.textContent = offlineAvailable
+				? 'Offline is fully installed on this device.'
+				: 'Offline becomes available after the full game finishes installing online.';
+			box.dataset.open = '1';
+
+			return await new Promise(resolve => {
+				let chosen = false;
+				const finish = async mode => {
+					if (chosen) return;
+					chosen = true;
+					offlineBtn.disabled = true;
+					onlineBtn.disabled = true;
+					if (registration?.active || navigator.serviceWorker?.controller) {
+						await setServiceWorkerNetworkMode(mode, registration);
+					}
+					window.__bermudaLaunchMode = mode;
+					box.dataset.open = '0';
+					setOfflineText(
+						mode === 'offline' ? 'OFFLINE MODE · installed game only ✓' : 'ONLINE MODE · local files preferred',
+						mode === 'offline' && offlineAvailable,
+					);
+					resolve({ mode, status, registration });
+				};
+				offlineBtn.addEventListener('click', () => offlineAvailable && finish('offline'), { once: true });
+				onlineBtn.addEventListener('click', () => finish('online'), { once: true });
+			});
+		};
+
 		window.addEventListener('offline', () => {
 			if (window.__bermudaOffline?.ready || window.__bermudaOffline?.playable) setOfflineText('OFFLINE GAME READY ✓', true);
 		});
@@ -254,9 +343,17 @@
 			if (window.__bermudaOffline?.ready || window.__bermudaOffline?.playable) setOfflineText('OFFLINE GAME READY ✓', true);
 		});
 
-		const mobilePreboot = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
-			(navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) < 1024);
-		if (mobilePreboot) await window.__bermudaEnsureFullOffline();
+		const launch = await chooseMobileLaunchMode();
+		if (mobilePreboot) {
+			const installed = !!(launch.status?.ready || launch.status?.playable);
+			if (launch.mode === 'offline') {
+				if (!installed) throw new Error('Offline mode selected without a complete installed game.');
+				requestPersistentGameStorage();
+			} else if (!installed) {
+				// First-time players still install the complete mobile package before WebGPU starts.
+				await window.__bermudaEnsureFullOffline();
+			}
+		}
 		await import('/src/runtime/MobileVehicleHandling.js');
 		await import('/src/main.js');
 	</script>
