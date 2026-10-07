@@ -7,6 +7,7 @@ export class Input {
 		this.keys = new Set();
 		this.pressed = new Set();
 		this.look = { x: 0, y: 0 };
+		this.lookSmooth = { x: 0, y: 0 };
 		this.wheel = 0;
 		this.mouseDown = false;
 		this.rightDown = false;
@@ -41,8 +42,12 @@ export class Input {
 
 			if ( this.locked || this.mouseDown || this.rightDown ) {
 
-				this.look.x += e.movementX;
-				this.look.y += e.movementY;
+				// Pointer-lock can report very large deltas after a slow frame, focus change or
+				// cursor recapture. Never let one browser event whip the camera around.
+				const dx = Math.max( -42, Math.min( 42, Number( e.movementX ) || 0 ) );
+				const dy = Math.max( -34, Math.min( 34, Number( e.movementY ) || 0 ) );
+				this.look.x += dx;
+				this.look.y += dy;
 
 			}
 
@@ -83,10 +88,21 @@ export class Input {
 
 	consumeLook() {
 
-		const l = { x: this.look.x, y: this.look.y };
+		// At low frame rates many mouse events can accumulate before one render frame. Clamp the
+		// frame total, then damp it so 12 FPS still feels controlled instead of applying a giant snap.
+		const rawX = Math.max( -64, Math.min( 64, this.look.x ) );
+		const rawY = Math.max( -48, Math.min( 48, this.look.y ) );
 		this.look.x = 0;
 		this.look.y = 0;
-		return l;
+
+		const response = 0.58;
+		this.lookSmooth.x += ( rawX - this.lookSmooth.x ) * response;
+		this.lookSmooth.y += ( rawY - this.lookSmooth.y ) * response;
+
+		if ( Math.abs( rawX ) < 0.01 && Math.abs( this.lookSmooth.x ) < 0.08 ) this.lookSmooth.x = 0;
+		if ( Math.abs( rawY ) < 0.01 && Math.abs( this.lookSmooth.y ) < 0.08 ) this.lookSmooth.y = 0;
+
+		return { x: this.lookSmooth.x, y: this.lookSmooth.y };
 
 	}
 
