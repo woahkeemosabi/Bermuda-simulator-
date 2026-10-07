@@ -2,6 +2,7 @@ import { Group, Vector3 } from '../engine/index.js';
 import { placeStaticAsset } from './bermuda/StaticAsset.js';
 import { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js';
 import { HOUSE } from './boat/Wheelhouse.js';
+import { WORLD } from './WorldLayout.js';
 
 const WORLD_SAVE_KEY = 'bermuda.world.v1';
 const _forward = new Vector3();
@@ -29,13 +30,35 @@ function installWorldPersistence( app ) {
 			const d = JSON.parse( raw );
 			if ( ! d || d.v !== 1 ) return true;
 			const b = app.player.boat;
-			if ( Array.isArray( d.boat?.p ) && d.boat.p.length === 3 ) b.position.set( ...d.boat.p );
-			if ( Array.isArray( d.boat?.q ) && d.boat.q.length === 4 ) b.quaternion.set( ...d.boat.q );
-			b.anchored = !! d.boat?.anchored;
-			b.moored = !! d.boat?.moored;
-			if ( Array.isArray( d.boat?.anchor ) && d.boat.anchor.length === 3 ) b.anchorPosition.set( ...d.boat.anchor );
-			if ( Number.isFinite( d.boat?.anchorHeading ) ) b.anchorHeading = d.boat.anchorHeading;
-			b.velocity.set( 0, 0, 0 ); b.angular.set( 0, 0, 0 ); b.throttle = 0; b.apply();
+			const ownsStarterBoat = !! app.game?.state?.boats?.owned?.some?.( boat => boat?.id === 'lobster-workboat' );
+
+			if ( ownsStarterBoat ) {
+				if ( Array.isArray( d.boat?.p ) && d.boat.p.length === 3 ) b.position.set( ...d.boat.p );
+				if ( Array.isArray( d.boat?.q ) && d.boat.q.length === 4 ) b.quaternion.set( ...d.boat.q );
+				b.anchored = !! d.boat?.anchored;
+				b.moored = !! d.boat?.moored;
+				if ( Array.isArray( d.boat?.anchor ) && d.boat.anchor.length === 3 ) b.anchorPosition.set( ...d.boat.anchor );
+				if ( Number.isFinite( d.boat?.anchorHeading ) ) b.anchorHeading = d.boat.anchorHeading;
+			} else {
+				// The unpurchased starter boat is part of the harbour progression, not world persistence.
+				// Old desktop saves must never move it away from the sale berth.
+				b.position.copy( WORLD.boatDock.position );
+				b.quaternion.setFromAxisAngle( new Vector3( 0, 1, 0 ), WORLD.boatDock.heading );
+				b.moored = true;
+				b.anchored = false;
+				if ( b.mooring ) {
+					b.mooring.anchor.copy( WORLD.boatDock.position );
+					b.mooring.heading = WORLD.boatDock.heading;
+				}
+				b.anchorPosition.copy( WORLD.boatDock.position );
+				b.anchorHeading = WORLD.boatDock.heading;
+			}
+			b.velocity.set( 0, 0, 0 );
+			b.angular.set( 0, 0, 0 );
+			b.throttle = 0;
+			b.steer = 0;
+			b.rpm = 0;
+			b.apply();
 
 			const r = app.relic;
 			if ( d.relic?.mode && r.setDriveMode ) r.setDriveMode( d.relic.mode, false );
