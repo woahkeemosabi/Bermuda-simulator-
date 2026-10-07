@@ -56,7 +56,35 @@ export class BoatOwnership {
 
 	refresh() { if ( this.sign ) this.sign.visible = ! this.ownsBoat(); }
 
+	ensureStarterBoatAtBerth() {
+		if ( this.ownsBoat() ) return;
+		const boat = this.player?.boat;
+		if ( ! boat ) return;
+
+		const dock = WORLD.boatDock.position;
+		const dx = boat.position.x - dock.x;
+		const dy = boat.position.y - dock.y;
+		const dz = boat.position.z - dock.z;
+		const away = Math.hypot( dx, dy, dz ) > 0.75;
+		const wrongState = ! boat.moored || boat.anchored;
+
+		if ( away || wrongState ) {
+			// The sale boat is harbour inventory until purchased. It cannot inherit a world-save
+			// position or drift into the traffic field before ownership transfers to the player.
+			if ( typeof boat.reset === 'function' ) boat.reset();
+			else {
+				boat.position.copy( dock );
+				boat.velocity?.set?.( 0, 0, 0 );
+				boat.angular?.set?.( 0, 0, 0 );
+				boat.moored = true;
+				boat.anchored = false;
+			}
+			boat.apply?.();
+		}
+	}
+
 	update() {
+		this.ensureStarterBoatAtBerth();
 		this.refresh();
 		if ( this.ownsBoat() ) {
 			// Migration: an older save may already own the boat before the mission became formal.
