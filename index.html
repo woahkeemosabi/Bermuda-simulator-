@@ -276,8 +276,8 @@
 
 		window.__bermudaEnsureFullOffline = () => startOfflineInstall({ blockUntilReady: true });
 
-		// Report an existing package immediately, but do not start/continue the 161 MB write job during
-		// gameplay. On phones the package is completed before the WebGPU game is imported.
+		// Report an existing package immediately. Merely viewing status must never start the 161 MB
+		// install; ONLINE launches without it and OFFLINE is only selectable when already complete.
 		if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
 			queryOfflineStatus(null).then(status => {
 				if (!status?.fullBytes) return;
@@ -310,7 +310,7 @@
 			offlineBtn.disabled = !offlineAvailable;
 			note.textContent = offlineAvailable
 				? 'Offline is fully installed on this device.'
-				: 'Offline becomes available after the full game finishes installing online.';
+				: 'Offline is not installed yet. Online starts immediately without downloading the full 161 MB package.';
 			box.dataset.open = '1';
 
 			return await new Promise(resolve => {
@@ -325,10 +325,13 @@
 					}
 					window.__bermudaLaunchMode = mode;
 					box.dataset.open = '0';
-					setOfflineText(
-						mode === 'offline' ? 'OFFLINE MODE · installed game only ✓' : 'ONLINE MODE · local files preferred',
-						mode === 'offline' && offlineAvailable,
-					);
+					if (mode === 'online') {
+						const badge = document.querySelector('.offline-download-badge');
+						if (badge) badge.style.display = 'none';
+						setOfflineText('ONLINE MODE · streaming game as needed');
+					} else {
+						setOfflineText('OFFLINE MODE · installed game only ✓', true);
+					}
 					resolve({ mode, status, registration });
 				};
 				offlineBtn.addEventListener('click', () => offlineAvailable && finish('offline'), { once: true });
@@ -349,10 +352,10 @@
 			if (launch.mode === 'offline') {
 				if (!installed) throw new Error('Offline mode selected without a complete installed game.');
 				requestPersistentGameStorage();
-			} else if (!installed) {
-				// First-time players still install the complete mobile package before WebGPU starts.
-				await window.__bermudaEnsureFullOffline();
 			}
+			// ONLINE intentionally does not start or wait for the 161 MB offline package.
+			// It launches immediately and lets the service worker/cache satisfy assets already stored
+			// while remaining assets are fetched normally from the network as gameplay loads them.
 		}
 		const loaderStatus = document.querySelector('.loader-status');
 		const loaderPct = document.querySelector('.loader-pct');
