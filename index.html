@@ -354,8 +354,33 @@
 				await window.__bermudaEnsureFullOffline();
 			}
 		}
-		await import('/src/runtime/MobileVehicleHandling.js');
-		await import('/src/main.js');
+		const loaderStatus = document.querySelector('.loader-status');
+		const loaderPct = document.querySelector('.loader-pct');
+
+		try {
+			if (!mobilePreboot) {
+				if (!navigator.gpu) {
+					throw new Error('WebGPU is not available in this desktop browser. Use a current Chrome, Edge or Safari build with WebGPU enabled.');
+				}
+				if (loaderStatus) loaderStatus.textContent = 'Starting desktop renderer…';
+				if (loaderPct) loaderPct.textContent = '1%';
+			} else {
+				if (loaderStatus) loaderStatus.textContent = 'Starting mobile controls…';
+				await import('/src/runtime/MobileVehicleHandling.js');
+			}
+
+			if (loaderStatus) loaderStatus.textContent = mobilePreboot ? 'Starting WebGPU…' : 'Loading desktop game engine…';
+			await import('/src/main.js');
+		} catch (error) {
+			console.error('Bermuda Simulator bootstrap failed:', error);
+			const message = String(error?.message || error || 'Unknown startup error');
+			if (loaderStatus) loaderStatus.textContent = 'Startup failed: ' + message;
+			const eta = document.querySelector('.loader-eta');
+			if (eta) eta.textContent = 'ERROR';
+			const loader = document.getElementById('loader');
+			if (loader) loader.classList.add('tw-error');
+			throw error;
+		}
 	</script>
 </body>
 </html>
