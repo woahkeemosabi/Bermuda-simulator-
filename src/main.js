@@ -1,4 +1,5 @@
-import { startDeferredWaterfront, preloadCompleteMobileWaterfront, updateWaterfrontVisibility } from './world/BermudaModels.js';
+import { startDeferredWaterfront, updateWaterfrontVisibility } from './world/BermudaModels.js';
+import { showStartupRecovery } from './core/StartupRecovery.js';
 import { mobileQualityParameters } from './mobile/QualityProfile.js';
 import './core/BenchSeed.js';
 import { App } from './App.js';
@@ -33,8 +34,9 @@ const initialParams = new URLSearchParams( location.search );
 const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
 const forceDesktop = initialParams.has( 'desktop' );
-const mobileFastStart = mobileDevice && ! forceDesktop;
-const mobileSafeLevel = mobileFastStart ? Math.max( 0, Number( initialParams.get( 'gpuSafe' ) || 0 ) ) : 0;
+const reducedGraphics = [ 'performance', 'mobile-safe' ].includes( initialParams.get( 'quality' ) );
+const mobileFastStart = ( mobileDevice || reducedGraphics ) && ! forceDesktop;
+const mobileSafeLevel = mobileFastStart ? Math.max( reducedGraphics ? 1 : 0, Number( initialParams.get( 'gpuSafe' ) || 0 ) ) : 0;
 
 if ( mobileFastStart ) {
 
@@ -244,7 +246,7 @@ function startMobileDeferredScenery( app ) {
 	// Never allocate decorative GLBs behind the Explore overlay. The first real WebGPU frames must
 	// prove stable before Safari is asked for more geometry/textures. On recovery level 2 we keep the
 	// procedural/reference fallbacks for the whole session rather than risking another device loss.
-	if ( mobileSafeLevel >= 2 ) {
+	if ( mobileSafeLevel >= 1 ) {
 
 		window.__bermudaDeferredScenery = 'held-safe-mode';
 		return;
@@ -263,7 +265,7 @@ function startMobileDeferredScenery( app ) {
 		}
 
 		window.__bermudaDeferredScenery = 'tier2-streaming';
-		startDeferredWaterfront( app, { initialDelay: 0, tierDelay: 8000, entryDelay: 350, maxTier: 2 } );
+		startDeferredWaterfront( app, { initialDelay: 0, entryDelay: 1200, maxTier: 3 } );
 
 	}, 12000 );
 
@@ -430,16 +432,9 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 		}
 
 	}
-	if ( mobileDevice ) {
-
-		// Build every mobile waterfront tier while the frame loop is still stopped. The 161 MB package
-		// is already local at this point, so this stage is decode/place/upload only—no runtime streaming.
-		ui.setLoading( 0.84, 'Building complete mobile environment…', 0.988 );
-		await preloadCompleteMobileWaterfront( app, { entryDelay: 120 } );
-		window.__bermudaDeferredScenery = 'all-mobile-tiers-preloaded-before-explore';
-		window.__bermudaRuntimeStreamingDisabled = true;
-
-	}
+	// Online mode may have no offline pack at all. Start with the playable harbour and load
+	// decorative tiers after Explore; installed offline assets follow the same memory-safe order.
+	window.__bermudaDeferredScenery = 'waiting-for-gameplay';
 
 	ui.setLoading( 0.99, 'Final checks…', 0.999 );
 	ui.setLoading( 1, 'Ready' );
@@ -467,6 +462,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 			if ( app.audio ) app.audio.resume();
 			installMobileGPUWatchdog();
 			app.start();
+			startMobileDeferredScenery( app );
 
 		} );
 		return;
@@ -475,7 +471,8 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 		app.start();
 		installDesktopQualityGovernor( app );
-            startDeferredWaterfront(app);
+		if ( mobileFastStart ) startMobileDeferredScenery( app );
+		else startDeferredWaterfront( app );
 
 	}
 	ui.showStartOverlay( () => {
@@ -490,5 +487,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	console.error( e );
 	if ( recoverMobileInitGPUError( e ) ) return;
 	ui.setLoadingError( 'Something went wrong: ' + e.message );
+	showStartupRecovery( e, { mobile: mobileDevice } );
 
 } );
+

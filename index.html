@@ -71,7 +71,7 @@
 					<span class="loader-eta">1:30</span>
 				</div>
 				<div class="loader-note">Estimate adapts to this device. First launch takes longest; later launches learn from the previous load.</div>
-				<div id="offline-state" class="loader-offline" data-ready="0">Offline pack: preparing on this device…</div>
+				<div id="offline-state" class="loader-offline" data-ready="0">Checking launch options…</div>
 				<div id="launch-mode" class="launch-mode" data-open="0">
 					<div class="launch-mode-title">PLAY MODE</div>
 					<div class="launch-mode-grid">
@@ -101,6 +101,8 @@
 		</div>
 	</div>
 	<script type="module">
+		import { showStartupRecovery } from '/src/core/StartupRecovery.js';
+
 		const offlineEl = document.getElementById('offline-state');
 		const setOfflineText = (text, ready = false) => {
 			if (!offlineEl) return;
@@ -287,8 +289,6 @@
 		}
 
 		const chooseMobileLaunchMode = async () => {
-			if (!mobilePreboot) return { mode: 'online', status: null, registration: null };
-
 			let registration = null;
 			try { registration = await navigator.serviceWorker?.getRegistration('./'); } catch (_) {}
 			let status = null;
@@ -298,6 +298,16 @@
 					window.__bermudaOffline = { ...status, supported: true };
 					showFullProgress(status);
 				}
+			}
+
+			// Desktop also has to clear a previous offline worker mode before importing engine
+			// chunks. The recovery link explicitly selects online on either kind of device.
+			if (!mobilePreboot || new URLSearchParams(location.search).get('launch') === 'online') {
+				if (registration?.active || navigator.serviceWorker?.controller) await setServiceWorkerNetworkMode('online', registration);
+				window.__bermudaLaunchMode = 'online';
+				if (offlineBadge) offlineBadge.style.display = 'none';
+				setOfflineText('ONLINE MODE · loading game as needed');
+				return { mode: 'online', status, registration };
 			}
 
 			const offlineAvailable = !!(status?.ready || status?.playable);
@@ -382,6 +392,7 @@
 			if (eta) eta.textContent = 'ERROR';
 			const loader = document.getElementById('loader');
 			if (loader) loader.classList.add('tw-error');
+			showStartupRecovery(error, { mobile: mobilePreboot });
 			throw error;
 		}
 	</script>

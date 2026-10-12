@@ -24,6 +24,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Verify startup and recovery
+        run: node test/startup-recovery.mjs && node --experimental-vm-modules test/startup-bootstrap.mjs
       - name: Run CPU-safe game logic tests
         run: node test/game-logic.mjs
       - run: npm run build
@@ -48,3 +50,4 @@ jobs:
         uses: actions/deploy-pages@v4
 
 # Redeploy marker: lobster startup fix verified 2026-09-28
+

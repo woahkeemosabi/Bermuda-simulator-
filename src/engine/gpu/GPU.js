@@ -8,6 +8,8 @@
 // range written twice in one frame keeps only the last value for every pass. Anything that changes
 // between passes of a frame needs its own buffer (or its own offset).
 
+import { requestGraphicsAdapter } from './Adapter.js';
+
 export const GPU = {
 
 	device: null,
@@ -27,9 +29,7 @@ export const GPU = {
 
 	async init( { canvas = null, requiredLimits = {}, headless = false } = {} ) {
 
-		if ( ! navigator.gpu ) throw new Error( 'WebGPU is not available in this browser.' );
-		const adapter = await navigator.gpu.requestAdapter( { powerPreference: 'high-performance' } );
-		if ( ! adapter ) throw new Error( 'No WebGPU adapter found.' );
+		const adapter = await requestGraphicsAdapter( navigator.gpu );
 		this.adapter = adapter;
 
 		const L = adapter.limits;
@@ -250,3 +250,4 @@ export function sampleTypeOf( format ) {
 	return t;
 
 }
+

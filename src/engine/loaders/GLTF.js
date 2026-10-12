@@ -18,20 +18,19 @@
 //   globalThis.__assetFile( url ) -> ArrayBuffer, globalThis.__assetImage( bytes, mimeType ) -> { data, width, height }
 
 import { Matrix4, Quaternion, Vector3 } from '../math/index.js';
+import { fetchAssetBuffer } from '../../core/AssetFetch.js';
 
 const COMPONENTS = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT4: 16 };
 const ARRAYS = { 5120: Int8Array, 5121: Uint8Array, 5122: Int16Array, 5123: Uint16Array, 5125: Uint32Array, 5126: Float32Array };
 const NORM = { 5120: 127, 5121: 255, 5122: 32767, 5123: 65535 };
 
-export async function loadGLB( url ) {
+export async function loadGLB( url, { timeoutMs = 30000 } = {} ) {
 
 	let buffer;
 	if ( globalThis.__assetFile ) buffer = await globalThis.__assetFile( url );
 	else {
 
-		const res = await fetch( url );
-		if ( ! res.ok ) throw new Error( 'GLB: ' + url + ' ' + res.status );
-		buffer = await res.arrayBuffer();
+		buffer = await fetchAssetBuffer( url, timeoutMs );
 
 	}
 
@@ -222,3 +221,4 @@ export async function decodeImage( bytes, mimeType ) {
 	return { data: new Uint8Array( d.buffer, d.byteOffset, d.byteLength ), width, height };
 
 }
+
