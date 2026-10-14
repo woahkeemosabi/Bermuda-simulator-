@@ -121,3 +121,4 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	ui.setLoadingError( 'Something went wrong: ' + e.message );
 
 } );
+// deploy-marker: pre-recovery-startup
