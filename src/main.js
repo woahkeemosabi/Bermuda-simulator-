@@ -199,7 +199,14 @@ function installMobileGPUWatchdog() {
 
 	};
 
-	GPU.device.lost.then( ( info ) => recover( 'device lost: ' + ( info && info.reason ? info.reason : 'unknown' ) ) );
+	GPU.device.lost.then( ( info ) => {
+		// Preserve the browser's actual failure detail for the on-screen recovery message.
+		// This runs only after device loss; it does not alter rendering or retry policy.
+		const detail = String( info?.message || '' ).slice( 0, 500 );
+		const frameError = String( window.__bermudaFrameError?.message || '' ).slice( 0, 300 );
+		recover( 'device lost: ' + ( info?.reason || 'unknown' ) +
+			( detail ? '; ' + detail : '' ) + ( frameError ? '; last frame: ' + frameError : '' ) );
+	} );
 
 	// A live JS/touch layer with a frozen 3D image means the browser can still run JavaScript while
 	// WebGPU presentation has stopped. Probe submitted GPU work periodically; if the queue cannot
