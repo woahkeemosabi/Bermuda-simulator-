@@ -45,7 +45,9 @@ function installStyle() {
 		#bm-touch-stable button[data-role='light']::before{background-image:${ ICONS.light }}
 		#bm-touch-stable button[data-role='fish']::before{background-image:${ ICONS.fish }}
 		#bm-touch-stable button[data-role='dive']::before{background-image:${ ICONS.up };transform:rotate(180deg)}
-		@media(max-width:700px){body.bm-mobile .gm-map{width:96px!important;height:96px!important;right:max(14px,env(safe-area-inset-right))!important;bottom:188px!important;opacity:.94!important}}
+		body.bm-mobile #bm-wallet-live{top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 18px)}
+		body.bm-mobile .bm-account-btn{top:var(--bm-save-top,calc(env(safe-area-inset-top,0px) + 58px));right:calc(env(safe-area-inset-right,0px) + 18px)}
+		@media(max-width:700px){body.bm-mobile .gm-map{width:96px!important;height:96px!important;right:calc(env(safe-area-inset-right,0px) + 16px)!important;bottom:var(--bm-hud-map-bottom,calc(max(28px,env(safe-area-inset-bottom)) + 212px))!important;opacity:.94!important}}
 	`;
 	document.head.appendChild( style );
 }
@@ -70,12 +72,56 @@ function syncWeatherIcon() {
 	el.style.setProperty( '--bm-weather-icon', icon );
 }
 
+// Layout only: measure the existing nodes without changing input, visibility or game state.
+function installHudSpacing() {
+	let actions, wallet;
+	const resize = new ResizeObserver( sync );
+	const changes = new MutationObserver( sync );
+	function sync() {
+		const nextWallet = document.getElementById( 'bm-wallet-live' );
+		const nextActions = document.querySelector( '#bm-touch-stable .bm-actions' );
+		if ( nextWallet !== wallet ) {
+			if ( wallet ) resize.unobserve( wallet );
+			wallet = nextWallet;
+			if ( wallet ) resize.observe( wallet );
+		}
+		if ( nextActions !== actions ) {
+			if ( actions ) resize.unobserve( actions );
+			changes.disconnect();
+			actions = nextActions;
+			if ( actions ) {
+				resize.observe( actions );
+				// Contextual buttons change class before paint; no polling delay when REEL appears.
+				changes.observe( actions, { subtree:true, childList:true, attributes:true, attributeFilter:[ 'class', 'style', 'hidden' ] } );
+			}
+		}
+		if ( wallet ) document.body.style.setProperty( '--bm-save-top', `${ wallet.getBoundingClientRect().bottom + 10 }px` );
+		const map = document.querySelector( '.gm-map' );
+		if ( map && actions && actions.getBoundingClientRect().height > 0 ) {
+			const parent = map.offsetParent;
+			const bottom = parent ? parent.getBoundingClientRect().top + parent.clientHeight : window.innerHeight;
+			map.style.setProperty( '--bm-hud-map-bottom', `${ Math.ceil( bottom - actions.getBoundingClientRect().top + 18 ) }px` );
+		}
+	}
+	window.addEventListener( 'resize', sync, { passive:true } );
+	window.visualViewport?.addEventListener( 'resize', sync, { passive:true } );
+	window.addEventListener( 'pagehide', () => {
+		resize.disconnect();
+		changes.disconnect();
+		window.removeEventListener( 'resize', sync );
+		window.visualViewport?.removeEventListener( 'resize', sync );
+	}, { once:true } );
+	return sync;
+}
+
 export function installMobileScreenshotHUD( app ) {
 	if ( ! app || ! mobileHardware() || typeof document === 'undefined' || app.__mobileScreenshotHUD ) return app?.__mobileScreenshotHUD || null;
 	installStyle();
+	const syncSpacing = installHudSpacing();
 
 	const sync = () => {
 		ensureWallet( app );
+		syncSpacing();
 		syncWeatherIcon();
 	};
 	sync();
@@ -86,3 +132,4 @@ export function installMobileScreenshotHUD( app ) {
 	window.__mobileScreenshotHUD = state;
 	return state;
 }
+
