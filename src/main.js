@@ -158,11 +158,10 @@ function recoverMobileInitGPUError( error ) {
 
 	if ( ! mobileFastStart ) return false;
 	const message = String( error && ( error.message || error ) || '' );
-	if ( ! /createBuffer|Unable to create buffer|GPUDevice|device lost|destroyed|out of memory|GPU queue/i.test( message ) ) return false;
-	const url = mobileRecoveryURL( message, 'gpu-init-recovery' );
-	if ( ! url ) return false;
-	location.replace( url.href );
-	return true;
+	if ( /createBuffer|Unable to create buffer|GPUDevice|device lost|destroyed|out of memory|GPU queue/i.test( message ) ) {
+		try { sessionStorage.setItem( 'bermudaLastGPUError', message ); } catch ( _ ) {}
+	}
+	return false;
 
 }
 
@@ -188,13 +187,7 @@ function installMobileGPUWatchdog() {
 		if ( recovering ) return;
 		recovering = true;
 		window.__bermudaGPUStall = reason;
-		const url = mobileRecoveryURL( reason );
-		if ( url ) {
-
-			location.replace( url.href );
-			return;
-
-		}
+		try { sessionStorage.setItem( 'bermudaLastGPUError', String( reason || 'unknown' ) ); } catch ( _ ) {}
 		showRecoveryFailure( reason );
 
 	};
@@ -301,9 +294,8 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
         const details = waterfront?.errors.map( e => e.id + ': ' + e.message ).join( '; ' );
         throw new Error( 'Waterfront failed to load: ' + ( details || 'scene unavailable' ) );
     }
-    if ( mobileDevice ) {
-        ui.setLoading( 0.992, 'Preparing Bermuda scenery', 0.998 );
-        await startDeferredWaterfront( app );
+    if ( mobileDevice && app.localLights ) {
+        app.localLights.strength = Math.max( Number( app.localLights.strength ) || 1, 1.35 );
     }
 	app.ui = new AppUI( app, ui );
 	applyBermudaBranding( mobileDevice );
@@ -336,21 +328,17 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 	}
 	ui.setLoading( 1, 'Ready' );
-	await ui.hideLoader();
-	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
+
 	if ( app.qs.has( 'bench' ) ) {
 
+		await ui.hideLoader();
 		window.__bench = new ( await import( './core/Bench.js' ) ).Bench( app );
 		if ( app.qs.has( 'auto' ) ) window.__job = window.__bench.auto( app.qs.get( 'auto' ), { runs: Number( app.qs.get( 'runs' ) ) || 1 } );
-		// ?bench&shots=view1,view2[&tag=name][&dt=seconds][&seq=n&every=frames]: reference shots of the named views only (core/DebugViews.js; dt > 0: the clock runs, e.g. for the eased lens flare)
-		// &wdbg=N: the water shader's debug view (WaterMaterial debugMode) in the shots
 		if ( app.qs.has( 'wdbg' ) && app.waterMaterial ) app.waterMaterial.debugMode.value = Number( app.qs.get( 'wdbg' ) );
 		if ( app.qs.has( 'shots' ) ) window.__job = window.__bench.shots( app.qs.get( 'shots' ).split( ',' ), { tag: app.qs.get( 'tag' ) || 'shot', dt: Number( app.qs.get( 'dt' ) ) || 0, seq: Number( app.qs.get( 'seq' ) ) || 1, every: Number( app.qs.get( 'every' ) ) || 1 } );
 
 	} else if ( mobileDevice ) {
 
-		// Do not run the full WebGPU frame loop behind the mobile start overlay. Start exactly once
-		// from the user gesture after the mobile memory profile is installed.
 		let started = false;
 		ui.showStartOverlay( () => {
 
@@ -359,15 +347,17 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 			if ( app.audio ) app.audio.resume();
 			installMobileGPUWatchdog();
 			app.start();
-            startDeferredWaterfront(app);
+			window.__bermudaMobileDeferredScenery = 'disabled-for-stability';
 
 		} );
+		await ui.hideLoader();
 		return;
 
 	} else {
 
+		await ui.hideLoader();
 		app.start();
-            startDeferredWaterfront(app);
+		startDeferredWaterfront( app );
 
 	}
 	ui.showStartOverlay( () => {
