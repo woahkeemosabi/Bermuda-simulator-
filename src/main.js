@@ -1,6 +1,7 @@
 import './core/BenchSeed.js';
 import { App } from './App.js';
 import { GPU } from './engine/gpu/GPU.js';
+import { ShadowUniforms } from './engine/render/wgsl/lighting.js';
 import { UI } from './ui/UI.js';
 import { AppUI } from './ui/AppUI.js';
 import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaIdentity.js';
@@ -25,21 +26,22 @@ if ( mobileDevice ) {
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	// The 72/82% emergency scales proved the Safari startup path. The default is now 90% so the
-	// actual game is substantially sharper, while clouds/haze/caustics remain off until their shader
-	// startup cost is reduced. ?scale= can still be supplied explicitly for diagnostics.
-	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ] ] ) {
+	// Stable iPhone baseline: preserve the core game, but avoid the expensive shoreline simulation
+	// and high-resolution startup allocations that have been killing Safari before Explore.
+	for ( const [ key, value ] of [
+		[ 'noClouds', '1' ],
+		[ 'noHaze', '1' ],
+		[ 'noCaustics', '1' ],
+		[ 'noSim', '1' ],
+		[ 'G', '16' ],
+	] ) {
 
-		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
+		url.searchParams.set( key, value );
 
 	}
-	if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) url.searchParams.set( 'scale', '0.90' );
+	url.searchParams.set( 'scale', '0.82' );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
-	// Keep all scene pipelines asynchronous on mobile. MeshRenderer explicitly supports this mode:
-	// a draw whose pipeline is still compiling is skipped for that frame instead of forcing a
-	// synchronous WebGPU compile. That is critical on iPhone Safari: equipping the rod, boarding the
-	// boat, or revealing a new material must never stall/fault the entire frame loop.
 	App.prototype.precompile = async function() {
 
 		await Promise.race( [
@@ -49,6 +51,74 @@ if ( mobileFastStart ) {
 		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;
 
 	};
+
+}
+
+// App.init normally runs two hidden warm-up frames. On iPhone, those frames can allocate most of
+// the heavy GPU systems before the user ever sees Tap to Explore. Suppress them until the mobile
+// memory profile is installed.
+const normalAppFrame = App.prototype.frame;
+if ( mobileFastStart ) {
+
+	App.prototype.frame = function( ...args ) {
+
+		if ( ! this.__bermudaMobileReady ) return;
+		return normalAppFrame.apply( this, args );
+
+	};
+
+}
+
+function applyMobileMemoryProfile( app ) {
+
+	if ( ! mobileFastStart || ! app ) return;
+
+	// Cut the 3-cascade shadow texture from 2048² to 1024² before its first real frame allocation.
+	if ( app.shadows && app.shadows.texture && ! app.shadows.texture.gpu ) {
+
+		app.shadows.size = 1024;
+		app.shadows.texture.width = 1024;
+		app.shadows.texture.height = 1024;
+		if ( ShadowUniforms?.fields?.mapSize ) ShadowUniforms.fields.mapSize.value = 1024;
+
+	}
+
+	// Preserve walking, fishing, Joe/Martha, minimap, boat physics and the ocean. Disable only
+	// secondary visual systems that create extra GPU buffers/particle work on iPhone.
+	if ( app.wake ) {
+		if ( app.surface ) app.surface.wake = null;
+		app.wake.update = () => {};
+	}
+	if ( app.boatSpray ) app.boatSpray.update = () => {};
+	if ( app.spray ) {
+		app.spray.update = () => {};
+		if ( app.spray.mesh ) app.spray.mesh.visible = false;
+	}
+	if ( app.breakers ) {
+		app.breakers.update = () => {};
+		if ( app.breakers.mesh ) app.breakers.mesh.visible = false;
+	}
+	if ( app.marineSnow ) {
+		app.marineSnow.update = () => {};
+		if ( app.marineSnow.mesh ) app.marineSnow.mesh.visible = false;
+	}
+	if ( app.airMotes ) {
+		app.airMotes.update = () => {};
+		if ( app.airMotes.mesh ) app.airMotes.mesh.visible = false;
+	}
+	if ( app.whale ) {
+		app.whale.update = () => {};
+		if ( app.whale.group ) app.whale.group.visible = false;
+	}
+	if ( app.wildlife ) {
+		app.wildlife.update = () => {};
+		if ( app.wildlife.birdBatch?.mesh ) app.wildlife.birdBatch.mesh.visible = false;
+		if ( app.wildlife.critterBatch?.mesh ) app.wildlife.critterBatch.mesh.visible = false;
+		if ( app.wildlife.blobs?.mesh ) app.wildlife.blobs.mesh.visible = false;
+	}
+
+	app.__bermudaMobileReady = true;
+	window.__bermudaMobileMemoryProfile = 'core-gameplay-stable';
 
 }
 
@@ -69,6 +139,7 @@ window.__ui = ui;
 
 app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async () => {
 
+	if ( mobileFastStart ) applyMobileMemoryProfile( app );
 	applyBermudaRuntimeLook( app );
 	app.ui = new AppUI( app, ui );
 	applyBermudaBranding( mobileDevice );
@@ -96,18 +167,38 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 	}
 	ui.setLoading( 1, 'Ready' );
-	await ui.hideLoader();
+
 	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
 	if ( app.qs.has( 'bench' ) ) {
 
+		await ui.hideLoader();
 		window.__bench = new ( await import( './core/Bench.js' ) ).Bench( app );
 		if ( app.qs.has( 'auto' ) ) window.__job = window.__bench.auto( app.qs.get( 'auto' ), { runs: Number( app.qs.get( 'runs' ) ) || 1 } );
-		// ?bench&shots=view1,view2[&tag=name][&dt=seconds][&seq=n&every=frames]: reference shots of the named views only (core/DebugViews.js; dt > 0: the clock runs, e.g. for the eased lens flare)
-		// &wdbg=N: the water shader's debug view (WaterMaterial debugMode) in the shots
 		if ( app.qs.has( 'wdbg' ) && app.waterMaterial ) app.waterMaterial.debugMode.value = Number( app.qs.get( 'wdbg' ) );
 		if ( app.qs.has( 'shots' ) ) window.__job = window.__bench.shots( app.qs.get( 'shots' ).split( ',' ), { tag: app.qs.get( 'tag' ) || 'shot', dt: Number( app.qs.get( 'dt' ) ) || 0, seq: Number( app.qs.get( 'seq' ) ) || 1, every: Number( app.qs.get( 'every' ) ) || 1 } );
 
-	} else app.start();
+	} else if ( mobileDevice ) {
+
+		let started = false;
+		// Mount the overlay while the loader is still covering the page. This guarantees Safari paints
+		// "Tap to Explore" before any real game frame is allowed to run.
+		ui.showStartOverlay( () => {
+
+			if ( started ) return;
+			started = true;
+			if ( app.audio ) app.audio.resume();
+			app.start();
+
+		} );
+		await ui.hideLoader();
+		return;
+
+	} else {
+
+		await ui.hideLoader();
+		app.start();
+
+	}
 	ui.showStartOverlay( () => {
 
 		if ( ! mobileDevice ) app.input.requestLock();
@@ -121,4 +212,4 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	ui.setLoadingError( 'Something went wrong: ' + e.message );
 
 } );
-// deploy-marker: pre-recovery-startup
+// deploy-marker: deferred-mobile-first-frame
