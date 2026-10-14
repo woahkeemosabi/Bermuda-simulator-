@@ -140,6 +140,7 @@ window.__ui = ui;
 app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async () => {
 
 	if ( mobileFastStart ) applyMobileMemoryProfile( app );
+	if ( mobileFastStart && app.localLights ) app.localLights.strength = Math.max( Number( app.localLights.strength ) || 1, 1.35 );
 	applyBermudaRuntimeLook( app );
 	app.ui = new AppUI( app, ui );
 	applyBermudaBranding( mobileDevice );
