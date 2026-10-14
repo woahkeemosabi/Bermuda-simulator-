@@ -45,7 +45,16 @@ function installStyle() {
 		#bm-touch-stable button[data-role='light']::before{background-image:${ ICONS.light }}
 		#bm-touch-stable button[data-role='fish']::before{background-image:${ ICONS.fish }}
 		#bm-touch-stable button[data-role='dive']::before{background-image:${ ICONS.up };transform:rotate(180deg)}
-		@media(max-width:700px){body.bm-mobile .gm-map{width:96px!important;height:96px!important;right:max(14px,env(safe-area-inset-right))!important;bottom:188px!important;opacity:.94!important}}
+		/* CSS-only spacing: 36px wallet + 10px gap; no layout observers or new timers. */
+		body.bm-mobile #bm-wallet-live{box-sizing:border-box;height:36px;top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 18px)}
+		body.bm-mobile .bm-account-btn{top:calc(env(safe-area-inset-top,0px) + 58px);right:calc(env(safe-area-inset-right,0px) + 18px)}
+		/* Leave the save chip its own right-hand lane instead of covering the cooler/time strip. */
+		@media(max-width:700px){
+			body.bm-mobile .gm-purse{right:calc(env(safe-area-inset-right,0px) + 150px);max-width:calc(100vw - env(safe-area-inset-right,0px) - 164px)}
+			/* Reserve three 58px rows, two 10px row gaps and 18px clearance even before
+			   the existing dock HUD measurement catches up with a newly visible REEL button. */
+			body.bm-mobile .gm-map{width:96px!important;height:96px!important;right:max(16px,env(safe-area-inset-right))!important;bottom:max(var(--bm-map-safe-bottom,0px),calc(max(28px,env(safe-area-inset-bottom)) + 212px))!important;opacity:.94!important}
+		}
 	`;
 	document.head.appendChild( style );
 }
