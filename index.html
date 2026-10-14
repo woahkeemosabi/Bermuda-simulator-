@@ -54,6 +54,34 @@
 		</div>
 	</div>
 	<script type="module">
+		// Simple browser baseline: remove the old offline/PWA worker and its asset caches without
+		// touching localStorage, so player money/progression remain intact.
+		if ( 'serviceWorker' in navigator ) {
+			try {
+				const registrations = await navigator.serviceWorker.getRegistrations();
+				const wasControlled = !!navigator.serviceWorker.controller;
+				if ( registrations.length || wasControlled ) {
+					// Publish/activate the self-cleaning worker immediately so an older Bermuda worker
+					// cannot keep serving a mixed cached build.
+					try {
+						const cleanup = await navigator.serviceWorker.register('./sw.js', { scope:'./', updateViaCache:'none' });
+						await cleanup.update();
+					} catch ( _ ) {}
+					await Promise.all( registrations.map( registration => registration.unregister().catch( () => false ) ) );
+					if ( 'caches' in window ) {
+						const keys = await caches.keys();
+						await Promise.all( keys.map( key => caches.delete( key ) ) );
+					}
+					if ( wasControlled && !sessionStorage.getItem('bermuda-simple-browser-reloaded') ) {
+						sessionStorage.setItem('bermuda-simple-browser-reloaded','1');
+						location.reload();
+						await new Promise( () => {} );
+					}
+				}
+			} catch ( error ) {
+				console.warn( 'Legacy offline cleanup skipped; continuing with normal browser launch', error );
+			}
+		}
 		await import('/src/runtime/MobileVehicleHandling.js');
 		await import('/src/main.js');
 	</script>

@@ -16,7 +16,7 @@ export class HarbourNotices {
 		} );
 		const material = standard( {
 			name: 'harbourJobNotices', roughness: 0.94,
-			side: 'double',
+			side: 'front',
 			textures: { jobNotices: this.texture },
 			surface: /* wgsl */`
 	let ink = textureSample( jobNotices, smpLinearClamp, vec2f( in.uv.x, 1.0 - in.uv.y ) ).rgb;
@@ -25,12 +25,14 @@ export class HarbourNotices {
 	s.emissive = ink * 0.14 * smoothstep( 0.15, 0.75, frame.night );
 `,
 		} );
+		// PlaneGeometry faces +Z. Use two real front faces, one rotated 180°, so the dock approach
+		// and ocean approach both read normally. A double-sided single orientation mirrors the text
+		// when viewed through its back face.
 		for ( const side of [ - 1, 1 ] ) {
 			const face = new Mesh( new PlaneGeometry( 1.4, 0.9 ), material );
 			face.name = `HarbourNotices:${ side }`;
 			face.position.set( 0, 1.43, side < 0 ? - 0.094 : 0.049 );
-			// Double-sided rendering lets the same UV orientation remain readable from either dock
-			// approach; rotating the rear card would mirror the printed notices.
+			face.rotation.y = side < 0 ? Math.PI : 0;
 			board.add( face );
 		}
 		const bulb = new Mesh( new PlaneGeometry( 0.24, 0.035 ), standard( {
