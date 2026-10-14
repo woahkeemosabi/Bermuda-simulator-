@@ -45,7 +45,7 @@ function installStyle() {
 		#bm-touch-stable button[data-role='light']::before{background-image:${ ICONS.light }}
 		#bm-touch-stable button[data-role='fish']::before{background-image:${ ICONS.fish }}
 		#bm-touch-stable button[data-role='dive']::before{background-image:${ ICONS.up };transform:rotate(180deg)}
-		@media(max-width:700px){body.bm-mobile .gm-map{width:96px!important;height:96px!important;right:max(14px,env(safe-area-inset-right))!important;bottom:188px!important;opacity:.94!important}}
+		@media(max-width:700px){body.bm-mobile .gm-map{width:96px!important;height:96px!important;right:max(14px,env(safe-area-inset-right))!important;bottom:260px!important;opacity:.94!important}}
 	`;
 	document.head.appendChild( style );
 }
