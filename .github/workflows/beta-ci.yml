@@ -3,13 +3,16 @@ on:
   push:
     branches:
       - beta/invite-only-pilot
+      - beta/player-login-gate
   pull_request:
     branches:
       - main
+      - beta/invite-only-pilot
     paths:
       - "src/**"
       - "test/**"
       - "index.html"
+      - "middleware.js"
       - "package.json"
       - "vite.config.js"
       - ".github/workflows/beta-ci.yml"
@@ -17,7 +20,7 @@ permissions:
   contents: read
 jobs:
   game-smoke:
-    name: Gameplay regression & Vite build
+    name: Gameplay regression, beta gate & Vite build
     runs-on: ubuntu-latest
     timeout-minutes: 18
     steps:
@@ -31,15 +34,20 @@ jobs:
           node-version: "22"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Regression tests
+      - name: Install Mesa Vulkan drivers for headless WebGPU smoke test
+        run: sudo apt-get update -qq && sudo apt-get install -y mesa-vulkan-drivers
+      - name: Gameplay regression tests
         run: npm test
+      - name: Beta server-auth regression tests
+        run: |
+          if test -f middleware.js; then node test/beta-gate.mjs; fi
       - name: Production build
         run: npm run build
       - name: Assert playable build assets
         run: |
           test -f dist/index.html
           test -d dist/assets
-          if grep -R -I -l -E '(BETA_AUTH_SECRET|RESEND_API_KEY|SUPABASE_SERVICE_ROLE_KEY)' dist/index.html dist/assets; then
+          if grep -R -I -l -E '(BETA_AUTH_SECRET|BETA_SESSION_SECRET|RESEND_API_KEY|SUPABASE_SERVICE_ROLE_KEY)' dist/index.html dist/assets; then
             echo "Potential server credential reference in the client build" >&2
             exit 1
           fi
