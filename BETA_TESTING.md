@@ -1,34 +1,43 @@
 # Bermuda Simulator — Invite-Only Beta Pilot
 
-**Status:** Preparation. This branch is separated from `main` and must not be merged until gated-access QA passes.
+**Status:** Internal staging. Do not open beta registrations or invite players yet.
 
-## Preserve the playable build
-- Do not modify the game's boot sequence, WebGPU renderer, mobile fast-start, UI coordinates, service worker clearing, save state, waterfront economy, fishing, Joe/Marta interactions, boat progression, or existing player controls as part of invite access.
-- Protect all game routes and assets **server-side**, not with a cosmetic login overlay or client-side JavaScript.
-- Keep the public Founding Players site at https://bermudasimulator.com/ independent from playable-beta deployment.
-- Never expose invitation codes, signing keys, API keys, or allowlists in this repository or client JavaScript.
+## Isolated development
+- The playable game on main is unchanged.
+- The existing protected internal preview remains on beta/invite-only-pilot, unchanged.
+- All new server-side player authentication is isolated on beta/player-login-gate.
+- The public Founding Players website and its email templates remain unchanged.
+- Do NOT attach play.bermudasimulator.com or merge the auth branch until the release checklist is complete.
 
-## Pilot deployment approach
-- Use the Vercel `bermuda-simulator` project **preview deployment** for the beta branch.
-- Its existing Vercel Authentication protects preview URLs. Verify protection on an incognito browser before sharing a URL.
-- While the Vercel account is on Hobby, external access grants are limited; use a very small pilot until a dedicated user-facing invite login can be implemented and audited.
-- Do **not** use the public production domain or add a custom `play.` subdomain until a tested, server-side invitation system protects HTML, JS bundles, asset requests, APIs and refreshes.
-- Vercel shareable links are bearer links, not identity-bound beta accounts: use individually granted access for initial testing rather than distributing one reusable shareable link.
+## Staged login gate
+New root Vercel Routing Middleware intercepts all requests before static HTML and game asset delivery. Anonymous HTML gets a 303 redirect to the login form. Anonymous JS, shaders, images, game assets and service-worker URLs are denied with 401. An approved email can request a Resend sign-in link valid for ten minutes. Following the link creates a signed, HttpOnly, Secure, SameSite=Lax session cookie for twelve hours. Every request rechecks the allowlist. Removing an email revokes access after env changes deploy; changing BETA_SESSION_VERSION invalidates all prior sessions. Without complete configuration, requests fail closed with HTTP 503.
 
-## Dedicated player accounts (next stage)
-- Email allowlist, single-use or expiring invitations, identity verification, short-lived signed sessions and secure HttpOnly cookies.
-- Admin capability to invite, revoke and track test accounts; no direct coupling to newsletter/consent status.
-- Server-side rate limiting and recovery; no publicly accessible static asset URLs bypassing the gate.
-- Distinguish *waitlist member* from *invited beta tester*: neither automatically grants the other.
+**Current limitations:** The email links expire but are not single-use, and invitation status is maintained in an environment allowlist, not a durable user database. No cloud save or player identity record exists. Persistent request rate limiting and actual independent deployment bypass tests are mandatory before outside testers can access this preview.
 
-## QA before any invitation
-1. Preview deployment builds; no new JavaScript/asset errors.
-2. Anonymous visitor denied at HTML **and** bundled JS and game asset URLs.
-3. Granted individual Vercel account can enter; revoked user cannot.
-4. iPhone Safari and Chrome/desktop launch without crashing; no local-save regression.
-5. Player can walk, fish, trade, steer/board boat, use minimap, resume save.
-6. Capture performance notes, visible bugs, date, browser and game commit for feedback.
-7. Validate how source and downloadable game assets are handled; the GitHub repository is currently public.
+## Server-only environment (Preview, auth branch only)
+Configure in the Vercel project dashboard; do not add these variables to GitHub or expose them through a VITE_ prefix:
+- BETA_ENABLED=true
+- BETA_ALLOWED_EMAILS (comma-separated, approved invitation emails)
+- BETA_SESSION_SECRET (minimum 32 unpredictable characters)
+- BETA_SESSION_VERSION=1 (increase to revoke all sessions)
+- RESEND_API_KEY (server-side only)
+- BETA_FROM_EMAIL (verified domain sender)
 
-## Scope
-This branch is an access-workflow isolation branch. Gameplay features and existing email templates remain unchanged.
+Do not put testers' contact details or secrets into repository files.
+
+## Release checklist
+1. Confirm Vercel builds and runs the middleware for this Vite project. READY status alone does not prove access protection.
+2. Add a durable rate limiter per IP and email for the request-link endpoint, and verify it independently. A production beta should also use an invitation database with one-time links, revocation audit and an admin panel.
+3. Test anonymous direct GETs to /, compiled /assets JS, game images/models and service worker; every route must be denied. Use a fresh device/browser not signed in to the owner account.
+4. Verify allowed email login and expiry, invalid signatures, cookie restrictions, logout and revocation.
+5. Test iPhone Safari, iPhone Chrome and desktop startup/gameplay: walk, fish, sell to Joe, board and steer boat, minimap and save recovery. Confirm no new crashes.
+6. Review asset cache headers, old service-worker behavior and all bypass routes. The source repository is currently public, so game source is independently available regardless of website protection. Decide whether to privatize source before a larger pilot.
+7. Select first invited players and gain approval before sending any email.
+8. Only when all checks pass, consider setting up play.bermudasimulator.com.
+
+## Verification
+- Gameplay CI: npm test and npm run build, unchanged.
+- Auth regression: node test/beta-gate.mjs (uses a mocked email sender; it does NOT send emails).
+- GitHub beta quality gate now includes both checks on the auth branch.
+
+Existing game boot, WebGPU, controls, local save, Joe and Marta businesses, fishing and boating are not to be edited as part of this login rollout.
