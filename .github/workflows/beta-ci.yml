@@ -1,0 +1,45 @@
+name: Beta branch quality gate
+on:
+  push:
+    branches:
+      - beta/invite-only-pilot
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "test/**"
+      - "index.html"
+      - "package.json"
+      - "vite.config.js"
+      - ".github/workflows/beta-ci.yml"
+permissions:
+  contents: read
+jobs:
+  game-smoke:
+    name: Gameplay regression & Vite build
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Check out existing game
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Regression tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Assert playable build assets
+        run: |
+          test -f dist/index.html
+          test -d dist/assets
+          if grep -R -I -l -E '(BETA_AUTH_SECRET|RESEND_API_KEY|SUPABASE_SERVICE_ROLE_KEY)' dist/index.html dist/assets; then
+            echo "Potential server credential reference in the client build" >&2
+            exit 1
+          fi
