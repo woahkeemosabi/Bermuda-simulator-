@@ -135,6 +135,14 @@ jobs:
             "applyBermudaRuntimeLook( app );",
             "applyBermudaRuntimeLook( app );\n"
             "\tif (mobileFastStart && app.engine) app.engine.mobileGpuFramePacing = true;")
+          # The October 14 App predates the mobileLite variable present in the
+          # current App. Define it inside init BEFORE the first shader/GPU resource.
+          patch('App.js',
+            "const qs = this.qs;",
+            "const qs = this.qs;\n"
+            "\t\tconst mobileLite = !qs.has('desktop') && (qs.get('quality') === 'mobile-safe' || "
+            "/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || "
+            "(navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) < 1024));")
           patch('App.js',
             "size: 2048, splits:",
             "size: mobileLite ? 512 : 2048, splits:")
@@ -168,6 +176,20 @@ jobs:
             "\t\t\tthis.boatSpray.update=()=>{}; this.wake.update=()=>{};\n"
             "\t\t}")
           print('Oct14 recovery engine: no audio, progressive HDR, two FFT cascades, no GPU particles, 25fps pacing')
+          PY
+          # Ensure archive-only variables referenced by our patches exist in their
+          # historical scope; Vite syntax bundling cannot detect unbound variables.
+          python3 - <<'PY'
+          from pathlib import Path
+          app=Path('_recovery/oct14/src/App.js').read_text()
+          main=Path('_recovery/oct14/src/main.js').read_text()
+          assert app.count("const mobileLite = !qs.has('desktop')") == 1, 'October 14 mobileLite not declared'
+          assert app.index("const mobileLite = !qs.has('desktop')") < app.index("new SunShadows(")
+          assert app.index("const mobileLite = !qs.has('desktop')") < app.index("new Environment(")
+          assert "new OceanFFT( renderer, mobileLite ? {cascades:2}" in app
+          assert "url.searchParams.set( 'noAudio', '1' );" in main
+          assert "app.start(); // no AudioContext constructed" in main
+          print('October 14 runtime-scope regression checks passed')
           PY
           node --input-type=module -e "import {firstBoatModeEnabled} from './_recovery/oct14/src/game/FirstBoatMode.js'; if(!firstBoatModeEnabled(new URLSearchParams('missions=boat')))throw Error('Boat mode missing'); console.log('Boat-only recovery source prepared')"
       - name: Build October 14 mobile recovery with $2454 and independent save
