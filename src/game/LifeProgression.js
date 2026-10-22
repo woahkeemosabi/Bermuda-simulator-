@@ -29,10 +29,7 @@ export class LifeProgression {
 	}
 
 	normalizeDockStart() {
-		if ( this.boatOnly ) {
-			normalizeFirstBoatObjectives( this.state );
-			return;
-		}
+		if ( this.boatOnly ) { normalizeFirstBoatObjectives( this.state ); return; }
 		const state = this.state;
 		const missions = state?.missions;
 		if ( ! state || ! missions || ( state.boats?.owned?.length || 0 ) > 0 ) return;
@@ -81,47 +78,18 @@ export class LifeProgression {
 	refreshObjective() {
 		if ( ! this.objectiveEl ) return;
 		if ( this.boatOnly ) {
-			const owned = ( this.state?.boats?.owned?.length || 0 ) > 0;
+			const owns = (this.state?.boats?.owned?.length || 0) > 0;
 			this.objectiveEl.style.display = '';
-			if ( owned ) {
+			if (owns) {
 				this.objectiveEl.innerHTML = '<span class="bm-objective-kicker">GOAL COMPLETE</span>First boat purchased · explore Bermuda';
 			} else {
-				const wallet = Math.max( 0, Math.floor( Number( this.state?.money ) || 0 ) );
-				const remaining = Math.max( 0, STARTER_BOAT_PRICE - wallet );
+				const wallet = Math.max(0, Math.floor(Number(this.state?.money)||0));
+				const remaining = Math.max(0, STARTER_BOAT_PRICE-wallet);
+				const currency = String.fromCharCode(36);
 				this.objectiveEl.innerHTML = '<span class="bm-objective-kicker">THE FIRST BOAT</span>' +
-					'Fish, sell to Joe and save · 
-		if ( ! objective ) {
-			this.objectiveEl.style.display = 'none';
-			return;
-		}
-		this.objectiveEl.style.display = '';
-		const kicker = objective.bucket === 'active' ? 'CURRENT GOAL' : 'NEXT GOAL';
-		this.objectiveEl.innerHTML = `<span class="bm-objective-kicker">${ kicker }</span>${ objective.text }`;
-	}
-}
- + wallet.toLocaleString() + ' / 
-		if ( ! objective ) {
-			this.objectiveEl.style.display = 'none';
-			return;
-		}
-		this.objectiveEl.style.display = '';
-		const kicker = objective.bucket === 'active' ? 'CURRENT GOAL' : 'NEXT GOAL';
-		this.objectiveEl.innerHTML = `<span class="bm-objective-kicker">${ kicker }</span>${ objective.text }`;
-	}
-}
- +
-					STARTER_BOAT_PRICE.toLocaleString() +
-					( remaining ? ' · 
-		if ( ! objective ) {
-			this.objectiveEl.style.display = 'none';
-			return;
-		}
-		this.objectiveEl.style.display = '';
-		const kicker = objective.bucket === 'active' ? 'CURRENT GOAL' : 'NEXT GOAL';
-		this.objectiveEl.innerHTML = `<span class="bm-objective-kicker">${ kicker }</span>${ objective.text }`;
-	}
-}
- + remaining.toLocaleString() + ' to go' : ' · buy at the dock' );
+					'Catch fish · Sell to Joe · Save ' + currency + wallet.toLocaleString() +
+					' / ' + currency + STARTER_BOAT_PRICE.toLocaleString() +
+					(remaining ? ' · ' + currency + remaining.toLocaleString() + ' to go' : ' · Buy at the dock');
 			}
 			return;
 		}
