@@ -25,7 +25,7 @@ import { SceneLighting } from './SceneLighting.js';
 // Installed as the `bounce` lighting hook (fn hookBounce( P, N ) -> vec3f, irradiance / PI). Skipped for
 // IS_WATER materials and materials with the define NO_GROUND_BOUNCE (the former
 // `material.groundBounce = false`: GroundBounce.exclude( material )).
-const N = 512;
+const N = typeof location !== 'undefined' && new URLSearchParams(location.search).get('recovery') === '1' ? 128 : 512;
 // objects around the receiver shade part of the ground it sees (their shadows are not in the map)
 const SURROUND = 0.6;
 // the environment map's lower hemisphere: the atmosphere's planet ground (Atmosphere.groundAlbedo)

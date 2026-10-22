@@ -52,7 +52,7 @@ export class BoatOwnership {
 	}
 
 	ownsBoat() {
-		return !! this.state.boats?.owned?.some( ( b ) => b.id === BOAT_ID );
+		return !! this.state.boats?.owned?.some( ( b ) => b.id === BOAT_ID && Number(b.purchasedAt) > 0 );
 	}
 
 	refresh() { if ( this.sign ) this.sign.visible = ! this.ownsBoat(); }
@@ -78,7 +78,14 @@ export class BoatOwnership {
 		const d = this.app.missionDirector;
 		if ( d?.available?.( MISSION ) ) d.accept( MISSION, { toast: false } );
 		if ( ! this.state.spend( PRICE ) ) return;
-		this.state.ownBoat( { id: BOAT_ID, name: 'Downeast Lobster Boat', purchasedAt: Date.now() } );
+		// Remove legacy placeholder entries only when the player truly purchases.
+		this.state.boats.owned = this.state.boats.owned.filter(
+			b => b?.id !== BOAT_ID || Number(b.purchasedAt) > 0
+		);
+		if (!this.state.ownBoat( { id: BOAT_ID, name: 'Downeast Lobster Boat', purchasedAt: Date.now() })) {
+			this.state.addMoney(PRICE); // never charge for a failed purchase
+			return;
+		}
 		this.state.storyFlags.firstBoatPurchased = true;
 
 		if ( d?.active?.( MISSION ) ) d.complete( MISSION, { toast: false } );

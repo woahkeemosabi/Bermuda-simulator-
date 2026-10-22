@@ -74,6 +74,7 @@ export class Environment {
 		this.step = - 1; // progress of the refresh under way (-1: idle)
 		this.primed = false;
 		this.freezeAfterPrime = false;
+		this.progressivePrime = false;
 		this.refreshCount = 0;
 
 		this._build();
@@ -283,9 +284,18 @@ fn hookEnvDiffuse( N: vec3f ) -> vec3f {
 		// Freeze test deliberately preserves an already computed cubemap and SH.
 		// It cannot bypass the initial bake: physically based island and boat
 		// materials still receive their expected reflection/irradiance bindings.
-		if ( this.freezeAfterPrime && this.primed && !force ) return;
-		this.timer -= dt;
 		const sun = this.sky.atmosphere.sunDir.value;
+		// The iOS recovery must not dispatch six faces, mipmaps and GGX filtering
+		// in one GPU submission; progress one existing refresh step per frame.
+		if (this.progressivePrime && !this.primed && !force) {
+			this.primed = true;
+			this.refreshCount++;
+			this.lastSun.copy(sun);
+			this.timer = this.interval;
+			this.step = 0;
+		}
+		if ( this.freezeAfterPrime && this.primed && this.step < 0 && !force ) return;
+		this.timer -= dt;
 
 		// first use (or forced): the whole refresh at once
 		if ( force || ! this.primed ) {

@@ -97,6 +97,7 @@ export class App {
 			/iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 			( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 ) );
 		this.mobileLite = mobileLite;
+		this.recoveryMode = mobileLite && qs.get('recovery') === '1';
 		// report a stage, then let the page paint it before the (synchronous) stage work starts
 		const progress = async ( p, text, until ) => {
 
@@ -154,11 +155,12 @@ export class App {
 		this.csm = this.shadows = new SunShadows( { size: mobileLite ? 1024 : 2048, splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
 		this.shadows.layerMask = ( 1 << LAYERS.OPAQUE ) | ( 1 << LAYERS.TRANSPARENT );
 
-		this.environment = new Environment( renderer, scene, this.sky );
+		this.environment = new Environment( renderer, scene, this.sky, this.recoveryMode ? 32 : 128 );
 		// A/B test: do the full, original initial reflection bake, then hold that
 		// image-based lighting instead of periodically refreshing the cubemap.
 		// Ocean FFT, caustics, spray, shadows, scene and live clouds remain active.
-		this.environment.freezeAfterPrime = mobileLite && qs.get( 'envtest' ) === 'freeze';
+		this.environment.freezeAfterPrime = this.recoveryMode || (mobileLite && qs.get( 'envtest' ) === 'freeze');
+		this.environment.progressivePrime = this.recoveryMode;
 		if ( typeof window !== 'undefined' ) window.__bermudaEnvExperiment =
 			this.environment.freezeAfterPrime ? 'freeze-after-prime' : 'live-reflections';
 
@@ -202,7 +204,7 @@ export class App {
 
 		// ---------------------------------------------------------------- ocean
 		await progress( 0.3, 'Simulating the ocean…' );
-		this.fft = new OceanFFT( renderer );
+		this.fft = new OceanFFT( renderer, this.recoveryMode ? {cascades:2} : {} );
 		if ( this.reef.setOcean ) this.reef.setOcean( this.fft ); // coral / sea fan sway follows the simulated swell
 		this.foamTexture = createFoamTexture( renderer );
 		this.oceanLOD = new CDLOD( { gridSize: Number( qs.get( 'G' ) || 32 ), leafSize: 8, levels: 12, minY: - 25, maxY: 25 } );
@@ -334,12 +336,12 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 				console.warn( 'whale model failed to load', e );
 			}
 		};
-		if ( mobileLite ) this._deferredWhaleLoad = loadWhale;
+		if ( mobileLite && !this.recoveryMode ) this._deferredWhaleLoad = loadWhale;
 		else await loadWhale();
 
 		// interactive wake around the boat (Kelvin pattern, bow/stern waves, prop wash foam)
 		this.wake = new WakeSim( renderer, { terrainGPU: this.terrainGPU, boat: this.boatCtl, colliders: this.colliders } );
-		this.surface.wake = this.wake;
+		this.surface.wake = this.recoveryMode ? null : this.wake;
 		// A tiny CPU wake remains available on iPhone when the GPU Kelvin wake is disabled by the memory profile.
 		this.mobileWake = new MobileWake( { scene, boat: this.boatCtl } );
 		this.player = new Player( { camera, input: this.input, terrain: this.terrainData, colliders: this.colliders, query: this.query, boat: this.boatCtl, reef: this.reef } );
@@ -350,6 +352,17 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			query: this.query, spray: this.spray, csm: this.csm,
 		} );
 		this.freeCam = qs.has( 'fly' );
+		if (this.recoveryMode) {
+			// Delay auxiliary particle systems in recovery mode; keep FFT water and
+			// the real fishing/boat gameplay. The full build is unaffected.
+			for (const effect of [this.spray, this.breakers, this.marineSnow, this.airMotes]) {
+				if (effect?.mesh) effect.mesh.visible = false;
+				if (effect) effect.update = () => {};
+			}
+			this.boatSpray.update = () => {};
+			this.wake.update = () => {};
+			if (this.whale?.group) this.whale.group.visible = false;
+		}
 
 		// ---------------------------------------------------------------- post
 		await progress( 0.34, 'Preparing the shaders…' );

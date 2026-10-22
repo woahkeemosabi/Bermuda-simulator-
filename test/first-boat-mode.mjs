@@ -21,7 +21,9 @@ assert.deepEqual(state.inventory,[{id:1}]);
 const backup=JSON.parse(memory.get(FIRST_BOAT_BACKUP));
 assert.equal(backup.missions.active[0],'main-blue-hole');
 assert.equal(normalizeFirstBoatObjectives(state),false);
-state.boats.owned=[{id:'lobster-workboat'}];
+state.boats.owned=[{id:'lobster-workboat'}]; // placeholder is not a purchase
+assert.equal(normalizeFirstBoatObjectives(state),false);
+state.boats.owned=[{id:'lobster-workboat',purchasedAt:1761152400000}];
 assert.ok(normalizeFirstBoatObjectives(state));
 assert.deepEqual(state.missions.available,[]);
 assert.ok(state.missions.completed.includes('main-first-boat'));

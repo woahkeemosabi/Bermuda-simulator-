@@ -8,7 +8,7 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
-import { verifyMobileWorld } from './mobile/WorldRenderGate.js';
+import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
 import { gpuStage, gpuReport } from './mobile/GpuAudit.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
@@ -18,6 +18,8 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
 const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
+// Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
+const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
 let mobileRetryLevel = 0;
 if ( mobileFastStart ) {
 	try {
@@ -25,7 +27,7 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = mobileRetryLevel > 0 ? 0.54 : 0.64;
+window.__bermudaMobileOutputScale = mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64);
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -38,9 +40,17 @@ if ( mobileFastStart ) {
 	const url = new URL( location.href );
 	// Render-resolution adaptation is allowed; deleting ocean, lighting and spray systems isn't.
 	// Mobile retains FFT swell, shoreline simulation, wave lips, spray, caustics, haze and clouds.
-	for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
-	url.searchParams.set( 'G', '16' );
-	url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.60' : '0.70' );
+	if (mobileRecovery) {
+		// Separate audio construction and costly GPU effects from iPhone gameplay.
+		for (const key of ['noClouds','noHaze','noCaustics','noSim','noVeg','noAudio'])
+			url.searchParams.set(key,'1');
+		url.searchParams.set('G','12');
+		url.searchParams.set('scale','0.70');
+	} else {
+		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
+		url.searchParams.set( 'G', '16' );
+		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.60' : '0.70' );
+	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	App.prototype.precompile = async function() {
@@ -61,7 +71,7 @@ if ( mobileFastStart ) {
 
 function applyMobileMemoryProfile( app ) {
 	if ( ! mobileFastStart || ! app ) return;
-	window.__bermudaMobileMemoryProfile = 'all-effects-mobile-compute-budget-v1';
+	window.__bermudaMobileMemoryProfile = mobileRecovery ? 'recovery-ocean2-progressive-lighting' : 'all-effects-mobile-compute-budget-v1';
 	window.__bermudaMobileBudget = {
 		oceanCascades: app.fft?.cascades,
 		wakeGrid: '256x256', shoreFoamGrid: app.shoreSim?.res,
@@ -140,8 +150,14 @@ app.init( ( p, text, until ) => {
 
 		ui.setLoading( .97, 'Validating the 3D world…', .995 );
 		gpuStage('World verification');
-		await verifyMobileWorld( app, attempt => ui.setLoading(
-			Math.min(.975+attempt*.003,.99), 'Rendering Bermuda world…', .995 ) );
+		if (mobileRecovery) {
+			// Skip expensive startup HDR texture copy/readback on fragile drivers.
+			validateSpawn(app);
+			window.__bermudaWorldGate = {status:'recovery-no-readback',tries:0};
+		} else {
+			await verifyMobileWorld( app, attempt => ui.setLoading(
+				Math.min(.975+attempt*.003,.99), 'Rendering Bermuda world…', .995 ) );
+		}
 		ui.setLoading( 1, 'World ready' );
 		let started = false;
 		ui.showStartOverlay( () => {
