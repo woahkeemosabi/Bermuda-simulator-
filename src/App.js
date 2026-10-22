@@ -54,6 +54,7 @@ import { AirMotes } from './fx/AirMotes.js';
 
 import { Underwater, LENS_REACH } from './post/Underwater.js';
 import { PostFX } from './post/PostFX.js';
+import { MobilePostFX } from './post/MobilePostFX.js';
 import { AirHaze } from './post/AirHaze.js';
 import { FlyCamera } from './player/FlyCamera.js';
 import { Player } from './player/Player.js';
@@ -346,7 +347,9 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			depthTexture: this.sceneRenderer.sceneRT.depthTexture, underwater: this.underwater, atmosphere: this.atmosphere,
 			sky: this.sky, clouds: this.clouds, terrain: this.terrainGPU, csm: this.csm,
 		} );
-		this.post = new PostFX( renderer, { sceneRenderer: this.sceneRenderer, camera, underwater: this.underwater, clouds: this.clouds, sunDir: this.atmosphere.sunDir, haze: this.haze } );
+		this.post = mobileLite && !qs.has('fullPost')
+			? new MobilePostFX( renderer, { sceneRenderer: this.sceneRenderer, camera, underwater: this.underwater } )
+			: new PostFX( renderer, { sceneRenderer: this.sceneRenderer, camera, underwater: this.underwater, clouds: this.clouds, sunDir: this.atmosphere.sunDir, haze: this.haze } );
 		G.exposure.value = this.settings.exposure;
 		if ( qs.has( 'scale' ) ) this.settings.renderScale = Number( qs.get( 'scale' ) ) || 1;
 		this.setRenderScale( this.settings.renderScale );
