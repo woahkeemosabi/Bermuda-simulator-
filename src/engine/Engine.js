@@ -125,6 +125,12 @@ export class Engine {
 
 			// Schedule first so one thrown frame cannot kill the animation loop.
 			this._raf = requestAnimationFrame( loop );
+			if ( this.mobileGpuFramePacing ) {
+				// Never stack GPU submissions on an iPhone while its previous frame is still
+				// executing. The entire simulation remains active in each rendered frame.
+				if ( this._gpuInFlight || ( this._mobileLastFrame && t - this._mobileLastFrame < 42 ) ) return;
+				this._mobileLastFrame = t;
+			}
 
 			try {
 
@@ -138,14 +144,37 @@ export class Engine {
 				if ( dt > 0.1 ) dt = 0.1;
 				this.frame ++;
 				update( dt, this.clock.getElapsed() );
-				this.consecutiveFrameErrors=0;
+				this.consecutiveFrameErrors = 0;
+				if ( this.mobileGpuFramePacing ) {
+					this._gpuInFlight = true;
+					const flight = this._gpuFlight = ( this._gpuFlight || 0 ) + 1;
+					GPU.queue.onSubmittedWorkDone().then( () => {
+						if ( flight === this._gpuFlight ) this._gpuInFlight = false;
+					}, ( error ) => {
+						this._gpuInFlight = false;
+						this.stop();
+						this.onFrameFailure?.( error, 1 );
+					} );
+					// A wedged WebKit GPU queue may never resolve or reject.
+					setTimeout( () => {
+						if ( this._gpuInFlight && flight === this._gpuFlight ) {
+							this._gpuInFlight = false;
+							this.stop();
+							this.onFrameFailure?.( new Error( 'WebGPU frame did not complete' ), 1 );
+						}
+					}, 4500 );
+				}
 				this._sampleBenchmark( t );
 
 			} catch ( e ) {
 
 				this.lastFrameError = e;
 				this.consecutiveFrameErrors=(this.consecutiveFrameErrors||0)+1;
-				if(this.consecutiveFrameErrors===3) this.onFrameFailure?.(e,this.consecutiveFrameErrors);
+				const fatal = GPU.fatalError || /createCommandEncoder|command encoder|device lost|out of memory/i.test( String(e?.message || e) );
+				if ( fatal || this.consecutiveFrameErrors >= 3 ) {
+					this.stop();
+					this.onFrameFailure?.( e, this.consecutiveFrameErrors );
+				}
 				window.__bermudaFrameError = e;
 				window.__bermudaFrameErrorCount = ( window.__bermudaFrameErrorCount || 0 ) + 1;
 

@@ -104,7 +104,8 @@ export class App {
 		};
 		await progress( 0.02, 'Starting WebGPU…' );
 		const engine = this.engine = new Engine( document.getElementById( 'app' ) );
-		if ( mobileLite ) engine.renderScale = 0.72; // canvas/swapchain, not just post processing
+		if ( mobileLite ) engine.renderScale = Number( window.__bermudaMobileOutputScale ) || 0.64;
+		// High-end ocean and simulation are preserved. Reduce only frame-buffer pixel count.
 		await engine.init();
 		// systems take `renderer` first as in the three.js version: it is the Engine now (GPU access is global)
 		const renderer = engine;

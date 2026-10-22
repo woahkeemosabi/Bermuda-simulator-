@@ -21,6 +21,8 @@ export const GPU = {
 	hasTimestamp: false,
 	hasFloat32Filterable: false,
 	canvasReadbackEnabled: false,
+	fatalError: null,
+	lostReason: null,
 	encoder: null,
 	frame: 0,
 	samplers: null,
@@ -52,7 +54,10 @@ export const GPU = {
 		const limits = {};
 		for ( const k in want ) if ( L[ k ] !== undefined ) limits[ k ] = Math.min( want[ k ], L[ k ] );
 
-		const optional = [ 'float32-filterable', 'timestamp-query', 'rg11b10ufloat-renderable', 'float32-blendable', 'shader-f16', 'clip-distances' ];
+		// GPU timestamp profiling is not a visual feature. Avoid its driver overhead on iOS.
+		const onPhone = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent );
+		const optional = [ 'float32-filterable', ...( onPhone ? [] : [ 'timestamp-query' ] ),
+			'rg11b10ufloat-renderable', 'float32-blendable', 'shader-f16', 'clip-distances' ];
 		const requiredFeatures = optional.filter( ( f ) => adapter.features.has( f ) );
 		this.features = new Set( requiredFeatures );
 		this.hasTimestamp = this.features.has( 'timestamp-query' );
@@ -63,11 +68,14 @@ export const GPU = {
 		this.queue = device.queue;
 		this.limits = device.limits;
 		device.lost.then( ( info ) => {
-			if(typeof window!=='undefined'){
-				window.__bermudaGpuLost=info.message||'GPU device lost';
-				window.__bermudaOnGPUFailure?.(window.__bermudaGpuLost);
+			this.lostReason = info.reason || 'unknown';
+			this.fatalError = new Error('WebGPU device lost (' + this.lostReason + '): ' +
+				(info.message || 'Graphics driver stopped'));
+			if ( typeof window !== 'undefined' ) {
+				window.__bermudaGpuLost = this.fatalError.message;
+				window.__bermudaOnGPUFailure?.( this.fatalError.message );
 			}
-			console.error('WebGPU device lost:',info.message);
+			console.error( this.fatalError );
 		} );
 		device.addEventListener && device.addEventListener( 'uncapturederror', ( e ) => console.error( 'WebGPU:', e.error.message.split( '\n' ).slice( 0, 6 ).join( '\n' ) ) );
 
@@ -76,15 +84,11 @@ export const GPU = {
 			this.canvas = canvas;
 			this.context = canvas.getContext( 'webgpu' );
 			this.format = navigator.gpu.getPreferredCanvasFormat();
-			const common=GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_DST;
-			try {
-				this.context.configure({device,format:this.format,alphaMode:'opaque',
-					usage:common|GPUTextureUsage.COPY_SRC});
-				this.canvasReadbackEnabled=true;
-			}catch(e){
-				this.context.configure({device,format:this.format,alphaMode:'opaque',usage:common});
-				this.canvasReadbackEnabled=false;
-			}
+			// iOS WebGPU swapchain readbacks caused an additional presentation/copy path.
+			// Startup verification reads the HDR scene target, not the drawable.
+			this.context.configure( { device, format: this.format, alphaMode: 'opaque',
+				usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST } );
+			this.canvasReadbackEnabled = false;
 
 		}
 
@@ -124,7 +128,17 @@ export const GPU = {
 
 	getEncoder() {
 
-		if ( ! this.encoder ) this.encoder = this.device.createCommandEncoder();
+		if ( this.fatalError ) throw this.fatalError;
+		if ( ! this.encoder ) {
+			try {
+				this.encoder = this.device.createCommandEncoder();
+			} catch ( error ) {
+				this.fatalError = new Error( 'WebGPU command encoder unavailable: ' + ( error?.message || error ) );
+				if ( typeof window !== 'undefined' )
+					window.__bermudaOnGPUFailure?.( this.fatalError.message );
+				throw this.fatalError;
+			}
+		}
 		return this.encoder;
 
 	},

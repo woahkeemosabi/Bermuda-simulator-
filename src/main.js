@@ -17,6 +17,14 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
 const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
+let mobileRetryLevel = 0;
+if ( mobileFastStart ) {
+	try {
+		mobileRetryLevel = Math.min( 3, Math.max( 0,
+			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
+	} catch (_) { /* storage may be blocked */ }
+}
+window.__bermudaMobileOutputScale = mobileRetryLevel > 0 ? 0.54 : 0.64;
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -31,7 +39,7 @@ if ( mobileFastStart ) {
 	// Mobile retains FFT swell, shoreline simulation, wave lips, spray, caustics, haze and clouds.
 	for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
 	url.searchParams.set( 'G', '16' );
-	url.searchParams.set( 'scale', '0.72' );
+	url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.60' : '0.70' );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	App.prototype.precompile = async function() {
@@ -90,10 +98,12 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	if ( mobileFastStart && app.localLights ) app.localLights.strength = Math.max( Number( app.localLights.strength ) || 1, 1.35 );
 	applyBermudaRuntimeLook( app );
 	app.ui = new AppUI( app, ui );
-	if ( app.engine ) app.engine.onFrameFailure = ( error, failures ) => {
-		if ( mobileDevice && failures >= 3 )
-			showWorldFailure( '3D world render error: ' + String( error?.message || error ) );
-	};
+	if ( app.engine ) {
+		app.engine.mobileGpuFramePacing = mobileFastStart;
+		app.engine.onFrameFailure = ( error ) => {
+			if ( mobileDevice ) showWorldFailure( '3D graphics stopped: ' + String( error?.message || error ) );
+		};
+	}
 	applyBermudaBranding( mobileDevice );
 	if ( mobileDevice ) {
 
@@ -171,7 +181,18 @@ function showWorldFailure(message){
 	if(L){L.style.display='';L.classList.remove('tw-hidden');}
 	ui.setLoadingError(message);
 	const retry=document.getElementById('bm-loader-retry');
-	if(retry){retry.hidden=false;retry.onclick=()=>location.reload();}
+	if(retry){
+		retry.hidden=false;
+		retry.onclick=()=>{
+			// Retrying allocates a fresh GPUDevice with fewer pixels per frame, not fewer FX.
+			try { sessionStorage.setItem('bermudaGpuRetryLevel',String(Math.min(3,mobileRetryLevel+1))); }
+			catch(_){}
+			location.reload();
+		};
+	}
 }
-window.__bermudaOnGPUFailure=message=>showWorldFailure('Graphics device failed: '+message);
+window.__bermudaOnGPUFailure=message=>{
+	app.engine?.stop();
+	showWorldFailure('Graphics device failed: '+message);
+};
 
