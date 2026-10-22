@@ -43,7 +43,7 @@ jobs:
             git push origin HEAD:main || echo "Artwork included in build; repository push unavailable"
           fi
       - name: Run CPU-safe game logic tests
-        run: node test/game-logic.mjs && node test/bermuda-full-fidelity.mjs && node test/bermuda-loading-screen.mjs && node test/mobile-render-gate.mjs && node test/mobile-postfx.mjs && node test/mobile-gpu-audit.mjs && node test/mobile-cloud-isolation.mjs && node test/mobile-environment-isolation.mjs && node test/first-boat-mode.mjs
+        run: node test/game-logic.mjs && node test/bermuda-full-fidelity.mjs && node test/bermuda-loading-screen.mjs && node test/mobile-render-gate.mjs && node test/mobile-postfx.mjs && node test/mobile-gpu-audit.mjs && node test/mobile-cloud-isolation.mjs && node test/mobile-environment-isolation.mjs && node test/first-boat-mode.mjs && node test/mobile-recovery-profile.mjs
       - run: npm run build
 
       # Archive builds are independently compiled from the last iPhone-safe snapshots.
@@ -59,7 +59,9 @@ jobs:
           cp src/game/FirstBoatMode.js _recovery/oct14/src/game/FirstBoatMode.js
           cp src/game/LifeProgression.js _recovery/oct14/src/game/LifeProgression.js
           cp src/game/BoatOwnership.js _recovery/oct14/src/game/BoatOwnership.js
-          cp src/main.js _recovery/oct14/src/main.js
+          cp src/sky/Environment.js _recovery/oct14/src/sky/Environment.js
+          cp src/materials/GroundBounce.js _recovery/oct14/src/materials/GroundBounce.js
+          cp src/engine/Engine.js _recovery/oct14/src/engine/Engine.js
           python3 - <<'PY'
           from pathlib import Path
           root=Path('_recovery/oct14/src/world')
@@ -100,6 +102,55 @@ jobs:
           assert 'const addHouse' not in s
           p.write_text(s)
           PY
+          # Historical Oct14 engine, but with tightly controlled WebGPU recovery startup.
+          python3 - <<'PY'
+          from pathlib import Path
+          folder=Path('_recovery/oct14/src')
+          def patch(path,old,new):
+            p=folder/path
+            src=p.read_text()
+            count=src.count(old)
+            assert count==1, f'{p}: expected one anchor, got {count}: {old[:80]!r}'
+            p.write_text(src.replace(old,new,1))
+          # Original archived main is compatible with its own dependency graph. Do not
+          # copy the modern main: the Oct14 snapshot predates WebGPU readback modules.
+          patch('main.js',
+            "url.searchParams.set( 'scale', '0.82' );",
+            "url.searchParams.set( 'scale', '0.70' );\n"
+            "\turl.searchParams.set( 'noAudio', '1' );\n"
+            "\turl.searchParams.set( 'noVeg', '1' );")
+          patch('main.js',
+            "if ( app.audio ) app.audio.resume();\n\t\t\tapp.start();",
+            "app.start(); // no AudioContext constructed in this recovery")
+          patch('main.js',
+            "applyBermudaRuntimeLook( app );",
+            "applyBermudaRuntimeLook( app );\n"
+            "\tif (mobileFastStart && app.engine) app.engine.mobileGpuFramePacing = true;")
+          patch('App.js',
+            "this.environment = new Environment( renderer, scene, this.sky );",
+            "this.environment = new Environment( renderer, scene, this.sky, mobileLite ? 32 : 128 );\n"
+            "\t\tif (mobileLite) { this.environment.progressivePrime = true; this.environment.freezeAfterPrime = true; }")
+          patch('App.js',
+            "this.fft = new OceanFFT( renderer );",
+            "this.fft = new OceanFFT( renderer, mobileLite ? {cascades:2} : {} );")
+          patch('App.js',
+            "if ( mobileLite ) this._deferredWhaleLoad = loadWhale;",
+            "if ( mobileLite && qs.get('recovery') !== '1' ) this._deferredWhaleLoad = loadWhale;")
+          patch('App.js',
+            "this.surface.wake = this.wake;",
+            "this.surface.wake = mobileLite ? null : this.wake;")
+          patch('App.js',
+            "this.freeCam = qs.has( 'fly' );",
+            "this.freeCam = qs.has( 'fly' );\n"
+            "\t\tif (mobileLite && qs.get('recovery') === '1') {\n"
+            "\t\t\tfor (const fx of [this.spray,this.breakers,this.marineSnow,this.airMotes]) {\n"
+            "\t\t\t\tif(fx?.mesh) fx.mesh.visible=false;\n"
+            "\t\t\t\tif(fx) fx.update=()=>{};\n"
+            "\t\t\t}\n"
+            "\t\t\tthis.boatSpray.update=()=>{}; this.wake.update=()=>{};\n"
+            "\t\t}")
+          print('Oct14 recovery engine: no audio, progressive HDR, two FFT cascades, no GPU particles, 25fps pacing')
+          PY
           node --input-type=module -e "import {firstBoatModeEnabled} from './_recovery/oct14/src/game/FirstBoatMode.js'; if(!firstBoatModeEnabled(new URLSearchParams('missions=boat')))throw Error('Boat mode missing'); console.log('Boat-only recovery source prepared')"
       - name: Build October 14 mobile recovery with $2454 and independent save
         working-directory: _recovery/oct14
@@ -110,7 +161,7 @@ jobs:
           s=p.read_text()
           assert s.count("const SAVE_KEY = 'tidewater.save.v1';")==1
           assert s.count('this.money = 75;')==2
-          s=s.replace("const SAVE_KEY = 'tidewater.save.v1';","const SAVE_KEY = 'bermuda.recovery.wallet2454.save.v1';")
+          s=s.replace("const SAVE_KEY = 'tidewater.save.v1';","const SAVE_KEY = 'bermuda.recovery.wallet2454.v2.save.v1';")
           s=s.replace('this.money = 75;','this.money = 2454;')
           s=s.replace("( d.v === 1 ? 0 : 75 )","( d.v === 1 ? 0 : 2454 )")
           p.write_text(s)
@@ -185,7 +236,7 @@ jobs:
             file = Path('dist/archive') / name / 'index.html'
             txt = file.read_text()
             assert '<head>' in txt
-            file.write_text(txt.replace('<head>', '<head>\n'+guard('wallet2454' if name=='oct14' else 'original2454'), 1))
+            file.write_text(txt.replace('<head>', '<head>\n'+guard('wallet2454.v2' if name=='oct14' else 'original2454'), 1))
           PY
           test -s dist/archive/oct14/index.html
           test -s dist/archive/sep30/index.html
