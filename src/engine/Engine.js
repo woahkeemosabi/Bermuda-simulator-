@@ -138,11 +138,14 @@ export class Engine {
 				if ( dt > 0.1 ) dt = 0.1;
 				this.frame ++;
 				update( dt, this.clock.getElapsed() );
+				this.consecutiveFrameErrors=0;
 				this._sampleBenchmark( t );
 
 			} catch ( e ) {
 
 				this.lastFrameError = e;
+				this.consecutiveFrameErrors=(this.consecutiveFrameErrors||0)+1;
+				if(this.consecutiveFrameErrors===3) this.onFrameFailure?.(e,this.consecutiveFrameErrors);
 				window.__bermudaFrameError = e;
 				window.__bermudaFrameErrorCount = ( window.__bermudaFrameErrorCount || 0 ) + 1;
 

@@ -8,6 +8,7 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
+import { verifyMobileWorld } from './mobile/WorldRenderGate.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
 // Buildings and decorative world assets stream separately instead of crowding the spawn beach.
@@ -126,16 +127,16 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 	} else if ( mobileDevice ) {
 
+		ui.setLoading( .97, 'Validating the 3D world…', .995 );
+		await verifyMobileWorld( app, attempt => ui.setLoading(
+			Math.min(.975+attempt*.003,.99), 'Rendering Bermuda world…', .995 ) );
+		ui.setLoading( 1, 'World ready' );
 		let started = false;
-		// Mount the overlay while the loader is still covering the page. This guarantees Safari paints
-		// "Tap to Explore" before any real game frame is allowed to run.
 		ui.showStartOverlay( () => {
-
 			if ( started ) return;
 			started = true;
 			if ( app.audio ) app.audio.resume();
 			app.start();
-
 		} );
 		await ui.hideLoader();
 		return;
@@ -156,7 +157,19 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 } ).catch( ( e ) => {
 
 	console.error( e );
-	ui.setLoadingError( 'Something went wrong: ' + e.message );
+	showWorldFailure( 'Something went wrong: ' + e.message );
 
 } );
 // deploy-marker: deferred-mobile-first-frame
+
+function showWorldFailure(message){
+	const L=document.getElementById('loader');
+	if(L){L.style.display='';L.classList.remove('tw-hidden');}
+	ui.setLoadingError(message);
+	const retry=document.getElementById('bm-loader-retry');
+	if(retry){retry.hidden=false;retry.onclick=()=>location.reload();}
+}
+window.__bermudaOnGPUFailure=message=>showWorldFailure('Graphics device failed: '+message);
+app.engine && (app.engine.onFrameFailure=(e,n)=>{
+	if(mobileDevice&&n>=3)showWorldFailure('3D world render error: '+String(e?.message||e));
+});

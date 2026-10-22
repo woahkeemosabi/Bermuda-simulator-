@@ -2671,3 +2671,10 @@ body {
 @media (prefers-reduced-motion:reduce) {
  #loader.bm-new-loader .loader-art {animation:none;}
 }
+
+/* Visible fail-safe when WebGPU yields black frames or a device failure. */
+#bm-loader-retry[hidden]{display:none!important}
+#bm-loader-retry{display:block;margin:12px auto;padding:11px 22px;border:1px solid #8ceaff;
+ border-radius:999px;background:#095166;color:white;font:600 14px system-ui;pointer-events:auto}
+#loader.bm-new-loader.tw-error .loader-panel{pointer-events:auto}
+#loader.bm-new-loader.tw-error .loader-status{white-space:normal;overflow:visible;line-height:1.4}

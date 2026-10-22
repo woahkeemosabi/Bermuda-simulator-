@@ -20,6 +20,7 @@ export const GPU = {
 	limits: null,
 	hasTimestamp: false,
 	hasFloat32Filterable: false,
+	canvasReadbackEnabled: false,
 	encoder: null,
 	frame: 0,
 	samplers: null,
@@ -61,7 +62,13 @@ export const GPU = {
 		this.device = device;
 		this.queue = device.queue;
 		this.limits = device.limits;
-		device.lost.then( ( info ) => console.error( 'WebGPU device lost:', info.message ) );
+		device.lost.then( ( info ) => {
+			if(typeof window!=='undefined'){
+				window.__bermudaGpuLost=info.message||'GPU device lost';
+				window.__bermudaOnGPUFailure?.(window.__bermudaGpuLost);
+			}
+			console.error('WebGPU device lost:',info.message);
+		} );
 		device.addEventListener && device.addEventListener( 'uncapturederror', ( e ) => console.error( 'WebGPU:', e.error.message.split( '\n' ).slice( 0, 6 ).join( '\n' ) ) );
 
 		if ( canvas && ! headless ) {
@@ -69,7 +76,15 @@ export const GPU = {
 			this.canvas = canvas;
 			this.context = canvas.getContext( 'webgpu' );
 			this.format = navigator.gpu.getPreferredCanvasFormat();
-			this.context.configure( { device, format: this.format, alphaMode: 'opaque', usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST } );
+			const common=GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_DST;
+			try {
+				this.context.configure({device,format:this.format,alphaMode:'opaque',
+					usage:common|GPUTextureUsage.COPY_SRC});
+				this.canvasReadbackEnabled=true;
+			}catch(e){
+				this.context.configure({device,format:this.format,alphaMode:'opaque',usage:common});
+				this.canvasReadbackEnabled=false;
+			}
 
 		}
 
