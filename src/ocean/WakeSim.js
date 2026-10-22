@@ -96,8 +96,8 @@ export class WakeSim {
 			hollow: [ 'f32', 1 ], // length of the transom hollow (m)
 			hollowK: [ 'f32', 0 ],
 			amplitude: [ 'f32', 1 ],
-			foamGain: [ 'f32', 0.35 ], // thick churn at the transom, patchy lace behind
-			aerGain: [ 'f32', 1 ],
+			foamGain: [ 'f32', 0.62 ], // readable transom churn / wake lace on mobile
+			aerGain: [ 'f32', 1.25 ],
 			aerOut: [ 'f32', 0.3 ], // output aeration at saturation (0..1)
 			nearRate: [ 'f32', 1 ],
 		}, { label: 'wake kernel params' } );
@@ -921,7 +921,7 @@ fn wakeFragment( xz: vec2f ) -> WakeFrag {
 		this.uHollowK.value = 0.3 * plane;
 		this.uSource.value = this.sourceGain * ( 1 + 0.2 * plane );
 		const prop = b.driven ? Math.abs( b.throttle ) * b.rpm : 0;
-		this.uWash.value = prop * 1.0 + MathUtils.smoothstep( speed, 1.5, 7 ) * 0.5;
+		this.uWash.value = prop * 1.45 + MathUtils.smoothstep( speed, 1.0, 7 ) * 0.85;
 		this.uWashW.value = 0.7 + 0.6 * MathUtils.smoothstep( speed, 2, 9 );
 		this.uBow.value = MathUtils.smoothstep( speed, 3.5, 9 );
 

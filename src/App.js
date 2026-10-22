@@ -62,6 +62,7 @@ import { CHANDLERY } from './game/Chandlery.js';
 import { BoatController } from './player/BoatController.js';
 import { BoatSpray } from './player/BoatSpray.js';
 import { WakeSim } from './ocean/WakeSim.js';
+import { MobileWake } from './ocean/MobileWake.js';
 import { Vegetation } from './world/Vegetation.js';
 import { SoundScape } from './audio/SoundScape.js';
 import { updateCameraVelocity, useStaticVelocity } from './post/CameraVelocity.js';
@@ -75,7 +76,9 @@ export class App {
 		this.settings = {
 			timeOfDay: 16.2,
 			sunAzimuth: 0, // degrees: turns the sun's daily path about the vertical
-			timeSpeed: 0, // hours per real second
+			timeSpeed: 0.05, // hours per real second; T pauses/resumes the day
+			weatherMode: 'clear',
+			weatherTimer: 0,
 			exposure: 0.55,
 			renderScale: 1, // internal resolution (the temporal upscaler reconstructs the output), Performance tab
 		};
@@ -154,8 +157,10 @@ export class App {
 		// terrain and rocks apply the heightfield sun shadow (long hill shadows) in their own lighting
 		this.terrain = new Terrain( { scene, terrainData: this.terrainData, terrainGPU: this.terrainGPU, renderer } );
 		this.rocks = new Rocks( { scene, terrain: this.terrain, village: this.village, colliders: this.colliders } );
-		// driftwood (CC0 photoscans), wrack, pebbles and village clutter
-		this.debris = new Debris( { scene, terrain: this.terrain, village: this.village, vegetation: this.vegetation, rocks: this.rocks, colliders: this.colliders } );
+		// Bermuda rebuild: the legacy Tidewater debris field (wheelbarrows, crate stacks,
+		// barrels, beached skiffs and village yard clutter) is deliberately disabled.
+		// Keep this slot for compatibility; Bermuda-specific harbour props are loaded separately.
+		this.debris = null;
 		// these apply the heightfield sun shadow in their own lighting model (see UnderwaterLighting)
 		this.terrain.mesh.material.appliesHillShadow = true;
 		this.rocks.material.appliesHillShadow = true;
@@ -307,6 +312,8 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// interactive wake around the boat (Kelvin pattern, bow/stern waves, prop wash foam)
 		this.wake = new WakeSim( renderer, { terrainGPU: this.terrainGPU, boat: this.boatCtl, colliders: this.colliders } );
 		this.surface.wake = this.wake;
+		// A tiny CPU wake remains available on iPhone when the GPU Kelvin wake is disabled by the memory profile.
+		this.mobileWake = new MobileWake( { scene, boat: this.boatCtl } );
 		this.player = new Player( { camera, input: this.input, terrain: this.terrainData, colliders: this.colliders, query: this.query, boat: this.boatCtl, reef: this.reef } );
 		// birds, beach crabs, sanderlings (after spray / query / boat, which they use)
 		this.wildlife = new Wildlife( {
@@ -343,11 +350,12 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.game = new Game( this );
 		// the lanterns at Joe's fish stand and Marta's chandlery (lit from dusk like the village lamps);
 		// positions are in each stall's frame (x right, z toward the customer), turned by its yaw
-		for ( const [ s, lx, ly, lz ] of [ [ STAND, - 0.9, 1.85, 0.1 ], [ CHANDLERY, - 0.75, 1.58, - 1.45 ] ] ) {
+		for ( const s of [ STAND, CHANDLERY ] ) {
+            const [lx, ly, lz] = s.lamp;
 
 			const c = Math.cos( s.yaw ), sn = Math.sin( s.yaw );
 			const x = s.x + lx * c + lz * sn, z = s.z - lx * sn + lz * c;
-			this.localLights.add( { position: new Vector3( x, this.terrainData.heightAt( s.x, s.z ) + ly, z ), color: new Color( 1.0, 0.72, 0.42 ), intensity: 5 * 1.5, range: 11, kind: 'lantern', flicker: 0.08 } );
+			this.localLights.add( { position: new Vector3( x, s.baseY + ly, z ), color: new Color( 1.0, 0.72, 0.42 ), intensity: 5 * 1.5, range: 11, kind: 'lantern', flicker: 0.08 } );
 
 		}
 
@@ -473,6 +481,47 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		const nightAmb = 0.012 * G.night.value;
 		G.skyIrradiance.value.setRGB( irr[ 0 ] + nightAmb * 0.6, irr[ 1 ] + nightAmb * 0.7, irr[ 2 ] + nightAmb );
 		G.horizonColor.value.setRGB( a.horizon[ 0 ], a.horizon[ 1 ], a.horizon[ 2 ] );
+
+	}
+
+	cycleWeather() {
+
+		const modes = [ 'clear', 'overcast', 'storm' ];
+		const i = modes.indexOf( this.settings.weatherMode );
+		this.settings.weatherMode = modes[ ( i + 1 ) % modes.length ];
+		this.settings.weatherTimer = 0;
+		this.updateWeather( 0 );
+		if ( this.ui ) this.ui.ui.toast( 'Weather: ' + this.settings.weatherMode );
+
+	}
+
+	updateWeather( dt ) {
+
+		const s = this.settings;
+		s.weatherTimer += dt;
+		if ( s.weatherTimer > 180 ) {
+
+			const modes = [ 'clear', 'overcast', 'storm' ];
+			s.weatherMode = modes[ ( modes.indexOf( s.weatherMode ) + 1 ) % modes.length ];
+			s.weatherTimer = 0;
+
+		}
+		const profile = {
+			clear: { coverage: 0.30, wind: 5.2, chop: 0.76, surf: 0.24 },
+			overcast: { coverage: 0.66, wind: 8.5, chop: 0.92, surf: 0.38 },
+			storm: { coverage: 0.88, wind: 14, chop: 1.08, surf: 0.62 },
+		}[ s.weatherMode ] || { coverage: 0.30, wind: 5.2, chop: 0.76, surf: 0.24 };
+		if ( this.clouds?.coverage ) this.clouds.coverage.value += ( profile.coverage - this.clouds.coverage.value ) * Math.min( 1, dt * 0.8 );
+		if ( this.fft?.local ) {
+
+			this.fft.local.windSpeed += ( profile.wind - this.fft.local.windSpeed ) * Math.min( 1, dt * 0.45 );
+			if ( this.fft.updateSpectrumUniforms ) this.fft.updateSpectrumUniforms();
+
+		}
+		if ( this.fft?.choppiness ) this.fft.choppiness.value += ( profile.chop - this.fft.choppiness.value ) * Math.min( 1, dt * 0.7 );
+		if ( this.shore?.amplitude ) this.shore.amplitude.value += ( profile.surf - this.shore.amplitude.value ) * Math.min( 1, dt * 0.7 );
+		if ( G.windSpeed ) G.windSpeed.value = profile.wind;
+		this.settings.weather = s.weatherMode;
 
 	}
 
@@ -604,10 +653,12 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		G.dt.value = dt;
 		G.time.value += dt;
 		if ( s.timeSpeed !== 0 ) s.timeOfDay = ( s.timeOfDay + dt * s.timeSpeed + 24 ) % 24;
+		this.updateWeather( dt );
 
 		// ---- player / boat (boat physics first so the cameras follow this frame's pose)
 		if ( this.input.hit( 'KeyF' ) ) this.setFreeCam( ! this.freeCam );
 		if ( this.input.hit( 'KeyT' ) ) this.toggleTime();
+		if ( this.input.hit( 'KeyY' ) ) this.cycleWeather();
 		if ( this.input.hit( 'KeyL' ) ) {
 
 			const on = this.localLights.toggleFlashlight();
@@ -624,6 +675,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.boatCtl.update( dt );
 		this.boatSpray.update( dt );
 		this.wake.update( dt );
+		if ( this.mobileWake ) this.mobileWake.update( dt );
 		if ( this.freeCam ) this.fly.update( dt );
 		else this.player.update( dt );
 		this.game.update( dt );
@@ -663,7 +715,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.oceanLOD.update( this.camera );
 		this.terrain.update( this.camera );
 		this.rocks.update( this.camera );
-		this.debris.update( this.camera );
+		if ( this.debris ) this.debris.update( this.camera );
 		this.reef.update( dt, this.camera.position );
 		this.village.update( dt );
 		if ( this.vegetation ) this.vegetation.update( dt, this.camera );

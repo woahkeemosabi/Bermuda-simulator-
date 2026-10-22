@@ -1,0 +1,196 @@
+{
+  "version": 1,
+  "tasks": {
+    "bermuda-dock-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e2ae-f1b8-7258-a0a2-f81b1f204476",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0def8-3f75-72ec-8973-3ca5976cae36",
+      "consumed_credits": 5
+    },
+    "bermuda-house-a-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e2ae-fd79-7047-a737-2a87b2d2a536",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0defc-1335-7017-983e-b4bf3ec7f275",
+      "consumed_credits": 5
+    },
+    "bermuda-house-b-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e2af-05a7-7124-b4b0-f83e0ddc648a",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0defe-b314-720a-8374-6e859ca76b35",
+      "consumed_credits": 5
+    },
+    "bermuda-boathouse-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e2af-0ecd-7431-b813-a635ed26320c",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0df01-52a2-7057-abfd-c9e21a77d49c",
+      "consumed_credits": 5
+    },
+    "bermuda-palmetto-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e2af-16e4-750d-a4e9-6d029fd98d61",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0df05-3758-7606-b700-74387dbe2e84",
+      "consumed_credits": 5
+    },
+    "bermuda-harbour-props-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e2af-1f77-73b3-b1ce-cf6c15d1d072",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-channel-marker-preview": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e2af-2d1b-7342-ab13-c98ef7730430",
+      "status": "SUCCEEDED",
+      "parent_task_id": null,
+      "consumed_credits": 20
+    },
+    "bermuda-harbour-props-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e2b6-7b1e-7452-a0d3-36423acbcbfe",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e2af-1f77-73b3-b1ce-cf6c15d1d072",
+      "consumed_credits": 10
+    },
+    "bermuda-harbour-props-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e2b8-2467-701c-ab00-c4ce7d1f9349",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e2b6-7b1e-7452-a0d3-36423acbcbfe",
+      "consumed_credits": 5
+    },
+    "bermuda-channel-marker-refine": {
+      "resource": "text-to-3d",
+      "task_id": "01a0e3b5-878d-7121-ad2a-af8cc445992e",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e2af-2d1b-7342-ab13-c98ef7730430",
+      "consumed_credits": 10
+    },
+    "bermuda-channel-marker-remesh": {
+      "resource": "remesh",
+      "task_id": "01a0e3b6-8d4a-74da-80da-36e506d87d9d",
+      "status": "SUCCEEDED",
+      "parent_task_id": "01a0e3b5-878d-7121-ad2a-af8cc445992e",
+      "consumed_credits": 5
+    }
+  },
+  "assets": {
+    "bermuda-dock": {
+      "file": "bermuda-dock.glb",
+      "bytes": 1884480,
+      "sha256": "bf57cd58e5528584436cee3ae17a407085031bb7c4f42caf71f62ca65dda30da",
+      "triangles": 3623,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e2ae-f1b8-7258-a0a2-f81b1f204476",
+      "resource": "remesh",
+      "parent_task_id": "01a0def8-3f75-72ec-8973-3ca5976cae36"
+    },
+    "bermuda-house-a": {
+      "file": "bermuda-house-a.glb",
+      "bytes": 1216100,
+      "sha256": "1bd734c235e23f498ed3023edad214443d3a84e4867b14612e3aee6b6d205fb6",
+      "triangles": 3637,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e2ae-fd79-7047-a737-2a87b2d2a536",
+      "resource": "remesh",
+      "parent_task_id": "01a0defc-1335-7017-983e-b4bf3ec7f275"
+    },
+    "bermuda-house-b": {
+      "file": "bermuda-house-b.glb",
+      "bytes": 1419096,
+      "sha256": "3994cefe0063ed3bc927722eeb2d39edfac5aac0c758b06640b86f4747caadd0",
+      "triangles": 3670,
+      "textures": [
+        [
+          1024,
+          1024
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e2af-05a7-7124-b4b0-f83e0ddc648a",
+      "resource": "remesh",
+      "parent_task_id": "01a0defe-b314-720a-8374-6e859ca76b35"
+    },
+    "bermuda-boathouse": {
+      "file": "bermuda-boathouse.glb",
+      "bytes": 537368,
+      "sha256": "e81bd05bdeb17cda883de2d72cb9a4e5c36f7036ee80902e6092bc7307197cc9",
+      "triangles": 2414,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e2af-0ecd-7431-b813-a635ed26320c",
+      "resource": "remesh",
+      "parent_task_id": "01a0df01-52a2-7057-abfd-c9e21a77d49c"
+    },
+    "bermuda-palmetto": {
+      "file": "bermuda-palmetto.glb",
+      "bytes": 584068,
+      "sha256": "a1667a6b2ad3f9dc835c18ef26e6d0d34b5ba7d9f570ad6443d63d7f8fa75bc0",
+      "triangles": 1237,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e2af-16e4-750d-a4e9-6d029fd98d61",
+      "resource": "remesh",
+      "parent_task_id": "01a0df05-3758-7606-b700-74387dbe2e84"
+    },
+    "bermuda-harbour-props": {
+      "file": "bermuda-harbour-props.glb",
+      "bytes": 524400,
+      "sha256": "b33eddf1d4fa6dca5196eb629e5cc1d3338173731d7232e00f9ebdd6dc85311c",
+      "triangles": 2023,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e2b8-2467-701c-ab00-c4ce7d1f9349",
+      "resource": "remesh",
+      "parent_task_id": "01a0e2b6-7b1e-7452-a0d3-36423acbcbfe"
+    },
+    "bermuda-channel-marker": {
+      "file": "bermuda-channel-marker.glb",
+      "bytes": 444380,
+      "sha256": "e80c041675595dcdc56287a4d971202633422fbde6bb61f770ce83eb064ee088",
+      "triangles": 596,
+      "textures": [
+        [
+          512,
+          512
+        ]
+      ],
+      "materials": 1,
+      "task_id": "01a0e3b6-8d4a-74da-80da-36e506d87d9d",
+      "resource": "remesh",
+      "parent_task_id": "01a0e3b5-878d-7121-ad2a-af8cc445992e"
+    }
+  }
+}

@@ -1,0 +1,89 @@
+name: Visual Reference QA
+
+on:
+  push:
+    paths:
+      - '.github/workflows/visual-reference-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save playwright
+      - name: Start simulator
+        shell: bash
+        run: |
+          mkdir -p qa-shots
+          npm run dev > /tmp/vite.log 2>&1 &
+          for i in {1..60}; do
+            curl -fsS http://127.0.0.1:5189/ >/dev/null && break
+            sleep 1
+          done
+      - name: Capture rendered review views
+        shell: bash
+        run: |
+          cat > capture-qa.mjs <<'JS'
+          import { chromium } from 'playwright';
+          const browser = await chromium.launch({
+            channel: 'chrome', headless: true,
+            args: [
+              '--enable-unsafe-webgpu','--enable-features=Vulkan','--use-angle=swiftshader',
+              '--enable-dawn-features=allow_unsafe_apis','--disable-gpu-sandbox','--no-sandbox'
+            ]
+          });
+          const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
+          page.on('console', m => console.log('BROWSER', m.type(), m.text()));
+          page.on('pageerror', e => console.error('PAGEERROR', e));
+          await page.goto('http://127.0.0.1:5189/?desktop', { waitUntil: 'networkidle', timeout: 120000 });
+          await page.waitForFunction(() => Array.isArray(window.__views) && window.__views.length > 0, null, { timeout: 120000 });
+          // Remove only the start curtain; keep the real HUD/canvas visible in the captures.
+          await page.evaluate(() => {
+            const candidates=[...document.querySelectorAll('button')];
+            const start=candidates.find(b=>/explore|start|enter/i.test(b.textContent||''));
+            if(start) start.click();
+          });
+          await page.waitForTimeout(2500);
+          const views=['pier','village','beach','shallowSeabed','pierShallows','underwater','aerial'];
+          for(const v of views){
+            await page.evaluate(name => window.__view(name), v);
+            await page.waitForTimeout(1300);
+            await page.screenshot({ path:`qa-shots/current-${v}.png` });
+          }
+          await page.screenshot({ path:'qa-shots/browser-final.png', fullPage:true });
+          await browser.close();
+          JS
+          node capture-qa.mjs
+      - name: Build contact sheet
+        shell: bash
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image,ImageOps,ImageDraw
+          import math
+          src=Path('qa-shots'); files=sorted(src.glob('current-*.png'))
+          if not files: raise SystemExit('No rendered captures produced')
+          tw,th=480,300; cols=2; rows=math.ceil(len(files)/cols)
+          sheet=Image.new('RGB',(cols*tw,rows*(th+32)),'black'); d=ImageDraw.Draw(sheet)
+          for i,p in enumerate(files):
+            im=Image.open(p).convert('RGB'); im=ImageOps.fit(im,(tw,th))
+            x=(i%cols)*tw; y=(i//cols)*(th+32); sheet.paste(im,(x,y)); d.text((x+8,y+th+8),p.stem,fill='white')
+          sheet.save(src/'current-reference-sheet.jpg',quality=90)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: visual-reference-qa-${{ github.sha }}
+          path: qa-shots/
+          retention-days: 7
+          if-no-files-found: error

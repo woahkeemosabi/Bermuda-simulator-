@@ -1,0 +1,61 @@
+name: Optimize Bermuda Assets
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'public/models/bermuda/*.glb'
+      - '.github/workflows/optimize-bermuda-assets.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install glTF optimizer
+        run: npm install --no-save @gltf-transform/cli
+      - name: Build mobile and desktop tiers
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public/models/bermuda/mobile public/models/bermuda/desktop
+          shopt -s nullglob
+          files=(public/models/bermuda/*.glb)
+          if [ ${#files[@]} -eq 0 ]; then echo 'No Bermuda GLBs found'; exit 1; fi
+          for src in "${files[@]}"; do
+            base=$(basename "$src")
+            echo "Optimizing $base"
+            # Desktop preserves the high-detail source silhouette and 2K texture ceiling.
+            # Do not emit meshopt/Draco: the simulator's lightweight GLB loader accepts
+            # core embedded-buffer geometry. WebP textures are supported by the loader/browser.
+            npx gltf-transform optimize "$src" "public/models/bermuda/desktop/$base" \
+              --compress false --texture-compress webp --texture-size 2048
+
+            # Mobile LOD is intentionally aggressive on hidden/micro geometry while retaining
+            # the silhouette and baked texture detail. Hero assets get a little more geometry.
+            case "$base" in
+              bermuda-dock.glb) ratio=0.18 ;;
+              bermuda-house-a.glb|bermuda-house-b.glb) ratio=0.12 ;;
+              bermuda-boathouse.glb) ratio=0.08 ;;
+              *) ratio=0.12 ;;
+            esac
+            npx gltf-transform optimize "$src" "public/models/bermuda/mobile/$base" \
+              --simplify true --simplify-ratio "$ratio" --simplify-error 0.003 \
+              --compress false --texture-compress webp --texture-size 1024
+          done
+          echo '--- sizes ---'
+          du -h public/models/bermuda/mobile/*.glb public/models/bermuda/desktop/*.glb || true
+      - name: Commit optimized tiers
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/models/bermuda/mobile public/models/bermuda/desktop
+          git diff --cached --quiet && exit 0
+          git commit -m 'assets: strengthen Bermuda mobile LODs'
+          git push

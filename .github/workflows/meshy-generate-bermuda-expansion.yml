@@ -1,0 +1,185 @@
+name: Generate Bermuda Realism Expansion Pack
+
+on:
+  push:
+    paths:
+      - '.github/workflows/meshy-generate-bermuda-expansion.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: meshy-bermuda-realism-expansion
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Preflight cost and balance
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+          mkdir -p .meshy-expansion/estimates
+
+          names=(
+            bermuda-limestone-seawall
+            bermuda-house-c
+            bermuda-house-d
+            bermuda-hillside-cluster
+            bermuda-hilltop-landmark
+            bermuda-bougainvillea-cluster
+            bermuda-rocky-shoreline
+            bermuda-marina-kit
+            bermuda-fish-market
+            bermuda-bait-tackle
+          )
+
+          prompts=(
+            "Authentic Bermuda waterfront limestone seawall module, pale cream Bermuda stone masonry, low harbour retaining wall with short stone steps, simple coping and subtle weathering, based on St George and Hamilton Bermuda waterfront architecture, game-ready low-poly mobile asset, isolated modular object, no terrain, no water, no people, no Caribbean stilt-house style"
+            "Authentic compact Bermuda waterfront cottage, cream rendered masonry walls, bright white stepped Bermuda slate roof, traditional shutters, chimney and simple sash windows, affluent tidy island architecture, St George Bermuda character, game-ready optimized mobile asset, isolated building, no terrain, no people"
+            "Authentic Bermuda waterfront cottage variant, pale blue-green rendered masonry walls, white stepped Bermuda roof, small chimney, dark shutters and tidy entrance, distinct silhouette from other houses, St George Bermuda architectural character, game-ready optimized mobile asset, isolated building, no terrain, no people"
+            "Bermuda hillside residential cluster as one distant-background game asset, six to eight tightly spaced pastel masonry houses stepping uphill, dominant bright white stepped Bermuda roofs, cream pink yellow pale blue walls, a few palms between buildings, St George Bermuda skyline character, optimized low-detail distant mobile game asset, no ground plane, no people, no skyscrapers"
+            "Bermuda hilltop landmark cluster for distant skyline, pale limestone fort walls and ramparts beside a slender historic church tower silhouette with white Bermuda roof elements, inspired by St George Bermuda historic landscape without copying a single monument exactly, optimized low-detail mobile background asset, isolated, no terrain, no people"
+            "Dense Bermuda waterfront vegetation cluster, mature fan palm, oleander-like subtropical shrubs and vivid magenta bougainvillea spilling over a low pale limestone garden wall, realistic Bermuda garden character, game-ready optimized mobile vegetation asset, isolated cluster, no ground plane, no pots, no people"
+            "Bermuda coastal rocky shoreline module, pale weathered limestone ledges and irregular low coastal rocks shaped by Atlantic water, light cream grey porous stone, suitable for turquoise shallows, game-ready optimized mobile modular asset, isolated, no water, no vegetation, no people"
+            "Bermuda harbour marina background kit as one optimized game asset with two small white sailboats, one compact moored motor yacht, white mooring buoys and simple marine fenders, clean realistic island harbour proportions, designed for distant background use, game-ready low-poly mobile asset, isolated arrangement, no water plane, no people"
+            "Small authentic Bermuda dockside fish market building, pale rendered masonry base, white stepped Bermuda roof, open shaded fish counter facing harbour, simple timber counter, coolers and restrained marine details, clean St George Bermuda waterfront character, game-ready optimized mobile asset, isolated building, no terrain, no people, no tropical stilt hut"
+            "Small authentic Bermuda bait and tackle shop for a harbour, pale pastel rendered masonry, bright white stepped Bermuda roof, shaded front counter, modest fishing gear display and hand-painted bait and tackle sign area, clean St George Bermuda waterfront character, game-ready optimized mobile asset, isolated building, no terrain, no people, no stilt construction"
+          )
+
+          total=0
+          for i in "${!names[@]}"; do
+            name="${names[$i]}"
+            echo "===== ESTIMATE ${name} ====="
+            $M make "${prompts[$i]}" --dry-run --output-schema v1 --format json --no-update-check | tee ".meshy-expansion/estimates/${name}.json"
+          done
+
+          $M balance --output-schema v1 --format json --no-update-check | tee .meshy-expansion/balance-before.json
+
+          python3 - <<'PY'
+          import glob, json, sys
+          total=0
+          print('\n=== MESHY EXPANSION PREFLIGHT ===')
+          for p in sorted(glob.glob('.meshy-expansion/estimates/*.json')):
+              d=json.load(open(p, encoding='utf-8'))
+              r=d.get('result') or d
+              c=r.get('estimated_credits')
+              print(f'{p}: {c}')
+              if not isinstance(c,(int,float)):
+                  print('Missing estimated_credits; refusing paid generation', file=sys.stderr)
+                  sys.exit(2)
+              total += c
+          b=json.load(open('.meshy-expansion/balance-before.json', encoding='utf-8'))
+          br=b.get('result') or b
+          balance=br.get('balance')
+          print(f'TOTAL_ESTIMATED_CREDITS={total}')
+          print(f'AVAILABLE_BALANCE={balance}')
+          if not isinstance(balance,(int,float)) or balance < total:
+              print('Insufficient Meshy balance for agreed expansion plan', file=sys.stderr)
+              sys.exit(9)
+          if total > 300:
+              print('Estimate exceeds the agreed 300-credit safety ceiling', file=sys.stderr)
+              sys.exit(3)
+          PY
+
+      - name: Generate, download, and preserve each asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+          mkdir -p public/models/bermuda/expansion/previews .meshy-expansion/results .meshy-expansion/downloads
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          names=(
+            bermuda-limestone-seawall
+            bermuda-house-c
+            bermuda-house-d
+            bermuda-hillside-cluster
+            bermuda-hilltop-landmark
+            bermuda-bougainvillea-cluster
+            bermuda-rocky-shoreline
+            bermuda-marina-kit
+            bermuda-fish-market
+            bermuda-bait-tackle
+          )
+
+          prompts=(
+            "Authentic Bermuda waterfront limestone seawall module, pale cream Bermuda stone masonry, low harbour retaining wall with short stone steps, simple coping and subtle weathering, based on St George and Hamilton Bermuda waterfront architecture, game-ready low-poly mobile asset, isolated modular object, no terrain, no water, no people, no Caribbean stilt-house style"
+            "Authentic compact Bermuda waterfront cottage, cream rendered masonry walls, bright white stepped Bermuda slate roof, traditional shutters, chimney and simple sash windows, affluent tidy island architecture, St George Bermuda character, game-ready optimized mobile asset, isolated building, no terrain, no people"
+            "Authentic Bermuda waterfront cottage variant, pale blue-green rendered masonry walls, white stepped Bermuda roof, small chimney, dark shutters and tidy entrance, distinct silhouette from other houses, St George Bermuda architectural character, game-ready optimized mobile asset, isolated building, no terrain, no people"
+            "Bermuda hillside residential cluster as one distant-background game asset, six to eight tightly spaced pastel masonry houses stepping uphill, dominant bright white stepped Bermuda roofs, cream pink yellow pale blue walls, a few palms between buildings, St George Bermuda skyline character, optimized low-detail distant mobile game asset, no ground plane, no people, no skyscrapers"
+            "Bermuda hilltop landmark cluster for distant skyline, pale limestone fort walls and ramparts beside a slender historic church tower silhouette with white Bermuda roof elements, inspired by St George Bermuda historic landscape without copying a single monument exactly, optimized low-detail mobile background asset, isolated, no terrain, no people"
+            "Dense Bermuda waterfront vegetation cluster, mature fan palm, oleander-like subtropical shrubs and vivid magenta bougainvillea spilling over a low pale limestone garden wall, realistic Bermuda garden character, game-ready optimized mobile vegetation asset, isolated cluster, no ground plane, no pots, no people"
+            "Bermuda coastal rocky shoreline module, pale weathered limestone ledges and irregular low coastal rocks shaped by Atlantic water, light cream grey porous stone, suitable for turquoise shallows, game-ready optimized mobile modular asset, isolated, no water, no vegetation, no people"
+            "Bermuda harbour marina background kit as one optimized game asset with two small white sailboats, one compact moored motor yacht, white mooring buoys and simple marine fenders, clean realistic island harbour proportions, designed for distant background use, game-ready low-poly mobile asset, isolated arrangement, no water plane, no people"
+            "Small authentic Bermuda dockside fish market building, pale rendered masonry base, white stepped Bermuda roof, open shaded fish counter facing harbour, simple timber counter, coolers and restrained marine details, clean St George Bermuda waterfront character, game-ready optimized mobile asset, isolated building, no terrain, no people, no tropical stilt hut"
+            "Small authentic Bermuda bait and tackle shop for a harbour, pale pastel rendered masonry, bright white stepped Bermuda roof, shaded front counter, modest fishing gear display and hand-painted bait and tackle sign area, clean St George Bermuda waterfront character, game-ready optimized mobile asset, isolated building, no terrain, no people, no stilt construction"
+          )
+
+          for i in "${!names[@]}"; do
+            name="${names[$i]}"
+            prompt="${prompts[$i]}"
+            dl=".meshy-expansion/downloads/${name}"
+            result=".meshy-expansion/results/${name}.json"
+            out="public/models/bermuda/expansion/${name}.glb"
+            preview="public/models/bermuda/expansion/previews/${name}.png"
+
+            echo "===== GENERATING ${name} ====="
+            mkdir -p "$dl"
+            $M make "$prompt" \
+              --max-credits 30 \
+              --timeout 900 \
+              -o "$dl" \
+              --output-schema v1 \
+              --format json \
+              --no-update-check | tee "$result"
+
+            glb=$(find "$dl" -type f -name '*.glb' | head -n 1)
+            test -n "$glb"
+            cp "$glb" "$out"
+
+            p=$(find "$dl" -type f \( -name 'preview.png' -o -name '*thumbnail*.png' -o -name '*.png' \) | head -n 1 || true)
+            if [ -n "$p" ]; then cp "$p" "$preview"; fi
+
+            test -s "$out"
+            echo "Generated ${out} ($(stat -c%s "$out") bytes)"
+            git add "$out" "$preview" 2>/dev/null || git add "$out"
+            git commit -m "asset: add ${name} Meshy model"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          done
+
+      - name: Final Meshy balance
+        if: always()
+        shell: bash
+        run: |
+          M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+          $M balance --output-schema v1 --format json --no-update-check || true
+
+      - name: Upload Meshy task records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meshy-bermuda-expansion-records
+          path: .meshy-expansion/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7

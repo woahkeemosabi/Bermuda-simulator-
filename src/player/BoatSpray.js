@@ -301,13 +301,16 @@ export class BoatSpray {
 		// sqrt( thrust / 1000 ) x e^( -depth / r ))
 		b.toWorld( b.model.propeller, _m );
 		const propDepth = b.sampleWaterAt( _m ) - _m.y;
-		const activity = b.driven && propDepth > - 0.2 ? Math.sqrt( Math.abs( b.thrust || 0 ) / 1000 ) * Math.exp( - Math.max( propDepth, 0 ) / 0.45 ) : 0;
+		const thrustActivity = Math.sqrt( Math.abs( b.thrust || 0 ) / 1000 );
+		const surfaceFactor = 0.32 + 0.68 * Math.exp( - Math.max( propDepth, 0 ) / 1.2 );
+		const speedActivity = MathUtils.smoothstep( speed, 0.8, 7 ) * ( 0.3 + 0.7 * Math.abs( b.throttle || 0 ) );
+		const activity = b.driven && propDepth > - 0.4 ? Math.max( thrustActivity * surfaceFactor, speedActivity ) : 0;
 		if ( activity > 0.05 ) {
 
 			b.toWorld( this.stern, _a );
 			if ( b.sampleWaterAt( _a ) - _a.y > - 0.3 ) {
 
-				this.washCarry += activity * 45 * dt;
+				this.washCarry += activity * 95 * dt;
 				const m = Math.floor( this.washCarry );
 				this.washCarry -= m;
 				const dir = Math.sign( b.thrust || b.throttle ) || 1;

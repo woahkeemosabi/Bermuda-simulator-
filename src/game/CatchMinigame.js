@@ -18,8 +18,9 @@ export class CatchMinigame {
 		this.kg = kg;
 		this.rng = rng;
 		this.reelSpeed = reelSpeed;
-		// pull relative to the line: a fish near the line rating is hard, one far above it is a lottery
-		this.power = Math.min( 2.2, ( 0.25 + 0.75 * f.fight ) * Math.pow( kg / Math.max( lineKg * 0.5, 0.2 ), 0.55 ) );
+		// Pull relative to the line: the slightly steeper size/line curve keeps ordinary fish
+		// manageable on starter tackle while trophy fish genuinely require the heavier line upgrade.
+		this.power = Math.min( 2.2, ( 0.25 + 0.75 * f.fight ) * Math.pow( kg / Math.max( lineKg * 0.5, 0.2 ), 0.58 ) );
 		this.staminaMax = f.stamina * Math.pow( Math.max( kg / f.kg[ 1 ], 0.15 ), 0.35 );
 		this.stamina = 1;
 		this.distance = distance;

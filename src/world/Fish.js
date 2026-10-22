@@ -197,6 +197,7 @@ export class FishSchools {
 		this.pattern = new Uint8Array( n );
 		this.slot = new Float32Array( n * 4 ); // bait: formation slot (unit direction, radius); pile: pile index
 		this.jump = new Float32Array( n ); // mullet: 0 swimming, 1 rising to the surface, 2 in the air
+		this.spearRespawn = new Float32Array( n ); // struck fish recoil briefly before returning to their home
 		this.floorC = new Float32Array( n ).fill( - 1000 ); // cached bottom under / ahead of each fish
 		this.shallowC = new Uint8Array( n ); // cached: shallow water or breakers ahead
 		this.prev = new Float32Array( n * 3 ); // positions in the previous frame (motion vectors)
@@ -236,6 +237,45 @@ export class FishSchools {
 	get fishCount() {
 
 		return this.n;
+
+	}
+
+	// First-person spearfishing hit test against the same CPU positions used to draw the fish.
+	// `allowedModels` keeps non-catchable wildlife (rays, turtle, whale escorts) out of the test.
+	spearHit( origin, direction, maxDist = 7, allowedModels = null ) {
+
+		let best = null, bestT = maxDist + 1, bestGroup = null;
+		const dx = direction.x, dy = direction.y, dz = direction.z;
+		for ( const g of this.groups ) {
+
+			const model = g.sp.model;
+			if ( allowedModels && ! allowedModels.has( model ) ) continue;
+			for ( let i = g.offset; i < g.offset + g.count; i ++ ) {
+
+				if ( this.spearRespawn[ i ] > 0 ) continue;
+				const k = i * 3, rx = this.pos[ k ] - origin.x, ry = this.pos[ k + 1 ] - origin.y, rz = this.pos[ k + 2 ] - origin.z;
+				const t = rx * dx + ry * dy + rz * dz;
+				if ( t < 0.35 || t > maxDist || t >= bestT ) continue;
+				const d2 = rx * rx + ry * ry + rz * rz - t * t;
+				const r = Math.max( 0.14, this.size[ i ] * 0.48 );
+				if ( d2 <= r * r ) { best = i; bestT = t; bestGroup = g; }
+
+			}
+
+		}
+		if ( best === null ) return null;
+		const k = best * 3, L = this.size[ best ], g = bestGroup;
+		const hit = { index: best, model: g.sp.model, length: L, distance: bestT, position: new THREE.Vector3( this.pos[ k ], this.pos[ k + 1 ], this.pos[ k + 2 ] ) };
+		// Give the struck fish a visible recoil instead of teleporting it on the impact frame. It is
+		// non-targetable during this short reaction, then quietly respawns near its group's home.
+		const kick = Math.max( 0.9, L * 3.4 );
+		this.vel[ k ] = direction.x * kick;
+		this.vel[ k + 1 ] = direction.y * kick + 0.12;
+		this.vel[ k + 2 ] = direction.z * kick;
+		this.panic[ best ] = 1;
+		this.spearRespawn[ best ] = 0.42;
+		g.alarm = Math.max( g.alarm, 3.5 );
+		return hit;
 
 	}
 
@@ -408,6 +448,13 @@ export class FishSchools {
 		this.escort = [ [ 'pilot', 12 ], [ 'juvenile', 6 ], [ 'remora', 4 ] ].map( ( [ name, c ] ) => this.addGroup( name, c, { x: 0, z: 200, r: 5, band: [ 0, 1e9 ] } ) );
 		const wet = piles.filter( ( p ) => this.depthAt( p[ 0 ], p[ 1 ] ) > 2.2 );
 		const pierZone = { x: P.x, z: P.zEnd - 8, r: 18, anchors: wet, piles: wet };
+		// The Bermuda hero dock is west of the legacy Tidewater pier. Keep a small, dense reef edge
+		// population here so a first dive from the boat finds life without a long swim to the bay.
+		const D = WORLD.boatDock.position;
+		const dockPiles = [];
+		for ( const dx of [ -2.6, 2.6 ] ) for ( const dz of [ -7, -3, 1, 5 ] ) dockPiles.push( [ D.x + dx, D.z + dz ] );
+		const dockZone = { x: D.x, z: D.z - 2, r: 13, anchors: dockPiles, piles: dockPiles, band: [ 2.0, 12 ] };
+		for ( const [ name, c ] of [ [ 'pierGrunt', 10 ], [ 'pierSnapper', 8 ], [ 'pierSergeant', 8 ] ] ) place( name, c, dockZone, true );
 		for ( const [ name, c ] of [ [ 'pierGrunt', 14 ], [ 'pierSnapper', 10 ], [ 'pierSergeant', 12 ] ] ) {
 
 			const g = place( name, c, pierZone, true );
@@ -654,6 +701,25 @@ export class FishSchools {
 		let any = false;
 		for ( const g of this.groups ) {
 
+			// Finish a spear-hit reaction by placing the fish back near its normal home. Keeping the
+			// timer in the shared fish state also prevents a single target from being harvested twice.
+			for ( let i = g.offset; i < g.offset + g.count; i ++ ) if ( this.spearRespawn[ i ] > 0 ) {
+
+				this.spearRespawn[ i ] -= dt;
+				if ( this.spearRespawn[ i ] <= 0 ) {
+
+					const a = g.rng() * TAU, rr = 1.5 + g.rng() * Math.max( 1, g.zone.r * 0.7 );
+					const x = g.home.x + Math.cos( a ) * rr, z = g.home.z + Math.sin( a ) * rr;
+					const y = this.clampY( g.sp, x, z, g.home.y );
+					const k = i * 3;
+					this.pos.set( [ x, y, z ], k ); this.prev.set( [ x, y, z ], k );
+					const speed = g.sp.cruise * this.size[ i ];
+					this.vel.set( [ Math.cos( a ) * speed, 0, Math.sin( a ) * speed ], k );
+					this.panic[ i ] = 0;
+
+				}
+
+			}
 			const was = g.active;
 			if ( g.sp.mode === 'escort' || g.sp.mode === 'remora' ) {
 

@@ -12,6 +12,8 @@ import { UPGRADES, fuelBurn } from './Gear.js';
 import { GameHUD } from './GameHUD.js';
 import { Minimap } from './Minimap.js';
 import { Guide } from './Guide.js';
+import { Lobsters } from './Lobsters.js';
+import { Spear } from './Spear.js';
 
 // how long the catch card stays up unless dismissed (ms)
 const CATCH_CARD_MS = 9000;
@@ -36,6 +38,8 @@ export class Game {
 		this.display = new CatchDisplay( { scene: app.scene, stall: this.stand.iceFish() } );
 		this.landing = null; // { species, kg } while the caught fish swings in view
 		this.chandlery = new Chandlery( { scene: app.scene, terrain: app.terrainData, colliders: app.colliders, material: this.stand.material } );
+		this.lobsters = new Lobsters( { scene: app.scene, terrain: app.terrainData, reef: app.reef } );
+		this.spear = new Spear( { scene: app.scene, camera: app.camera } );
 		this.vendors = [ this.stand.vendor, this.chandlery.vendor ];
 		// boat upgrades: engine (thrust / top speed) and deck floodlights for night fishing
 		const b = app.boatCtl;
@@ -53,6 +57,13 @@ export class Game {
 		this._hookedSpecies = null;
 		this._pier = WORLD.pier;
 		this._tmp = new Vector3();
+		this._spearDir = new Vector3();
+		this._spearCooldown = 0;
+		this._spearModels = new Set();
+		this._spearByModel = new Map();
+		for ( const [ id, f ] of Object.entries( FISH ) ) if ( ! this._spearByModel.has( f.model ) ) { this._spearByModel.set( f.model, id ); this._spearModels.add( f.model ); }
+		this._lobsterTarget = null;
+		// UNDERWATER_POLISH_V1: physical grab / impact feedback and non-blocking dive catch HUD.
 		this.applyGear();
 		this.state.onChange( () => this.applyGear() );
 
@@ -185,6 +196,21 @@ export class Game {
 		this._lmb = lmb;
 		this._rmb = rmb;
 		const panelOpen = this.hud && ( this.hud.invOpen || this.hud.standOpen );
+		this._spearCooldown = Math.max( 0, this._spearCooldown - dt );
+		const diving = p.mode === 'swim' && ( p.diveDepth || 0 ) > 0.35;
+		if ( this.lobsters ) this.lobsters.update( dt, p, app.camera );
+		this._lobsterTarget = null;
+		if ( diving && this.lobsters ) {
+
+			p.getViewDir( this._spearDir ).normalize();
+			this._lobsterTarget = this.lobsters.target( app.camera.position, this._spearDir, 1.8 );
+
+		}
+		const swimSpeed = p.velocity ? Math.hypot( p.velocity.x, p.velocity.z ) : 0;
+		if ( this.spear ) this.spear.update( dt, { visible: diving && ! panelOpen, moving: Math.min( 1, swimSpeed / 2 ) } );
+		const act = diving ? inp.hit( 'KeyE' ) : false;
+		if ( diving && ! panelOpen && act && this._lobsterTarget ) this.grabLobster();
+		else if ( diving && ! panelOpen && this._spearCooldown <= 0 && ( lDown || act ) ) this.fireSpear();
 
 		if ( rod.equipped && ! panelOpen ) {
 
@@ -264,19 +290,25 @@ export class Game {
 		this.updateVendors( inp, p );
 
 		// prompts when the player has nothing to say
-		if ( ! p.prompt && can ) p.prompt = this.prompt();
+		if ( ! p.prompt && diving && this._lobsterTarget ) p.prompt = { key: 'E', text: 'Grab Caribbean spiny lobster' };
+		else if ( ! p.prompt && diving ) p.prompt = { key: 'E', text: 'Spear · aim at a fish and ACT' };
+		else if ( ! p.prompt && can ) p.prompt = this.prompt();
 
 		const aboard = p.mode === 'boat' || p.mode === 'deck';
+		if ( aboard && inp.hit( 'KeyX' ) ) { app.boatCtl.reset(); this.state.save(); this.toast( 'Boat recovered to berth', 2200 ); }
 		// the catch card's live fish portrait (or one queued thumbnail)
 		if ( this.hud && this.hud.portrait ) this.hud.portrait.update( dt );
 		if ( this.hud ) this.hud.update( {
 			fuel: aboard ? { litres: this.state.fuelL, tank: this.state.stats.fuelL } : null,
 			sonar: aboard && this.state.stats.finder ? this._sonar : null,
+			dive: p.mode === 'swim' ? { oxygen: p.oxygen, depth: p.diveDepth } : null,
+			time: { hours: app.settings.timeOfDay, weather: app.settings.weatherMode },
+			anchor: app.boatCtl && ( app.boatCtl.anchored || p.mode === 'boat' || p.mode === 'deck' ) ? { anchored: !! app.boatCtl.anchored, distance: p.position.distanceTo( app.boatCtl.position ) } : null,
 			fight: this.fight,
 			casting: rod.state === 'windup',
 			power: rod.power,
 			bite: this.bite && this.bite.phase === 'take',
-			aiming: rod.equipped,
+			aiming: rod.equipped || diving,
 		} );
 		if ( this.minimap ) this.minimap.update( dt );
 		if ( this.guide ) this.guide.update( dt );
@@ -312,6 +344,88 @@ export class Game {
 			default: return null;
 
 		}
+
+	}
+
+	// Close-range hand capture of the visible lobster under the reticle. It shares the cooler,
+	// persistence and fish-stand economy, but deliberately skips FishPortrait because lobsters use
+	// their own world geometry rather than a fish model.
+	grabLobster() {
+
+		const app = this.app;
+		if ( ! this.lobsters ) return false;
+		app.player.getViewDir( this._spearDir ).normalize();
+		const target = this.lobsters.target( app.camera.position, this._spearDir, 1.8 );
+		if ( ! target ) return false;
+		if ( ! this.state.fits( target.kg ) ) {
+
+			this.toast( 'Cooler full · lobster left on the reef', 1800 );
+			return false;
+
+		}
+		const hit = this.lobsters.grab( app.camera.position, this._spearDir, 1.8 );
+		if ( ! hit ) return false;
+		if ( this.spear ) this.spear.grab( hit.position );
+		let kept;
+		try {
+
+			kept = this.state.addFish( 'spinyLobster', hit.kg, app.settings?.timeOfDay ?? 12, hit.cm );
+
+		} catch ( error ) {
+
+			console.error( 'lobster capture recovered', error );
+			this.lobsters.restore( hit.id );
+			this.toast( 'Lobster capture recovered · try again', 1800 );
+			return false;
+
+		}
+		if ( ! kept ) {
+
+			this.lobsters.restore( hit.id );
+			this.toast( 'Lobster released', 1600 );
+			return false;
+
+		}
+		this.toast( `Grabbed Caribbean spiny lobster · ${ hit.cm } cm · ${ hit.kg.toFixed( 2 ) } kg`, 1800 );
+		if ( this.hud && this.state.lastCatch ) this.hud.showDiveCatch( this.state.lastCatch, 'HAND CAPTURE' );
+		return true;
+
+	}
+
+	// Spear the fish actually under the reticle. Protected/undersize species still flow through
+	// GameState.addFish, so the same legal-release rules apply to rod and spear catches.
+	fireSpear() {
+
+		this._spearCooldown = 0.7;
+		const app = this.app;
+		app.player.getViewDir( this._spearDir ).normalize();
+		const lobsterAim = this.lobsters && this.lobsters.target( app.camera.position, this._spearDir, 4.0 );
+		if ( this.spear ) this.spear.fire();
+		if ( lobsterAim ) {
+
+			if ( this.spear ) this.spear.impact( lobsterAim.position, 0.45 );
+			this.toast( 'Caribbean spiny lobster · move close and use ACT to grab', 1900 );
+			return;
+
+		}
+		const schools = app.reef && app.reef.fish;
+		if ( ! schools || ! schools.spearHit ) return;
+		const hit = schools.spearHit( app.camera.position, this._spearDir, 7, this._spearModels );
+		if ( ! hit ) { this.toast( 'Spear missed', 650 ); return; }
+		if ( this.spear ) this.spear.impact( hit.position, 1 );
+		const species = this._spearByModel.get( hit.model );
+		const f = species && FISH[ species ];
+		if ( ! f ) return;
+		const cm = Math.max( 5, hit.length * 100 );
+		const rawKg = f.lw[ 0 ] * Math.pow( cm, f.lw[ 1 ] ) / 1000;
+		const kg = Math.max( f.kg[ 0 ], Math.min( f.kg[ 1 ], rawKg ) );
+		const kept = this.state.addFish( species, kg, app.settings?.timeOfDay ?? 12 );
+		const info = this.state.lastCatch;
+		if ( info?.protectedSpecies ) this.toast( `${ f.name } · protected · released`, 2400 );
+		else if ( info && ! info.legalSize ) this.toast( `${ f.name } · undersize · released`, 2400 );
+		else if ( kept ) this.toast( `Speared ${ f.name } · ${ info.kg.toFixed( 2 ) } kg · cooler ${ this.state.inventory.length } fish`, 2600 );
+		else this.toast( `${ f.name } · cooler full · released`, 2200 );
+		if ( this.hud && info ) this.hud.showDiveCatch( info, 'SPEARED' );
 
 	}
 

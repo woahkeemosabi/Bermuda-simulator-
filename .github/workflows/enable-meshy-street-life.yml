@@ -1,0 +1,34 @@
+name: Enable Meshy Street Life
+
+on:
+  push:
+    paths:
+      - '.github/workflows/enable-meshy-street-life.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply runtime integration
+        run: node scripts/enable-meshy-street-life.mjs
+
+      - name: Commit runtime integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/engine/loaders/GLTF.js src/world/BermudaIdentity.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'feat: enable Meshy Bermuda street-life models'
+          git pull --rebase origin main
+          git push origin HEAD:main

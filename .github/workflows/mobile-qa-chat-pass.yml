@@ -1,0 +1,92 @@
+name: Mobile QA Chat Pass
+
+on:
+  push:
+    branches: [ bermuda-mobile-qa-chat-pass ]
+    paths:
+      - '.github/workflows/mobile-qa-chat-pass.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Apply first mobile QA fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'patch anchor missing: {label}')
+              p.write_text(text.replace(old, new, 1))
+
+          # Stable mobile HUD: keep gameplay gauges visible while hiding only dev/settings UI.
+          replace_once(
+              'src/mobile/BermudaMobileStable.js',
+              "\t\tbody.bm-mobile .tw-rail,body.bm-mobile .tw-panel,body.bm-mobile .tw-help,body.bm-mobile .tw-stats,body.bm-mobile .gm-purse{display:none!important}\n\t\t@media (max-width:700px){body.bm-mobile .gm-map{width:102px;height:102px;right:15px;bottom:230px;opacity:.84}}",
+              "\t\tbody.bm-mobile .tw-rail,body.bm-mobile .tw-panel,body.bm-mobile .tw-help,body.bm-mobile .tw-stats{display:none!important}\n\t\tbody.bm-mobile .gm-purse{display:flex!important;left:14px;right:14px;top:54px;width:auto;max-width:calc(100vw - 28px);gap:7px;padding:6px 9px;border-radius:12px;flex-wrap:wrap;font-size:11px;pointer-events:none}\n\t\tbody.bm-mobile .gm-money{display:none!important}\n\t\tbody.bm-mobile .gm-cooler{gap:5px}\n\t\tbody.bm-mobile .gm-cooler-label{display:none}\n\t\tbody.bm-mobile .gm-cooler-bar{width:38px;height:4px}\n\t\tbody.bm-mobile .gm-gauge{gap:5px}\n\t\tbody.bm-mobile .gm-dive-depth{font-size:10px;opacity:.82}\n\t\tbody.bm-mobile .tw-depth{display:none!important}\n\t\t@media (max-width:700px){body.bm-mobile .gm-map{width:102px;height:102px;right:15px;bottom:230px;opacity:.84}}",
+              'show compact fuel/O2/cooler HUD and hide bulky depth tape'
+          )
+
+          # The lower-right FISH action becomes a direct SPEAR trigger while submerged.
+          replace_once(
+              'src/mobile/BermudaMobileStable.js',
+              "\tconst fishDescriptor = () => {\n\n\t\tconst game = app.game, rod = game && game.rod;\n\t\tif ( ! game || ! rod || ! rod.equipped ) return { kind: 'none', label: 'FISH' };",
+              "\tconst fishDescriptor = () => {\n\n\t\tconst game = app.game, rod = game && game.rod, p = app.player;\n\t\tif ( p && p.mode === 'swim' && ( p.diveDepth || 0 ) > 0.35 ) return { kind: 'lmb', label: 'SPEAR' };\n\t\tif ( ! game || ! rod || ! rod.equipped ) return { kind: 'none', label: 'FISH' };",
+              'swap FISH to SPEAR underwater'
+          )
+
+          # Put guaranteed QA-discoverable lobsters around the active Bermuda dock, not the legacy pier.
+          replace_once(
+              'src/game/Lobsters.js',
+              "\tconstructor( { scene, terrain, reef, count = 18, seed = 20260928 } ) {",
+              "\tconstructor( { scene, terrain, reef, count = 24, seed = 20260928 } ) {",
+              'increase lobster population'
+          )
+          replace_once(
+              'src/game/Lobsters.js',
+              "\t\t// A few discoverable animals around the pier head, then the larger reef population.\n\t\tconst P = WORLD.pier;\n\t\tfor ( const [ dx, dz ] of [ [ - 5, - 2 ], [ 5, - 1 ], [ - 4, - 8 ], [ 5, - 9 ], [ 0, - 12 ] ] ) {\n\n\t\t\tconst x = P.x + dx, z = P.zEnd + dz;\n\t\t\tif ( this.valid( x, z ) ) candidates.push( [ x, z ] );\n\n\t\t}",
+              "\t\t// Seed several discoverable animals around the active Bermuda landing/boat dock first,\n\t\t// then fill the larger reef population. WORLD.pier is the legacy Tidewater pier and is not\n\t\t// where the current mobile player starts.\n\t\tconst D = WORLD.boatDock?.position || WORLD.spawn.position;\n\t\tfor ( const [ dx, dz ] of [ [ - 8, 4 ], [ 7, 3 ], [ - 6, 10 ], [ 6, 11 ], [ - 10, 16 ], [ 9, 17 ], [ 0, 22 ] ] ) {\n\n\t\t\tconst x = D.x + dx, z = D.z + dz;\n\t\t\tif ( this.valid( x, z ) ) candidates.push( [ x, z ] );\n\n\t\t}",
+              'move lobster discovery spawns to active dock'
+          )
+
+      - name: Verify source and gameplay
+        run: |
+          git diff --check
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const mobile = fs.readFileSync('src/mobile/BermudaMobileStable.js', 'utf8');
+          const lob = fs.readFileSync('src/game/Lobsters.js', 'utf8');
+          for (const needle of ["label: 'SPEAR'", '.gm-purse{display:flex!important', '.tw-depth{display:none!important']) {
+            if (!mobile.includes(needle)) throw new Error(`mobile source missing ${needle}`);
+          }
+          for (const needle of ['count = 24', 'WORLD.boatDock?.position']) {
+            if (!lob.includes(needle)) throw new Error(`lobster source missing ${needle}`);
+          }
+          console.log('mobile QA source checks passed');
+          NODE
+          node test/game-logic.mjs
+          npm run build
+
+      - name: Commit verified fixes
+        run: |
+          git config user.name 'bermuda-simulator-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/mobile/BermudaMobileStable.js src/game/Lobsters.js
+          git commit -m 'Fix mobile dive controls HUD and lobster discovery'
+          git push origin HEAD:bermuda-mobile-qa-chat-pass

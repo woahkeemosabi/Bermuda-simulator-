@@ -1,0 +1,62 @@
+name: Bermuda Meshy Preview Sheet
+
+on:
+  push:
+    paths:
+      - '.github/workflows/bermuda-preview-sheet.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview-sheet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Build preview contact sheet
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageOps, ImageDraw
+          import math
+
+          src = Path('public/models/bermuda/expansion/previews')
+          files = sorted(src.glob('*.png'))
+          if not files:
+              raise SystemExit('No Meshy previews found')
+
+          tile_w, tile_h = 320, 360
+          cols = 2
+          rows = math.ceil(len(files) / cols)
+          sheet = Image.new('RGB', (cols * tile_w, rows * tile_h), 'white')
+          draw = ImageDraw.Draw(sheet)
+
+          for i, path in enumerate(files):
+              img = Image.open(path).convert('RGB')
+              thumb = ImageOps.contain(img, (300, 300))
+              x = (i % cols) * tile_w + (tile_w - thumb.width) // 2
+              y = (i // cols) * tile_h + 8
+              sheet.paste(thumb, (x, y))
+              label = path.stem
+              draw.text(((i % cols) * tile_w + 10, (i // cols) * tile_h + 318), label, fill='black')
+
+          out = Path('bermuda-meshy-preview-sheet.jpg')
+          sheet.save(out, quality=82, optimize=True)
+          print(f'PREVIEWS={len(files)}')
+          print(f'OUTPUT={out} SIZE={out.stat().st_size}')
+          PY
+
+      - name: Upload preview sheet
+        uses: actions/upload-artifact@v4
+        with:
+          name: bermuda-meshy-preview-sheet
+          path: bermuda-meshy-preview-sheet.jpg
+          if-no-files-found: error
+          retention-days: 7

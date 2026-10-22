@@ -70,6 +70,11 @@ const CSS = /* css */`
 .gm-gauge.is-on { display: flex; }
 .gm-gauge b { font-family: var(--tw-mono); font-weight: 500; color: var(--tw-ink); }
 .gm-fuel-bar > span { background: var(--tw-sun); }
+.gm-clock { display:flex!important; gap:6px; white-space:nowrap; }
+.gm-clock-time { font-family: var(--tw-mono); color: var(--tw-ink); }
+.gm-weather { color: var(--tw-ink-3); text-transform:capitalize; }
+.gm-anchor.is-on { display:flex; }
+.gm-anchor b { font-family:var(--tw-mono); }
 .gm-fuel.is-low .gm-fuel-bar > span { background: var(--tw-coral); }
 .gm-sonar-dots { letter-spacing: 1px; color: var(--tw-aqua); }
 .gm-shop-row { display: grid; grid-template-columns: 1fr auto; gap: var(--tw-3); align-items: center; padding: var(--tw-2) 0; border-bottom: 1px solid var(--tw-line); }
@@ -78,6 +83,20 @@ const CSS = /* css */`
 .gm-log { margin-top: var(--tw-3); color: var(--tw-ink-3); font-size: var(--tw-fs-sm); line-height: 1.5; }
 .gm-row .gm-cm { font-family: var(--tw-mono); color: var(--tw-ink-3); }
 .gm-row.has-cm { grid-template-columns: 1fr auto auto auto auto; }
+
+/* compact underwater hunting confirmation: never blocks steering or the reticle */
+.gm-dive-catch { position: absolute; left: 50%; top: max(calc(74 * var(--tw-u)), 12vh); transform: translate(-50%, -14px) scale(0.96);
+	min-width: min(360px, 82vw); padding: calc(10 * var(--tw-u)) calc(18 * var(--tw-u)); border-radius: var(--tw-r-lg);
+	background: linear-gradient(135deg, rgba(4,24,34,0.88), rgba(8,48,58,0.74)); border: 1px solid rgba(var(--tw-aqua-rgb),0.34);
+	box-shadow: 0 14px 38px rgba(0,0,0,0.3), 0 0 24px rgba(var(--tw-aqua-rgb),0.12); text-align: center;
+	font: 500 var(--tw-fs-md) var(--tw-font); color: var(--tw-ink); opacity: 0; pointer-events: none; }
+.gm-dive-catch.is-on { animation: gm-dive-catch 3.1s var(--tw-ease) both; }
+.gm-dive-catch-kicker { font-size: var(--tw-fs-sm); font-weight: 800; letter-spacing: 0.24em; color: var(--tw-aqua); }
+.gm-dive-catch strong { display: block; margin-top: 3px; font-size: calc(18 * var(--tw-u)); }
+.gm-dive-catch-meta { margin-top: 3px; font-family: var(--tw-mono); color: var(--tw-ink-2); }
+.gm-dive-catch-status { margin-top: 4px; font-size: var(--tw-fs-sm); color: var(--tw-sun); }
+.gm-dive-catch-status.is-release { color: var(--tw-coral); }
+@keyframes gm-dive-catch { 0% { opacity: 0; transform: translate(-50%, -14px) scale(0.96); } 10%, 72% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -6px) scale(0.99); } }
 
 /* catch card: full screen. The world dims and blurs; the fish lies side-on in its own studio light
    (FishPortrait, a WebGPU canvas) between the name above and the numbers below */
@@ -172,13 +191,21 @@ export class GameHUD {
 		style.textContent = CSS;
 		document.head.append( style );
 
-		this.purse = h( 'div', 'gm-purse tw-glass', `<span class="gm-money">$0</span><span class="gm-cooler"><span class="gm-cooler-label">Cooler</span><span class="gm-cooler-bar"><span></span></span><span class="gm-cooler-kg">0 / 30 kg</span></span><span class="gm-gauge gm-fuel"><span>Fuel</span><span class="gm-cooler-bar gm-fuel-bar"><span></span></span><b class="gm-fuel-l">40 L</b></span><span class="gm-gauge gm-sonar"><span>Sonar</span><b class="gm-sonar-d">0 m</b><span class="gm-sonar-dots"></span></span>` );
+		this.purse = h( 'div', 'gm-purse tw-glass', `<span class="gm-money">$0</span><span class="gm-cooler"><span class="gm-cooler-label">Cooler</span><span class="gm-cooler-bar"><span></span></span><span class="gm-cooler-kg">0 / 30 kg</span></span><span class="gm-gauge gm-fuel"><span>Fuel</span><span class="gm-cooler-bar gm-fuel-bar"><span></span></span><b class="gm-fuel-l">40 L</b></span><span class="gm-gauge gm-sonar"><span>Sonar</span><b class="gm-sonar-d">0 m</b><span class="gm-sonar-dots"></span></span><span class="gm-gauge gm-dive"><span>O₂</span><span class="gm-cooler-bar gm-dive-bar"><span></span></span><b class="gm-dive-o2">100%</b><b class="gm-dive-depth">0.0 m</b></span><span class="gm-gauge gm-clock is-on"><b class="gm-clock-time">16:12</b><span class="gm-weather">Clear</span></span><span class="gm-gauge gm-anchor"><span>⚓</span><b class="gm-anchor-d">Boat</b></span>` );
 		this.fuelEl = this.purse.querySelector( '.gm-fuel' );
 		this.fuelBar = this.purse.querySelector( '.gm-fuel-bar > span' );
 		this.fuelL = this.purse.querySelector( '.gm-fuel-l' );
 		this.sonarEl = this.purse.querySelector( '.gm-sonar' );
 		this.sonarD = this.purse.querySelector( '.gm-sonar-d' );
 		this.sonarDots = this.purse.querySelector( '.gm-sonar-dots' );
+		this.diveEl = this.purse.querySelector( '.gm-dive' );
+		this.diveBar = this.purse.querySelector( '.gm-dive-bar > span' );
+		this.diveO2 = this.purse.querySelector( '.gm-dive-o2' );
+		this.diveDepth = this.purse.querySelector( '.gm-dive-depth' );
+		this.clockTime = this.purse.querySelector( '.gm-clock-time' );
+		this.weatherEl = this.purse.querySelector( '.gm-weather' );
+		this.anchorEl = this.purse.querySelector( '.gm-anchor' );
+		this.anchorD = this.purse.querySelector( '.gm-anchor-d' );
 		this.moneyEl = this.purse.querySelector( '.gm-money' );
 		this.coolerEl = this.purse.querySelector( '.gm-cooler' );
 		this.coolerBar = this.purse.querySelector( '.gm-cooler-bar > span' );
@@ -199,11 +226,12 @@ export class GameHUD {
 		this.cast = h( 'div', 'gm-cast', '<span></span>' );
 		this.castBar = this.cast.firstChild;
 		this.dot = h( 'div', 'gm-dot' );
+		this.diveCatch = h( 'div', 'gm-dive-catch tw-glass' );
 		this.catchScrim = h( 'div', 'gm-catch-scrim' );
 		this.catchCard = h( 'div', 'gm-catch tw-glass' );
 		this.catchOpen = false;
 		const hud = ui.hud || ui.root;
-		hud.append( this.catchScrim, this.purse, this.fight, this.bite, this.cast, this.dot, this.catchCard );
+		hud.append( this.catchScrim, this.purse, this.fight, this.bite, this.cast, this.dot, this.diveCatch, this.catchCard );
 
 		// panels (interactive)
 		this.inv = h( 'div', 'gm-panel tw-glass tw-interactive' );
@@ -248,7 +276,7 @@ export class GameHUD {
 	}
 
 	// per frame
-	update( { fight, casting, power, bite, aiming, fuel = null, sonar = null } ) {
+	update( { fight, casting, power, bite, aiming, fuel = null, sonar = null, dive = null, time = null, anchor = null } ) {
 
 		// boat instruments in the purse: fuel while aboard, the fish finder when fitted
 		this.fuelEl.classList.toggle( 'is-on', !! fuel );
@@ -260,6 +288,23 @@ export class GameHUD {
 
 		}
 
+		this.diveEl.classList.toggle( 'is-on', !! dive );
+		if ( dive ) {
+			this.diveBar.style.width = `${ Math.max( 0, dive.oxygen ) * 100 }%`;
+			this.diveO2.textContent = `${ Math.round( dive.oxygen * 100 ) }%`;
+			this.diveDepth.textContent = `${ dive.depth.toFixed( 1 ) } m`;
+		}
+
+		if ( time && this.clockTime ) {
+
+			const hours = Math.floor( ( time.hours + 24 ) % 24 );
+			const minutes = Math.floor( ( ( time.hours + 24 ) % 1 ) * 60 );
+			this.clockTime.textContent = `${ String( hours ).padStart( 2, '0' ) }:${ String( minutes ).padStart( 2, '0' ) }`;
+			if ( this.weatherEl ) this.weatherEl.textContent = time.weather || 'Clear';
+
+		}
+		this.anchorEl.classList.toggle( 'is-on', !! anchor );
+		if ( anchor ) this.anchorD.textContent = anchor.anchored ? `⚓ ${ anchor.distance.toFixed( 0 ) }m` : 'Boat';
 		this.sonarEl.classList.toggle( 'is-on', !! sonar );
 		if ( sonar ) {
 
@@ -294,6 +339,23 @@ export class GameHUD {
 		this.cast.classList.toggle( 'is-on', !! casting );
 		if ( casting ) this.castBar.style.width = `${ power * 100 }%`;
 		this.dot.classList.toggle( 'is-on', !! aiming && ! this.invOpen && ! this.standOpen );
+
+	}
+
+	showDiveCatch( info, verb = 'SPEARED' ) {
+
+		const f = FISH[ info.species ];
+		if ( ! f || ! this.diveCatch ) return;
+		let status = info.kept ? ( info.record ? 'NEW RECORD · STORED' : info.newSpecies ? 'NEW SPECIES · STORED' : 'STORED IN COOLER' ) : 'RELEASED';
+		if ( info.protectedSpecies ) status = 'PROTECTED · RELEASED';
+		else if ( info.legalSize === false ) status = 'UNDERSIZE · RELEASED';
+		else if ( ! info.kept ) status = 'COOLER FULL · RELEASED';
+		this.diveCatch.innerHTML = 			`<div class="gm-dive-catch-kicker">${ verb }</div><strong>${ f.name }</strong>` +
+			`<div class="gm-dive-catch-meta">${ info.cm } cm · ${ info.kg.toFixed( 2 ) } kg · ${ info.value }</div>` +
+			`<div class="gm-dive-catch-status ${ info.kept ? '' : 'is-release' }">${ status }</div>`;
+		this.diveCatch.classList.remove( 'is-on' );
+		void this.diveCatch.offsetWidth;
+		this.diveCatch.classList.add( 'is-on' );
 
 	}
 
@@ -389,9 +451,9 @@ export class GameHUD {
 		const logged = Object.entries( s.log ).filter( ( [ k ] ) => FISH[ k ] ).map( ( [ k, v ] ) => `${ FISH[ k ].name }: ${ v.count } caught, best ${ v.bestKg.toFixed( 2 ) } kg · ${ v.bestCm ?? Math.round( fishLengthCm( k, v.bestKg ) ) } cm` ).join( '<br>' );
 		this.inv.innerHTML = `
 			<h2>${ s.upgrades.hold > 0 ? 'Fish hold' : 'Cooler' }</h2>
-			<p class="gm-sub">${ s.inventory.length } fish · ${ s.holdKg.toFixed( 1 ) } of ${ s.stats.holdKg } kg · worth $${ s.holdValue }</p>
+			<p class="gm-sub">${ s.inventory.length } catch${ s.inventory.length === 1 ? '' : 'es' } · ${ s.holdKg.toFixed( 1 ) } of ${ s.stats.holdKg } kg · worth ${ s.holdValue }</p>
 			<div class="gm-list">${ rows || '<div class="gm-empty">Nothing yet. Cast from the pier, the beach or the boat.</div>' }</div>
-			${ logged ? `<div class="gm-log"><b>Fish log</b><br>${ logged }</div>` : '' }
+			${ logged ? `<div class="gm-log"><b>Catch log</b><br>${ logged }</div>` : '' }
 			<div class="gm-foot"><span class="gm-sub">Sell at the fish stand by the pier</span><button class="gm-btn is-ghost" data-close>Close (I)</button></div>`;
 		this.inv.querySelector( '[data-close]' ).onclick = () => this.toggleInventory( false );
 		for ( const b of this.inv.querySelectorAll( '[data-release]' ) ) b.onclick = () => s.release( Number( b.dataset.release ) );
@@ -425,7 +487,7 @@ export class GameHUD {
 		const rows = s.inventory.map( ( f ) => `<div class="gm-row has-cm"><span>${ FISH[ f.species ].name }</span><span class="gm-cm">${ f.cm ?? Math.round( fishLengthCm( f.species, f.kg ) ) } cm</span><span class="gm-kg">${ f.kg.toFixed( 2 ) } kg</span><span class="gm-val">$${ f.value }</span><button class="gm-mini" data-sell="${ f.id }">Sell</button></div>` ).join( '' );
 		this.stand.innerHTML = `
 			<h2>${ v.name }</h2>
-			<p class="gm-sub">${ s.inventory.length ? v.greeting || 'Let\'s see what you caught.' : v.idle || 'Come back when you\'ve got fish.' }</p>
+			<p class="gm-sub">${ s.inventory.length ? v.greeting || 'Let\'s see what you caught.' : v.idle || 'Come back when you\'ve got a catch.' }</p>
 			<div class="gm-list">${ rows || '<div class="gm-empty">Your cooler is empty.</div>' }</div>
 			<div class="gm-foot"><button class="gm-btn is-ghost" data-close>Leave (E)</button><button class="gm-btn" data-all ${ s.inventory.length ? '' : 'disabled' }>Sell all · $${ s.holdValue }</button></div>`;
 		this.stand.querySelector( '[data-close]' ).onclick = () => this.closeStand();

@@ -1,0 +1,66 @@
+name: Meshy Street Life Estimate
+
+on:
+  push:
+    paths:
+      - '.github/workflows/meshy-street-life-estimate.yml'
+  workflow_dispatch:
+
+jobs:
+  estimate:
+    runs-on: ubuntu-latest
+    env:
+      MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+    steps:
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check Meshy balance and estimate street-life assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+          echo '===== CURRENT BALANCE ====='
+          $M balance --output-schema v1 --format json --no-update-check | tee meshy-balance.json
+
+          names=(bermuda-scooter bermuda-npc-male bermuda-npc-female)
+          prompts=(
+            "Modern Bermuda commuter scooter, compact 125cc island road scooter, realistic proportions, black tires, metal wheels, tasteful dark blue bodywork, mirrors, headlight and seat, clean stylized-realistic mobile game asset, isolated vehicle, no rider, no ground, no text, no logos"
+            "Bermuda waterfront male pedestrian NPC, adult Black Bermudian man, casual clean island clothing with short sleeve shirt, shorts or lightweight trousers and sneakers, realistic human proportions, neutral A-pose suitable for game rigging, stylized-realistic mobile game character, full body isolated, no props, no background"
+            "Bermuda waterfront female pedestrian NPC, adult Black Bermudian woman, casual clean island clothing with summer top, lightweight trousers or knee-length shorts and sneakers, realistic human proportions, neutral A-pose suitable for game rigging, stylized-realistic mobile game character, full body isolated, no props, no background"
+          )
+
+          for i in "${!names[@]}"; do
+            echo "===== ESTIMATE ${names[$i]} ====="
+            $M make "${prompts[$i]}" --dry-run --output-schema v1 --format json --no-update-check | tee "estimate-${names[$i]}.json"
+          done
+
+          python - <<'PY'
+          import json, glob
+          total = 0
+          print('\n=== STREET LIFE SUMMARY ===')
+          for p in sorted(glob.glob('estimate-*.json')):
+              with open(p, encoding='utf-8') as f:
+                  d = json.load(f)
+              result = d.get('result') or d
+              credits = result.get('estimated_credits')
+              print(f'{p}: {credits}')
+              if isinstance(credits, (int, float)):
+                  total += credits
+          print(f'BASE_MODELS_ESTIMATED_CREDITS={total}')
+          print('OPTIONAL_RIGGING_ESTIMATED_CREDITS=10')
+          print(f'BASE_PLUS_TWO_RIGS_ESTIMATED_CREDITS={total + 10}')
+          PY
+
+      - name: Upload estimate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meshy-street-life-estimate
+          path: |
+            meshy-balance.json
+            estimate-*.json
+          if-no-files-found: warn
+          retention-days: 7

@@ -1,0 +1,37 @@
+/* iPhone boat HUD: keep read-only instruments completely clear of the steering joystick and action buttons. */
+@media (hover: none) and (pointer: coarse) {
+  .tw-boat {
+    left: auto;
+    right: max(12px, env(safe-area-inset-right));
+    top: max(118px, calc(env(safe-area-inset-top) + 94px));
+    bottom: auto;
+    max-width: min(46vw, 250px);
+    gap: calc(8 * var(--tw-u));
+    padding: calc(7 * var(--tw-u)) calc(10 * var(--tw-u));
+    transform-origin: 100% 0;
+    scale: .64;
+    pointer-events: none;
+  }
+  /* Touch throttle/steering already provide control feedback; remove the duplicate throttle strip. */
+  .tw-boat .tw-thr { display: none; }
+  .tw-depth {
+    left: max(10px, env(safe-area-inset-left));
+    top: 43%;
+    scale: .78;
+    transform-origin: 0 50%;
+    pointer-events: none;
+  }
+  .tw-prompt {
+    bottom: max(152px, calc(env(safe-area-inset-bottom) + 136px));
+  }
+}
+
+@media (hover: none) and (pointer: coarse) and (max-width: 430px) {
+  .tw-boat {
+    right: max(9px, env(safe-area-inset-right));
+    top: max(112px, calc(env(safe-area-inset-top) + 88px));
+    max-width: 43vw;
+    scale: .58;
+  }
+  .tw-depth { scale: .68; }
+}

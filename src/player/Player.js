@@ -34,7 +34,7 @@ const HELM_REACH = 0.75; // m from the helm seat to take the wheel
 //   boat : at the helm, driving; V toggles helm (1st person) / chase (3rd person) camera, E stands up
 export class Player {
 
-	constructor( { camera, input, terrain, colliders, query, boat, reef = null, audio = null } ) {
+	constructor( { camera, input, terrain, colliders, query, boat, reef = null, audio = null, relic = null } ) {
 
 		this.camera = camera;
 		this.input = input;
@@ -44,6 +44,7 @@ export class Player {
 		this.boat = boat;
 		this.reef = reef;
 		this.audio = audio;
+		this.relic = relic;
 
 		this.mode = 'walk';
 		this.camMode = 'third';
@@ -65,6 +66,8 @@ export class Player {
 		this.camOffV = 0;
 		this._camY = null;
 		this.floating = true; // swimming at the surface (riding the waves) vs. free under water
+		this.oxygen = 1; // breath reserve: 1 full, 0 forces an emergency ascent
+		this.diveDepth = 0;
 		this.slot = query.allocate( 'player', 1 );
 		this.prompt = null;
 		this.surface = 'sand';
@@ -139,6 +142,13 @@ export class Player {
 		this.waterMean = this.waterMean === null ? this.waterH : this.waterMean + ( this.waterH - this.waterMean ) * ( 1 - Math.exp( - dt / 4 ) );
 		this.prompt = null;
 
+		if ( this.mode === 'relic' && this.relic ) {
+
+			this.relic.update( dt, this );
+			return;
+
+		}
+
 		if ( this.mode === 'boat' ) {
 
 			this.updateBoat( dt );
@@ -156,6 +166,19 @@ export class Player {
 		const look = inp.consumeLook();
 		this.yaw -= look.x * 0.0022;
 		this.pitch = THREE.MathUtils.clamp( this.pitch - look.y * 0.0022, - 1.5, 1.5 );
+
+		// RELIC is a road vehicle, entered from the driver side. Keep the pedestrian route clear.
+		if ( this.relic && this.mode === 'walk' && this.relic.near( this.position ) && ! this.busy ) {
+
+			this.prompt = { key: 'E', text: 'Enter RELIC' };
+			if ( inp.hit( 'KeyE' ) ) {
+
+				this.relic.enter( this );
+				return;
+
+			}
+
+		}
 
 		// (not with a line out or a fish in hand: E belongs to the fishing then)
 		if ( this.nearBoat() && ! this.busy ) {
@@ -351,6 +374,18 @@ export class Player {
 
 		}
 
+		// Freediving: breath drains only while the player's head is properly submerged.
+		// Sprinting costs more oxygen; returning to the surface recovers it quickly. At zero
+		// reserve the swimmer is forced upward rather than silently remaining underwater.
+		this.diveDepth = Math.max( 0, surfaceY - ( p.y + SWIM_EYE ) );
+		const submerged = this.diveDepth > 0.18;
+		if ( submerged ) this.oxygen = Math.max( 0, this.oxygen - dt * ( sprint ? 0.024 : 0.017 ) );
+		else this.oxygen = Math.min( 1, this.oxygen + dt * 0.32 );
+		if ( this.oxygen <= 0 ) {
+			this.floating = false;
+			this.velocity.y = Math.max( this.velocity.y, 2.25 );
+		}
+
 		const under = this.camera.position.y < surfaceY - 0.05;
 		if ( under !== this.wasUnder && this.audio ) {
 
@@ -435,7 +470,8 @@ export class Player {
 
 		this.mode = 'boat';
 		this.boat.driven = true;
-		this.boat.moored = false;
+		// Stay physically secured while the player settles at the helm. The first deliberate
+		// throttle input releases the berth; simply boarding/taking the helm must not kick the hull.
 		this.helmYaw = 0;
 		this.helmPitch = - 0.05;
 		this.orbitYaw = this.boat.getYaw() + Math.PI;
@@ -733,6 +769,12 @@ export class Player {
 		const wheel = inp.consumeWheel();
 
 		if ( inp.hit( 'KeyV' ) ) this.camMode = this.camMode === 'first' ? 'third' : 'first';
+		if ( inp.hit( 'KeyK' ) && b.toggleAnchor ) {
+
+			b.toggleAnchor();
+
+		}
+		if ( b.anchored && ( inp.down( 'KeyW' ) || inp.down( 'KeyS' ) ) && b.raiseAnchor ) b.raiseAnchor();
 		if ( inp.hit( 'KeyE' ) ) {
 
 			this.leaveHelm();
@@ -743,6 +785,7 @@ export class Player {
 		let throttle = 0;
 		if ( inp.down( 'KeyW' ) ) throttle = inp.down( 'ShiftLeft' ) ? 1 : 0.7;
 		if ( inp.down( 'KeyS' ) ) throttle = - 0.6;
+		if ( Math.abs( throttle ) > 0.05 && b.moored ) b.moored = false;
 		let steer = 0;
 		if ( inp.down( 'KeyA' ) ) steer += 1;
 		if ( inp.down( 'KeyD' ) ) steer -= 1;

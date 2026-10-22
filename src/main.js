@@ -1,3 +1,5 @@
+import { startDeferredWaterfront, updateWaterfrontVisibility } from './world/BermudaModels.js';
+import { mobileQualityParameters } from './mobile/QualityProfile.js';
 import './core/BenchSeed.js';
 import { App } from './App.js';
 import { GPU } from './engine/gpu/GPU.js';
@@ -7,6 +9,7 @@ import { AppUI } from './ui/AppUI.js';
 import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaIdentity.js';
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
+import { RelicVehicle } from './player/RelicVehicle.js';
 
 // iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
 // Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
@@ -21,31 +24,7 @@ const mobileSafeLevel = mobileFastStart ? Math.max( 0, Number( initialParams.get
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	for ( const [ key, value ] of [ [ 'noClouds', '1' ], [ 'noHaze', '1' ], [ 'noCaustics', '1' ], [ 'noSim', '1' ] ] ) {
-
-		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
-
-	}
-
-	// Keep the normal phone image at 90% rather than globally lowering quality. The expensive shoreline
-	// simulation is disabled on mobile because it adds GPU allocations that are not worth risking a
-	// WebGPU device loss on iOS. Recovery only lowers resolution after an actual device failure.
-	if ( mobileSafeLevel >= 2 ) {
-
-		url.searchParams.set( 'scale', '0.72' );
-		url.searchParams.set( 'noVeg', '1' );
-		url.searchParams.set( 'G', '16' );
-
-	} else if ( mobileSafeLevel === 1 ) {
-
-		url.searchParams.set( 'scale', '0.82' );
-		url.searchParams.set( 'G', '16' );
-
-	} else if ( ! url.searchParams.has( 'scale' ) || Number( url.searchParams.get( 'scale' ) ) < 0.9 ) {
-
-		url.searchParams.set( 'scale', '0.90' );
-
-	}
+	url.search = mobileQualityParameters(url.searchParams, mobileSafeLevel).toString();
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	// Keep all scene pipelines asynchronous on mobile. MeshRenderer explicitly supports this mode:
@@ -55,7 +34,7 @@ if ( mobileFastStart ) {
 
 		await Promise.race( [
 			GPU.pipelinesReady(),
-			new Promise( ( resolve ) => setTimeout( resolve, 6500 ) ),
+			new Promise( ( resolve ) => setTimeout( resolve, 25000 ) ),
 		] );
 		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;
 
@@ -67,7 +46,12 @@ if ( mobileFastStart ) {
 // were enough to materialise every lazy GPU buffer (wake, spray, wildlife, shadows, etc.) at once.
 // Keep the scene-building work, but defer all actual frames until the user taps Explore and after
 // the mobile memory profile has disabled nonessential GPU systems.
-const normalAppFrame = App.prototype.frame;
+const originalAppFrame = App.prototype.frame;
+const normalAppFrame = function(...args) {
+    updateWaterfrontVisibility(this);
+    return originalAppFrame.apply(this,args);
+};
+App.prototype.frame = normalAppFrame;
 if ( mobileFastStart ) {
 
 	App.prototype.frame = function( ...args ) {
@@ -103,6 +87,7 @@ function applyMobileMemoryProfile( app ) {
 		app.wake.update = () => {};
 
 	}
+	// Keep the low-cost MobileWake active; only the GPU particle spray is disabled on the safe path.
 	if ( app.boatSpray ) app.boatSpray.update = () => {};
 	if ( app.spray ) {
 
@@ -154,14 +139,15 @@ function mobileRecoveryURL( reason, prefix = 'gpu-recovery' ) {
 	const url = new URL( location.href );
 	const attempts = Number( url.searchParams.get( 'gpuRecovery' ) || 0 );
 	if ( attempts >= 2 ) return null;
-	const next = attempts + 1;
+	const next = Math.min( 2, Math.max( attempts + 1, Number( url.searchParams.get( 'gpuSafe' ) || 0 ) ) );
 	url.searchParams.set( 'gpuSafe', String( next ) );
 	url.searchParams.set( 'gpuRecovery', String( next ) );
 	url.searchParams.set( 'scale', next === 1 ? '0.82' : '0.72' );
 	url.searchParams.set( 'noSim', '1' );
 	url.searchParams.set( 'G', '16' );
 	if ( next >= 2 ) url.searchParams.set( 'noVeg', '1' );
-	url.searchParams.set( 'v', prefix + '-' + next );
+	// Keep the deployed build identifier across recovery.
+	url.searchParams.set( 'recoveryReason', prefix );
 	try { sessionStorage.setItem( 'bermudaLastGPUError', String( reason || 'unknown' ) ); } catch ( _ ) {}
 	return url;
 
@@ -248,7 +234,7 @@ function installMobileGPUWatchdog() {
 
 function installMobileAudioResume( app ) {
 
-	if ( ! mobileDevice || ! app.audio ) return;
+	if ( ! app.audio ) return;
 	const wakeAudio = () => {
 
 		if ( document.visibilityState === 'hidden' || ! app.audio ) return;
@@ -269,7 +255,10 @@ function installMobileAudioResume( app ) {
 	window.addEventListener( 'pageshow', wakeAudio );
 	window.addEventListener( 'focus', wakeAudio );
 	document.addEventListener( 'pointerdown', wakeAudio, { capture: true, passive: true } );
+	document.addEventListener( 'pointerup', wakeAudio, { capture: true, passive: true } );
 	document.addEventListener( 'touchstart', wakeAudio, { capture: true, passive: true } );
+	document.addEventListener( 'touchend', wakeAudio, { capture: true, passive: true } );
+	document.addEventListener( 'click', wakeAudio, { capture: true, passive: true } );
 
 }
 
@@ -291,7 +280,23 @@ window.__ui = ui;
 app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async () => {
 
 	if ( mobileFastStart ) applyMobileMemoryProfile( app );
-	applyBermudaRuntimeLook( app );
+	app.onWaterfrontProgress = ( done, total, id ) => {
+        // Exact completed asset count; do not simulate progress during asset loading.
+        ui.setLoading( 0.99, `Waterfront ${ done }/${ total }${ id ? ': ' + id : '' }`, 0.99 );
+    };
+    const waterfront = await applyBermudaRuntimeLook( app );
+    if ( app.relic001 && ! app.relic ) {
+        app.relic = new RelicVehicle( { app, vehicle: app.relic001 } );
+        app.player.relic = app.relic;
+    }
+    if ( ! waterfront?.ready ) {
+        const details = waterfront?.errors.map( e => e.id + ': ' + e.message ).join( '; ' );
+        throw new Error( 'Waterfront failed to load: ' + ( details || 'scene unavailable' ) );
+    }
+    if ( mobileDevice ) {
+        ui.setLoading( 0.992, 'Preparing Bermuda scenery', 0.998 );
+        await startDeferredWaterfront( app );
+    }
 	app.ui = new AppUI( app, ui );
 	applyBermudaBranding( mobileDevice );
 	if ( mobileDevice ) {
@@ -345,6 +350,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 			if ( app.audio ) app.audio.resume();
 			installMobileGPUWatchdog();
 			app.start();
+            startDeferredWaterfront(app);
 
 		} );
 		return;
@@ -352,6 +358,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	} else {
 
 		app.start();
+            startDeferredWaterfront(app);
 
 	}
 	ui.showStartOverlay( () => {

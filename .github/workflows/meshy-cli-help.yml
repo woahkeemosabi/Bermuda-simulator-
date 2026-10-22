@@ -1,0 +1,28 @@
+name: Meshy CLI Help
+
+on:
+  push:
+    paths:
+      - '.github/workflows/meshy-cli-help.yml'
+  workflow_dispatch:
+
+jobs:
+  help:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Show Meshy make and generation help
+        shell: bash
+        run: |
+          set -euo pipefail
+          M="npm exec --yes --package=meshy-cli@0.4.0 -- meshy"
+          echo '=== MAKE HELP ==='
+          $M make --help
+          echo '=== TEXT PREVIEW HELP ==='
+          $M text-to-3d create --help
+          echo '=== PROJECT INIT HELP ==='
+          $M project init --help
+          echo '=== DOWNLOAD HELP ==='
+          $M download --help

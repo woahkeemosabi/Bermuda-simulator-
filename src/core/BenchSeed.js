@@ -1,3 +1,5 @@
+import '../game/CloudAccountBootstrap.js';
+
 // ?bench: a seeded Math.random (imported first by main.js, before any module that draws random
 // numbers), so the world is laid out the same on every load and reference shots can be compared.
 if ( typeof location !== 'undefined' && /[?&]bench\b/.test( location.search ) ) {

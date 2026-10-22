@@ -1,0 +1,41 @@
+name: Verify waterfront rendering
+on:
+  push:
+    branches: [bermuda-waterfront-verified-v2, bermuda-waterfront-expansion-recovery, bermuda-world-polish-v1]
+    paths: ['src/**', 'test/**', '.github/workflows/bermuda-verify.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci && npm install --no-save pngjs
+      - run: sudo apt-get update -qq && sudo apt-get install -y mesa-vulkan-drivers
+      - name: Bermuda asset integrity
+        run: node test/bermuda-assets.mjs
+      - name: Bermuda layout
+        run: node test/bermuda-layout.mjs
+      - name: Game logic
+        run: node test/game-logic.mjs
+      - name: Bermuda player life test
+        run: node test/life-player.mjs --bermuda
+      - name: World polish assertions
+        run: node test/world-polish.mjs
+      - name: Production build
+        run: npm run build
+      - name: Native render smoke
+        run: node test/bermuda-render.mjs
+        env:
+          XDG_RUNTIME_DIR: /tmp
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: waterfront-native-render
+          path: verification/
+
+# Strict clean-branch gate after world-polish diagnostic cleanup.

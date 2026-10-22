@@ -41,7 +41,7 @@ export class Vendor {
 	}
 
 	// clips: { idle, talk, greet } clip names in the GLB
-	async loadCharacter( url, { idle = 'idle_neutral_01', talk = 'gestic_talk_relaxed_01', greet = 'wave_01', listen = null } = {} ) {
+	async loadCharacter( url, { idle = 'idle_neutral_01', talk = 'gestic_talk_relaxed_01', greet = 'wave_01', listen = null, yaw = 0 } = {} ) {
 
 		const model = await SkinnedModel.create( await loadGLB( url ) );
 		// on land, never under water: no caustics / wave lookups in their shaders
@@ -53,6 +53,7 @@ export class Vendor {
 		// one-shot clips (the wave) hand back to the idle / talk loop
 		model.onClipEnd = () => model.play( this.talking ? talk : idle, { fade: 0.5 } );
 		this.character = model;
+		this.characterYaw = yaw;
 		this.setModel( model.group );
 
 	}
@@ -114,7 +115,7 @@ export class Vendor {
 
 			}
 
-			f.rotation.y = this._yawOff;
+			f.rotation.y = ( this.characterYaw || 0 ) + this._yawOff;
 			c.update( dt );
 			return;
 
