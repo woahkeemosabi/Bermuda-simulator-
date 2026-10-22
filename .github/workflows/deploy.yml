@@ -59,6 +59,7 @@ jobs:
           cp src/game/FirstBoatMode.js _recovery/oct14/src/game/FirstBoatMode.js
           cp src/game/LifeProgression.js _recovery/oct14/src/game/LifeProgression.js
           cp src/game/BoatOwnership.js _recovery/oct14/src/game/BoatOwnership.js
+          cp src/main.js _recovery/oct14/src/main.js
           python3 - <<'PY'
           from pathlib import Path
           root=Path('_recovery/oct14/src/world')

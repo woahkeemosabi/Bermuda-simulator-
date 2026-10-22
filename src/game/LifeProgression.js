@@ -78,7 +78,7 @@ export class LifeProgression {
 	refreshObjective() {
 		if ( ! this.objectiveEl ) return;
 		if ( this.boatOnly ) {
-			const owns = (this.state?.boats?.owned?.length || 0) > 0;
+			const owns = !!this.state?.boats?.owned?.some(b=>b?.id==='lobster-workboat' && Number.isFinite(Number(b.purchasedAt)) && Number(b.purchasedAt)>0);
 			this.objectiveEl.style.display = '';
 			if (owns) {
 				this.objectiveEl.innerHTML = '<span class="bm-objective-kicker">GOAL COMPLETE</span>First boat purchased · explore Bermuda';

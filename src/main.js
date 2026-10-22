@@ -147,8 +147,13 @@ app.init( ( p, text, until ) => {
 		ui.showStartOverlay( () => {
 			if ( started ) return;
 			started = true;
-			if ( app.audio ) app.audio.resume();
-			app.start();
+			// Keep sound off on mobile until the renderer is proven stable.
+			// ?audio=on is an explicit diagnostic opt-in; sound is not required to play.
+			gpuStage('Starting simulation (mobile audio disabled)');
+			try { app.start(); } catch (error) { showWorldFailure('Simulation start failed: ' + String(error?.message || error)); return; }
+			if ( app.audio && new URLSearchParams(location.search).get('audio') === 'on' ) {
+				try { app.audio.resume(); } catch (error) { console.warn('Audio resume failed', error); }
+			}
 		} );
 		await ui.hideLoader();
 		return;

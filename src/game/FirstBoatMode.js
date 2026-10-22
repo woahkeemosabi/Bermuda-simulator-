@@ -14,7 +14,7 @@ export function firstBoatModeEnabled(params, userAgent = typeof navigator === 'u
 export function normalizeFirstBoatObjectives(state) {
  if(!state?.missions) return false;
  const missions=state.missions;
- const owned=(state.boats?.owned?.length||0)>0;
+ const owned=!!state.boats?.owned?.some(b=>b?.id==='lobster-workboat' && Number.isFinite(Number(b.purchasedAt)) && Number(b.purchasedAt)>0);
  const before={
   available:Array.isArray(missions.available)?missions.available:[],
   active:Array.isArray(missions.active)?missions.active:[],
