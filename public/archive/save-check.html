@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#071724">
+<title>Bermuda Simulator — Save Recovery</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:linear-gradient(155deg,#07283c,#04121c 45%,#020b13);color:#edf8ff;padding:28px 18px 60px}
+main{max-width:660px;margin:auto}.eyebrow{letter-spacing:.25em;text-transform:uppercase;font-size:11px;font-weight:750;color:#65d9e9}
+h1{font-size:clamp(28px,7vw,42px);margin:12px 0;letter-spacing:-.04em;line-height:1.08}
+p{line-height:1.55;color:#bcd5df;font-size:15px}section{border:1px solid #264a59;background:#082434a8;border-radius:18px;padding:20px;margin:20px 0}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:20px 0}
+dt{font-size:11px;color:#83afbd;letter-spacing:.09em;text-transform:uppercase}dd{margin:5px 0 0;font-size:26px;font-variant-numeric:tabular-nums;font-weight:750}
+small{font-size:13px;color:#bad0dd}.status{font-weight:650;color:#c5f6fc}button,a.action{display:inline-flex;justify-content:center;align-items:center;background:#9cf3f9;color:#063044;font-weight:750;padding:13px 16px;border-radius:11px;text-decoration:none;border:none;cursor:pointer;font-size:14px;margin:6px 6px 6px 0}
+button.secondary,a.secondary{background:#163a4a;color:#d5f8ff;border:1px solid #317083}
+button[disabled]{opacity:.45;cursor:not-allowed}#details{font-size:13px;white-space:pre-wrap;background:#03131c;border:1px solid #1d4050;padding:14px;border-radius:10px;color:#98c3cf}
+footer{margin-top:32px;font-size:12px;color:#91b7c4}
+</style></head>
+<body><main>
+<div class="eyebrow">Bermuda Simulator / Recovery</div>
+<h1>Find your original game progress</h1>
+<p>This checks only save data stored on this device in this browser. Nothing is uploaded. Open this page in the same Safari browser you used for the original game.</p>
+<section>
+<div class="status" id="status">Checking saved game…</div>
+<div class="info"><div><dt>Saved money</dt><dd id="money">—</dd></div><div><dt>Boats owned</dt><dd id="boats">—</dd></div></div>
+<div id="details">Looking for a previous Tidewater/Bermuda save…</div>
+<div style="margin-top:18px">
+<button id="restore" disabled>Copy original progress into recovery</button>
+<button id="export" class="secondary" disabled>Export backup JSON</button>
+<button id="refresh" class="secondary">Check again</button>
+</div>
+</section>
+<section>
+<h2 style="font-size:19px;margin:0 0 6px">Playable recovery build</h2>
+<p>The October 14 mobile version uses a separate save. If your original saved game is unavailable, it starts at the last recorded wallet amount of <strong>$2,454</strong>, without a boat.</p>
+<a class="action" href="./oct14/?quality=mobile-safe&v=b8cf128b">Open mobile recovery game</a>
+</section>
+<p><strong>Seeing $75 or no saved game?</strong> You may be in a different browser or private-browsing session. Open this URL directly in Safari rather than the in-app browser. Existing Safari data cannot be recovered from the GitHub source code.</p>
+<footer>Save inspection is entirely local. Your original <code>tidewater.save.v1</code> record is never deleted or overwritten here.</footer>
+</main>
+<script>
+(function(){
+const original='tidewater.save.v1', backup='bermuda.recovery.original-save.v1', target='bermuda.recovery.wallet2454.save.v1';
+let source=null, parsed=null;
+const $=s=>document.getElementById(s);
+function good(s){try{const v=JSON.parse(s);return v && (v.v===1||v.v===2) && Number.isFinite(v.money)?v:null}catch{return null}}
+function load(){
+  $('restore').disabled=true;$('export').disabled=true;source=null;parsed=null;
+  try{
+    const entries=[['Original saved game',localStorage.getItem(original)],['Previous recovery backup',localStorage.getItem(backup)]];
+    const available=entries.map(([name,raw])=>({name,raw,data:good(raw)})).filter(x=>x.data);
+    const eligible=available.find(x=>x.data.money>=2000&&Array.isArray(x.data.boats?.owned||[])&&(x.data.boats?.owned||[]).length===0);
+    const chosen=eligible||available[0];
+    if(!chosen){$('status').textContent='No original saved game found in this browser';$('money').textContent='—';$('boats').textContent='—';$('details').textContent='A separate recovery game can start with $2,454 and no purchased boat. Your original Safari save might still exist in Safari.';return}
+    source=chosen.raw;parsed=chosen.data;
+    const owned=parsed.boats?.owned||[];
+    $('status').textContent=chosen.name+(eligible?' · eligible for restoration':' · found');
+    $('money').textContent='$'+parsed.money.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+    $('boats').textContent=owned.length;
+    $('details').textContent='Save version: '+parsed.v+'\nInventory items: '+(parsed.inventory?.length||0)+'\nBoat ownership: '+(owned.length?'Owned':'None')+'\nSource: '+chosen.name+'\nOriginal save remains unchanged.';
+    $('export').disabled=false;$('restore').disabled=!(parsed.money>=2000&&owned.length===0);
+  }catch(e){$('status').textContent='Browser storage unavailable';$('details').textContent=String(e)}
+}
+$('restore').onclick=()=>{
+ if(!source||!parsed||parsed.money<2000||(parsed.boats?.owned||[]).length) return;
+ try {
+   if(!localStorage.getItem(backup)){const orig=localStorage.getItem(original);if(orig)localStorage.setItem(backup,orig)}
+   localStorage.setItem(target,source);
+   $('details').textContent+='\n\nRestored to a separate recovery slot. Original save untouched.';
+   $('restore').textContent='Recovery copy created';
+ }catch(e){$('details').textContent+='\nFailed to copy: '+String(e)}
+};
+$('export').onclick=()=>{
+ if(!source)return;const blob=new Blob([source],{type:'application/json'}),url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download='bermuda-original-game-save.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),3000);
+};
+$('refresh').onclick=load;load();
+})();
+</script>
+</body></html>
