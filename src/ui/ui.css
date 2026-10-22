@@ -2678,3 +2678,12 @@ body {
  border-radius:999px;background:#095166;color:white;font:600 14px system-ui;pointer-events:auto}
 #loader.bm-new-loader.tw-error .loader-panel{pointer-events:auto}
 #loader.bm-new-loader.tw-error .loader-status{white-space:normal;overflow:visible;line-height:1.4}
+
+/* Crash-only GPU lifetime instrumentation; invisible during normal gameplay. */
+#bm-gpu-trace[hidden],#bm-gpu-copy[hidden]{display:none!important}
+#bm-gpu-trace{white-space:pre-wrap;word-break:break-word;font:10px/1.35 ui-monospace,monospace;
+ color:#d4effa;background:rgba(1,10,22,.78);border:1px solid rgba(118,238,255,.25);
+ border-radius:8px;padding:9px;text-align:left;width:100%;max-height:160px;overflow:auto;pointer-events:auto}
+#bm-gpu-copy{display:block;margin:6px auto 0;padding:8px 15px;border-radius:18px;
+ border:1px solid #85eafa;background:rgba(0,29,44,.87);color:#fff;pointer-events:auto}
+#loader.bm-new-loader.tw-error .loader-inner{max-height:73svh;overflow-y:auto}

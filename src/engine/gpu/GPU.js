@@ -8,6 +8,8 @@
 // range written twice in one frame keeps only the last value for every pass. Anything that changes
 // between passes of a frame needs its own buffer (or its own offset).
 
+import { gpuStage, gpuCompute, gpuSubmit, gpuError } from '../../mobile/GpuAudit.js';
+
 export const GPU = {
 
 	device: null,
@@ -31,6 +33,7 @@ export const GPU = {
 	async init( { canvas = null, requiredLimits = {}, headless = false } = {} ) {
 
 		if ( ! navigator.gpu ) throw new Error( 'WebGPU is not available in this browser.' );
+		gpuStage('Requesting GPU adapter');
 		const adapter = await navigator.gpu.requestAdapter( { powerPreference: 'high-performance' } );
 		if ( ! adapter ) throw new Error( 'No WebGPU adapter found.' );
 		this.adapter = adapter;
@@ -63,12 +66,15 @@ export const GPU = {
 		this.hasTimestamp = this.features.has( 'timestamp-query' );
 		this.hasFloat32Filterable = this.features.has( 'float32-filterable' );
 
+		gpuStage('Requesting GPU device');
 		const device = await adapter.requestDevice( { requiredFeatures, requiredLimits: limits } );
+		gpuStage('WebGPU device acquired');
 		this.device = device;
 		this.queue = device.queue;
 		this.limits = device.limits;
 		device.lost.then( ( info ) => {
 			this.lostReason = info.reason || 'unknown';
+			gpuError('lost', info.message || '', this.lostReason);
 			this.fatalError = new Error('WebGPU device lost (' + this.lostReason + '): ' +
 				(info.message || 'Graphics driver stopped'));
 			if ( typeof window !== 'undefined' ) {
@@ -77,7 +83,10 @@ export const GPU = {
 			}
 			console.error( this.fatalError );
 		} );
-		device.addEventListener && device.addEventListener( 'uncapturederror', ( e ) => console.error( 'WebGPU:', e.error.message.split( '\n' ).slice( 0, 6 ).join( '\n' ) ) );
+		device.addEventListener && device.addEventListener( 'uncapturederror', ( e ) => {
+			gpuError('uncaptured', e.error?.message || 'uncaptured GPU error');
+			console.error('WebGPU:',e.error?.message);
+		} );
 
 		if ( canvas && ! headless ) {
 
@@ -151,6 +160,7 @@ export const GPU = {
 		this._submitHooks = [];
 		for ( const h of hooks ) if ( h.before ) h.before( this.encoder );
 		this.queue.submit( [ this.encoder.finish() ] );
+		gpuSubmit( this.frame );
 		this.encoder = null;
 		for ( const h of hooks ) if ( h.after ) h.after();
 
@@ -229,6 +239,7 @@ export const GPU = {
 	// A compute or render pass on the frame encoder.
 	computePass( label, fn, timestampWrites ) {
 
+		gpuCompute( label );
 		const pass = this.getEncoder().beginComputePass( { label, timestampWrites } );
 		fn( pass );
 		pass.end();

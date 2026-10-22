@@ -1,5 +1,6 @@
 import { Vector3, Euler, Color, MathUtils, Mesh } from './engine/index.js';
 import { GPU } from './engine/gpu/GPU.js';
+import { gpuStage } from './mobile/GpuAudit.js';
 import { SunShadows } from './engine/render/Shadows.js';
 import { FrameUniforms } from './engine/render/Frame.js';
 
@@ -394,7 +395,9 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// frames behind the loading screen so any remaining first-use stalls happen there
 		// stage weights: in the browser the pipeline compile below takes far longer than everything before it
 		await progress( 0.36, 'Compiling shaders…', 0.95 );
+		gpuStage('Precompile shaders');
 		await this.precompile();
+		gpuStage('Startup GPU warmup');
 		await progress( 0.96, 'Warming up…' );
 		// All simulation effects remain available. Prime on the loading screen, one GPU
 		// submission at a time; never let startup pretend success after a failed device.
@@ -667,6 +670,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 	_frame( dt ) {
 
+		gpuStage('Frame begin', GPU.frame + 1);
 		GPU.beginFrame();
 		FrameUniforms.fields.frameIndex.value = GPU.frame;
 		const s = this.settings;
@@ -706,6 +710,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.applyAtmosphereReadback();
 
 		// ---- water simulation
+		gpuStage('FFT and ocean simulation', GPU.frame);
 		this.fft.update( dt );
 		this.seaDetail.update( dt );
 		this.query.setCamera( this.camera.position.x, this.camera.position.z );
@@ -733,6 +738,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.environment.update( dt );
 
 		// ---- world
+		gpuStage('Island world preparation', GPU.frame);
 		this.oceanLOD.update( this.camera );
 		this.terrain.update( this.camera );
 		this.rocks.update( this.camera );
@@ -747,6 +753,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.localLights.update( this.camera, dt );
 
 		// ---- render
+		gpuStage('Scene rendering', GPU.frame);
 		G.exposure.value = s.exposure;
 		updateCameraVelocity( this.camera );
 		this.post.lens.update( dt, this.camera.position.y < ( this.cameraWaterHeight ?? 0 ) );
@@ -764,6 +771,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.shadows.render( this.scene, this.engine.meshRenderer, this.shadows.update( this.camera, G.sunDir.value ) );
 		this.sceneRenderer.render();
 		if ( this.post.flare ) this.post.flare.kernel.dispatch( 1 );
+		gpuStage('Post/presentation', GPU.frame);
 		this.post.render();
 		this.post.endFrame();
 		GPU.submit();

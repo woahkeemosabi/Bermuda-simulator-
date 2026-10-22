@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {gpuAudit,gpuStage,gpuCompute,gpuError,gpuReport} from '../src/mobile/GpuAudit.js';
+const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
+gpuStage('FFT',12);gpuCompute('Ocean FFT');gpuError('uncaptured','test message');
+assert.equal(gpuAudit.frame,12);
+assert.equal(gpuAudit.lastCompute,'Ocean FFT');
+assert.match(gpuReport(null,1),/Last stage FFT/);
+assert.match(read('../src/App.js'),/gpuStage\('FFT and ocean simulation'/);
+assert.match(read('../src/engine/gpu/GPU.js'),/gpuError\('lost'/);
+assert.match(read('../src/main.js'),/bm-gpu-trace/);
+assert.match(read('../index.html'),/id="bm-gpu-copy"/);
+console.log('Mobile GPU device-lifetime diagnostics ready');

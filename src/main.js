@@ -9,6 +9,7 @@ import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
 import { verifyMobileWorld } from './mobile/WorldRenderGate.js';
+import { gpuStage, gpuReport } from './mobile/GpuAudit.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
 // Buildings and decorative world assets stream separately instead of crowding the spawn beach.
@@ -78,13 +79,17 @@ if ( /[?&]bench\b/.test( location.search ) ) {
 
 }
 
+gpuStage('UI initialization');
 const ui = new UI();
 applyBermudaBranding( mobileDevice );
 const app = new App();
 applyBermudaBootLook( app );
 window.__ui = ui;
 
-app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async () => {
+app.init( ( p, text, until ) => {
+  gpuStage('Loading: '+String(text||''));
+  ui.setLoading( p, text, until );
+} ).then( async () => {
 
 	if ( mobileFastStart ) applyMobileMemoryProfile( app );
 	if ( mobileFastStart && app.localLights ) app.localLights.strength = Math.max( Number( app.localLights.strength ) || 1, 1.35 );
@@ -134,6 +139,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	} else if ( mobileDevice ) {
 
 		ui.setLoading( .97, 'Validating the 3D world…', .995 );
+		gpuStage('World verification');
 		await verifyMobileWorld( app, attempt => ui.setLoading(
 			Math.min(.975+attempt*.003,.99), 'Rendering Bermuda world…', .995 ) );
 		ui.setLoading( 1, 'World ready' );
@@ -172,6 +178,17 @@ function showWorldFailure(message){
 	const L=document.getElementById('loader');
 	if(L){L.style.display='';L.classList.remove('tw-hidden');}
 	ui.setLoadingError(message);
+	const diag=document.getElementById('bm-gpu-trace');
+	if(diag){diag.textContent=gpuReport(app,mobileRetryLevel);diag.hidden=false;}
+	const copy=document.getElementById('bm-gpu-copy');
+	if(copy){
+		copy.hidden=false;
+		copy.onclick=async()=>{
+			try{await navigator.clipboard.writeText(message+'\n'+gpuReport(app,mobileRetryLevel));
+				copy.textContent='Diagnostics copied';}
+			catch(e){copy.textContent='Screenshot diagnostics';}
+		};
+	}
 	const retry=document.getElementById('bm-loader-retry');
 	if(retry){
 		retry.hidden=false;

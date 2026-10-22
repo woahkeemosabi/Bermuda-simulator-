@@ -43,7 +43,7 @@ jobs:
             git push origin HEAD:main || echo "Artwork included in build; repository push unavailable"
           fi
       - name: Run CPU-safe game logic tests
-        run: node test/game-logic.mjs && node test/bermuda-full-fidelity.mjs && node test/bermuda-loading-screen.mjs && node test/mobile-render-gate.mjs && node test/mobile-postfx.mjs
+        run: node test/game-logic.mjs && node test/bermuda-full-fidelity.mjs && node test/bermuda-loading-screen.mjs && node test/mobile-render-gate.mjs && node test/mobile-postfx.mjs && node test/mobile-gpu-audit.mjs
       - run: npm run build
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'
