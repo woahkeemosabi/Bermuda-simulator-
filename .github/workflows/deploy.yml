@@ -54,6 +54,52 @@ jobs:
           ref: d7f931404dc7b87c9d4fcacc2ed2aa12de213b43
           path: _recovery/oct14
           persist-credentials: false
+      - name: Activate first-boat-only recovery and remove dockside residential mission props
+        run: |
+          cp src/game/FirstBoatMode.js _recovery/oct14/src/game/FirstBoatMode.js
+          cp src/game/LifeProgression.js _recovery/oct14/src/game/LifeProgression.js
+          cp src/game/BoatOwnership.js _recovery/oct14/src/game/BoatOwnership.js
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('_recovery/oct14/src/world')
+          p=root/'BermudaIdentity.js'
+          s=p.read_text()
+          def replace(old,new):
+            global s
+            assert s.count(old)==1, f'Expected one copy of {old[:60]!r}, got {s.count(old)}'
+            s=s.replace(old,new)
+          replace("import { LifeProgression } from '../game/LifeProgression.js';",
+            "import { LifeProgression } from '../game/LifeProgression.js';\n"
+            "import { BoatOwnership } from '../game/BoatOwnership.js';\n"
+            "import { firstBoatModeEnabled } from '../game/FirstBoatMode.js';")
+          replace("installRelic001( app );\n\tinstallRelicStory( app );",
+            "if (!firstBoatModeEnabled()) { installRelic001( app ); installRelicStory( app ); }")
+          replace("installRelicMobileModes( app );",
+            "if (!firstBoatModeEnabled()) installRelicMobileModes( app );")
+          replace("if ( ! app.progression ) new LifeProgression( app );",
+            "if ( ! app.progression ) new LifeProgression( app );\n"
+            "\tif (firstBoatModeEnabled() && !app.boatOwnership) new BoatOwnership( app );")
+          replace("const waterfrontReady = installBermudaModels( app );",
+            "const waterfrontReady = phone ? Promise.resolve(null) : installBermudaModels( app );")
+          p.write_text(s)
+          # Keep the dock, road and walkable ramps; omit the concentrated
+          # cottages and their extra collision boxes from the loading scene.
+          p=root/'BermudaBlockout.js'
+          s=p.read_text()
+          a=s.index(' const steppedRoof=')
+          b=s.index(' const moorings=',a)
+          s=s[:a]+' // Houses are not in the first-boat loading district.\n'+s[b:]
+          assert 'house({x:' not in s
+          p.write_text(s)
+          p=root/'ReferenceWorldUpgrade.js'
+          s=p.read_text()
+          a=s.index('\tconst addRoof =')
+          b=s.index('\tapp.scene.add( group );',a)
+          s=s[:a]+'\t// Residential set dressing reserved for a later island sector.\n'+s[b:]
+          assert 'const addHouse' not in s
+          p.write_text(s)
+          PY
+          node --input-type=module -e "import {firstBoatModeEnabled} from './_recovery/oct14/src/game/FirstBoatMode.js'; if(!firstBoatModeEnabled(new URLSearchParams('missions=boat')))throw Error('Boat mode missing'); console.log('Boat-only recovery source prepared')"
       - name: Build October 14 mobile recovery with $2454 and independent save
         working-directory: _recovery/oct14
         run: |
