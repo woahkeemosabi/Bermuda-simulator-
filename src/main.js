@@ -90,6 +90,10 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	if ( mobileFastStart && app.localLights ) app.localLights.strength = Math.max( Number( app.localLights.strength ) || 1, 1.35 );
 	applyBermudaRuntimeLook( app );
 	app.ui = new AppUI( app, ui );
+	if ( app.engine ) app.engine.onFrameFailure = ( error, failures ) => {
+		if ( mobileDevice && failures >= 3 )
+			showWorldFailure( '3D world render error: ' + String( error?.message || error ) );
+	};
 	applyBermudaBranding( mobileDevice );
 	if ( mobileDevice ) {
 
@@ -170,6 +174,4 @@ function showWorldFailure(message){
 	if(retry){retry.hidden=false;retry.onclick=()=>location.reload();}
 }
 window.__bermudaOnGPUFailure=message=>showWorldFailure('Graphics device failed: '+message);
-app.engine && (app.engine.onFrameFailure=(e,n)=>{
-	if(mobileDevice&&n>=3)showWorldFailure('3D world render error: '+String(e?.message||e));
-});
+
