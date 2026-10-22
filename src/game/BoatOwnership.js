@@ -2,9 +2,10 @@ import { Group, Mesh, Vector3 } from '../engine/index.js';
 import { prepare, mergePrepared, box, rod, mat4 } from '../world/boat/GeoKit.js';
 import { createPropMaterial, PAT } from './GameMaterials.js';
 import { WORLD } from '../world/WorldLayout.js';
+import { STARTER_BOAT_PRICE, normalizeFirstBoatObjectives } from './FirstBoatMode.js';
 
 const BOAT_ID = 'lobster-workboat';
-const PRICE = 3200;
+const PRICE = STARTER_BOAT_PRICE;
 const MISSION = 'main-first-boat';
 
 function signGeometry() {
@@ -83,6 +84,8 @@ export class BoatOwnership {
 		if ( d?.active?.( MISSION ) ) d.complete( MISSION, { toast: false } );
 		else this.state.addReputation( 'Joe', 5 );
 
+		// Do not unlock the other campaign chapters during the one-goal recovery.
+		if ( this.app.progression?.boatOnly ) normalizeFirstBoatObjectives( this.state );
 		this.state.save(); this.state.emit();
 		this.refresh();
 		this.game.toast( 'The First Boat · Downeast Lobster Boat is yours', 3400 );

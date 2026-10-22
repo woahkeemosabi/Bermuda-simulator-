@@ -18,6 +18,8 @@ import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
 import { installWaterfrontRepair } from '../game/WaterfrontRepair.js';
 import { LifeProgression } from '../game/LifeProgression.js';
+import { BoatOwnership } from '../game/BoatOwnership.js';
+import { firstBoatModeEnabled } from '../game/FirstBoatMode.js';
 import { installRelicMobileModes } from '../mobile/RelicMobileModes.js';
 import { Whale } from './marine/Whale.js';
 
@@ -102,6 +104,7 @@ export function applyBermudaBootLook( app ) {
 export function applyBermudaRuntimeLook( app ) {
 	const look = BERMUDA_LOOK;
 	const phone = mobileHardware();
+	const boatOnly = firstBoatModeEnabled();
 
 	G.waterAbsorption.value.set( ...look.water.absorption );
 	G.waterScattering.value.set( ...look.water.scattering );
@@ -143,10 +146,14 @@ export function applyBermudaRuntimeLook( app ) {
 		installReferenceStreetLife( app );
 	}
 
-	installRelic001( app );
-	installRelicStory( app );
+	// RELIC chapter geometry and storyline are deferred until the boat-only
+	// opening is complete. Core walking, fishing, boat physics stay active.
+	if ( !boatOnly ) {
+		installRelic001( app );
+		installRelicStory( app );
+		installRelicMobileModes( app );
+	}
 	installBermudaGameplayQA( app );
-	installRelicMobileModes( app );
 	installNoVisiblePlayer( app );
 
 	if ( phone ) {
@@ -176,6 +183,7 @@ export function applyBermudaRuntimeLook( app ) {
 	// was never wired into the live startup graph, so FIRST DAY could silently disappear after a reload.
 	// Install it once after all platform-specific player wrappers are in place.
 	if ( ! app.progression ) new LifeProgression( app );
+	if ( boatOnly && !app.boatOwnership ) new BoatOwnership( app );
 
 	// Never decode waterfront GLBs during mobile startup: the dock blockout is already walkable.
 	const waterfrontReady = phone ? Promise.resolve( null ) : installBermudaModels( app );

@@ -43,7 +43,7 @@ jobs:
             git push origin HEAD:main || echo "Artwork included in build; repository push unavailable"
           fi
       - name: Run CPU-safe game logic tests
-        run: node test/game-logic.mjs && node test/bermuda-full-fidelity.mjs && node test/bermuda-loading-screen.mjs && node test/mobile-render-gate.mjs && node test/mobile-postfx.mjs && node test/mobile-gpu-audit.mjs && node test/mobile-cloud-isolation.mjs && node test/mobile-environment-isolation.mjs
+        run: node test/game-logic.mjs && node test/bermuda-full-fidelity.mjs && node test/bermuda-loading-screen.mjs && node test/mobile-render-gate.mjs && node test/mobile-postfx.mjs && node test/mobile-gpu-audit.mjs && node test/mobile-cloud-isolation.mjs && node test/mobile-environment-isolation.mjs && node test/first-boat-mode.mjs
       - run: npm run build
 
       # Archive builds are independently compiled from the last iPhone-safe snapshots.
