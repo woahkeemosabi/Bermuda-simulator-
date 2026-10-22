@@ -9,8 +9,8 @@ import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
 
-// iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
-// Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
+// Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
+// Buildings and decorative world assets stream separately instead of crowding the spawn beach.
 // Add ?desktop to the URL to force the full desktop path on a mobile device for diagnostics.
 const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
@@ -26,20 +26,11 @@ if ( mobileDevice ) {
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	// Stable iPhone baseline: preserve the core game, but avoid the expensive shoreline simulation
-	// and high-resolution startup allocations that have been killing Safari before Explore.
-	for ( const [ key, value ] of [
-		[ 'noClouds', '1' ],
-		[ 'noHaze', '1' ],
-		[ 'noCaustics', '1' ],
-		[ 'noSim', '1' ],
-		[ 'G', '16' ],
-	] ) {
-
-		url.searchParams.set( key, value );
-
-	}
-	url.searchParams.set( 'scale', '0.65' );
+	// Render-resolution adaptation is allowed; deleting ocean, lighting and spray systems isn't.
+	// Mobile retains FFT swell, shoreline simulation, wave lips, spray, caustics, haze and clouds.
+	for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
+	url.searchParams.set( 'G', '16' );
+	url.searchParams.set( 'scale', '0.72' );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	App.prototype.precompile = async function() {
@@ -70,56 +61,11 @@ if ( mobileFastStart ) {
 }
 
 function applyMobileMemoryProfile( app ) {
-
 	if ( ! mobileFastStart || ! app ) return;
-
-	// Cut the 3-cascade shadow texture from 2048² to 1024² before its first real frame allocation.
-	if ( app.shadows && app.shadows.texture && ! app.shadows.texture.gpu ) {
-
-		app.shadows.size = 1024;
-		app.shadows.texture.width = 1024;
-		app.shadows.texture.height = 1024;
-		if ( ShadowUniforms?.fields?.mapSize ) ShadowUniforms.fields.mapSize.value = 1024;
-
-	}
-
-	// Preserve walking, fishing, Joe/Martha, minimap, boat physics and the ocean. Disable only
-	// secondary visual systems that create extra GPU buffers/particle work on iPhone.
-	if ( app.wake ) {
-		if ( app.surface ) app.surface.wake = null;
-		app.wake.update = () => {};
-	}
-	if ( app.boatSpray ) app.boatSpray.update = () => {};
-	if ( app.spray ) {
-		app.spray.update = () => {};
-		if ( app.spray.mesh ) app.spray.mesh.visible = false;
-	}
-	if ( app.breakers ) {
-		app.breakers.update = () => {};
-		if ( app.breakers.mesh ) app.breakers.mesh.visible = false;
-	}
-	if ( app.marineSnow ) {
-		app.marineSnow.update = () => {};
-		if ( app.marineSnow.mesh ) app.marineSnow.mesh.visible = false;
-	}
-	if ( app.airMotes ) {
-		app.airMotes.update = () => {};
-		if ( app.airMotes.mesh ) app.airMotes.mesh.visible = false;
-	}
-	if ( app.whale ) {
-		app.whale.update = () => {};
-		if ( app.whale.group ) app.whale.group.visible = false;
-	}
-	if ( app.wildlife ) {
-		app.wildlife.update = () => {};
-		if ( app.wildlife.birdBatch?.mesh ) app.wildlife.birdBatch.mesh.visible = false;
-		if ( app.wildlife.critterBatch?.mesh ) app.wildlife.critterBatch.mesh.visible = false;
-		if ( app.wildlife.blobs?.mesh ) app.wildlife.blobs.mesh.visible = false;
-	}
-
+	// Preserve all effects. On mobile only the swapchain, post scale and shadow resolution
+	// are constrained to fit Safari; no simulation update functions or meshes are disabled.
 	app.__bermudaMobileReady = true;
-	window.__bermudaMobileMemoryProfile = 'minimal-allocations-at-init';
-
+	window.__bermudaMobileMemoryProfile = 'full-effects-adaptive-resolution';
 }
 
 // ?bench runs in background tabs too (automation): rAF does not fire in a hidden page

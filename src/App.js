@@ -150,7 +150,7 @@ export class App {
 		// data is derived (shore field, GPU textures, meshes)
 		await progress( 0.12, 'Building the village…' );
 		this.village = new Village( { scene, terrain: this.terrainData, colliders: this.colliders } );
-		if ( ! mobileLite && ! qs.has( 'noVeg' ) ) {
+		if ( ! qs.has( 'noVeg' ) ) {
 
 			await progress( 0.14, 'Planting the island…' );
 			this.vegetation = new Vegetation( { scene, terrain: this.terrainData, village: this.village } );
@@ -159,7 +159,7 @@ export class App {
 		}
 
 		await progress( 0.19, 'Rolling in the swell…' );
-		this.shoreField = computeShoreField( this.terrainData, { res: mobileLite ? 256 : 512, swellDir: [ WORLD.swellDir.x, WORLD.swellDir.y ] } );
+		this.shoreField = computeShoreField( this.terrainData, { res: 512, swellDir: [ WORLD.swellDir.x, WORLD.swellDir.y ] } );
 		this.terrainGPU = new TerrainGPU( this.terrainData, this.shoreField );
 		// terrain and rocks apply the heightfield sun shadow (long hill shadows) in their own lighting
 		this.terrain = new Terrain( { scene, terrainData: this.terrainData, terrainGPU: this.terrainGPU, renderer } );
@@ -284,26 +284,24 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		this.query = new WaterQuery( renderer, this.surface );
 
-		this.marineSnow = mobileLite ? { update() {}, mesh: null } : new MarineSnow( { fft: this.fft, query: this.query } );
-		if ( this.marineSnow.mesh ) scene.add( this.marineSnow.mesh );
+		this.marineSnow = new MarineSnow( { fft: this.fft, query: this.query } );
+		scene.add( this.marineSnow.mesh );
 
 		// ---- surf: plunging lips along the beach + spray particles (the breakers emit on the GPU;
 		// spray.emit() / emitAlongPoints() for boat bow spray and splashes)
-		this.spray = mobileLite ? {
-			nReq: 0, mesh: null, update() {}, emit() {}, emitAlongPoints() {}, setBody() {}, setBodyShape() {},
-		} : new Spray( renderer, { query: this.query, terrain: this.terrainGPU, sceneCopy: this.sceneRenderer.opaqueCopy, clouds: this.clouds } );
-		if ( this.spray.mesh ) scene.add( this.spray.mesh );
+		this.spray = new Spray( renderer, { query: this.query, terrain: this.terrainGPU, sceneCopy: this.sceneRenderer.opaqueCopy, clouds: this.clouds } );
+		scene.add( this.spray.mesh );
 		if ( this.reef.setSpray ) this.reef.setSpray( this.spray ); // splashes of leaping fish
-		this.breakers = mobileLite ? { update() {}, mesh: null } : new Breakers( renderer, {
+		this.breakers = new Breakers( renderer, {
 			surface: this.surface, shore: this.shore, terrainData: this.terrainData, sky: this.sky,
 			spray: this.spray, clouds: this.clouds,
 		} );
-		if ( this.breakers.mesh ) scene.add( this.breakers.mesh );
+		scene.add( this.breakers.mesh );
 		// dust, pollen, salt aerosol, seed fluff and gnats drifting around the camera
-		this.airMotes = mobileLite ? { update() {}, mesh: null } : new AirMotes( { terrain: this.terrainGPU, clouds: this.clouds, csm: this.csm, reversedDepth: true } );
-		if ( this.airMotes.mesh ) scene.add( this.airMotes.mesh );
+		this.airMotes = new AirMotes( { terrain: this.terrainGPU, clouds: this.clouds, csm: this.csm, reversedDepth: true } );
+		scene.add( this.airMotes.mesh );
 		this.boatCtl = new BoatController( { model: this.boat, query: this.query, terrain: this.terrainData, colliders: this.colliders } );
-		this.boatSpray = mobileLite ? { update() {} } : new BoatSpray( { boat: this.boatCtl, spray: this.spray } );
+		this.boatSpray = new BoatSpray( { boat: this.boatCtl, spray: this.spray } );
 		// humpback cruising the deep water around the island (model fetched from public/models/whale)
 		this.whale = new Whale( { scene, terrain: this.terrainData, query: this.query, spray: this.spray } );
 		try {
@@ -319,13 +317,13 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		}
 
 		// interactive wake around the boat (Kelvin pattern, bow/stern waves, prop wash foam)
-		this.wake = mobileLite ? { update() {} } : new WakeSim( renderer, { terrainGPU: this.terrainGPU, boat: this.boatCtl, colliders: this.colliders } );
-		this.surface.wake = mobileLite ? null : this.wake;
+		this.wake = new WakeSim( renderer, { terrainGPU: this.terrainGPU, boat: this.boatCtl, colliders: this.colliders } );
+		this.surface.wake = this.wake;
 		// A tiny CPU wake remains available on iPhone when the GPU Kelvin wake is disabled by the memory profile.
 		this.mobileWake = new MobileWake( { scene, boat: this.boatCtl } );
 		this.player = new Player( { camera, input: this.input, terrain: this.terrainData, colliders: this.colliders, query: this.query, boat: this.boatCtl, reef: this.reef } );
 		// birds, beach crabs, sanderlings (after spray / query / boat, which they use)
-		this.wildlife = mobileLite ? { update() {} } : new Wildlife( {
+		this.wildlife = new Wildlife( {
 			scene, renderer, terrain: this.terrainData, terrainGPU: this.terrainGPU, shore: this.shore,
 			village: this.village, colliders: this.colliders, vegetation: this.vegetation, boat: this.boatCtl, boatModel: this.boat,
 			query: this.query, spray: this.spray, csm: this.csm,
