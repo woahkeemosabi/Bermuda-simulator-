@@ -8,7 +8,7 @@ const assetLayout = readFileSync(new URL('../src/world/bermuda/AssetLayout.js', 
 const ui = readFileSync(new URL('../src/ui/AppUI.js', import.meta.url),'utf8');
 
 for (const cls of ['Spray','Breakers','WakeSim','BoatSpray','MarineSnow','AirMotes','Wildlife','Vegetation']) {
-  assert.match(app,new RegExp('new '+cls+'\\\\s*\\\\('), 'Missing live effect: '+cls);
+  assert.ok(app.includes('new '+cls+'('), 'Missing live effect: '+cls);
 }
 assert.doesNotMatch(app,/mobileLite\s*\?\s*\{[^;]*update\(\)\s*\{\}/);
 assert.doesNotMatch(main,/app\.spray\.update\s*=|app\.breakers\.update\s*=|app\.wake\.update\s*=/);

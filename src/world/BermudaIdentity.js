@@ -90,7 +90,7 @@ export function applyBermudaBootLook( app ) {
 	const look = BERMUDA_LOOK;
 	installBermudaBoatFlag();
 	installBermudaTerrainProfile();
-	installMobileWhaleBypass();
+	// The whale is now streamed after startup on mobile, not disabled.
 	app.settings.timeOfDay = look.daylight.timeOfDay;
 	app.settings.exposure = look.daylight.exposure;
 	G.waterAbsorption.value.set( ...look.water.absorption );

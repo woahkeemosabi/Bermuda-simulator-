@@ -304,17 +304,16 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.boatSpray = new BoatSpray( { boat: this.boatCtl, spray: this.spray } );
 		// humpback cruising the deep water around the island (model fetched from public/models/whale)
 		this.whale = new Whale( { scene, terrain: this.terrainData, query: this.query, spray: this.spray } );
-		try {
-
-			await this.whale.load();
-			if ( this.reef && this.reef.setWhale ) this.reef.setWhale( this.whale ); // escort fish, foam and slick
-
-		} catch ( e ) {
-
-			console.warn( 'whale model failed to load', e );
-			this.whale = null;
-
-		}
+		const loadWhale = async () => {
+			try {
+				await this.whale.load();
+				if ( this.reef && this.reef.setWhale ) this.reef.setWhale( this.whale );
+			} catch ( e ) {
+				console.warn( 'whale model failed to load', e );
+			}
+		};
+		if ( mobileLite ) this._deferredWhaleLoad = loadWhale;
+		else await loadWhale();
 
 		// interactive wake around the boat (Kelvin pattern, bow/stern waves, prop wash foam)
 		this.wake = new WakeSim( renderer, { terrainGPU: this.terrainGPU, boat: this.boatCtl, colliders: this.colliders } );
@@ -612,6 +611,13 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 	start() {
 
 		this.engine.start( ( dt, t ) => this.frame( dt, t ) );
+		// The marine animal is retained in the full game and joins after mobile is interactive.
+		// Staggering its asset decode keeps unrelated beach shader compilation uninterrupted.
+		if ( this._deferredWhaleLoad ) {
+			const load = this._deferredWhaleLoad;
+			this._deferredWhaleLoad = null;
+			setTimeout( () => { void load(); }, 2000 );
+		}
 
 	}
 
