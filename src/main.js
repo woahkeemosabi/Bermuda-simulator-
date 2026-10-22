@@ -54,27 +54,19 @@ if ( mobileFastStart ) {
 
 }
 
-// App.init normally runs two hidden warm-up frames. On iPhone, those frames can allocate most of
-// the heavy GPU systems before the user ever sees Tap to Explore. Suppress them until the mobile
-// memory profile is installed.
-const normalAppFrame = App.prototype.frame;
-if ( mobileFastStart ) {
-
-	App.prototype.frame = function( ...args ) {
-
-		if ( ! this.__bermudaMobileReady ) return;
-		return normalAppFrame.apply( this, args );
-
-	};
-
-}
+// The previous early-return on App.frame silently skipped every warm-up frame.
+// Shader variants were therefore all requested together on the first gameplay frame.
+// App.init now primes frames behind the loader after its mobile systems are allocated.
 
 function applyMobileMemoryProfile( app ) {
 	if ( ! mobileFastStart || ! app ) return;
-	// Preserve all effects. On mobile only the swapchain, post scale and shadow resolution
-	// are constrained to fit Safari; no simulation update functions or meshes are disabled.
-	app.__bermudaMobileReady = true;
-	window.__bermudaMobileMemoryProfile = 'full-effects-adaptive-resolution';
+	window.__bermudaMobileMemoryProfile = 'all-effects-mobile-compute-budget-v1';
+	window.__bermudaMobileBudget = {
+		oceanCascades: app.fft?.cascades,
+		wakeGrid: '256x256', shoreFoamGrid: app.shoreSim?.res,
+		sprayParticleCapacity: app.spray?.N,
+		cloudSteps: 128, caustics: true
+	};
 }
 
 // ?bench runs in background tabs too (automation): rAF does not fire in a hidden page

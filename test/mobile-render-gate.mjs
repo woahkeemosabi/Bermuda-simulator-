@@ -20,3 +20,11 @@ assert.match(f('../src/main.js'),/bermudaGpuRetryLevel/);
 
 assert.match(f('../src/engine/render/MeshRenderer.js'),/iosStableDrawOrder/);
 assert.match(f('../src/mobile/WorldRenderGate.js'),/queue did not finish/);
+
+// All high-end effects remain instantiated, but their mobile GPU workloads are bounded.
+assert.match(f('../src/App.js'),/gpuCapacity: mobileLite \? 8192 : 32768/);
+assert.match(f('../src/App.js'),/res: mobileLite \? 512 : 768/);
+assert.match(f('../src/ocean/WakeSim.js'),/MOBILE_WAKE \? 256 : 512/);
+assert.match(f('../src/ocean/Caustics.js'),/mobile \? 256 : 512/);
+assert.match(f('../src/sky/SkyProClouds.js'),/MOBILE_CLOUDS \? 128 : 256/);
+assert.doesNotMatch(f('../src/main.js'),/if \( ! this\.__bermudaMobileReady \) return/);

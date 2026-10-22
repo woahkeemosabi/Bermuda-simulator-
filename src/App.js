@@ -193,12 +193,12 @@ export class App {
 		this.surface.detail = this.seaDetail;
 		this.shore = new ShoreWaves( this.terrainGPU );
 		this.surface.shore = this.shore;
-		this.caustics = qs.has( 'noCaustics' ) ? null : new Caustics( renderer, this.fft );
+		this.caustics = qs.has( 'noCaustics' ) ? null : new Caustics( renderer, this.fft, { mobile: mobileLite } );
 		if ( this.caustics ) this.caustics.detail = this.seaDetail;
 
 		if ( ! qs.has( 'noSim' ) ) {
 
-			this.shoreSim = new ShoreSim( renderer, { terrainGPU: this.terrainGPU, shore: this.shore } );
+			this.shoreSim = new ShoreSim( renderer, { terrainGPU: this.terrainGPU, shore: this.shore, res: mobileLite ? 512 : 768 } );
 			this.surface.shoreSim = this.shoreSim;
 			// WGSL: fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f (x = wetness, y = sand foam)
 			this.terrain.wetness = {
@@ -290,7 +290,9 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		// ---- surf: plunging lips along the beach + spray particles (the breakers emit on the GPU;
 		// spray.emit() / emitAlongPoints() for boat bow spray and splashes)
-		this.spray = new Spray( renderer, { query: this.query, terrain: this.terrainGPU, sceneCopy: this.sceneRenderer.opaqueCopy, clouds: this.clouds } );
+		this.spray = new Spray( renderer, { query: this.query, terrain: this.terrainGPU,
+			sceneCopy: this.sceneRenderer.opaqueCopy, clouds: this.clouds,
+			gpuCapacity: mobileLite ? 8192 : 32768, cpuCapacity: mobileLite ? 2048 : 8192 } );
 		scene.add( this.spray.mesh );
 		if ( this.reef.setSpray ) this.reef.setSpray( this.spray ); // splashes of leaping fish
 		this.breakers = new Breakers( renderer, {
@@ -391,11 +393,13 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		await progress( 0.36, 'Compiling shaders…', 0.95 );
 		await this.precompile();
 		await progress( 0.96, 'Warming up…' );
-		for ( let i = 0; i < 2; i ++ ) {
-
+		// All simulation effects remain available. Prime on the loading screen, one GPU
+		// submission at a time; never let startup pretend success after a failed device.
+		for ( let i = 0; i < ( mobileLite ? 1 : 2 ); i ++ ) {
+			if ( GPU.fatalError ) throw GPU.fatalError;
 			this.frame( 1 / 60 );
 			await GPU.queue.onSubmittedWorkDone();
-
+			if ( GPU.fatalError ) throw GPU.fatalError;
 		}
 
 	}

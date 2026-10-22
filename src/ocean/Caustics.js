@@ -152,7 +152,7 @@ struct CauOut { @builtin( position ) pos: vec4f, @location( 0 ) vOld: vec2f, @lo
 
 export class Caustics {
 
-	constructor( renderer, fft ) {
+	constructor( renderer, fft, { mobile = false } = {} ) {
 
 		this.renderer = renderer;
 		this.fft = fft;
@@ -161,9 +161,11 @@ export class Caustics {
 		this.detail = null; // SeaDetail: rougher water in gusts focuses more, slicks less
 		const fine = fft.cascades - 1;
 		// fine networks (finest cascade, ripples < ~11 cm filtered out: they defocus immediately)
-		this.fine = new CausticLayer( fft, fine, { res: 512, grid: 256, depths: [ 1.2, 4.0 ], name: 'causticsFine', slopeLevel: 1, margin: 0.35 } );
+		this.fine = new CausticLayer( fft, fine, { res: mobile ? 256 : 512, grid: mobile ? 128 : 256,
+			depths: [ 1.2, 4.0 ], name: 'causticsFine', slopeLevel: 1, margin: 0.35 } );
 		// broad focusing from the next cascade; different tile size -> no visible repetition
-		this.broad = new CausticLayer( fft, fine - 1, { res: 256, grid: 128, depths: [ 3.0, 9.0 ], name: 'causticsBroad', slopeLevel: 0.5, margin: 0.35 } );
+		this.broad = new CausticLayer( fft, fine - 1, { res: mobile ? 128 : 256, grid: mobile ? 64 : 128,
+			depths: [ 3.0, 9.0 ], name: 'causticsBroad', slopeLevel: 0.5, margin: 0.35 } );
 		this._module = null;
 
 	}

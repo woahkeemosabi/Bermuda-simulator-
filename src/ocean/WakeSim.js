@@ -2,8 +2,11 @@ import { Vector2, Vector3, Vector4, MathUtils, DataUtils } from '../engine/index
 import { GPU, UniformBlock, Texture, StorageBuffer, ShaderModule, ComputeKernel, commonModule } from '../engine/webgpu.js';
 import { GRAVITY } from '../core/Globals.js';
 
-const N = 512; // grid cells per side
-const LOG2N = 9;
+// Same Kelvin wake physics on mobile, with a shorter 256x256 simulation tile.
+// This reduces five large wake field buffers and per-frame FFT work by 4x.
+const MOBILE_WAKE = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test( navigator.userAgent );
+const N = MOBILE_WAKE ? 256 : 512;
+const LOG2N = Math.log2( N );
 const HALF = N / 2;
 const MASK = N - 1;
 const CELL = 0.4; // m

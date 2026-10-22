@@ -48,7 +48,10 @@ const PRESET = {
 };
 
 // sky-pro "high" quality
-const QUALITY = { historyDivisor: 2, lattice: 4, maxSteps: 256, lightTaps: 6, stepMeters: 25, fullLightingAlpha: 0.5, lightReuseSteps: 3, historyWeight: 0.9 };
+const MOBILE_CLOUDS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test( navigator.userAgent );
+const QUALITY = { historyDivisor: 2, lattice: 4, maxSteps: MOBILE_CLOUDS ? 128 : 256,
+	lightTaps: MOBILE_CLOUDS ? 4 : 6, stepMeters: 25, fullLightingAlpha: 0.5,
+	lightReuseSteps: 3, historyWeight: 0.9 };
 
 const PANO_W = 512, PANO_H = 160; // same mapping as sky/Clouds.js (elevation -4..90 deg, v = sqrt)
 const PANO_LATTICE = 4; // 1/16 of the panorama per frame
@@ -409,7 +412,7 @@ export class SkyProClouds {
 		// ---- textures
 		this.noise = new Texture( { label: 'cloud shape noise 64³', width: 64, height: 64, depth: 64, dimension: '3d', format: 'rgba8unorm', usage: [ 'sample', 'copyDst' ] } );
 		this.blue = new Texture( { label: 'cloud blue noise', width: 64, height: 64, format: 'r8unorm', usage: [ 'sample', 'copyDst' ] } );
-		const W = P.weather.resolution;
+		const W = MOBILE_CLOUDS ? 512 : P.weather.resolution;
 		this.weatherMap = new Texture( { label: 'cloud weather', width: W, height: W, format: 'rgba8unorm', usage: [ 'sample', 'storage' ] } );
 		this.weatherBounds = new Texture( { label: 'cloud weather bounds', width: 64, height: 64, format: 'rgba8unorm', usage: [ 'sample', 'storage' ] } );
 		const t2 = ( label, w = 4, h = 4, format = 'rgba16float' ) => new Texture( { label, width: w, height: h, format, usage: [ 'sample', 'storage' ] } );
