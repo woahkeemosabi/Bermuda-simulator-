@@ -134,8 +134,14 @@ jobs:
             "this.fft = new OceanFFT( renderer );",
             "this.fft = new OceanFFT( renderer, mobileLite ? {cascades:2} : {} );")
           patch('App.js',
-            "if ( mobileLite ) this._deferredWhaleLoad = loadWhale;",
-            "if ( mobileLite && qs.get('recovery') !== '1' ) this._deferredWhaleLoad = loadWhale;")
+            "this.whale = new Whale( { scene, terrain: this.terrainData, query: this.query, spray: this.spray } );",
+            "this.whale = mobileLite ? null : new Whale( { scene, terrain: this.terrainData, query: this.query, spray: this.spray } );")
+          patch('App.js',
+            "await this.whale.load();",
+            "if (this.whale) await this.whale.load();")
+          patch('App.js',
+            "if ( this.reef && this.reef.setWhale ) this.reef.setWhale( this.whale );",
+            "if ( this.whale && this.reef && this.reef.setWhale ) this.reef.setWhale( this.whale );")
           patch('App.js',
             "this.surface.wake = this.wake;",
             "this.surface.wake = mobileLite ? null : this.wake;")
