@@ -17,3 +17,6 @@ console.log('Bermuda mobile render gate: real pixels, retained ocean and spray')
 assert.match(f('../src/engine/Engine.js'),/mobileGpuFramePacing/);
 assert.match(f('../src/mobile/WorldRenderGate.js'),/hdr-scene/);
 assert.match(f('../src/main.js'),/bermudaGpuRetryLevel/);
+
+assert.match(f('../src/engine/render/MeshRenderer.js'),/iosStableDrawOrder/);
+assert.match(f('../src/mobile/WorldRenderGate.js'),/queue did not finish/);

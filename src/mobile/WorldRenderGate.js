@@ -98,7 +98,7 @@ export async function verifyMobileWorld(app,onProgress=()=>{}){
    status.last={valid:false,reason:'gpu-error',error:message(e)};
    // An encoder failure is a terminal loss of the GPU context, not a black-pixel
    // condition. A new GPUDevice needs a page reload, not another command encoder.
-   if(GPU.fatalError||/command encoder|createCommandEncoder|device lost|out of memory/i.test(message(e))){
+   if(GPU.fatalError||/command encoder|createCommandEncoder|device lost|out of memory|timed out|queue did not finish/i.test(message(e))){
     status.status='gpu-lost';
     throw e;
    }
