@@ -26,6 +26,8 @@ export function gpuReport(app,attempt=0){
    ' | Canvas '+(engine?engine.width+'x'+engine.height:'unavailable'),
   'Post '+(app?.post?.isCompatibility?'single-pass mobile':'desktop'),
   'Cloud experiment '+(typeof window!=='undefined'?(window.__bermudaCloudExperiment||'unknown'):'not browser'),
+  'Reflection experiment '+(typeof window!=='undefined'?(window.__bermudaEnvExperiment||'unknown'):'not browser')+
+  ' | Refreshes '+(app?.environment?.refreshCount??'unavailable'),
   'Loss reason '+(a.reason||'not reported'),
   'Last error '+(a.deviceMessage||a.lastError||'none'),
   'Recent '+a.errors.join(' | ')

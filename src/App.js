@@ -155,6 +155,12 @@ export class App {
 		this.shadows.layerMask = ( 1 << LAYERS.OPAQUE ) | ( 1 << LAYERS.TRANSPARENT );
 
 		this.environment = new Environment( renderer, scene, this.sky );
+		// A/B test: do the full, original initial reflection bake, then hold that
+		// image-based lighting instead of periodically refreshing the cubemap.
+		// Ocean FFT, caustics, spray, shadows, scene and live clouds remain active.
+		this.environment.freezeAfterPrime = mobileLite && qs.get( 'envtest' ) === 'freeze';
+		if ( typeof window !== 'undefined' ) window.__bermudaEnvExperiment =
+			this.environment.freezeAfterPrime ? 'freeze-after-prime' : 'live-reflections';
 
 		// ---------------------------------------------------------------- island
 		await progress( 0.06, 'Shaping the island…' );

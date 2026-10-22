@@ -73,6 +73,8 @@ export class Environment {
 		this.interval = 3;
 		this.step = - 1; // progress of the refresh under way (-1: idle)
 		this.primed = false;
+		this.freezeAfterPrime = false;
+		this.refreshCount = 0;
 
 		this._build();
 		this.steps = this._buildSteps();
@@ -278,6 +280,10 @@ fn hookEnvDiffuse( N: vec3f ) -> vec3f {
 
 	update( dt, force = false ) {
 
+		// Freeze test deliberately preserves an already computed cubemap and SH.
+		// It cannot bypass the initial bake: physically based island and boat
+		// materials still receive their expected reflection/irradiance bindings.
+		if ( this.freezeAfterPrime && this.primed && !force ) return;
 		this.timer -= dt;
 		const sun = this.sky.atmosphere.sunDir.value;
 
@@ -285,6 +291,7 @@ fn hookEnvDiffuse( N: vec3f ) -> vec3f {
 		if ( force || ! this.primed ) {
 
 			this.primed = true;
+			this.refreshCount++;
 			this.timer = this.interval;
 			this.lastSun.copy( sun );
 			for ( const s of this.steps ) s();
@@ -299,6 +306,7 @@ fn hookEnvDiffuse( N: vec3f ) -> vec3f {
 			if ( ! moved && this.timer > 0 ) return;
 			this.timer = this.interval;
 			this.lastSun.copy( sun );
+			this.refreshCount++;
 			this.step = 0;
 
 		}
