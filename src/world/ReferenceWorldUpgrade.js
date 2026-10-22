@@ -97,57 +97,7 @@ export function installReferenceWorldUpgrade( app ) {
 		{ tag: 'bermuda-footway', walkable: true }
 	);
 
-	const addRoof = ( x, baseY, z, w, d, yaw ) => {
-		for ( let i = 0; i < 4; i ++ ) {
-			const inset = i * 0.72;
-			box( M.roof, x, baseY + i * 0.20, z, Math.max( 2.5, w + 0.85 - inset ), 0.22, Math.max( 2.3, d + 0.85 - inset * 0.76 ), yaw, true );
-		}
-	};
-
-	const addHouse = ( { x, z, w, d, h, mat, yaw = 0 } ) => {
-		const gy = terrain.heightAt( x, z );
-		const y = Math.max( 1.48, gy );
-		box( mat, x, y + h * 0.5, z, w, h, d, yaw, true );
-		addRoof( x, y + h + 0.10, z, w, d, yaw );
-
-		// Front door and windows face the waterfront road (+Z). Slightly offset them to avoid z-fight.
-		const front = z + d * 0.5 + 0.035;
-		box( M.wood, x, y + 1.05, front, 0.82, 2.02, 0.08, yaw );
-		box( M.dark, x - w * 0.27, y + 1.45, front + 0.01, 0.94, 1.05, 0.07, yaw );
-		box( M.dark, x + w * 0.27, y + 1.45, front + 0.01, 0.94, 1.05, 0.07, yaw );
-		colliders.addBox(
-			new Vector3( x, y + h * 0.5, z ),
-			new Vector3( w * 0.5, h * 0.5, d * 0.5 ),
-			yaw,
-			{ tag: 'bermuda-reference-house' }
-		);
-	};
-
-	// Dense staggered cottage line behind the road. Existing hero houses remain; these fill the large
-	// empty gaps so every road-facing camera has layered architecture rather than isolated props.
-	[
-		{ x: -105, z: -64, w: 7.6, d: 6.0, h: 4.2, mat: M.cream, yaw: 0.05 },
-		{ x: -95, z: -67, w: 8.4, d: 6.2, h: 4.6, mat: M.blue, yaw: - 0.04 },
-		{ x: -71, z: -66, w: 7.4, d: 5.8, h: 4.1, mat: M.coral, yaw: 0.03 },
-		{ x: -51, z: -69, w: 8.0, d: 6.0, h: 4.35, mat: M.mint, yaw: - 0.04 },
-		{ x: -39, z: -64, w: 7.1, d: 5.6, h: 4.0, mat: M.yellow, yaw: 0.05 },
-		{ x: -29, z: -68, w: 8.1, d: 6.3, h: 4.5, mat: M.pink, yaw: - 0.05 },
-	].forEach( addHouse );
-
-	// Palms are supplied by the authored palmetto GLB tier; do not layer crude crossed-box trees over them.
-
-	// Compact hedge/shrub masses between the footway and houses. Keep the RELIC's parking/drive lane
-	// completely clear; all vegetation begins several metres landward of the road centreline.
-	for ( const [ x, z, w ] of [
-		[ -102, -57.3, 4.5 ], [ -87, -57.0, 4.2 ], [ -77, -58.2, 4.0 ],
-		[ -65, -57.5, 4.6 ], [ -54, -57.1, 3.8 ], [ -42, -57.5, 4.2 ], [ -31, -57.2, 3.8 ],
-	] ) box( M.green, x, 2.05, z, w, 1.05, 1.0, 0, false );
-
-	// A few limestone gateposts/driveway edges provide scale cues without recreating the deleted
-	// waterfront barrier. These are all on the landward side of the footway.
-	for ( const x of [ -99, -91, -74, -66, -49, -41, -33 ] ) {
-		box( M.limestone, x, 1.95, -55.25, 0.42, 1.05, 0.42 );
-	}
+	// Keep the waterfront empty. Houses, garden walls, gateposts and shrubs are not spawned here.
 
 	app.scene.add( group );
 	app.bermudaReferenceUpgrade = { group, materials: M };

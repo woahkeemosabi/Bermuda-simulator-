@@ -136,9 +136,9 @@ export function applyBermudaRuntimeLook( app ) {
 	installHarbourShopPolish( app );
 	installReferenceWorldUpgrade( app );
 
-	// These detail/street-life passes are decorative. They are kept on desktop, but not on iPhone:
-	// Safari was still allocating their geometry/character resources even after gpuSafe=2 recovery.
-	if ( ! phone ) {
+	// The public beach launch is deliberately clean. Legacy set dressing is opt-in only.
+	const decorations = !phone && new URLSearchParams( location.search ).get( 'worldDecor' ) === '1';
+	if ( decorations ) {
 		installReferenceDetailUpgrade( app );
 		installReferenceStreetLife( app );
 	}
@@ -159,7 +159,7 @@ export function applyBermudaRuntimeLook( app ) {
 			window.__bermudaMobileWorldMode = 'core-stable-v2';
 			window.__bermudaHeavyWorldAssetsDisabled = true;
 		}
-	} else {
+	} else if ( decorations ) {
 		installReferenceFinalPass( app );
 		installReferenceFinalRuntimeFix( app );
 		installReferenceExactVideoPass( app );
@@ -177,7 +177,8 @@ export function applyBermudaRuntimeLook( app ) {
 	// Install it once after all platform-specific player wrappers are in place.
 	if ( ! app.progression ) new LifeProgression( app );
 
-	const waterfrontReady = installBermudaModels( app );
+	// Never decode waterfront GLBs during mobile startup: the dock blockout is already walkable.
+	const waterfrontReady = phone ? Promise.resolve( null ) : installBermudaModels( app );
 
 	if ( app.updateSun ) app.updateSun();
 	return waterfrontReady;

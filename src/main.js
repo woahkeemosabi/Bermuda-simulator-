@@ -39,7 +39,7 @@ if ( mobileFastStart ) {
 		url.searchParams.set( key, value );
 
 	}
-	url.searchParams.set( 'scale', '0.82' );
+	url.searchParams.set( 'scale', '0.65' );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	App.prototype.precompile = async function() {
@@ -118,7 +118,7 @@ function applyMobileMemoryProfile( app ) {
 	}
 
 	app.__bermudaMobileReady = true;
-	window.__bermudaMobileMemoryProfile = 'core-gameplay-stable';
+	window.__bermudaMobileMemoryProfile = 'minimal-allocations-at-init';
 
 }
 
