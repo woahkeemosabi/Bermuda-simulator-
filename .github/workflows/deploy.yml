@@ -45,6 +45,60 @@ jobs:
       - name: Run CPU-safe game logic tests
         run: node test/game-logic.mjs && node test/bermuda-full-fidelity.mjs && node test/bermuda-loading-screen.mjs && node test/mobile-render-gate.mjs && node test/mobile-postfx.mjs && node test/mobile-gpu-audit.mjs && node test/mobile-cloud-isolation.mjs && node test/mobile-environment-isolation.mjs
       - run: npm run build
+
+      # Archive builds are independently compiled from the last iPhone-safe snapshots.
+      # They are published under /archive/, never over the current site's root.
+      - name: Checkout October 14 stable mobile version
+        uses: actions/checkout@v4
+        with:
+          ref: d7f931404dc7b87c9d4fcacc2ed2aa12de213b43
+          path: _recovery/oct14
+          persist-credentials: false
+      - name: Build October 14 historical version
+        working-directory: _recovery/oct14
+        run: |
+          npm ci
+          npm run build
+      - name: Checkout September 30 core-mobile version
+        uses: actions/checkout@v4
+        with:
+          ref: e4e71eeeda2d62cb63b18d4aba15e716803dd49e
+          path: _recovery/sep30
+          persist-credentials: false
+      - name: Build September 30 historical version
+        working-directory: _recovery/sep30
+        run: |
+          npm ci
+          npm run build
+      - name: Publish playable recovery versions without replacing current game
+        run: |
+          mkdir -p dist/archive/oct14 dist/archive/sep30
+          cp -a _recovery/oct14/dist/. dist/archive/oct14/
+          cp -a _recovery/sep30/dist/. dist/archive/sep30/
+          # Preserve the existing player state before a historical build can autosave
+          # under the same tidewater.save.v1 key. The backup is distinct, and created
+          # at most once, without changing current game data.
+          python3 - <<'PY'
+          from pathlib import Path
+          guard = """
+          <script>
+          try {
+            const key='tidewater.save.v1';
+            const copy='bermuda.recovery.original-save.v1';
+            const value=localStorage.getItem(key);
+            if(value && !localStorage.getItem(copy)) localStorage.setItem(copy,value);
+          } catch (_) {}
+          </script>
+          """
+          for name in ('oct14', 'sep30'):
+            file = Path('dist/archive') / name / 'index.html'
+            txt = file.read_text()
+            assert '<head>' in txt
+            file.write_text(txt.replace('<head>', '<head>\n'+guard, 1))
+          PY
+          test -s dist/archive/oct14/index.html
+          test -s dist/archive/sep30/index.html
+          find dist/archive -name index.html -maxdepth 3 -print
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
