@@ -112,6 +112,15 @@ jobs:
             count=src.count(old)
             assert count==1, f'{p}: expected one anchor, got {count}: {old[:80]!r}'
             p.write_text(src.replace(old,new,1))
+          # Cut three shadow cascades from 2048^2 to 512^2 before any WebGPU
+          # allocation; never let the legacy post-init memory profile enlarge them.
+          for old,new in [
+            ("app.shadows.size = 1024;","app.shadows.size = 512;"),
+            ("app.shadows.texture.width = 1024;","app.shadows.texture.width = 512;"),
+            ("app.shadows.texture.height = 1024;","app.shadows.texture.height = 512;"),
+            ("ShadowUniforms.fields.mapSize.value = 1024;","ShadowUniforms.fields.mapSize.value = 512;"),
+          ]:
+            patch('main.js',old,new)
           # Original archived main is compatible with its own dependency graph. Do not
           # copy the modern main: the Oct14 snapshot predates WebGPU readback modules.
           patch('main.js',
@@ -126,6 +135,9 @@ jobs:
             "applyBermudaRuntimeLook( app );",
             "applyBermudaRuntimeLook( app );\n"
             "\tif (mobileFastStart && app.engine) app.engine.mobileGpuFramePacing = true;")
+          patch('App.js',
+            "size: 2048, splits:",
+            "size: mobileLite ? 512 : 2048, splits:")
           patch('App.js',
             "this.environment = new Environment( renderer, scene, this.sky );",
             "this.environment = new Environment( renderer, scene, this.sky, mobileLite ? 32 : 128 );\n"
