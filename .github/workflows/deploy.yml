@@ -54,7 +54,7 @@ jobs:
           ref: d7f931404dc7b87c9d4fcacc2ed2aa12de213b43
           path: _recovery/oct14
           persist-credentials: false
-      - name: Build October 14 recovery with isolated saved game
+      - name: Build October 14 mobile recovery with $2454 and independent save
         working-directory: _recovery/oct14
         run: |
           python3 - <<'PY'
@@ -63,21 +63,22 @@ jobs:
           s=p.read_text()
           assert s.count("const SAVE_KEY = 'tidewater.save.v1';")==1
           assert s.count('this.money = 75;')==2
-          s=s.replace("const SAVE_KEY = 'tidewater.save.v1';","const SAVE_KEY = 'bermuda.recovery.oct14.save.v1';")
-          s=s.replace('this.money = 75;','this.money = 2400;')
-          s=s.replace("( d.v === 1 ? 0 : 75 )","( d.v === 1 ? 0 : 2400 )")
+          s=s.replace("const SAVE_KEY = 'tidewater.save.v1';","const SAVE_KEY = 'bermuda.recovery.wallet2454.save.v1';")
+          s=s.replace('this.money = 75;','this.money = 2454;')
+          s=s.replace("( d.v === 1 ? 0 : 75 )","( d.v === 1 ? 0 : 2454 )")
           p.write_text(s)
-          assert "this.money = 2400;" in p.read_text()
+          assert "this.money = 2454;" in p.read_text()
           PY
           npm ci
+          node --input-type=module -e "import {GameState} from './src/game/GameState.js'; const s=new GameState({getItem:()=>null,setItem:()=>{}}); if(s.money!==2454||s.boats.owned.length!==0||s.boats.activeBoat!==null)throw Error('Recovery economy mismatch'); console.log('Verified: $2454, no owned boat, isolated save');"
           npm run build
       - name: Checkout September 30 core-mobile version
         uses: actions/checkout@v4
         with:
-          ref: e4e71eeeda2d62cb63b18d4aba15e716803dd49e
+          ref: 7e2394a4cf43372e3b3f4373709bbbb710ad4b90
           path: _recovery/sep30
           persist-credentials: false
-      - name: Build September 30 experimental recovery in separate save slot
+      - name: Build exact September 30 wallet-era snapshot with isolated save
         working-directory: _recovery/sep30
         run: |
           python3 - <<'PY'
@@ -86,12 +87,13 @@ jobs:
           s=p.read_text()
           assert s.count("const SAVE_KEY = 'tidewater.save.v1';")==1
           assert s.count('this.money = 75;')==2
-          s=s.replace("const SAVE_KEY = 'tidewater.save.v1';","const SAVE_KEY = 'bermuda.recovery.sep30.save.v1';")
-          s=s.replace('this.money = 75;','this.money = 2400;')
-          s=s.replace("( d.v === 1 ? 0 : 75 )","( d.v === 1 ? 0 : 2400 )")
+          s=s.replace("const SAVE_KEY = 'tidewater.save.v1';","const SAVE_KEY = 'bermuda.recovery.original2454.save.v1';")
+          s=s.replace('this.money = 75;','this.money = 2454;')
+          s=s.replace("( d.v === 1 ? 0 : 75 )","( d.v === 1 ? 0 : 2454 )")
           p.write_text(s)
           PY
           npm ci
+          node --input-type=module -e "import {GameState} from './src/game/GameState.js'; const s=new GameState({getItem:()=>null,setItem:()=>{}}); if(s.money!==2454||s.boats.owned.length!==0||s.boats.activeBoat!==null)throw Error('Recovery economy mismatch'); console.log('Verified: $2454, no owned boat, isolated save');"
           npm run build
       - name: Publish playable recovery versions without replacing current game
         run: |
@@ -136,7 +138,7 @@ jobs:
             file = Path('dist/archive') / name / 'index.html'
             txt = file.read_text()
             assert '<head>' in txt
-            file.write_text(txt.replace('<head>', '<head>\n'+guard(name), 1))
+            file.write_text(txt.replace('<head>', '<head>\n'+guard('wallet2454' if name=='oct14' else 'original2454'), 1))
           PY
           test -s dist/archive/oct14/index.html
           test -s dist/archive/sep30/index.html
