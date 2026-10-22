@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const get=p=>readFileSync(new URL(p,import.meta.url),'utf8');
+const src=get('../src/sky/SkyProClouds.js');
+const app=get('../src/App.js');
+const audit=get('../src/mobile/GpuAudit.js');
+assert.match(src,/underwater \|\| this.mobilePanoramaOnly/);
+assert.match(src,/this\.panoKernel\.dispatch/);
+assert.match(src,/this\.shadowKernel\.dispatch/);
+assert.match(src,/this\.traceKernel\.dispatch/);
+assert.match(src,/this\.temporalKernel\.dispatch/);
+assert.match(app,/qs\.get\( 'cloudtest' \) === 'panorama'/);
+assert.match(audit,/Cloud experiment/);
+assert.match(app,/new OceanFFT\(/);
+assert.match(app,/new Spray\(/);
+assert.match(app,/new Breakers\(/);
+assert.match(app,/new WakeSim\(/);
+console.log('Controlled panorama-cloud A/B diagnostic: ocean and full baseline preserved.');

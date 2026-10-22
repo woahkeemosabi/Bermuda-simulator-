@@ -25,6 +25,7 @@ export function gpuReport(app,attempt=0){
   'Scene '+(scene?scene.width+'x'+scene.height:'unavailable')+
    ' | Canvas '+(engine?engine.width+'x'+engine.height:'unavailable'),
   'Post '+(app?.post?.isCompatibility?'single-pass mobile':'desktop'),
+  'Cloud experiment '+(typeof window!=='undefined'?(window.__bermudaCloudExperiment||'unknown'):'not browser'),
   'Loss reason '+(a.reason||'not reported'),
   'Last error '+(a.deviceMessage||a.lastError||'none'),
   'Recent '+a.errors.join(' | ')

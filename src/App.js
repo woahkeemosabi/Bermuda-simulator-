@@ -131,6 +131,17 @@ export class App {
 
 			// sky-pro-webgpu's clouds ("Partly cloudy"); ?oldClouds: the previous ones
 			this.clouds = qs.has( 'oldClouds' ) ? new Clouds( renderer, this.atmosphere ) : new SkyProClouds( renderer, this.atmosphere );
+			// Explicit controlled diagnostic: preserve panorama clouds, atmospheric
+			// transmittance and cloud shadows while bypassing ONLY the full-screen
+			// volumetric trace + temporal resolve. Not the permanent graphics mode.
+			// Distinguishes cloud-history GPU work from world/FFT compatibility issues.
+			if ( mobileLite && qs.get( 'cloudtest' ) === 'panorama' &&
+				this.clouds instanceof SkyProClouds ) {
+				this.clouds.mobilePanoramaOnly = true;
+				window.__bermudaCloudExperiment = 'panorama-only';
+			} else {
+				window.__bermudaCloudExperiment = 'full-clouds';
+			}
 			if ( this.clouds.ready ) await this.clouds.ready;
 			this.sky.clouds = this.clouds;
 

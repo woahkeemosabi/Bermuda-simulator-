@@ -434,6 +434,9 @@ export class SkyProClouds {
 		this.sourceWidth = 1; this.sourceHeight = 1; this.historyWidth = 1; this.historyHeight = 1;
 		this.frameIndex = 0;
 		this.historyValid = false;
+		// Diagnostic switch only: panorama is already a fully supported cloud view
+		// in SkyPro; no new shaders, materials or resources are introduced.
+		this.mobilePanoramaOnly = false;
 		this.weatherDirty = true;
 		this.panoWarm = true;
 		this._windX = 0; this._windZ = 0; this._evolution = 0; this._elapsed = 0;
@@ -1035,9 +1038,11 @@ ${ MAIN } {
 
 		}
 
-		if ( underwater ) {
+		if ( underwater || this.mobilePanoramaOnly ) {
 
-			// the sky is only seen through Snell's window (panorama)
+			// On the controlled panorama experiment, clouds remain visible
+			// via cloudsSample() while Clouds Trace/Resolve never dispatch.
+			// The normal path is unchanged when the experiment is off.
 			this.viewValid.value = 0;
 			this.historyValid = false;
 
