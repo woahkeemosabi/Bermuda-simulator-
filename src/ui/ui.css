@@ -2608,3 +2608,66 @@ body {
 	}
 
 }
+
+/* Bermuda Simulator official illustrated launch screen. UI elements remain live.
+   The poster contains the game brand so it is not duplicated in HTML. */
+#loader.bm-new-loader {background:#020e1b;}
+#loader.bm-new-loader .loader-art {
+  opacity:1; transform:none; animation:none; will-change:auto;
+  object-position:50% 40%;
+}
+#loader.bm-new-loader .loader-scrim {
+  background:linear-gradient(to top,rgba(1,8,20,.98) 0%,rgba(1,10,23,.91) 10%,
+      rgba(1,12,28,.58) 21%,transparent 35%);
+}
+#loader.bm-new-loader .loader-inner {
+  left:0;right:0;bottom:0;max-width:none;width:auto;
+  padding:16px max(22px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom));
+  gap:0; align-items:center;pointer-events:none;
+}
+#loader.bm-new-loader .loader-panel {
+  width:min(520px,100%);max-width:520px;padding:8px 2px 0;
+  gap:14px;pointer-events:none;
+}
+#loader.bm-new-loader .loader-note,
+#loader.bm-new-loader .loader-tips {display:none;}
+#loader.bm-new-loader .loader-row {font-size:12px;letter-spacing:.08em;text-transform:uppercase;}
+#loader.bm-new-loader .loader-status {color:#e3f8ff;}
+#loader.bm-new-loader .loader-meta {color:#c8e9fa;}
+#loader.bm-new-loader .loader-bar {height:6px;border-radius:12px;
+  background:rgba(211,247,255,.16);border:1px solid rgba(153,241,255,.38);}
+#loader.bm-new-loader .loader-fill {background:linear-gradient(90deg,#05b6e5,#3ae7fc,#bcffff);
+  box-shadow:0 0 15px rgba(18,221,255,.7);}
+#loader.bm-new-loader.tw-error .loader-status {
+  color:#ffd8d8;white-space:normal;text-transform:none;line-height:1.4;
+}
+.tw-start {
+  background-image:linear-gradient(to top,rgba(0,8,20,.96) 0%,
+       rgba(0,8,20,.7) 13%,transparent 38%),
+       var(--bermuda-start-art);
+  background-color:#061626;background-size:cover,cover;
+  background-position:center,center 40%;
+  background-repeat:no-repeat;
+}
+.tw-start .tw-start-inner {
+  position:absolute;left:16px;right:16px;
+  bottom:calc(42px + env(safe-area-inset-bottom));
+  gap:13px;
+}
+.tw-start .bm-start-pretitle {font-size:11px;letter-spacing:.3em;color:#c8f5ff;
+  text-shadow:0 2px 8px #001827;}
+.tw-start .bm-start-caption {font-size:10px;letter-spacing:.18em;color:#d0effb;
+  text-shadow:0 2px 8px #001827;}
+.tw-start .tw-start-cta {min-height:52px;height:52px;padding:0 42px;
+  font-weight:700;letter-spacing:.05em;color:#032331;
+  border:1px solid #b6fbff;
+  background:linear-gradient(180deg,#a8faff,#38d5ee);
+  box-shadow:0 0 22px rgba(9,218,250,.3),0 14px 38px rgba(0,0,0,.55);
+}
+@media (min-width:700px) {
+ #loader.bm-new-loader .loader-art {object-fit:contain;background:#051326;}
+ .tw-start {background-size:cover,contain;background-color:#021426;}
+}
+@media (prefers-reduced-motion:reduce) {
+ #loader.bm-new-loader .loader-art {animation:none;}
+}

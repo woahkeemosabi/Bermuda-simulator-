@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const ui=readFileSync(new URL('../src/ui/UI.js',import.meta.url),'utf8');
+const stable=readFileSync(new URL('../src/mobile/BermudaMobileStable.js',import.meta.url),'utf8');
+const css=readFileSync(new URL('../src/ui/ui.css',import.meta.url),'utf8');
+assert.match(html,/src="ui\/bermuda-loading\.jpg"/);
+assert.doesNotMatch(html,/src="ui\/keyart-720\.jpg"/);
+assert.match(ui,/bermuda-loading\.jpg/);
+assert.match(ui,/Tap to Explore/);
+assert.doesNotMatch(ui.slice(ui.indexOf('_buildStart() {'),ui.indexOf('// ── global wiring')),/TIDEWATER/);
+assert.match(stable,/var\(--bermuda-start-art\)/);
+assert.match(css,/#loader\.bm-new-loader/);
+console.log('Bermuda loading and start screens use branded art.');

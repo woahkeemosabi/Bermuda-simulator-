@@ -38,8 +38,8 @@ export function installStableMobileControls( app ) {
 		body.bm-mobile .gm-gauge{gap:5px}
 		body.bm-mobile .gm-dive-depth{font-size:10px;opacity:.82}
 		body.bm-mobile .tw-depth{display:none!important}
-		body.bm-mobile .tw-start{background:radial-gradient(90% 55% at 50% 18%,rgba(40,132,181,.96),rgba(9,52,76,.98) 62%,#04151f 100%)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-		body.bm-mobile .tw-start-inner{background:rgba(3,22,32,.34);border:1px solid rgba(150,242,234,.18);border-radius:24px;padding:24px 22px;box-shadow:0 22px 70px rgba(0,0,0,.28)}
+		body.bm-mobile .tw-start{background-image:linear-gradient(to top,rgba(0,9,20,.95) 0%,transparent 38%),var(--bermuda-start-art)!important;background-color:#04151f!important;background-position:center!important;background-size:cover!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+		body.bm-mobile .tw-start-inner{background:transparent!important;border:none!important;border-radius:0!important;padding:0!important;box-shadow:none!important}
 		@media (max-width:700px){body.bm-mobile .gm-map{width:96px;height:96px;right:14px;bottom:260px;opacity:.82}}
 	`;
 	document.head.appendChild( style );

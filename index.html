@@ -6,7 +6,7 @@
 	<meta name="theme-color" content="#061820" />
 	<meta name="description" content="Bermuda Simulator — explore a living island world by land, boat and sea." />
 	<title>Bermuda Simulator</title>
-	<link rel="preload" as="image" href="ui/keyart-720.jpg" imagesrcset="ui/keyart-720.jpg 1280w, ui/keyart.jpg 2560w" imagesizes="100vw" />
+	<link rel="preload" as="image" type="image/avif" href="ui/bermuda-loading.jpg" />
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Caveat+Brush&family=Kalam:wght@400;700&display=swap" rel="stylesheet" />
@@ -23,33 +23,18 @@
 <body>
 	<div id="app"></div>
 	<div id="fps">-- fps</div>
-	<div id="loader" role="status" aria-live="polite" aria-label="Loading Bermuda Simulator">
-		<img class="loader-art" src="ui/keyart-720.jpg" srcset="ui/keyart-720.jpg 1280w, ui/keyart.jpg 2560w" sizes="100vw" alt="" decoding="async" fetchpriority="high" onload="this.classList.add('is-in')" />
+	<div id="loader" class="bm-new-loader" role="status" aria-live="polite" aria-label="Loading Bermuda Simulator">
+		<img class="loader-art is-in" src="ui/bermuda-loading.jpg" alt="Bermuda Simulator — explore, drive, dive and discover" decoding="async" fetchpriority="high" />
 		<div class="loader-scrim"></div>
 		<div class="loader-inner">
-			<div class="loader-brand">
-				<p class="loader-kicker">32°N · 64°W · Atlantic island world</p>
-				<h1 class="loader-title">BERMUDA<br />SIMULATOR</h1>
-				<p class="loader-tagline">Leave the dock. Cross the turquoise shallows. Take the boat into the sound, find the reef and enter the water.</p>
-			</div>
 			<div class="loader-panel">
 				<div class="loader-row">
 					<span class="loader-status">Preparing the island…</span>
 					<span class="loader-meta"><span class="loader-pct">0%</span><span class="loader-time">0:00</span></span>
 				</div>
 				<div class="loader-bar"><div class="loader-fill"></div><div class="loader-glint"></div></div>
-				<div class="loader-note">The first launch compiles the WebGPU shaders and can take a minute or two. Later visits load much faster.</div>
-				<div class="loader-tips">
-					<span class="loader-tip-label">Explore</span>
-					<div class="loader-tip-list">
-						<p class="loader-tip">Walk to the water and use <kbd>E</kbd> to interact with the boat, helm and shoreline.</p>
-						<p class="loader-tip">At the helm, use the boat to move from bright shallow water into the deeper blue channel.</p>
-						<p class="loader-tip">Leave the boat near the reef and swim below the surface to explore the seabed and coral.</p>
-						<p class="loader-tip">Use <kbd>V</kbd> at the helm to switch between first- and third-person boat cameras.</p>
-						<p class="loader-tip">Use <kbd>C</kbd> to dive and <kbd>Space</kbd> to swim upward.</p>
-						<p class="loader-tip">Press <kbd>F</kbd> for the free camera while we build the Bermuda world around the simulation systems.</p>
-					</div>
-				</div>
+				<div class="loader-note">Preparing Bermuda for exploration</div>
+
 			</div>
 		</div>
 	</div>

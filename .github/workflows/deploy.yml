@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -24,8 +24,26 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Install official Bermuda loading artwork
+        run: |
+          if [ ! -s public/ui/bermuda-loading.jpg ]; then
+            curl -fL --retry 3 --connect-timeout 15 --max-time 120 \
+              -o public/ui/bermuda-loading.jpg \
+              'https://d2ol7oe51mr4n9.cloudfront.net/user_3A1q9BcQbl45SCnLUguSPsAMEGh/98b4aa4a-be69-4270-b49d-e08419050e26.jpg'
+          fi
+          test "$(wc -c < public/ui/bermuda-loading.jpg)" -gt 100000
+      - name: Persist branded loading artwork in the repository
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if ! git ls-files --error-unmatch public/ui/bermuda-loading.jpg >/dev/null 2>&1; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add public/ui/bermuda-loading.jpg
+            git commit -m "Add Bermuda Simulator branded loading artwork"
+            git push origin HEAD:main || echo "Artwork included in build; repository push unavailable"
+          fi
       - name: Run CPU-safe game logic tests
-        run: node test/game-logic.mjs && node test/bermuda-full-fidelity.mjs
+        run: node test/game-logic.mjs && node test/bermuda-full-fidelity.mjs && node test/bermuda-loading-screen.mjs
       - run: npm run build
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'
