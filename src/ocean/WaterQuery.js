@@ -192,6 +192,13 @@ fn main( @builtin( global_invocation_id ) gid: vec3u ) {
 
 	update() {
 
+		// On mobile, avoid continuous compute/readback pressure. Keep the most
+		// recent water heights for physics between samples (~15 Hz at 60 FPS).
+		if ( typeof window !== 'undefined' && window.__bermudaThrottleWaterQueries ) {
+			this._mobileQueryTick = (this._mobileQueryTick || 0) + 1;
+			if (this._mobileQueryTick % 4 !== 1) return;
+		}
+
 		// built on first use: the wake / shore attached to the surface after construction are included
 		if ( ! this.kernel ) this._build();
 		this.inputBuffer.write( this.inputs );
