@@ -780,7 +780,12 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.marineSnow.update( this.camera, this.camera.position.y < ( this.cameraWaterHeight ?? 0 ) + LENS_REACH );
 		this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );
 		if ( this.shoreSim ) this.shoreSim.update();
-		this.underwaterLighting.update( this.camera );
+		// Only dispatch the underwater light-map kernels during the first mobile frame.
+		// This gate remains effective even if another system replaces the lighting updater.
+		if ( !this.qs.has('freezeFFT') || !this._underwaterMapPrimed ) {
+			this.underwaterLighting.update( this.camera );
+			this._underwaterMapPrimed = true;
+		}
 		this.breakers.update( this.camera );
 		// Explicitly bypass spray dispatch in mobile low-GPU mode, even if a later system
 		// reassigns spray.update after initialization.
