@@ -25,6 +25,7 @@ const mobileLowGPU = mobileFastStart && new URLSearchParams(location.search).get
 window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
 window.__bermudaDisableSwashProbe = mobileLowGPU;
+window.__bermudaSparseVegetation = mobileLowGPU;
 let mobileRetryLevel = 0;
 if ( mobileFastStart ) {
 	try {
@@ -64,8 +65,8 @@ if ( mobileFastStart ) {
 		url.searchParams.set( 'noSpray', '1' );
 		// Mobile vegetation isolation: disable procedural palm forest by default.
 		// ?veg=1 restores it for controlled A/B stability testing.
-		if (url.searchParams.get('veg') === '1') url.searchParams.delete('noVeg');
-		else url.searchParams.set('noVeg','1');
+		if (url.searchParams.get('veg') === '0') url.searchParams.set('noVeg','1');
+		else url.searchParams.delete('noVeg');
 		url.searchParams.set( 'G', '12' );
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
