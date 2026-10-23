@@ -105,6 +105,18 @@ export class Vegetation {
 		const site = new VegSite( terrain, villageObstacles( village ) );
 		this.site = site;
 		const recs = scatterVegetation( site );
+		// Mobile retains an intentionally sparse, deterministic island landscape.
+		// Filter instances before GPU geometry and LOD buffers are constructed.
+		const mobileSparse = typeof window !== 'undefined' && window.__bermudaSparseVegetation;
+		if ( mobileSparse ) {
+			const fractions = { palms: 0.16, trees: 0.12, bananas: 0.12, shrubs: 0.12,
+				youngPalms: 0.10, ferns: 0.10, monsteras: 0.10, elephantEars: 0.10,
+				heliconias: 0.10, strelitzias: 0.10 };
+			for ( const [ kind, fraction ] of Object.entries( fractions ) ) {
+				if ( Array.isArray( recs[ kind ] ) ) recs[ kind ] = recs[ kind ].filter( (_, i) => (i * 37 % 101) < fraction * 101 );
+			}
+			recs.villagePalms = Math.min( recs.villagePalms || 0, recs.palms.length );
+		}
 		this.records = recs;
 		const t1 = performance.now();
 		const grassMask = buildGrassMask( site );
@@ -153,8 +165,8 @@ export class Vegetation {
 		};
 
 		this.palms = add( new VegType( 'palms', recs.palms, {
-			nearRange: PALM_NEAR, margin: 10, refreshDistance: 6, farExcludeNear: true, sortNear: true,
-			near: [ { geometry: palmNear.geometry, material: leafMat, castShadow: true, name: 'veg-palm' } ],
+			nearRange: mobileSparse ? 45 : PALM_NEAR, margin: 10, refreshDistance: 6, farExcludeNear: true, sortNear: true,
+			near: [ { geometry: palmNear.geometry, material: leafMat, castShadow: !mobileSparse, name: 'veg-palm' } ],
 			far: { parts: [ { geometry: palmFar.geometry, material: leafMat, name: 'veg-palm-far' } ], fade: CANOPY_FAR },
 		} ) );
 
