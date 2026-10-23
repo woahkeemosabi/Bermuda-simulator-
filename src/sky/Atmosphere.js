@@ -491,7 +491,7 @@ fn main() {
 		}
 		// The original transmittance -> multiple scattering -> sky-view dependency
 		// is preserved, but each static shader submits in a separate mobile frame.
-		if((this.mobileMode === 'staged' || this.mobileMode === 'static-only' || this.mobileMode === 'skyview-only' || this.mobileMode === 'irradiance-only') && this.needsStatic) {
+		if((this.mobileMode === 'staged' || this.mobileMode === 'static-only' || this.mobileMode === 'skyview-only' || this.mobileMode === 'irradiance-only' || this.mobileMode === 'irradiance-readback') && this.needsStatic) {
 			if(this.mobileInitStage === 0) {
 				this.transmittanceKernel.dispatch([T_W / 8,T_H / 8,1]);
 				this.mobileInitStage=1;
