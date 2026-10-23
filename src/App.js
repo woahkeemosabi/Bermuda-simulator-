@@ -285,7 +285,8 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		const renderTest = mobileLite ? qs.get('renderTest') : null;
 		this.sceneRenderer.diagnosticOpaqueOnly = renderTest === 'opaque' || renderTest === 'opaque-noshadows';
 		this.sceneRenderer.diagnosticWaterOnly = renderTest === 'water-noshadows' || renderTest === 'water-daylight';
-		if (renderTest === 'opaque-noshadows' || renderTest === 'water-noshadows' || renderTest === 'water-daylight') this.shadows.enabled = false;
+		this.sceneRenderer.diagnosticRefractionOnly = renderTest === 'water-refraction';
+		if (renderTest === 'opaque-noshadows' || renderTest === 'water-noshadows' || renderTest === 'water-daylight' || renderTest === 'water-refraction') this.shadows.enabled = false;
 		if (typeof window !== 'undefined') window.__bermudaRenderExperiment = renderTest || 'full';
 		// the water's refraction source: the scene below the water only, half resolution
 		this.refraction = new RefractionPass( { meshRenderer: engine.meshRenderer, scene, camera, sceneRenderer: this.sceneRenderer, scale: 0.5 } );
