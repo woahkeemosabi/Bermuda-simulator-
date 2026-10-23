@@ -9,7 +9,7 @@ export function gpuStage(stage,frame){
  if(Number.isFinite(frame))gpuAudit.frame=frame;
 }
 export function gpuCompute(name){gpuAudit.lastCompute=String(name||'').slice(0,70);}
-export function gpuSubmit(frame){gpuAudit.submits++;gpuStage('GPU submit',frame);}
+export function gpuSubmit(frame){gpuAudit.submits++;gpuStage('GPU submit',frame);gpuAudit.lastCompute='none this submit';}
 export function gpuError(kind,message,reason=''){
  const msg=String(message||'').slice(0,300);gpuAudit.lastError=msg;
  if(kind==='lost'){gpuAudit.reason=String(reason||'unknown');gpuAudit.deviceMessage=msg;}
