@@ -2,6 +2,7 @@ import { startDeferredWaterfront, updateWaterfrontVisibility } from './world/Ber
 import { mobileQualityParameters } from './mobile/QualityProfile.js';
 import './core/BenchSeed.js';
 import { App } from './App.js';
+import { G } from './core/Globals.js';
 import { GPU } from './engine/gpu/GPU.js';
 import { ShadowUniforms } from './engine/render/wgsl/lighting.js';
 import { UI } from './ui/UI.js';
@@ -10,6 +11,7 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { RelicVehicle } from './player/RelicVehicle.js';
+import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
 
 // iPhone/iPad WebGPU can spend several minutes compiling every desktop pipeline variant up front.
 // Keep desktop quality unchanged, but use a deliberately lighter startup path on touch/mobile devices.
@@ -19,7 +21,10 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
 const forceDesktop = initialParams.has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
-const mobileSafeLevel = mobileFastStart ? Math.max( 0, Number( initialParams.get( 'gpuSafe' ) || 0 ) ) : 0;
+const requestedMobileHigh = initialParams.get( 'quality' ) === 'mobile-high';
+const mobileSafeLevel = mobileFastStart
+	? Math.max( 0, Number( initialParams.get( 'gpuSafe' ) ?? ( requestedMobileHigh ? 0 : 2 ) ) )
+	: 0;
 
 if ( mobileFastStart ) {
 
@@ -67,14 +72,15 @@ function applyMobileMemoryProfile( app ) {
 
 	if ( ! mobileFastStart || ! app ) return;
 
-	// The 3-cascade 2048² depth array alone is about 48 MB. Resize the lazy texture before its first
-	// GPU allocation; 1024² keeps useful shadows while cutting that allocation to one quarter.
-	if ( app.shadows && app.shadows.texture && ! app.shadows.texture.gpu ) {
+	// The 3-cascade 2048² depth array alone is expensive on iOS. Keep the lazy allocation tiny for
+	// the first playable frame; 512² shadows are still useful on a phone and leave substantially more
+	// headroom for the water/post render targets Safari allocates when Explore starts the frame loop.
+	if ( app.shadows && app.shadows.enabled && app.shadows.texture && ! app.shadows.texture.gpu ) {
 
-		app.shadows.size = 1024;
-		app.shadows.texture.width = 1024;
-		app.shadows.texture.height = 1024;
-		if ( ShadowUniforms && ShadowUniforms.fields && ShadowUniforms.fields.mapSize ) ShadowUniforms.fields.mapSize.value = 1024;
+		app.shadows.size = 512;
+		app.shadows.texture.width = 512;
+		app.shadows.texture.height = 512;
+		if ( ShadowUniforms && ShadowUniforms.fields && ShadowUniforms.fields.mapSize ) ShadowUniforms.fields.mapSize.value = 512;
 
 	}
 
@@ -128,8 +134,106 @@ function applyMobileMemoryProfile( app ) {
 
 	}
 
+	// Normal iPhone boot is safe-level 2. Keep the expensive first-use render passes out of the
+	// first playable frame; desktop and explicit mobile-high are unaffected.
+	if ( mobileSafeLevel >= 2 ) {
+
+		if ( app.shadows ) app.shadows.enabled = false;
+		if ( app.refraction ) app.refraction.enabled = false;
+		if ( app.sceneRenderer ) app.sceneRenderer.onBeforeWater = null;
+		if ( app.post ) {
+
+			app.post.mobileLite = true;
+			app.post.aaMode = 'fxaa';
+			if ( app.post.params?.aoStrength ) app.post.params.aoStrength.value = 0;
+			if ( app.post.params?.bloom ) app.post.params.bloom.value = 0;
+			if ( app.post.params?.sharpen ) app.post.params.sharpen.value = 0.52;
+			if ( app.post.params?.saturation ) app.post.params.saturation.value = 1.04;
+			if ( app.post.params?.contrast ) app.post.params.contrast.value = 1.055;
+			if ( app.post.params?.warmth ) app.post.params.warmth.value = 0.045;
+			if ( app.post.params?.grain ) app.post.params.grain.value = 0.002;
+			if ( app.post.params?.vignette ) app.post.params.vignette.value = 0.18;
+			if ( app.post.autoExposure?.enabled ) app.post.autoExposure.enabled.value = 0;
+			if ( app.post.motionBlur?.shutter ) app.post.motionBlur.shutter.value = 0;
+
+		}
+
+		// iOS diving stability: the desktop underwater path adds a half-resolution ray-marched
+		// torch/caustic shaft target and pass. Keep the normal underwater colour/attenuation and the
+		// flashlight's surface illumination, but do not allocate or execute the volumetric march.
+		if ( app.underwater ) {
+
+			app.underwater.renderShafts = null;
+			app.underwater.setSize = () => {};
+			if ( app.underwater.uniforms?.fields?.hasShafts ) app.underwater.uniforms.fields.hasShafts.value = 0;
+			if ( app.underwater.torchBeam ) app.underwater.torchBeam.value = 0;
+			if ( app.underwater.band ) app.underwater.band.value = 5;
+			const updateUnderwaterCamera = app.underwater.updateCamera.bind( app.underwater );
+			app.underwater.updateCamera = camera => {
+
+				updateUnderwaterCamera( camera );
+				const waterH = Number.isFinite( app.cameraWaterHeight ) ? app.cameraWaterHeight : 0;
+				// Above-water mobile frames must never inherit an erroneous underwater medium classification.
+				// Re-enable the full attenuation only once the lens is actually at the surface.
+				if ( app.underwater.enabled ) app.underwater.enabled.value = camera.position.y < waterH + 0.42 ? 1 : 0;
+
+			};
+
+		}
+
+		// At night the desktop path shades against every nearby village/boat lamp. On phone, preserve the
+		// diver flashlight but leave static lamp appearance to their emissive materials.
+		if ( app.localLights?.sources ) app.localLights.sources.length = 0;
+
+		// Bermuda water should stay dark and reflective at night, not glow cyan. Preserve the clear
+		// daytime character while reducing mobile night wash and over-bright subsurface scattering.
+		if ( app.waterMaterial?.params ) {
+
+			if ( app.waterMaterial.params.reflectionStrength ) app.waterMaterial.params.reflectionStrength.value = 0.72;
+			if ( app.waterMaterial.params.sss ) app.waterMaterial.params.sss.value = 0.68;
+			if ( app.waterMaterial.params.roughness ) app.waterMaterial.params.roughness.value = 0.055;
+			if ( app.waterMaterial.params.foamIntensity ) app.waterMaterial.params.foamIntensity.value = 0.86;
+
+		}
+		if ( G.waterAbsorption?.value?.set ) G.waterAbsorption.value.set( 0.36, 0.09, 0.052 );
+		if ( G.waterScattering?.value?.set ) G.waterScattering.value.set( 0.009, 0.013, 0.017 );
+
+		// Preserve the first-person spear itself but drop the pooled transparent bubble meshes on the
+		// constrained path. Transparent underwater particles are disproportionately expensive on iOS.
+		if ( app.game?.spear ) {
+
+			app.game.spear.burst = () => {};
+			if ( app.game.spear.fxRoot ) app.game.spear.fxRoot.visible = false;
+
+		}
+
+		// Ocean displacement remains live, but mobile does not need to run the multi-pass FFT at display
+		// refresh rate. Above water update every other frame; while actively diving update every third
+		// frame and advance by the accumulated dt so wave timing remains correct.
+		if ( app.fft?.update && ! app.fft.__bermudaMobileThrottled ) {
+
+			const fullFFTUpdate = app.fft.update.bind( app.fft );
+			let fftAccum = 0, fftFrame = 0;
+			app.fft.update = ( dt ) => {
+
+				fftAccum += dt;
+				fftFrame ++;
+				const diving = app.player?.mode === 'swim' && ( app.player?.diveDepth || 0 ) > 0.18;
+				const cadence = diving ? 4 : 3;
+				if ( fftFrame % cadence !== 0 ) return;
+				const step = Math.min( fftAccum, 0.12 );
+				fftAccum = 0;
+				fullFFTUpdate( step );
+
+			};
+			app.fft.__bermudaMobileThrottled = true;
+
+		}
+
+	}
+
 	app.__bermudaMobileReady = true;
-	window.__bermudaMobileMemoryProfile = 'core-gameplay-v1';
+	window.__bermudaMobileMemoryProfile = mobileSafeLevel >= 2 ? 'core-gameplay-safe-v3' : 'core-gameplay-v1';
 
 }
 
@@ -156,6 +260,10 @@ function mobileRecoveryURL( reason, prefix = 'gpu-recovery' ) {
 function recoverMobileInitGPUError( error ) {
 
 	if ( ! mobileFastStart ) return false;
+	// Safe level 2 is already the lowest normal iPhone profile. Do not create a visible
+	// reload/reset loop if the safest profile still fails during boot; leave the loader up
+	// with the real error so QA can diagnose it.
+	if ( mobileSafeLevel >= 2 ) return false;
 	const message = String( error && ( error.message || error ) || '' );
 	if ( ! /createBuffer|Unable to create buffer|GPUDevice|device lost|destroyed|out of memory|GPU queue/i.test( message ) ) return false;
 	const url = mobileRecoveryURL( message, 'gpu-init-recovery' );
@@ -167,7 +275,8 @@ function recoverMobileInitGPUError( error ) {
 
 function installMobileGPUWatchdog() {
 
-	if ( ! mobileFastStart || ! GPU.device || ! GPU.queue ) return;
+	if ( ! mobileFastStart || ! GPU.device || ! GPU.queue || window.__bermudaGPUWatchdogInstalled ) return;
+	window.__bermudaGPUWatchdogInstalled = true;
 	let recovering = false;
 	let probeBusy = false;
 
@@ -187,6 +296,14 @@ function installMobileGPUWatchdog() {
 		if ( recovering ) return;
 		recovering = true;
 		window.__bermudaGPUStall = reason;
+		// Safe level 2 is already the lowest normal iPhone profile. Reloading the page here only creates
+		// the visible Explore -> reset loop without reducing GPU work any further.
+		if ( mobileSafeLevel >= 2 ) {
+
+			showRecoveryFailure( reason );
+			return;
+
+		}
 		const url = mobileRecoveryURL( reason );
 		if ( url ) {
 
@@ -232,6 +349,87 @@ function installMobileGPUWatchdog() {
 
 }
 
+function startMobileDeferredScenery( app ) {
+
+	if ( ! mobileFastStart || ! app ) return;
+
+	// Never allocate decorative GLBs behind the Explore overlay. The first real WebGPU frames must
+	// prove stable before Safari is asked for more geometry/textures. On recovery level 2 we keep the
+	// procedural/reference fallbacks for the whole session rather than risking another device loss.
+	if ( mobileSafeLevel >= 2 ) {
+
+		window.__bermudaDeferredScenery = 'held-safe-mode';
+		return;
+
+	}
+
+	const timer = setTimeout( () => {
+
+		if ( document.visibilityState !== 'visible' || window.__bermudaGPUStall ) return;
+		const fps = Number( app.fps || 0 );
+		if ( fps > 0 && fps < 24 ) {
+
+			window.__bermudaDeferredScenery = 'held-low-fps';
+			return;
+
+		}
+
+		window.__bermudaDeferredScenery = 'tier2-streaming';
+		startDeferredWaterfront( app, { initialDelay: 0, tierDelay: 8000, entryDelay: 350, maxTier: 2 } );
+
+	}, 12000 );
+
+	window.addEventListener( 'pagehide', () => clearTimeout( timer ), { once: true } );
+
+}
+
+function installDesktopQualityGovernor( app ) {
+
+	if ( mobileDevice || ! app || app.qs?.has?.( 'bench' ) || app.qs?.has?.( 'scale' ) ) return;
+
+	const requested = initialParams.get( 'quality' );
+	const lockedUltra = requested === 'ultra' || initialParams.has( 'ultra' );
+	if ( requested === 'performance' ) {
+		app.setRenderScale( 0.70 );
+		window.__bermudaGraphicsProfile = 'performance';
+		return;
+	}
+
+	// A normal shared desktop URL starts at full native internal resolution with the complete
+	// desktop world stack. Capable machines therefore see the maximum-quality presentation
+	// immediately; only sustained poor frame rate can trigger a local render-scale fallback.
+	app.setRenderScale( 1 );
+	window.__bermudaGraphicsProfile = lockedUltra ? 'ultra-locked' : 'ultra';
+	if ( lockedUltra ) return;
+
+	let low = 0, critical = 0, healthy = 0;
+	const timer = setInterval( () => {
+		if ( document.visibilityState !== 'visible' || ! Number.isFinite( app.fps ) ) return;
+		const fps = app.fps;
+
+		critical = fps < 18 ? critical + 1 : 0;
+		low = fps < 28 ? low + 1 : 0;
+		healthy = fps > 52 ? healthy + 1 : 0;
+
+		if ( critical >= 3 && app.settings.renderScale > 0.65 ) {
+			app.setRenderScale( 0.65 );
+			window.__bermudaGraphicsProfile = 'adaptive-low';
+			critical = low = healthy = 0;
+		} else if ( low >= 5 && app.settings.renderScale > 0.80 ) {
+			app.setRenderScale( 0.80 );
+			window.__bermudaGraphicsProfile = 'adaptive-balanced';
+			critical = low = healthy = 0;
+		} else if ( healthy >= 10 && app.settings.renderScale < 1 ) {
+			app.setRenderScale( Math.min( 1, app.settings.renderScale + 0.15 ) );
+			window.__bermudaGraphicsProfile = app.settings.renderScale >= 0.99 ? 'ultra' : 'adaptive-balanced';
+			critical = low = healthy = 0;
+		}
+	}, 1000 );
+
+	window.addEventListener( 'pagehide', () => clearInterval( timer ), { once: true } );
+
+}
+
 function installMobileAudioResume( app ) {
 
 	if ( ! app.audio ) return;
@@ -271,19 +469,78 @@ if ( /[?&]bench\b/.test( location.search ) ) {
 
 }
 
+async function primeMobileCoreFrame( app, ui ) {
+
+	if ( ! mobileFastStart || ! app || app.__bermudaMobilePrimed ) return;
+
+	window.__bermudaBootPhase = 'mobile-core-prime';
+	ui.setLoading( 0.755, 'Priming mobile renderer…', 0.775 );
+
+	let timer = 0;
+	try {
+
+		await Promise.race( [
+			( async () => {
+				app.frame( 1 / 60, 0 );
+				await GPU.queue.onSubmittedWorkDone();
+			} )(),
+			new Promise( ( _, reject ) => {
+				timer = setTimeout( () => reject( new Error( 'Mobile GPU prime timed out' ) ), 8000 );
+			} ),
+		] );
+		app.__bermudaMobilePrimed = true;
+		window.__bermudaBootPhase = 'mobile-core-primed';
+
+	} finally {
+
+		if ( timer ) clearTimeout( timer );
+
+	}
+
+}
+
 const ui = new UI();
 applyBermudaBranding( mobileDevice );
 const app = new App();
 applyBermudaBootLook( app );
 window.__ui = ui;
 
-app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async () => {
+// App.init used to consume almost the whole bar before the genuinely slow harbour/model work
+// began, which made first launch appear stuck around 98%. Reserve explicit progress ranges for the
+// core renderer and the post-init asset phases so the percentage describes real completed work.
+const coreBootEnd = mobileDevice ? 0.74 : 0.88;
+const mapCoreProgress = ( value ) => typeof value === 'number' && isFinite( value )
+	? Math.max( 0, Math.min( coreBootEnd, value * coreBootEnd ) )
+	: value;
 
-	if ( mobileFastStart ) applyMobileMemoryProfile( app );
+app.init( ( p, text, until ) => ui.setLoading(
+	mapCoreProgress( p ),
+	text,
+	typeof until === 'number' ? mapCoreProgress( until ) : undefined,
+) ).then( async () => {
+
+	if ( mobileFastStart ) {
+		applyMobileMemoryProfile( app );
+		// Materialise the safe-profile core render targets before Explore is tappable. Previously the
+		// first real frame happened only after the tap, concentrating the remaining GPU allocations into
+		// that gesture and causing iOS Safari to kill/reload the page on constrained devices.
+		installMobileGPUWatchdog();
+		await primeMobileCoreFrame( app, ui );
+	}
+	// Waterfront is one of the slowest first-launch phases on mobile, so give it a real section of
+	// the progress bar instead of jumping to 99% before the network/model work has happened.
+	const waterfrontStart = mobileDevice ? 0.78 : 0.90;
+	const waterfrontEnd = mobileDevice ? 0.94 : 0.975;
+	ui.setLoading( waterfrontStart, 'Loading harbour assets…', waterfrontEnd );
 	app.onWaterfrontProgress = ( done, total, id ) => {
-        // Exact completed asset count; do not simulate progress during asset loading.
-        ui.setLoading( 0.99, `Waterfront ${ done }/${ total }${ id ? ': ' + id : '' }`, 0.99 );
-    };
+		const ratio = total > 0 ? Math.max( 0, Math.min( 1, done / total ) ) : 0;
+		const p = waterfrontStart + ( waterfrontEnd - waterfrontStart ) * ratio;
+		ui.setLoading( p, id ? `Loading harbour · ${ id }` : 'Harbour assets ready', waterfrontEnd );
+		if ( total > 0 ) ui.setLoadingDetail( done, total );
+	};
+	app.onWaterfrontRetry = ( id, attempt, total ) => {
+		ui.setLoading( undefined, `Connection retry ${ attempt }/${ total - 1 } · ${ id }` );
+	};
     const waterfront = await applyBermudaRuntimeLook( app );
     if ( app.relic001 && ! app.relic ) {
         app.relic = new RelicVehicle( { app, vehicle: app.relic001 } );
@@ -291,17 +548,21 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
     }
     if ( ! waterfront?.ready ) {
         const details = waterfront?.errors.map( e => e.id + ': ' + e.message ).join( '; ' );
-        throw new Error( 'Waterfront failed to load: ' + ( details || 'scene unavailable' ) );
+        throw new Error( 'Waterfront failed to initialize: ' + ( details || 'scene unavailable' ) );
+    }
+    if ( waterfront?.degraded ) {
+        ui.setLoading( 0.945, 'Using stable harbour fallback', 0.97 );
     }
     if ( mobileDevice ) {
-        ui.setLoading( 0.992, 'Preparing Bermuda scenery', 0.998 );
-        await startDeferredWaterfront( app );
+        // Boot-critical waterfront is now either loaded or safely represented by the procedural fallback.
+        ui.setLoading( 0.96, 'Finalizing mobile controls…', 0.99 );
     }
 	app.ui = new AppUI( app, ui );
 	applyBermudaBranding( mobileDevice );
 	if ( mobileDevice ) {
 
 		installStableMobileControls( app );
+		installMobileScreenshotHUD( app );
 		installMobileAudioResume( app );
 
 		// A little extra RCAS sharpening compensates for mobile render scaling without increasing the
@@ -326,8 +587,12 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 		}
 
 	}
+	ui.setLoading( 0.99, 'Final checks…', 0.999 );
 	ui.setLoading( 1, 'Ready' );
 	await ui.hideLoader();
+	window.__bermudaGameReady = true;
+	window.__bermudaBootPhase = 'ready-for-explore';
+	setTimeout( () => window.dispatchEvent( new Event( 'bermuda-game-ready' ) ), mobileDevice ? 60000 : 5000 );
 	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
 	if ( app.qs.has( 'bench' ) ) {
 
@@ -347,10 +612,14 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 
 			if ( started ) return;
 			started = true;
+			window.__bermudaBootPhase = 'explore-start';
 			if ( app.audio ) app.audio.resume();
 			installMobileGPUWatchdog();
 			app.start();
-            startDeferredWaterfront(app);
+			startMobileDeferredScenery( app );
+			requestAnimationFrame( () => {
+				window.__bermudaBootPhase = 'gameplay-running';
+			} );
 
 		} );
 		return;
@@ -358,6 +627,7 @@ app.init( ( p, text, until ) => ui.setLoading( p, text, until ) ).then( async ()
 	} else {
 
 		app.start();
+		installDesktopQualityGovernor( app );
             startDeferredWaterfront(app);
 
 	}

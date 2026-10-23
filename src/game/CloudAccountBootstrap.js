@@ -3,13 +3,19 @@ import './LegacyProgressionMigration.js';
 import { CloudAccount } from './CloudAccount.js';
 import './CloudAccountAuthCompat.js';
 import './CloudAccountSyncCompat.js';
+import { MissionDirector } from './MissionDirector.js';
 import { LifeProgression } from './LifeProgression.js';
 import { RelationshipSystem } from './RelationshipSystem.js';
 import { VehiclePersistence } from './VehiclePersistence.js';
-import { MarthaShopInterior } from './MarthaShopInterior.js';
+import { PropertySystem } from './PropertySystem.js';
+import { PropertyExpansion } from './PropertyExpansion.js';
+import { DynamicIslandEvents } from './DynamicIslandEvents.js';
+import { IslandMissionSystem } from './IslandMissionSystem.js';
+import { SideQuestSystem } from './SideQuestSystem.js';
+import { HarbourJobBoard } from './HarbourJobBoard.js';
 import { BoatOwnership } from './BoatOwnership.js';
 import { BoatUpgradeVisuals } from './BoatUpgradeVisuals.js';
-import { Bicycle } from '../player/Bicycle.js';
+import { CharacterMotionStability } from '../world/CharacterMotionStability.js';
 
 // main.js creates the App asynchronously and exposes it as window.__app once core gameplay systems
 // exist. This small bootstrap keeps progression/account concerns out of App.js and never blocks startup.
@@ -22,18 +28,13 @@ if ( typeof window !== 'undefined' ) {
 			clearInterval( timer );
 
 			try {
-				if ( ! app.bicycle ) app.bicycle = new Bicycle( app );
-			} catch ( error ) {
-				console.warn( 'starter bicycle unavailable; continuing on foot', error );
-			}
-
-			try {
 				if ( ! app.vehiclePersistence ) app.vehiclePersistence = new VehiclePersistence( app );
 			} catch ( error ) {
 				console.warn( 'vehicle persistence unavailable; current-session vehicles remain usable', error );
 			}
 
 			try {
+				if ( ! app.missionDirector ) app.missionDirector = new MissionDirector( app );
 				if ( ! app.progression ) app.progression = new LifeProgression( app );
 			} catch ( error ) {
 				console.warn( 'life progression unavailable; existing gameplay remains active', error );
@@ -46,16 +47,47 @@ if ( typeof window !== 'undefined' ) {
 			}
 
 			try {
-				if ( ! app.marthaShop ) app.marthaShop = new MarthaShopInterior( app );
-			} catch ( error ) {
-				console.warn( 'Martha shop interior unavailable; vendor menu remains usable', error );
-			}
-
-			try {
 				if ( ! app.boatOwnership ) app.boatOwnership = new BoatOwnership( app );
 				if ( ! app.boatUpgradeVisuals ) app.boatUpgradeVisuals = new BoatUpgradeVisuals( app );
 			} catch ( error ) {
 				console.warn( 'boat progression visuals unavailable; existing boat controller remains active', error );
+			}
+
+			try {
+				if ( ! app.propertySystem ) app.propertySystem = new PropertySystem( app );
+				if ( ! app.propertyExpansion ) app.propertyExpansion = new PropertyExpansion( app );
+			} catch ( error ) {
+				console.warn( 'property progression unavailable; the rest of the life loop remains active', error );
+			}
+
+			try {
+				if ( ! app.dynamicIslandEvents ) app.dynamicIslandEvents = new DynamicIslandEvents( app );
+			} catch ( error ) {
+				console.warn( 'dynamic island events unavailable; time/weather simulation remains active', error );
+			}
+
+			try {
+				if ( ! app.islandMissions ) app.islandMissions = new IslandMissionSystem( app );
+			} catch ( error ) {
+				console.warn( 'island mission set unavailable; core progression remains playable', error );
+			}
+
+			try {
+				if ( ! app.sideQuests ) app.sideQuests = new SideQuestSystem( app );
+			} catch ( error ) {
+				console.warn( 'Bermuda side quests unavailable; core and dynamic missions remain playable', error );
+			}
+
+			try {
+				if ( ! app.harbourJobBoard ) app.harbourJobBoard = new HarbourJobBoard( app );
+			} catch ( error ) {
+				console.warn( 'harbour quick jobs unavailable; larger missions remain playable', error );
+			}
+
+			try {
+				if ( ! app.characterMotionStability ) app.characterMotionStability = new CharacterMotionStability( app );
+			} catch ( error ) {
+				console.warn( 'character motion stabilizer unavailable; production characters remain active', error );
 			}
 
 			// Accounts are optional: local save remains authoritative until a backend is configured.

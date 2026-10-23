@@ -3,6 +3,7 @@ import { TerrainData } from './TerrainData.js';
 import { installBermudaBlockout } from './BermudaBlockout.js';
 import { installBermudaModels } from './BermudaModels.js';
 import { installHarbourShopPolish } from './HarbourShopPolish.js';
+import { installBermudaBoatFlag } from './BermudaBoatFlag.js';
 import { installReferenceWorldUpgrade } from './ReferenceWorldUpgrade.js';
 import { installReferenceDetailUpgrade } from './ReferenceDetailUpgrade.js';
 import { installReferenceStreetLife } from './ReferenceStreetLife.js';
@@ -10,26 +11,24 @@ import { installReferenceStreetLifeModels } from './ReferenceStreetLifeModels.js
 import { installReferenceFinalPass } from './ReferenceFinalPass.js';
 import { installReferenceFinalRuntimeFix } from './ReferenceFinalRuntimeFix.js';
 import { installReferenceExactVideoPass } from './ReferenceExactVideoPass.js';
-import { installProductionMeshyAssets } from './ProductionMeshyAssets.js';
+import { installProductionWorldAssetsNoPlayer } from './ProductionWorldAssetsNoPlayer.js';
+import { installNoVisiblePlayer } from './NoVisiblePlayer.js';
 import { installRelic001 } from './Relic001.js';
 import { installRelicStory } from './RelicStory.js';
 import { installBermudaGameplayQA } from '../game/BermudaGameplayQA.js';
+import { installWaterfrontRepair } from '../game/WaterfrontRepair.js';
+import { LifeProgression } from '../game/LifeProgression.js';
 import { installRelicMobileModes } from '../mobile/RelicMobileModes.js';
 import { Whale } from './marine/Whale.js';
 
 export const BERMUDA_LOOK = {
-	// High-clarity Bermuda afternoon: bright enough to separate pastel walls, white roofs and foliage
-	// without flattening the scene. The 54-second gameplay reference is the visual benchmark.
 	daylight: { timeOfDay: 14.55, exposure: 0.72 },
 	water: {
-		// Harbour water should be calm, transparent and strongly depth-coded: pale aqua over sand,
-		// saturated turquoise over the first few metres, then clean Atlantic blue in the channel.
 		absorption: [ 0.235, 0.033, 0.012 ], scattering: [ 0.006, 0.022, 0.028 ],
 		backscatter: 0.019, sss: 1.16, refraction: 0.088, roughness: 0.017,
 		reflectionStrength: 0.97, foamIntensity: 0.62, choppiness: 0.56,
 		foamBias: 0.61, foamGain: 1.96, foamAdd: 1.42,
 	},
-	// Bermuda should read as high-clarity Atlantic air rather than a hazy tropical/jungle scene.
 	atmosphere: { rayleighScale: 1.03, mieScale: 0.52, mieG: 0.78, ozoneScale: 1.0, cloudCoverage: 0.22, cloudShadowStrength: 0.46 },
 	wind: { speed: 3.7, direction: [ 0.28, 0.96 ] },
 	terrain: { coastalKeepHeight: 4, midOriginalHeight: 60, midReliefScale: 0.23, highReliefScale: 0.12, maxHeight: 38, highlandRockScale: 0.52 },
@@ -37,6 +36,12 @@ export const BERMUDA_LOOK = {
 
 let terrainProfileInstalled = false;
 let mobileWhaleBypassInstalled = false;
+
+function mobileHardware() {
+	if ( typeof navigator === 'undefined' ) return false;
+	return /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
+		( navigator.maxTouchPoints > 1 && typeof screen !== 'undefined' && Math.min( screen.width, screen.height ) < 1024 );
+}
 
 function installBermudaTerrainProfile() {
 	if ( terrainProfileInstalled ) return;
@@ -56,30 +61,24 @@ function installBermudaTerrainProfile() {
 			heights[ i ] = Math.min( T.maxHeight, out );
 			if ( rock ) rock[ i ] *= T.highlandRockScale;
 		}
-        // Local limestone headland under the distant landmark. Modify the shared heightmap
-        // before min/max construction so rendering, walking and collision queries agree.
-        // The envelope ends inland (z <= -101), leaving the dock, beach and seabed unchanged.
-        const smooth = t => t*t*(3-2*t);
-        for(let iz=0;iz<this.res;iz++) {
-            const z=this.origin+iz*this.texel;
-            if(z < -189 || z > -101) continue;
-            for(let ix=0;ix<this.res;ix++) {
-                const x=this.origin+ix*this.texel, r=Math.hypot(x+80,z+145);
-                if(r>=44) continue;
-                const t=Math.max(0,Math.min(1,(r-20)/24));
-                const index=iz*this.res+ix;
-                heights[index]=Math.max(heights[index],4+13*(1-smooth(t)));
-            }
-        }
+		const smooth = t => t*t*(3-2*t);
+		for ( let iz = 0; iz < this.res; iz ++ ) {
+			const z = this.origin + iz * this.texel;
+			if ( z < -189 || z > -101 ) continue;
+			for ( let ix = 0; ix < this.res; ix ++ ) {
+				const x = this.origin + ix * this.texel, r = Math.hypot( x + 80, z + 145 );
+				if ( r >= 44 ) continue;
+				const t = Math.max( 0, Math.min( 1, ( r - 20 ) / 24 ) );
+				const index = iz * this.res + ix;
+				heights[ index ] = Math.max( heights[ index ], 4 + 13 * ( 1 - smooth( t ) ) );
+			}
+		}
 		return result;
 	};
 }
 
 function installMobileWhaleBypass() {
-	if ( mobileWhaleBypassInstalled || typeof navigator === 'undefined' || typeof location === 'undefined' ) return;
-	const params = new URLSearchParams( location.search );
-	const mobile = ( /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) || ( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 ) ) && ! params.has( 'desktop' );
-	if ( ! mobile ) return;
+	if ( mobileWhaleBypassInstalled || ! mobileHardware() ) return;
 	mobileWhaleBypassInstalled = true;
 	Whale.prototype.load = async function bermudaMobileWhaleLoad() {
 		this.ready = false;
@@ -89,6 +88,7 @@ function installMobileWhaleBypass() {
 
 export function applyBermudaBootLook( app ) {
 	const look = BERMUDA_LOOK;
+	installBermudaBoatFlag();
 	installBermudaTerrainProfile();
 	installMobileWhaleBypass();
 	app.settings.timeOfDay = look.daylight.timeOfDay;
@@ -101,6 +101,8 @@ export function applyBermudaBootLook( app ) {
 
 export function applyBermudaRuntimeLook( app ) {
 	const look = BERMUDA_LOOK;
+	const phone = mobileHardware();
+
 	G.waterAbsorption.value.set( ...look.water.absorption );
 	G.waterScattering.value.set( ...look.water.scattering );
 	G.windSpeed.value = look.wind.speed;
@@ -129,47 +131,54 @@ export function applyBermudaRuntimeLook( app ) {
 		app.fft.foamGain.value = look.water.foamGain; app.fft.foamAdd.value = look.water.foamAdd;
 	}
 
-	// Preserve the proven simulation systems and layer authored reference-match composition around
-	// them. The detail pass adds the marina, shallow seabed cues and near-camera Bermuda facade/plant
-	// detail without rewriting the engine or the Harbour Run gameplay loop. Street life adds scooters,
-	// pedestrians and market furniture from the final third of the 54-second visual benchmark.
+	// Core Bermuda world remains on every platform.
 	installBermudaBlockout( app );
 	installHarbourShopPolish( app );
 	installReferenceWorldUpgrade( app );
-	installReferenceDetailUpgrade( app );
-	installReferenceStreetLife( app );
-	// Meshy models replace the lightweight procedural scooters/people only after each GLB has
-	// loaded and passed the runtime checks. Keep mobile boot responsive by streaming this cosmetic
-	// pass shortly after the core scene; desktop starts it immediately. A load failure leaves the
-	// proven procedural fallback visible instead of breaking gameplay.
-	const loadStreetLifeModels = () => installReferenceStreetLifeModels( app ).catch( ( error ) =>
-		console.warn( 'Bermuda Meshy street-life pass failed; procedural fallbacks remain active.', error ) );
-	const params = typeof location !== 'undefined' ? new URLSearchParams( location.search ) : null;
-	const mobileStreetLife = typeof navigator !== 'undefined' && ! params?.has( 'desktop' ) && (
-		/iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
-		( navigator.maxTouchPoints > 1 && typeof screen !== 'undefined' && Math.min( screen.width, screen.height ) < 1024 )
-	);
-	if ( mobileStreetLife && typeof setTimeout === 'function' ) setTimeout( loadStreetLifeModels, 3200 );
-	else void loadStreetLifeModels();
+
+	// These detail/street-life passes are decorative. They are kept on desktop, but not on iPhone:
+	// Safari was still allocating their geometry/character resources even after gpuSafe=2 recovery.
+	if ( ! phone ) {
+		installReferenceDetailUpgrade( app );
+		installReferenceStreetLife( app );
+	}
+
 	installRelic001( app );
 	installRelicStory( app );
 	installBermudaGameplayQA( app );
 	installRelicMobileModes( app );
-	installReferenceFinalPass( app );
-	installReferenceFinalRuntimeFix( app );
-	installReferenceExactVideoPass( app );
+	installNoVisiblePlayer( app );
 
-	// Production Meshy assets are cosmetic replacements on top of the already-proven gameplay state:
-	// RELIC keeps its existing controller/modes/collider, lobsters keep their AI/targeting/economy, and
-	// the character rigs replace only the walk/run presentation. Stream them after the reference pass
-	// so a slow GLB can never hold the loading screen at 98% again.
-	const loadProductionAssets = () => installProductionMeshyAssets( app ).catch( ( error ) =>
-		console.warn( 'Production Meshy asset pass failed; validated reference fallbacks remain active.', error ) );
-	if ( mobileStreetLife && typeof setTimeout === 'function' ) setTimeout( loadProductionAssets, 5200 );
-	else void loadProductionAssets();
+	if ( phone ) {
+		// TRUE mobile core-stable mode. Do not instantiate the reference-final pedestrians/skiffs,
+		// exact-video character/material stack, Meshy street-life pack, or production RELIC/lobster GLBs.
+		// The previous recovery URL only disabled clouds/vegetation/simulation and still loaded these
+		// later, allowing Safari to exhaust the page process after startup.
+		installWaterfrontRepair( app );
+		if ( typeof window !== 'undefined' ) {
+			window.__bermudaMobileWorldMode = 'core-stable-v2';
+			window.__bermudaHeavyWorldAssetsDisabled = true;
+		}
+	} else {
+		installReferenceFinalPass( app );
+		installReferenceFinalRuntimeFix( app );
+		installReferenceExactVideoPass( app );
+
+		const loadProductionWorld = () => installProductionWorldAssetsNoPlayer( app ).catch( ( error ) =>
+			console.warn( 'Production world asset pass failed; validated reference fallbacks remain active.', error ) );
+		const loadStreetLifeModels = () => installReferenceStreetLifeModels( app ).catch( ( error ) =>
+			console.warn( 'Bermuda Meshy street-life pass failed; procedural fallbacks remain active.', error ) );
+		void loadProductionWorld();
+		void loadStreetLifeModels();
+	}
+
+	// Mission runtime is gameplay, not a desktop-only visual pass. The module existed in source but
+	// was never wired into the live startup graph, so FIRST DAY could silently disappear after a reload.
+	// Install it once after all platform-specific player wrappers are in place.
+	if ( ! app.progression ) new LifeProgression( app );
 
 	const waterfrontReady = installBermudaModels( app );
 
 	if ( app.updateSun ) app.updateSun();
-    return waterfrontReady;
+	return waterfrontReady;
 }

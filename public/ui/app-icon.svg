@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Bermuda Simulator">
+  <defs>
+    <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#03131d"/>
+      <stop offset="1" stop-color="#074858"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#64efe0"/>
+      <stop offset="1" stop-color="#1696b4"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#sea)"/>
+  <circle cx="256" cy="256" r="174" fill="none" stroke="#76f0e3" stroke-opacity=".28" stroke-width="10"/>
+  <path d="M98 294c52-31 94-38 137-18 44 21 79 19 118-8 27-19 48-25 72-21v51c-25-2-44 5-69 23-42 30-84 34-131 11-39-19-72-14-127 20z" fill="url(#water)"/>
+  <path d="M158 237c35-45 75-69 122-70 31-1 57 9 83 27-31-4-54 1-81 18-41 26-75 35-124 25z" fill="#f2f0df"/>
+  <path d="M203 227c27-28 55-42 87-43 18 0 34 4 51 12-25 3-45 11-66 26-28 20-46 23-72 5z" fill="#d54d4d"/>
+</svg>
