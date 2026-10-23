@@ -62,6 +62,10 @@ if ( mobileFastStart ) {
 		url.searchParams.set( 'freezeFFT', '1' );
 		url.searchParams.set( 'scale', '0.85' );
 		url.searchParams.set( 'noSpray', '1' );
+		// Mobile vegetation isolation: disable procedural palm forest by default.
+		// ?veg=1 restores it for controlled A/B stability testing.
+		if (url.searchParams.get('veg') === '1') url.searchParams.delete('noVeg');
+		else url.searchParams.set('noVeg','1');
 		url.searchParams.set( 'G', '12' );
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
