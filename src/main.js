@@ -22,6 +22,7 @@ const mobileFastStart = mobileDevice && ! forceDesktop;
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
 // Low-GPU iPhone default: retain gameplay, freeze FFT ocean and remove expensive sky passes.
 const mobileLowGPU = mobileFastStart && new URLSearchParams(location.search).get('fullgpu') !== '1';
+window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 let mobileRetryLevel = 0;
 if ( mobileFastStart ) {
 	try {
