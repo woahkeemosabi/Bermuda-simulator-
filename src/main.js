@@ -21,12 +21,12 @@ const mobileFastStart = mobileDevice && ! forceDesktop;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
 // Low-GPU iPhone default: retain gameplay, freeze FFT ocean and remove expensive sky passes.
-const mobileLowGPU = mobileFastStart && new URLSearchParams(location.search).get('fullgpu') !== '1';
+const mobileLowGPU = mobileFastStart && new URLSearchParams(location.search).get('ocean') !== 'full' && new URLSearchParams(location.search).get('fullgpu') !== '1';
 window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
 window.__bermudaDisableSwashProbe = mobileLowGPU;
-window.__bermudaSparseVegetation = mobileLowGPU;
-window.__bermudaBuildMarker = 'veg-isolation-20261023-b';
+window.__bermudaSparseVegetation = mobileFastStart;
+window.__bermudaBuildMarker = 'ocean-full-20261023';
 let mobileRetryLevel = 0;
 if ( mobileFastStart ) {
 	try {
@@ -57,6 +57,14 @@ if ( mobileFastStart ) {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
 		url.searchParams.set( 'G', '16' );
 		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.60' : '0.70' );
+	}
+	// Full ocean restores the original live FFT, shoreline and atmospheric effects.
+	// Retain the sparse vegetation profile independently of ocean quality.
+	if (mobileFastStart && !mobileLowGPU) {
+		for (const key of ['freezeFFT','noSpray','noClouds','noHaze','noCaustics','noSim']) url.searchParams.delete(key);
+		url.searchParams.set('G','12');
+		url.searchParams.set('scale','0.85');
+		url.searchParams.set('noVeg', url.searchParams.get('veg') === '0' ? '1' : '0');
 	}
 	if ( mobileLowGPU ) {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.set( key, '1' );
