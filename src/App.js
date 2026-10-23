@@ -139,7 +139,7 @@ export class App {
 		// Keep the original sky shader. Spread its LUT initialization across mobile frames.
 		// Diagnostic A/B: ?atmotest=skip, trans, full; default mobile: staged.
 		this.atmosphere.mobileMode = mobileLite
-			? ( ['full','skip','trans','static-only','skyview-only','irradiance-only','irradiance-readback'].includes(qs.get('atmotest')) ? qs.get('atmotest') : 'staged' )
+			? ( ['full','skip','trans','static-only','skyview-only','irradiance-only','irradiance-readback','irradiance-no-readback'].includes(qs.get('atmotest')) ? qs.get('atmotest') : 'staged' )
 			: 'full';
 		this.sky = new Sky( this.atmosphere );
 		if ( ! qs.has( 'noClouds' ) ) {
