@@ -16,7 +16,8 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
 const forceDesktop = initialParams.has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
-const mobileSafeLevel = mobileFastStart ? Math.max( 0, Number( initialParams.get( 'gpuSafe' ) || 0 ) ) : 0;
+// Start iPhone on the lowest existing WebGPU profile; ?desktop opts out.
+const mobileSafeLevel = mobileFastStart ? Math.max( 2, Number( initialParams.get( 'gpuSafe' ) || 0 ) ) : 0;
 
 if ( mobileFastStart ) {
 
@@ -32,7 +33,7 @@ if ( mobileFastStart ) {
 	// WebGPU device loss on iOS. Recovery only lowers resolution after an actual device failure.
 	if ( mobileSafeLevel >= 2 ) {
 
-		url.searchParams.set( 'scale', '0.72' );
+		url.searchParams.set( 'scale', '0.65' );
 		url.searchParams.set( 'noVeg', '1' );
 		url.searchParams.set( 'G', '16' );
 
