@@ -362,6 +362,11 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			this.wake.update = () => {};
 			this.surface.wake = null;
 		}
+		if (qs.has('noSpray')) {
+			if (this.spray?.mesh) this.spray.mesh.visible = false;
+			if (this.spray) this.spray.update = () => {};
+			if (this.boatSpray) this.boatSpray.update = () => {};
+		}
 		if (this.recoveryMode) {
 			// Delay auxiliary particle systems in recovery mode; keep FFT water and
 			// the real fishing/boat gameplay. The full build is unaffected.
