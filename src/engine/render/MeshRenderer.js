@@ -1,4 +1,5 @@
 import { GPU } from '../gpu/GPU.js';
+import { gpuRender } from '../../mobile/GpuAudit.js';
 import { composeShader, createShaderModule, getBindGroupLayout, group0ForBlock } from '../gpu/Shader.js';
 import { buildMeshShader } from './MeshShader.js';
 import { blendState } from './Material.js';
@@ -510,6 +511,7 @@ export class MeshRenderer {
 			depthClearValue: pass.clearDepth ?? 0,
 		};
 		if ( pass.timestampWrites ) desc.timestampWrites = pass.timestampWrites;
+		gpuRender(desc.label);
 		const rp = enc.beginRenderPass( desc );
 		if ( pass.viewport ) rp.setViewport( ...pass.viewport );
 		rp.setBindGroup( 0, group0ForBlock( pass.frameBlock, 'render' ).getBindGroup() );

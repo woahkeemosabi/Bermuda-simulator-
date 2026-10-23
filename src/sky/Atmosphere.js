@@ -140,6 +140,8 @@ export class Atmosphere {
 		this._buildModules();
 		this._build();
 		this.needsStatic = true;
+		this.mobileMode = 'full';
+		this.mobileInitStage = 0;
 		this._irrPending = false;
 		this._irrTimer = 0;
 		this.skyIrradiance = null;
@@ -476,6 +478,33 @@ fn main() {
 		const yq = y < 100 ? Math.round( y / 2 ) * 2 : Math.exp( Math.round( Math.log( y ) / LOG_STEP ) * LOG_STEP );
 		this.viewHeight.value = RG + Math.max( 0.001, yq / 1000 );
 
+		// Diagnostic A/B modes: no atmosphere LUT dispatch, or transmittance only.
+		// Existing GPU textures remain allocated; visual output may be dark.
+		if (this.mobileMode === 'skip') return;
+		if (this.mobileMode === 'trans') {
+			if(this.needsStatic) {
+				this.needsStatic=false;
+				this.mobileInitStage=1;
+				this.transmittanceKernel.dispatch([T_W / 8,T_H / 8,1]);
+			}
+			return;
+		}
+		// The original transmittance -> multiple scattering -> sky-view dependency
+		// is preserved, but each static shader submits in a separate mobile frame.
+		if(this.mobileMode === 'staged' && this.needsStatic) {
+			if(this.mobileInitStage === 0) {
+				this.transmittanceKernel.dispatch([T_W / 8,T_H / 8,1]);
+				this.mobileInitStage=1;
+				return;
+			}
+			if(this.mobileInitStage === 1) {
+				this.multiScatKernel.dispatch([MS_RES / 8,MS_RES / 8,1]);
+				this.mobileInitStage=2;
+				return;
+			}
+			this.needsStatic=false;
+			this.mobileInitStage=3;
+		}
 		let dirty = false;
 		if ( this.needsStatic ) {
 

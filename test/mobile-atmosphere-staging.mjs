@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {gpuAudit,gpuStage,gpuCompute,gpuRender,gpuSubmit,gpuReport} from '../src/mobile/GpuAudit.js';
+const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
+const atmo=read('../src/sky/Atmosphere.js'),app=read('../src/App.js'),main=read('../src/main.js');
+for(const mode of ["staged","skip","trans"])assert.ok(atmo.includes("this.mobileMode === '"+mode+"'"),mode);
+assert.match(app,/this\.atmosphere\.mobileMode = mobileLite/);
+assert.match(main,/ATMO /);
+gpuStage('Frame begin',5);gpuCompute('Atmosphere Transmittance');
+gpuRender('scene');gpuRender('post');gpuSubmit(5);
+assert.equal(gpuAudit.lastSubmittedComputeCount,1);
+assert.equal(gpuAudit.lastSubmittedRenderCount,2);
+assert.match(gpuReport(null,0),/scene > post/);
+console.log('Mobile atmosphere A/B and GPU draw-pass tracing OK');

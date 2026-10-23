@@ -127,6 +127,11 @@ export class App {
 		// ---------------------------------------------------------------- sky
 		await progress( 0.04, 'Building the atmosphere…' );
 		this.atmosphere = new Atmosphere( renderer );
+		// Keep the original sky shader. Spread its LUT initialization across mobile frames.
+		// Diagnostic A/B: ?atmotest=skip, trans, full; default mobile: staged.
+		this.atmosphere.mobileMode = mobileLite
+			? ( ['full','skip','trans'].includes(qs.get('atmotest')) ? qs.get('atmotest') : 'staged' )
+			: 'full';
 		this.sky = new Sky( this.atmosphere );
 		if ( ! qs.has( 'noClouds' ) ) {
 

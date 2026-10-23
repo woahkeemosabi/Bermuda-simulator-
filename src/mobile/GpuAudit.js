@@ -3,17 +3,20 @@ const now=()=>typeof performance!=='undefined'?performance.now():Date.now();
 const began=now();
 export const gpuAudit={
  stage:'boot',stageAt:0,frame:0,submits:0,lastCompute:'',lastError:'',
- reason:'',deviceMessage:'',errors:[],version:'GPU lifecycle trace 3',
+ reason:'',deviceMessage:'',errors:[],version:'GPU lifecycle trace 4',
  explicitDestroyCall:false,destroyCallStack:'',destroyHook:'not installed',
  queueAckFrame:0,queueAckAt:0,queueStall:'',
  currentFrameComputeCount:0,currentFrameComputes:[],
- lastSubmittedComputeCount:0,lastSubmittedComputes:[],lastSubmitAt:0
+ lastSubmittedComputeCount:0,lastSubmittedComputes:[],lastSubmitAt:0,
+ currentFrameRenderCount:0,currentFrameRenders:[],lastSubmittedRenderCount:0,lastSubmittedRenders:[]
 };
 if(typeof window!=='undefined')window.__bermudaGpuAudit=gpuAudit;
 export function gpuStage(stage,frame){
  if(stage==='Frame begin'){
   gpuAudit.currentFrameComputeCount=0;
   gpuAudit.currentFrameComputes=[];
+  gpuAudit.currentFrameRenderCount=0;
+  gpuAudit.currentFrameRenders=[];
  }
  gpuAudit.stage=stage;gpuAudit.stageAt=Math.round(now()-began);
  if(Number.isFinite(frame))gpuAudit.frame=frame;
@@ -25,6 +28,12 @@ export function gpuCompute(name){
  if(a.currentFrameComputes.length>12)a.currentFrameComputes.shift();
  a.lastCompute=label;
 }
+export function gpuRender(label){
+ const a=gpuAudit;
+ a.currentFrameRenderCount++;
+ a.currentFrameRenders.push(String(label||'render').slice(0,60));
+ if(a.currentFrameRenders.length>16)a.currentFrameRenders.shift();
+}
 export function gpuSubmit(frame){
  const a=gpuAudit;
  a.submits++;
@@ -32,6 +41,8 @@ export function gpuSubmit(frame){
  // this information was replaced with "none this submit" on every submission.
  a.lastSubmittedComputeCount=a.currentFrameComputeCount;
  a.lastSubmittedComputes=a.currentFrameComputes.slice(-8);
+ a.lastSubmittedRenderCount=a.currentFrameRenderCount;
+ a.lastSubmittedRenders=a.currentFrameRenders.slice(-10);
  a.lastSubmitAt=Math.round(now()-began);
  gpuStage('GPU submit',frame);
  a.lastCompute=a.lastSubmittedComputeCount?
@@ -63,6 +74,7 @@ export function gpuReport(app,attempt=0){
   'Last stage '+a.stage+' @'+a.stageAt+'ms | Last submit '+a.lastSubmitAt+'ms',
   'Compute in last submit '+a.lastSubmittedComputeCount+' | Last kernels '+(a.lastSubmittedComputes.join(' > ')||'none recorded'),
   'Compute in current frame '+a.currentFrameComputeCount,
+  'Render passes in last submit '+a.lastSubmittedRenderCount+' | Last passes '+(a.lastSubmittedRenders.join(' > ')||'none'),
   'Last queue completion frame '+a.queueAckFrame+' @'+a.queueAckAt+'ms'+(a.queueStall?' | Stall '+a.queueStall:''),
   'GPUDevice.destroy() hook '+a.destroyHook+' | Called from JS '+(a.explicitDestroyCall?'YES':'NO'),
   ...(a.destroyCallStack?['Destroy caller '+a.destroyCallStack]:[]),
@@ -70,6 +82,7 @@ export function gpuReport(app,attempt=0){
    ' | Canvas '+(engine?engine.width+'x'+engine.height:'unavailable'),
   'Post '+(app?.post?.isCompatibility?'single-pass mobile':'desktop'),
   'Cloud experiment '+(typeof window!=='undefined'?(window.__bermudaCloudExperiment||'unknown'):'not browser'),
+  'Atmosphere '+(app?.atmosphere?.mobileMode??'unknown')+' | Initialization step '+(app?.atmosphere?.mobileInitStage??'unknown'),
   'Reflection experiment '+(typeof window!=='undefined'?(window.__bermudaEnvExperiment||'unknown'):'not browser')+
   ' | Refreshes '+(app?.environment?.refreshCount??'unavailable')+
   ' | Prime '+(app?.environment?.progressivePrime?'progressive':'one-shot')+

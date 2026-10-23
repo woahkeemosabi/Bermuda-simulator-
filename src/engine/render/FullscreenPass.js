@@ -1,4 +1,5 @@
 import { GPU } from '../gpu/GPU.js';
+import { gpuRender } from '../../mobile/GpuAudit.js';
 import { composeShader, createShaderModule, group0ForBlock } from '../gpu/Shader.js';
 import { FrameUniforms } from './Frame.js';
 import { commonModule } from './wgsl/common.js';
@@ -84,6 +85,7 @@ export class FullscreenPass {
 		};
 		if ( depthView ) desc.depthStencilAttachment = { view: depthView, depthLoadOp: 'load', depthStoreOp: 'store' };
 		if ( this.timestampWrites ) desc.timestampWrites = this.timestampWrites;
+		gpuRender(desc.label);
 		const rp = encoder.beginRenderPass( desc );
 		if ( viewport ) rp.setViewport( ...viewport );
 		this.draw( rp, frameBlock );
