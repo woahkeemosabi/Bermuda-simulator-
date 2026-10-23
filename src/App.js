@@ -107,7 +107,16 @@ export class App {
 		};
 		await progress( 0.02, 'Starting WebGPU…' );
 		const engine = this.engine = new Engine( document.getElementById( 'app' ) );
-		if ( mobileLite ) engine.renderScale = Number( window.__bermudaMobileOutputScale ) || 0.64;
+		if ( mobileLite ) {
+			const baseline = Number( window.__bermudaMobileOutputScale ) || 0.64;
+			// Explicit opaque-only quality A/B: raise canvas pixel count while keeping
+			// ocean, shadows and secondary passes isolated. No auto quality changes.
+			const fidelity = qs.get('fidelity');
+			const multiplier = fidelity === '125' ? 1.25 : fidelity === '150' ? 1.5 : 1;
+			engine.renderScale = Math.min(1, Math.max(0.4, baseline * multiplier));
+			if (typeof window !== 'undefined') window.__bermudaFidelityExperiment =
+				fidelity === '125' || fidelity === '150' ? fidelity : 'baseline';
+		}
 		// High-end ocean and simulation are preserved. Reduce only frame-buffer pixel count.
 		await engine.init();
 		// systems take `renderer` first as in the three.js version: it is the Engine now (GPU access is global)
