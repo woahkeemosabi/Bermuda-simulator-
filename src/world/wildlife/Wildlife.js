@@ -89,7 +89,8 @@ export class Wildlife {
 		this.blobs = new ShadowBlobs();
 		scene.add( this.blobs.mesh );
 		let probe = null;
-		if ( shore && terrainGPU ) {
+		// Shorebirds fall back to their existing wet-sand band without GPU swash readbacks.
+		if ( shore && terrainGPU && !(typeof window !== 'undefined' && window.__bermudaDisableSwashProbe) ) {
 
 			try {
 
