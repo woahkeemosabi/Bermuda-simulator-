@@ -352,6 +352,16 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			query: this.query, spray: this.spray, csm: this.csm,
 		} );
 		this.freeCam = qs.has( 'fly' );
+		if ( qs.has('freezeFFT') ) {
+			// On iPhone, retain scene and gameplay while removing GPU spray/particle/wake dispatches.
+			for ( const effect of [this.spray, this.breakers, this.marineSnow, this.airMotes] ) {
+				if ( effect?.mesh ) effect.mesh.visible = false;
+				if ( effect ) effect.update = () => {};
+			}
+			this.boatSpray.update = () => {};
+			this.wake.update = () => {};
+			this.surface.wake = null;
+		}
 		if (this.recoveryMode) {
 			// Delay auxiliary particle systems in recovery mode; keep FFT water and
 			// the real fishing/boat gameplay. The full build is unaffected.
