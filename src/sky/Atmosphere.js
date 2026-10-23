@@ -515,6 +515,10 @@ fn main() {
 
 		}
 
+		// V9 diagnostic: retain static transmittance + multi-scattering,
+		// but isolate the dynamic SkyView dispatch and irradiance readback.
+		if (this.mobileMode === 'static-only') return;
+
 		// sky view LUT: only when the parameters (sun, height, scattering) changed
 		this.params._pack();
 		const cur = this.params.u32;
