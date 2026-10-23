@@ -26,7 +26,7 @@ window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
 window.__bermudaDisableSwashProbe = mobileLowGPU;
 window.__bermudaSparseVegetation = mobileFastStart;
-window.__bermudaBuildMarker = 'gpu-trace-v2-20261023';
+window.__bermudaBuildMarker = 'gpu-device-lifecycle-v3-20261023';
 const missionIsolation = new URLSearchParams(location.search).get('missions') === 'off';
 window.__bermudaMissionsDisabledForTest = missionIsolation;
 let mobileRetryLevel = 0;
@@ -62,7 +62,9 @@ if ( mobileFastStart ) {
 	}
 	if ( mobileLowGPU ) {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.set( key, '1' );
-		url.searchParams.set( 'envtest', 'freeze' );
+		// Preserve explicitly requested diagnostics instead of overwriting them.
+		if (!['skip','full','instant','freeze'].includes(url.searchParams.get('envtest')))
+			url.searchParams.set( 'envtest', 'freeze' );
 		url.searchParams.set( 'freezeFFT', '1' );
 		url.searchParams.set( 'scale', '0.85' );
 		url.searchParams.set( 'noSpray', '1' );
@@ -75,7 +77,7 @@ if ( mobileFastStart ) {
 			url.searchParams.set('noAudio','1');
 			url.searchParams.set('G','8');
 		}
-		url.searchParams.set( 'G', '12' );
+		if (url.searchParams.get('gpuTest') !== 'minimal') url.searchParams.set( 'G', '12' );
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 

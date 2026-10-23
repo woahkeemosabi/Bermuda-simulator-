@@ -281,6 +281,10 @@ fn hookEnvDiffuse( N: vec3f ) -> vec3f {
 
 	update( dt, force = false ) {
 
+		// A/B only: skip the environmental cubemap bake to identify whether it
+		// participates in device loss. Never enabled on the normal renderer.
+		if (this.disablePrime && !force) return;
+
 		// Freeze test deliberately preserves an already computed cubemap and SH.
 		// It cannot bypass the initial bake: physically based island and boat
 		// materials still receive their expected reflection/irradiance bindings.

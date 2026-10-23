@@ -1,6 +1,6 @@
 import { Vector3, Euler, Color, MathUtils, Mesh } from './engine/index.js';
 import { GPU } from './engine/gpu/GPU.js';
-import { gpuStage } from './mobile/GpuAudit.js';
+import { gpuStage, gpuQueueAck } from './mobile/GpuAudit.js';
 import { SunShadows } from './engine/render/Shadows.js';
 import { FrameUniforms } from './engine/render/Frame.js';
 
@@ -155,7 +155,12 @@ export class App {
 		this.csm = this.shadows = new SunShadows( { size: this.recoveryMode ? 512 : (mobileLite ? 1024 : 2048), splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
 		this.shadows.layerMask = ( 1 << LAYERS.OPAQUE ) | ( 1 << LAYERS.TRANSPARENT );
 
-		this.environment = new Environment( renderer, scene, this.sky, this.recoveryMode ? 32 : 128 );
+		// Reduce the mobile IBL *cubemap* face work (not the ocean, terrain or
+		// reflection shader). The iPhone diagnostic can force the former 128px
+		// cubemap using ?envtest=full for a controlled comparison.
+		const envTest = qs.get( 'envtest' );
+		this.environment = new Environment( renderer, scene, this.sky, this.recoveryMode ? 32 : (mobileLite && envTest !== 'full' ? 64 : 128) );
+		this.environment.disablePrime = mobileLite && envTest === 'skip';
 		// A/B test: do the full, original initial reflection bake, then hold that
 		// image-based lighting instead of periodically refreshing the cubemap.
 		// Ocean FFT, caustics, spray, shadows, scene and live clouds remain active.
@@ -164,9 +169,9 @@ export class App {
 		// consecutive GPU submissions. Never batch the complete cubemap and GGX
 		// prefilter into the startup frame (which can trigger WebKit GPU resets).
 		// ?envtest=instant restores the earlier one-shot bake for A/B diagnostics.
-		this.environment.progressivePrime = mobileLite && qs.get( 'envtest' ) !== 'instant';
+		this.environment.progressivePrime = mobileLite && envTest !== 'instant' && envTest !== 'skip';
 		if ( typeof window !== 'undefined' ) window.__bermudaEnvExperiment =
-			this.environment.freezeAfterPrime ? 'freeze-after-prime' : 'live-reflections';
+			this.environment.disablePrime ? 'no-reflection-bake-diagnostic' : (this.environment.freezeAfterPrime ? 'freeze-after-prime' : 'live-reflections');
 
 		// ---------------------------------------------------------------- island
 		await progress( 0.06, 'Shaping the island…' );
@@ -453,6 +458,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			if ( GPU.fatalError ) throw GPU.fatalError;
 			this.frame( 1 / 60 );
 			await GPU.queue.onSubmittedWorkDone();
+			gpuQueueAck(GPU.frame);
 			if ( GPU.fatalError ) throw GPU.fatalError;
 		}
 

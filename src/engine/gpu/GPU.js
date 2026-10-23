@@ -8,7 +8,7 @@
 // range written twice in one frame keeps only the last value for every pass. Anything that changes
 // between passes of a frame needs its own buffer (or its own offset).
 
-import { gpuStage, gpuCompute, gpuSubmit, gpuError } from '../../mobile/GpuAudit.js';
+import { gpuStage, gpuCompute, gpuSubmit, gpuError, gpuDeviceDestroyObserved, gpuDestroyHookStatus } from '../../mobile/GpuAudit.js';
 
 export const GPU = {
 
@@ -74,6 +74,26 @@ export const GPU = {
 		this.device = device;
 		this.queue = device.queue;
 		this.limits = device.limits;
+		// WebGPU reports reason "destroyed" for explicit device.destroy() calls.
+		// Record a JS stack if our app or a dependency destroys the live device.
+		// Never change the underlying native destroy behavior.
+		if (typeof device.destroy === 'function') {
+			try {
+				const nativeDestroy = device.destroy.bind(device);
+				Object.defineProperty(device, 'destroy', {
+					configurable: true,
+					value: (...args) => {
+						gpuDeviceDestroyObserved(new Error('GPUDevice.destroy() invoked by JavaScript').stack || 'stack unavailable');
+						return nativeDestroy(...args);
+					}
+				});
+				gpuDestroyHookStatus('installed');
+			} catch (err) {
+				gpuDestroyHookStatus('unavailable: '+String(err?.message || err));
+			}
+		} else {
+			gpuDestroyHookStatus('destroy() method absent');
+		}
 		device.lost.then( ( info ) => {
 			this.lostReason = info.reason || 'unknown';
 			gpuError('lost', info.message || '', this.lostReason);

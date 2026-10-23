@@ -1,4 +1,5 @@
 import { GPU } from './gpu/GPU.js';
+import { gpuQueueAck, gpuQueueStall } from '../mobile/GpuAudit.js';
 import { PerspectiveCamera } from './scene/Camera.js';
 import { Scene } from './scene/Scene.js';
 import { Timer } from './math/Timer.js';
@@ -148,10 +149,13 @@ export class Engine {
 				if ( this.mobileGpuFramePacing ) {
 					this._gpuInFlight = true;
 					const flight = this._gpuFlight = ( this._gpuFlight || 0 ) + 1;
+					const submittedFrame = GPU.frame;
 					GPU.queue.onSubmittedWorkDone().then( () => {
+						gpuQueueAck(submittedFrame);
 						if ( flight === this._gpuFlight ) this._gpuInFlight = false;
 					}, ( error ) => {
 						this._gpuInFlight = false;
+						gpuQueueStall(String(error?.message || error));
 						this.stop();
 						this.onFrameFailure?.( error, 1 );
 					} );
@@ -159,6 +163,7 @@ export class Engine {
 					setTimeout( () => {
 						if ( this._gpuInFlight && flight === this._gpuFlight ) {
 							this._gpuInFlight = false;
+							gpuQueueStall('WebGPU frame did not complete after 4500ms');
 							this.stop();
 							this.onFrameFailure?.( new Error( 'WebGPU frame did not complete' ), 1 );
 						}

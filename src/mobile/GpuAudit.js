@@ -3,7 +3,9 @@ const now=()=>typeof performance!=='undefined'?performance.now():Date.now();
 const began=now();
 export const gpuAudit={
  stage:'boot',stageAt:0,frame:0,submits:0,lastCompute:'',lastError:'',
- reason:'',deviceMessage:'',errors:[],version:'GPU lifecycle trace 2',
+ reason:'',deviceMessage:'',errors:[],version:'GPU lifecycle trace 3',
+ explicitDestroyCall:false,destroyCallStack:'',destroyHook:'not installed',
+ queueAckFrame:0,queueAckAt:0,queueStall:'',
  currentFrameComputeCount:0,currentFrameComputes:[],
  lastSubmittedComputeCount:0,lastSubmittedComputes:[],lastSubmitAt:0
 };
@@ -35,6 +37,17 @@ export function gpuSubmit(frame){
  a.lastCompute=a.lastSubmittedComputeCount?
   a.lastSubmittedComputes.join(', '):'no compute passes recorded';
 }
+export function gpuDeviceDestroyObserved(stack){
+ gpuAudit.explicitDestroyCall=true;
+ gpuAudit.destroyCallStack=String(stack||'no stack').slice(0,600);
+ gpuError('explicit GPUDevice.destroy()',gpuAudit.destroyCallStack);
+}
+export function gpuDestroyHookStatus(status){gpuAudit.destroyHook=String(status).slice(0,100);}
+export function gpuQueueAck(frame){
+ gpuAudit.queueAckFrame=Number(frame)||0;
+ gpuAudit.queueAckAt=Math.round(now()-began);
+}
+export function gpuQueueStall(message){gpuAudit.queueStall=String(message||'').slice(0,150);}
 export function gpuError(kind,message,reason=''){
  const a=gpuAudit,msg=String(message||'').slice(0,300);
  if(msg)a.lastError=msg;
@@ -50,6 +63,9 @@ export function gpuReport(app,attempt=0){
   'Last stage '+a.stage+' @'+a.stageAt+'ms | Last submit '+a.lastSubmitAt+'ms',
   'Compute in last submit '+a.lastSubmittedComputeCount+' | Last kernels '+(a.lastSubmittedComputes.join(' > ')||'none recorded'),
   'Compute in current frame '+a.currentFrameComputeCount,
+  'Last queue completion frame '+a.queueAckFrame+' @'+a.queueAckAt+'ms'+(a.queueStall?' | Stall '+a.queueStall:''),
+  'GPUDevice.destroy() hook '+a.destroyHook+' | Called from JS '+(a.explicitDestroyCall?'YES':'NO'),
+  ...(a.destroyCallStack?['Destroy caller '+a.destroyCallStack]:[]),
   'Scene '+(scene?scene.width+'x'+scene.height:'unavailable')+
    ' | Canvas '+(engine?engine.width+'x'+engine.height:'unavailable'),
   'Post '+(app?.post?.isCompatibility?'single-pass mobile':'desktop'),
@@ -57,7 +73,8 @@ export function gpuReport(app,attempt=0){
   'Reflection experiment '+(typeof window!=='undefined'?(window.__bermudaEnvExperiment||'unknown'):'not browser')+
   ' | Refreshes '+(app?.environment?.refreshCount??'unavailable')+
   ' | Prime '+(app?.environment?.progressivePrime?'progressive':'one-shot')+
-  ' | Step '+(app?.environment?.step??'unavailable'),
+  ' | Step '+(app?.environment?.step??'unavailable')+
+  ' | Cube '+(app?.environment?.size??'unavailable')+'px',
   'Loss reason '+(a.reason||'not reported'),
   'Browser device-loss message '+(a.deviceMessage||'none provided'),
   'Last reported error '+(a.lastError||'none'),
