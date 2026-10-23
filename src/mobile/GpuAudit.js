@@ -5,6 +5,7 @@ export const gpuAudit={stage:'boot',stageAt:0,frame:0,submits:0,lastCompute:'',l
   reason:'',deviceMessage:'',errors:[],version:'GPU lifecycle trace 1'};
 if(typeof window!=='undefined')window.__bermudaGpuAudit=gpuAudit;
 export function gpuStage(stage,frame){
+ if(stage==='Frame begin')gpuAudit.lastCompute='none this frame';
  gpuAudit.stage=stage;gpuAudit.stageAt=Math.round(now()-began);
  if(Number.isFinite(frame))gpuAudit.frame=frame;
 }
