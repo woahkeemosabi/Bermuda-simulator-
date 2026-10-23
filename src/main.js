@@ -24,6 +24,7 @@ const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).g
 const mobileLowGPU = mobileFastStart && new URLSearchParams(location.search).get('fullgpu') !== '1';
 window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
+window.__bermudaDisableSwashProbe = mobileLowGPU;
 let mobileRetryLevel = 0;
 if ( mobileFastStart ) {
 	try {
