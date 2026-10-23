@@ -327,7 +327,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.boatCtl = new BoatController( { model: this.boat, query: this.query, terrain: this.terrainData, colliders: this.colliders } );
 		this.boatSpray = new BoatSpray( { boat: this.boatCtl, spray: this.spray } );
 		// humpback cruising the deep water around the island (model fetched from public/models/whale)
-		this.whale = new Whale( { scene, terrain: this.terrainData, query: this.query, spray: this.spray } );
+		this.whale = mobileLite ? null : new Whale( { scene, terrain: this.terrainData, query: this.query, spray: this.spray } );
 		const loadWhale = async () => {
 			try {
 				await this.whale.load();
@@ -336,8 +336,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 				console.warn( 'whale model failed to load', e );
 			}
 		};
-		if ( mobileLite && !this.recoveryMode ) this._deferredWhaleLoad = loadWhale;
-		else await loadWhale();
+		if ( !mobileLite ) await loadWhale();
 
 		// interactive wake around the boat (Kelvin pattern, bow/stern waves, prop wash foam)
 		this.wake = new WakeSim( renderer, { terrainGPU: this.terrainGPU, boat: this.boatCtl, colliders: this.colliders } );
