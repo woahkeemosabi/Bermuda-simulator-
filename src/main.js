@@ -26,7 +26,9 @@ window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
 window.__bermudaDisableSwashProbe = mobileLowGPU;
 window.__bermudaSparseVegetation = mobileFastStart;
-window.__bermudaBuildMarker = 'gpu-isolation-20261023';
+window.__bermudaBuildMarker = 'mission-isolation-20261023';
+const missionIsolation = new URLSearchParams(location.search).get('missions') === 'off';
+window.__bermudaMissionsDisabledForTest = missionIsolation;
 let mobileRetryLevel = 0;
 if ( mobileFastStart ) {
 	try {
@@ -132,7 +134,7 @@ app.init( ( p, text, until ) => {
 		console.info('[Bermuda build]',window.__bermudaBuildMarker,'vegetation',profile,'palms',app.vegetation?.records?.palms?.length ?? 0);
 		const marker = document.createElement('div');
 		marker.id='bm-build-verification';
-		marker.textContent='BUILD '+window.__bermudaBuildMarker+' | GPU '+(new URLSearchParams(location.search).get('gpuTest')||'normal')+' | TREES '+profile+' | PALMS '+(app.vegetation?.records?.palms?.length ?? 0);
+		marker.textContent='BUILD '+window.__bermudaBuildMarker+' | MISSIONS '+(missionIsolation?'ISOLATED':'BASELINE')+' | GPU '+(new URLSearchParams(location.search).get('gpuTest')||'normal')+' | TREES '+profile+' | PALMS '+(app.vegetation?.records?.palms?.length ?? 0);
 		Object.assign(marker.style,{position:'fixed',top:'max(6px, env(safe-area-inset-top))',left:'6px',zIndex:'2147483647',background:'rgba(0,0,0,.8)',color:'#fff',font:'11px monospace',padding:'5px 7px',pointerEvents:'none'});
 		document.body.appendChild(marker);
 	}
