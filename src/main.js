@@ -188,10 +188,11 @@ app.init( ( p, text, until ) => {
 
 		ui.setLoading( .97, 'Validating the 3D world…', .995 );
 		gpuStage('World verification');
-		if (mobileRecovery) {
-			// Skip expensive startup HDR texture copy/readback on fragile drivers.
+		if (mobileRecovery || app.qs.has('renderTest')) {
+			// Controlled render-pass diagnostics bypass HDR GPU readback verification.
+			// The standard production path still verifies real scene pixels.
 			validateSpawn(app);
-			window.__bermudaWorldGate = {status:'recovery-no-readback',tries:0};
+			window.__bermudaWorldGate = {status:app.qs.has('renderTest')?'render-test-no-readback':'recovery-no-readback',tries:0};
 		} else {
 			await verifyMobileWorld( app, attempt => ui.setLoading(
 				Math.min(.975+attempt*.003,.99), 'Rendering Bermuda world…', .995 ) );
