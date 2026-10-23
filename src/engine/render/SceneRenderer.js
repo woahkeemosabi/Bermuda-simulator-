@@ -145,10 +145,16 @@ export class SceneRenderer {
 
 		// 3. hull interiors
 		if ( this.hullMasks.length > 0 ) this._renderHullMasks( camera );
-		if ( this.onBeforeWater ) this.onBeforeWater();
+		if ( this.onBeforeWater && !this.diagnosticWaterOnly ) this.onBeforeWater();
 
-		// 4. water + transparents
-		mr.render( scene, { ...common, label: 'water + transparent', late: true, layerMask: ( 1 << LAYERS.WATER ) | ( 1 << LAYERS.TRANSPARENT ) } );
+		// 4. V7 isolates the original ocean mesh/shader from transparents and
+		// the separate refraction render pass; opaque copies remain bound for
+		// the water material's sampling dependencies.
+		mr.render( scene, { ...common,
+			label: this.diagnosticWaterOnly ? 'water only (no refraction)' : 'water + transparent',
+			late: true,
+			layerMask: this.diagnosticWaterOnly ? ( 1 << LAYERS.WATER ) : ( ( 1 << LAYERS.WATER ) | ( 1 << LAYERS.TRANSPARENT ) ),
+		} );
 
 	}
 
