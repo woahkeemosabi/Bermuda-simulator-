@@ -29,7 +29,7 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = mobileLowGPU ? 0.48 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64));
+window.__bermudaMobileOutputScale = mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64));
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -57,7 +57,8 @@ if ( mobileFastStart ) {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.set( key, '1' );
 		url.searchParams.set( 'envtest', 'freeze' );
 		url.searchParams.set( 'freezeFFT', '1' );
-		url.searchParams.set( 'scale', '0.55' );
+		url.searchParams.set( 'scale', '0.85' );
+		url.searchParams.set( 'noSpray', '1' );
 		url.searchParams.set( 'G', '12' );
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
