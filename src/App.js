@@ -782,7 +782,9 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		if ( this.shoreSim ) this.shoreSim.update();
 		this.underwaterLighting.update( this.camera );
 		this.breakers.update( this.camera );
-		this.spray.update();
+		// Explicitly bypass spray dispatch in mobile low-GPU mode, even if a later system
+		// reassigns spray.update after initialization.
+		if ( !this.qs.has('noSpray') && !this.qs.has('freezeFFT') ) this.spray.update();
 		if ( this.clouds ) this.clouds.update( dt, this.camera );
 		this.environment.update( dt );
 
