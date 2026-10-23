@@ -34,7 +34,9 @@ export const GPU = {
 
 		if ( ! navigator.gpu ) throw new Error( 'WebGPU is not available in this browser.' );
 		gpuStage('Requesting GPU adapter');
-		const adapter = await navigator.gpu.requestAdapter( { powerPreference: 'high-performance' } );
+		// iOS: try the lower-power adapter to avoid high-performance driver pressure.
+		const mobileAdapter = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent );
+		const adapter = await navigator.gpu.requestAdapter( { powerPreference: mobileAdapter ? 'low-power' : 'high-performance' } );
 		if ( ! adapter ) throw new Error( 'No WebGPU adapter found.' );
 		this.adapter = adapter;
 
