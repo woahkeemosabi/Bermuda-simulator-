@@ -26,7 +26,7 @@ window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
 window.__bermudaDisableSwashProbe = mobileLowGPU;
 window.__bermudaSparseVegetation = mobileFastStart;
-window.__bermudaBuildMarker = 'mission-isolation-20261023';
+window.__bermudaBuildMarker = 'gpu-trace-v2-20261023';
 const missionIsolation = new URLSearchParams(location.search).get('missions') === 'off';
 window.__bermudaMissionsDisabledForTest = missionIsolation;
 let mobileRetryLevel = 0;

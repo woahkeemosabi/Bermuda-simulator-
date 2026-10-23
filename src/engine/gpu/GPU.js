@@ -78,7 +78,7 @@ export const GPU = {
 			this.lostReason = info.reason || 'unknown';
 			gpuError('lost', info.message || '', this.lostReason);
 			this.fatalError = new Error('WebGPU device lost (' + this.lostReason + '): ' +
-				(info.message || 'Graphics driver stopped'));
+				(info.message || 'Browser provided no device-loss details'));
 			if ( typeof window !== 'undefined' ) {
 				window.__bermudaGpuLost = this.fatalError.message;
 				window.__bermudaOnGPUFailure?.( this.fatalError.message );

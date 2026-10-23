@@ -160,7 +160,11 @@ export class App {
 		// image-based lighting instead of periodically refreshing the cubemap.
 		// Ocean FFT, caustics, spray, shadows, scene and live clouds remain active.
 		this.environment.freezeAfterPrime = this.recoveryMode || (mobileLite && qs.get( 'envtest' ) === 'freeze');
-		this.environment.progressivePrime = this.recoveryMode;
+		// On iPhone, progressively build the original high-quality environment map over
+		// consecutive GPU submissions. Never batch the complete cubemap and GGX
+		// prefilter into the startup frame (which can trigger WebKit GPU resets).
+		// ?envtest=instant restores the earlier one-shot bake for A/B diagnostics.
+		this.environment.progressivePrime = mobileLite && qs.get( 'envtest' ) !== 'instant';
 		if ( typeof window !== 'undefined' ) window.__bermudaEnvExperiment =
 			this.environment.freezeAfterPrime ? 'freeze-after-prime' : 'live-reflections';
 
