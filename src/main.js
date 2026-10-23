@@ -26,7 +26,7 @@ window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
 window.__bermudaDisableSwashProbe = mobileLowGPU;
 window.__bermudaSparseVegetation = mobileFastStart;
-window.__bermudaBuildMarker = 'ocean-stable-20261023';
+window.__bermudaBuildMarker = 'gpu-isolation-20261023';
 let mobileRetryLevel = 0;
 if ( mobileFastStart ) {
 	try {
@@ -66,8 +66,13 @@ if ( mobileFastStart ) {
 		url.searchParams.set( 'noSpray', '1' );
 		// Mobile vegetation isolation: disable procedural palm forest by default.
 		// ?veg=1 restores it for controlled A/B stability testing.
-		if (url.searchParams.get('veg') === '0') url.searchParams.set('noVeg','1');
+		if (url.searchParams.get('veg') === '0' || url.searchParams.get('gpuTest') === 'minimal') url.searchParams.set('noVeg','1');
 		else url.searchParams.delete('noVeg');
+		if (url.searchParams.get('gpuTest') === 'minimal') {
+			url.searchParams.set('scale','0.55');
+			url.searchParams.set('noAudio','1');
+			url.searchParams.set('G','8');
+		}
 		url.searchParams.set( 'G', '12' );
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
@@ -127,7 +132,7 @@ app.init( ( p, text, until ) => {
 		console.info('[Bermuda build]',window.__bermudaBuildMarker,'vegetation',profile,'palms',app.vegetation?.records?.palms?.length ?? 0);
 		const marker = document.createElement('div');
 		marker.id='bm-build-verification';
-		marker.textContent='BUILD '+window.__bermudaBuildMarker+' | TREES '+profile+' | PALMS '+(app.vegetation?.records?.palms?.length ?? 0);
+		marker.textContent='BUILD '+window.__bermudaBuildMarker+' | GPU '+(new URLSearchParams(location.search).get('gpuTest')||'normal')+' | TREES '+profile+' | PALMS '+(app.vegetation?.records?.palms?.length ?? 0);
 		Object.assign(marker.style,{position:'fixed',top:'max(6px, env(safe-area-inset-top))',left:'6px',zIndex:'2147483647',background:'rgba(0,0,0,.8)',color:'#fff',font:'11px monospace',padding:'5px 7px',pointerEvents:'none'});
 		document.body.appendChild(marker);
 	}
