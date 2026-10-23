@@ -20,6 +20,8 @@ const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
+// Low-GPU iPhone default: retain gameplay, freeze FFT ocean and remove expensive sky passes.
+const mobileLowGPU = mobileFastStart && new URLSearchParams(location.search).get('fullgpu') !== '1';
 let mobileRetryLevel = 0;
 if ( mobileFastStart ) {
 	try {
@@ -27,7 +29,7 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64);
+window.__bermudaMobileOutputScale = mobileLowGPU ? 0.48 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64));
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -50,6 +52,13 @@ if ( mobileFastStart ) {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
 		url.searchParams.set( 'G', '16' );
 		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.60' : '0.70' );
+	}
+	if ( mobileLowGPU ) {
+		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.set( key, '1' );
+		url.searchParams.set( 'envtest', 'freeze' );
+		url.searchParams.set( 'freezeFFT', '1' );
+		url.searchParams.set( 'scale', '0.55' );
+		url.searchParams.set( 'G', '12' );
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
