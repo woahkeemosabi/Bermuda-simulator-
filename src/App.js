@@ -204,7 +204,7 @@ export class App {
 
 		// ---------------------------------------------------------------- ocean
 		await progress( 0.3, 'Simulating the ocean…' );
-		this.fft = new OceanFFT( renderer, this.recoveryMode ? {cascades:2} : {} );
+		this.fft = new OceanFFT( renderer, qs.has('freezeFFT') ? {cascades:1} : (this.recoveryMode ? {cascades:2} : {}) );
 		if ( this.reef.setOcean ) this.reef.setOcean( this.fft ); // coral / sea fan sway follows the simulated swell
 		this.foamTexture = createFoamTexture( renderer );
 		this.oceanLOD = new CDLOD( { gridSize: Number( qs.get( 'G' ) || 32 ), leafSize: 8, levels: 12, minY: - 25, maxY: 25 } );
@@ -741,7 +741,11 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		// ---- water simulation
 		gpuStage('FFT and ocean simulation', GPU.frame);
-		this.fft.update( dt );
+		// Keep FFT displacement textures valid, but compute them only once in low-GPU mode.
+		if ( !this.qs.has('freezeFFT') || !this._fftInitialized ) {
+			this.fft.update( dt );
+			this._fftInitialized = true;
+		}
 		this.seaDetail.update( dt );
 		this.query.setCamera( this.camera.position.x, this.camera.position.z );
 		this.boatCtl.queueQueries();
