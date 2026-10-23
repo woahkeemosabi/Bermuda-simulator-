@@ -532,6 +532,9 @@ fn main() {
 
 		}
 
+		// V11: SkyView LUT is enabled, but irradiance compute/readback is not.
+		if (this.mobileMode === 'skyview-only') return;
+
 		// periodically integrate irradiance and read it back for CPU-side uniforms/lights
 		this._irrTimer -= dt;
 		if ( this._irrTimer <= 0 && ! this._irrPending ) {
