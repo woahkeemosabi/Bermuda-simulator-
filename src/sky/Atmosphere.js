@@ -541,7 +541,7 @@ fn main() {
 
 			this._irrTimer = 0.25;
 			this.irradianceKernel.dispatch( 1 );
-			if ( this.readback.request( this.irrBuffer ) ) this._irrPending = true;
+			if (this.mobileMode !== 'irradiance-only' && this.readback.request( this.irrBuffer )) this._irrPending = true;
 
 		}
 
