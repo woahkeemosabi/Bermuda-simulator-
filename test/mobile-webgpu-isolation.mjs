@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
+assert.match(read('../index.html'),/GpuIdleProbe\.js/);
+assert.match(read('../src/mobile/GpuIdleProbe.js'),/device\.lost/);
+assert.match(read('../src/mobile/GpuIdleProbe.js'),/No Bermuda world/);
+assert.match(read('../src/engine/render/SceneRenderer.js'),/diagnosticOpaqueOnly/);
+assert.match(read('../src/App.js'),/renderTest === 'opaque-noshadows'/);
+assert.match(read('../src/main.js'),/webgpu-isolation-v5/);
+console.log('Mobile GPU probe and render-stage isolation checks passed');

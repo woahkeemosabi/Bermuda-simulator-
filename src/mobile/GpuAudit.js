@@ -3,7 +3,7 @@ const now=()=>typeof performance!=='undefined'?performance.now():Date.now();
 const began=now();
 export const gpuAudit={
  stage:'boot',stageAt:0,frame:0,submits:0,lastCompute:'',lastError:'',
- reason:'',deviceMessage:'',errors:[],version:'GPU lifecycle trace 4',
+ reason:'',deviceMessage:'',errors:[],version:'GPU lifecycle trace 5',
  explicitDestroyCall:false,destroyCallStack:'',destroyHook:'not installed',
  queueAckFrame:0,queueAckAt:0,queueStall:'',
  currentFrameComputeCount:0,currentFrameComputes:[],
@@ -83,6 +83,7 @@ export function gpuReport(app,attempt=0){
   'Post '+(app?.post?.isCompatibility?'single-pass mobile':'desktop'),
   'Cloud experiment '+(typeof window!=='undefined'?(window.__bermudaCloudExperiment||'unknown'):'not browser'),
   'Atmosphere '+(app?.atmosphere?.mobileMode??'unknown')+' | Initialization step '+(app?.atmosphere?.mobileInitStage??'unknown'),
+  'Render isolation '+(typeof window!=='undefined'?(window.__bermudaRenderExperiment||'full'):'not browser'),
   'Reflection experiment '+(typeof window!=='undefined'?(window.__bermudaEnvExperiment||'unknown'):'not browser')+
   ' | Refreshes '+(app?.environment?.refreshCount??'unavailable')+
   ' | Prime '+(app?.environment?.progressivePrime?'progressive':'one-shot')+

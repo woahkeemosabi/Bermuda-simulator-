@@ -273,6 +273,10 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// sunlight bounced off the ground (one diffuse bounce, re-baked with the terrain sun shadow)
 		installGroundBounce( { terrain: this.terrainGPU, clouds: this.clouds } );
 		this.sceneRenderer = new SceneRenderer( engine.meshRenderer, scene, camera );
+		const renderTest = mobileLite ? qs.get('renderTest') : null;
+		this.sceneRenderer.diagnosticOpaqueOnly = renderTest === 'opaque' || renderTest === 'opaque-noshadows';
+		if (renderTest === 'opaque-noshadows') this.shadows.enabled = false;
+		if (typeof window !== 'undefined') window.__bermudaRenderExperiment = renderTest || 'full';
 		// the water's refraction source: the scene below the water only, half resolution
 		this.refraction = new RefractionPass( { meshRenderer: engine.meshRenderer, scene, camera, sceneRenderer: this.sceneRenderer, scale: 0.5 } );
 		this.sceneRenderer.onBeforeWater = () => this.refraction.render( G.seaLevel.value );

@@ -70,8 +70,13 @@
 				console.warn( 'Legacy offline cleanup skipped; continuing with normal browser launch', error );
 			}
 		}
-		await import('/src/runtime/MobileVehicleHandling.js');
-		await import('/src/main.js');
+		// GPU probe runs without importing any Bermuda rendering or gameplay module.
+		if (new URLSearchParams(location.search).has('gpuProbe')) {
+			await import('/src/mobile/GpuIdleProbe.js');
+		} else {
+			await import('/src/runtime/MobileVehicleHandling.js');
+			await import('/src/main.js');
+		}
 	</script>
 </body>
 </html>

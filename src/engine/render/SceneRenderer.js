@@ -128,6 +128,9 @@ export class SceneRenderer {
 			after: this.background ? ( rp ) => this.background.draw( rp ) : null,
 		} );
 
+		// Only an A/B diagnostic. Production keeps the entire normal pipeline.
+		if (this.diagnosticOpaqueOnly) return;
+
 		// 2. copies for refraction
 		const enc = GPU.getEncoder();
 		const size = { width: rt.width, height: rt.height };
