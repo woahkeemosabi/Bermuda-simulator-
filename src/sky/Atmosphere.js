@@ -473,6 +473,9 @@ fn main() {
 
 	update( dt, cameraY ) {
 
+		// Reset each frame; environment reflection work must not share this submission.
+		this.mobileSkyViewDispatched = false;
+
 		// camera height quantized (2 m near the sea, 2 % higher up): the sky view LUT is rebuilt only
 		// when a parameter changes, not every frame the camera bobs
 		const y = Math.max( 0.5, cameraY + 0.5 );
@@ -534,6 +537,7 @@ fn main() {
 			last.set( cur );
 			this._svValid = true;
 			if ( this.mobileMode === 'staged' ) this._mobileSkyTimer = 5;
+			this.mobileSkyViewDispatched = true;
 			this.skyViewKernel.dispatch( [ SV_W / 8, Math.ceil( SV_H / 8 ), 1 ] );
 			// On iPhone, never combine a sky-view LUT rebuild with irradiance
 			// integration/readback in the same GPU submission. Preserve both effects.
