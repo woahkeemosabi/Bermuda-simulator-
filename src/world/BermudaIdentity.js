@@ -61,18 +61,8 @@ function installBermudaTerrainProfile() {
 			heights[ i ] = Math.min( T.maxHeight, out );
 			if ( rock ) rock[ i ] *= T.highlandRockScale;
 		}
-		const smooth = t => t*t*(3-2*t);
-		for ( let iz = 0; iz < this.res; iz ++ ) {
-			const z = this.origin + iz * this.texel;
-			if ( z < -189 || z > -101 ) continue;
-			for ( let ix = 0; ix < this.res; ix ++ ) {
-				const x = this.origin + ix * this.texel, r = Math.hypot( x + 80, z + 145 );
-				if ( r >= 44 ) continue;
-				const t = Math.max( 0, Math.min( 1, ( r - 20 ) / 24 ) );
-				const index = iz * this.res + ix;
-				heights[ index ] = Math.max( heights[ index ], 4 + 13 * ( 1 - smooth( t ) ) );
-			}
-		}
+		// Do not synthesize the old circular 13m hill at (-80,-145).
+		// Preserve the coastline and natural terrain profile without this artificial mound.
 		return result;
 	};
 }
