@@ -151,9 +151,9 @@ export class SceneRenderer {
 		// the separate refraction render pass; opaque copies remain bound for
 		// the water material's sampling dependencies.
 		mr.render( scene, { ...common,
-			label: this.diagnosticWaterOnly ? 'water only (no refraction)' : 'water + transparent',
+			label: this.diagnosticWaterOnly ? 'water only (no refraction)' : (this.diagnosticRefractionOnly ? 'water + quarter refraction' : 'water + transparent'),
 			late: true,
-			layerMask: this.diagnosticWaterOnly ? ( 1 << LAYERS.WATER ) : ( ( 1 << LAYERS.WATER ) | ( 1 << LAYERS.TRANSPARENT ) ),
+			layerMask: (this.diagnosticWaterOnly || this.diagnosticRefractionOnly) ? ( 1 << LAYERS.WATER ) : ( ( 1 << LAYERS.WATER ) | ( 1 << LAYERS.TRANSPARENT ) ),
 		} );
 
 	}
