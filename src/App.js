@@ -809,7 +809,12 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// reassigns spray.update after initialization.
 		if ( !this.qs.has('noSpray') && !this.qs.has('freezeFFT') ) this.spray.update();
 		if ( this.clouds ) this.clouds.update( dt, this.camera );
-		this.environment.update( dt );
+		// Mobile WebGPU: don't bake reflection faces while the atmosphere LUTs
+		// are still initializing. This keeps the original reflections and ocean,
+		// but avoids pairing Atmosphere MultiScat with Env Face on startup.
+		const atmosphereReadyForReflections = !this.mobileLite ||
+			( this.atmosphere.mobileInitStage >= 3 && this.atmosphere._svValid );
+		if ( atmosphereReadyForReflections ) this.environment.update( dt );
 
 		// ---- world
 		gpuStage('Island world preparation', GPU.frame);
