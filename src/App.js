@@ -132,6 +132,9 @@ export class App {
 		this.atmosphere.mobileMode = mobileLite
 			? ( ['full','skip','trans'].includes(qs.get('atmotest')) ? qs.get('atmotest') : 'staged' )
 			: 'full';
+		// Diagnostic only: keep the completed sky-view texture instead of repeatedly
+		// recomputing it while preserving the atmosphere's rendering shader.
+		this.atmosphere.mobileHoldAfterPrime = mobileLite && qs.get('atmotest') === 'hold';
 		this.sky = new Sky( this.atmosphere );
 		if ( ! qs.has( 'noClouds' ) ) {
 
@@ -782,7 +785,14 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.seaDetail.update( dt );
 		this.query.setCamera( this.camera.position.x, this.camera.position.z );
 		this.boatCtl.queueQueries();
-		this.query.update();
+		// Avoid submitting SkyView and GPU water-height queries in the same mobile
+		// frame. The water results buffer keeps its previous valid samples;
+		// subsequent frames continue water physics and camera-state readback.
+		if ( this.mobileLite && this.atmosphere.mobileSkyViewDispatched ) {
+			this.mobileSkyViewWaterQuerySkips = ( this.mobileSkyViewWaterQuerySkips || 0 ) + 1;
+		} else {
+			this.query.update();
+		}
 		if ( this.query.cpuValid ) {
 
 			const h0 = this.query.cpu[ 0 ];
