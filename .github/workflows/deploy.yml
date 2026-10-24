@@ -62,6 +62,8 @@ jobs:
           cp src/sky/Environment.js _recovery/oct14/src/sky/Environment.js
           cp src/materials/GroundBounce.js _recovery/oct14/src/materials/GroundBounce.js
           cp src/engine/Engine.js _recovery/oct14/src/engine/Engine.js
+          # Modern Engine imports this zero-dependency diagnostic; the historical tree predates it.
+          cp src/mobile/GpuAudit.js _recovery/oct14/src/mobile/GpuAudit.js
           python3 - <<'PY'
           from pathlib import Path
           root=Path('_recovery/oct14/src/world')
@@ -140,6 +142,10 @@ jobs:
           patch('main.js',
             "applyBermudaRuntimeLook( app );",
             "applyBermudaRuntimeLook( app );\n"
+            "\tif (new URLSearchParams(location.search).get('daylight') === '1') {\n"
+            "\t\tapp.settings.timeOfDay = 14.0;\n"
+            "\t\tapp.settings.timeSpeed = 0;\n"
+            "\t}\n"
             "\tif (mobileFastStart && app.engine) app.engine.mobileGpuFramePacing = true;")
           # The October 14 App predates the mobileLite variable present in the
           # current App. Define it inside init BEFORE the first shader/GPU resource.
