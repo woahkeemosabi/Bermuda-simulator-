@@ -145,6 +145,8 @@ export class Atmosphere {
 		this._irrPending = false;
 		this._irrTimer = 0;
 		this._mobileSkyTimer = 0;
+		this.mobileHoldAfterPrime = false;
+		this.skyViewDispatchCount = 0;
 		this.skyIrradiance = null;
 		this.sunTransmittance = null;
 		this.horizon = null;
@@ -525,7 +527,7 @@ fn main() {
 		// This preserves the atmosphere, sun cycle and ocean rendering.
 		if ( this.mobileMode === 'staged' && this._svValid ) {
 			this._mobileSkyTimer -= dt;
-			if ( this._mobileSkyTimer > 0 ) return;
+			if ( this.mobileHoldAfterPrime || this._mobileSkyTimer > 0 ) return;
 		}
 		// sky view LUT: only when the parameters (sun, height, scattering) changed
 		this.params._pack();
@@ -538,6 +540,7 @@ fn main() {
 			this._svValid = true;
 			if ( this.mobileMode === 'staged' ) this._mobileSkyTimer = 5;
 			this.mobileSkyViewDispatched = true;
+			this.skyViewDispatchCount++;
 			this.skyViewKernel.dispatch( [ SV_W / 8, Math.ceil( SV_H / 8 ), 1 ] );
 			// On iPhone, never combine a sky-view LUT rebuild with irradiance
 			// integration/readback in the same GPU submission. Preserve both effects.
