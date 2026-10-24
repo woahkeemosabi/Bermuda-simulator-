@@ -525,6 +525,9 @@ fn main() {
 			last.set( cur );
 			this._svValid = true;
 			this.skyViewKernel.dispatch( [ SV_W / 8, Math.ceil( SV_H / 8 ), 1 ] );
+			// On iPhone, never combine a sky-view LUT rebuild with irradiance
+			// integration/readback in the same GPU submission. Preserve both effects.
+			if ( this.mobileMode === 'staged' ) return;
 
 		}
 
