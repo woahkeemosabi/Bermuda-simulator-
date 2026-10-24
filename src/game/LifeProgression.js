@@ -83,13 +83,8 @@ export class LifeProgression {
 			if (owns) {
 				this.objectiveEl.innerHTML = '<span class="bm-objective-kicker">GOAL COMPLETE</span>First boat purchased · explore Bermuda';
 			} else {
-				const wallet = Math.max(0, Math.floor(Number(this.state?.money)||0));
-				const remaining = Math.max(0, STARTER_BOAT_PRICE-wallet);
-				const currency = String.fromCharCode(36);
 				this.objectiveEl.innerHTML = '<span class="bm-objective-kicker">THE FIRST BOAT</span>' +
-					'Catch fish · Sell to Joe · Save ' + currency + wallet.toLocaleString() +
-					' / ' + currency + STARTER_BOAT_PRICE.toLocaleString() +
-					(remaining ? ' · ' + currency + remaining.toLocaleString() + ' to go' : ' · Buy at the dock');
+					'Catch fish · Sell your catch to Joe · Save $3,200 for the starter lobster boat';
 			}
 			return;
 		}
