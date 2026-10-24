@@ -289,7 +289,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		if (renderTest === 'opaque-noshadows' || renderTest === 'water-noshadows' || renderTest === 'water-daylight' || renderTest === 'refraction-quarter') this.shadows.enabled = false;
 		if (typeof window !== 'undefined') window.__bermudaRenderExperiment = renderTest || 'full';
 		// the water's refraction source: the scene below the water only, half resolution
-		this.refraction = new RefractionPass( { meshRenderer: engine.meshRenderer, scene, camera, sceneRenderer: this.sceneRenderer, scale: 0.5 } );
+		this.refraction = new RefractionPass( { meshRenderer: engine.meshRenderer, scene, camera, sceneRenderer: this.sceneRenderer, scale: renderTest === 'refraction-quarter' ? 0.25 : 0.5 } );
 		this.sceneRenderer.onBeforeWater = () => this.refraction.render( G.seaLevel.value );
 		if ( this.sky.background ) this.sceneRenderer.background = this.sky.background;
 		// lanterns, lamp posts, path lights, lit windows, the boat's cabin / navigation lights and the
