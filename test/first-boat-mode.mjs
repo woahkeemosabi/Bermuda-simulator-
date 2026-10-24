@@ -32,5 +32,10 @@ assert.equal(JSON.parse(memory.get(FIRST_BOAT_BACKUP)).missions.active[0],'main-
 const files=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 assert.match(files('../src/world/BermudaIdentity.js'),/boatOnly && !app.boatOwnership/);
 assert.match(files('../src/game/LifeProgression.js'),/normalizeFirstBoatObjectives/);
+// Objective copy is static; the live wallet remains in the HUD and saved state.
+const objectiveSource=files('../src/game/LifeProgression.js');
+assert.match(objectiveSource,/Save \$3,200 for the starter lobster boat/);
+assert.doesNotMatch(objectiveSource,/to go/);
+assert.doesNotMatch(objectiveSource,/wallet\.toLocaleString\(\)/);
 assert.match(files('../src/game/BoatOwnership.js'),/normalizeFirstBoatObjectives/);
 console.log('First boat only: no lost money, completed missions or saved history; purchase retained.');
