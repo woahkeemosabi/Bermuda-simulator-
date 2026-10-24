@@ -42,32 +42,34 @@
 		</div>
 	</div>
 	<script type="module">
-		// Simple browser baseline: remove the old offline/PWA worker and its asset caches without
-		// touching localStorage, so player money/progression remain intact.
+		// Online-only launch: retire legacy offline/PWA workers before loading the engine.
+		// Never delete localStorage: wallet, boats, inventory and progress live there.
 		if ( 'serviceWorker' in navigator ) {
 			try {
 				const registrations = await navigator.serviceWorker.getRegistrations();
 				const wasControlled = !!navigator.serviceWorker.controller;
 				if ( registrations.length || wasControlled ) {
-					// Publish/activate the self-cleaning worker immediately so an older Bermuda worker
-					// cannot keep serving a mixed cached build.
+					// Replace the old controller with the one-time cleanup worker, then unregister.
 					try {
-						const cleanup = await navigator.serviceWorker.register('./sw.js', { scope:'./', updateViaCache:'none' });
+						const cleanup = await navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' });
 						await cleanup.update();
-					} catch ( _ ) {}
-					await Promise.all( registrations.map( registration => registration.unregister().catch( () => false ) ) );
-					if ( 'caches' in window ) {
+					} catch ( error ) { console.warn('Cleanup worker unavailable', error); }
+					const active = await navigator.serviceWorker.getRegistrations();
+					await Promise.all(active.map(reg => reg.unregister().catch(() => false)));
+					if ('caches' in window) {
 						const keys = await caches.keys();
-						await Promise.all( keys.map( key => caches.delete( key ) ) );
+						await Promise.all(keys.map(key => caches.delete(key)));
 					}
-					if ( wasControlled && !sessionStorage.getItem('bermuda-simple-browser-reloaded') ) {
-						sessionStorage.setItem('bermuda-simple-browser-reloaded','1');
+					// A previously controlled document may still use cached modules until navigation.
+					// Reload only once per tab, and only after the old controller has been retired.
+					if (wasControlled && !sessionStorage.getItem('bermuda-online-clean-v2')) {
+						sessionStorage.setItem('bermuda-online-clean-v2', '1');
 						location.reload();
-						await new Promise( () => {} );
+						await new Promise(() => {});
 					}
 				}
-			} catch ( error ) {
-				console.warn( 'Legacy offline cleanup skipped; continuing with normal browser launch', error );
+			} catch (error) {
+				console.warn('Legacy worker cleanup failed; starting online browser build', error);
 			}
 		}
 		// GPU probe runs without importing any Bermuda rendering or gameplay module.
