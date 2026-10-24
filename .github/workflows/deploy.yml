@@ -121,13 +121,19 @@ jobs:
             ("ShadowUniforms.fields.mapSize.value = 1024;","ShadowUniforms.fields.mapSize.value = 512;"),
           ]:
             patch('main.js',old,new)
+          # Remove the fabricated circular highland mound from the archived island.
+          identity=folder/'world/BermudaIdentity.js'
+          terrain=identity.read_text()
+          start=terrain.index("\t\tconst smooth = t => t*t*(3-2*t);")
+          end=terrain.index("\t\treturn result;",start)
+          terrain=terrain[:start]+"\t\t// Original island profile: no synthetic inland mound.\\n".replace('\\n','\n')+terrain[end:]
+          identity.write_text(terrain)
           # Original archived main is compatible with its own dependency graph. Do not
           # copy the modern main: the Oct14 snapshot predates WebGPU readback modules.
           patch('main.js',
             "url.searchParams.set( 'scale', '0.82' );",
             "url.searchParams.set( 'scale', '0.70' );\n"
-            "\turl.searchParams.set( 'noAudio', '1' );\n"
-            "\turl.searchParams.set( 'noVeg', '1' );")
+            "\turl.searchParams.set( 'noAudio', '1' );")
           patch('main.js',
             "if ( app.audio ) app.audio.resume();\n\t\t\tapp.start();",
             "app.start(); // no AudioContext constructed in this recovery")
