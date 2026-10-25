@@ -28,4 +28,7 @@ assert.match(appSource,/mobileSkyViewWaterQuerySkips/);
 assert.match(atmosphereSource,/this\.mobileHoldAfterPrime \|\| this\._mobileSkyTimer > 0/);
 assert.match(atmosphereSource,/this\.skyViewDispatchCount\+\+/);
 assert.match(read('../src/mobile/GpuAudit.js'),/Water query overlap skipped/);
+assert.match(read('../src/ocean/WaterQuery.js'),/get\( 'waterTest' \) === 'hold'/);
+assert.match(read('../src/ocean/WaterQuery.js'),/this\.cpuValid/);
+assert.match(read('../src/mobile/GpuAudit.js'),/Water query diagnostic/);
 console.log('Mobile GPU device-lifetime diagnostics ready');
