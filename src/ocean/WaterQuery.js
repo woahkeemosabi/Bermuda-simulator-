@@ -192,6 +192,16 @@ fn main( @builtin( global_invocation_id ) gid: vec3u ) {
 
 	update() {
 
+		// Diagnostic only: after the first successful water-height readback,
+		// retain the last GPU results buffer instead of issuing new queries.
+		// Do not use for normal navigation: physics heights become stale.
+		if ( typeof window !== 'undefined' &&
+			new URLSearchParams( location.search ).get( 'waterTest' ) === 'hold' &&
+			this.cpuValid ) {
+			this.diagnosticHeldUpdates = ( this.diagnosticHeldUpdates || 0 ) + 1;
+			return;
+		}
+
 		// On mobile, avoid continuous compute/readback pressure. Keep the most
 		// recent water heights for physics between samples (~15 Hz at 60 FPS).
 		if ( typeof window !== 'undefined' && window.__bermudaThrottleWaterQueries ) {
