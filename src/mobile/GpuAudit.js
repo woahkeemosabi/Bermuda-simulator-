@@ -83,6 +83,9 @@ export function gpuReport(app,attempt=0){
   'Post '+(app?.post?.isCompatibility?'single-pass mobile':'desktop'),
   'Cloud experiment '+(typeof window!=='undefined'?(window.__bermudaCloudExperiment||'unknown'):'not browser'),
   'Atmosphere '+(app?.atmosphere?.mobileMode??'unknown')+' | Initialization step '+(app?.atmosphere?.mobileInitStage??'unknown'),
+  'Water query diagnostic '+(typeof location!=='undefined'?(new URLSearchParams(location.search).get('waterTest')||'normal'):'unknown')+
+   ' | Held updates '+(app?.query?.diagnosticHeldUpdates??0)+
+   ' | Valid initial sample '+(app?.query?.cpuValid?'YES':'NO'),
   'SkyView dispatches '+(app?.atmosphere?.skyViewDispatchCount??'unknown')+
    ' | Hold after prime '+(app?.atmosphere?.mobileHoldAfterPrime?'YES':'NO')+
    ' | Water query overlap skipped '+(app?.mobileSkyViewWaterQuerySkips??0),
