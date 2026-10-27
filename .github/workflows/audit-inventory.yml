@@ -19,6 +19,8 @@ jobs:
       - run: npm ci
       - name: Run read-only static reachability inventory
         run: node scripts/audit-reachability.mjs
+      - name: Check mip storage-binding regression
+        run: node test/compute-mips-limits.mjs
       - name: Build production bundle
         run: npm run build
       - name: Install browser audit runner
