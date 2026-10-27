@@ -18,21 +18,23 @@ for(const scenario of scenarios){
   userAgent:scenario.mobile?'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1':undefined
  });
  const page=await context.newPage();
- const requests=[],errors=[],consoleErrors=[];
+ const requests=[],errors=[],consoleErrors=[],failedRequests=[];
  page.on('request',r=>requests.push({url:r.url(),method:r.method(),resourceType:r.resourceType()}));
  page.on('pageerror',e=>errors.push(String(e)));
+ page.on('requestfailed',r=>failedRequests.push({url:r.url(),failure:r.failure()}));
  page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text());});
  let status=null,navError=null;
  try{
   const response=await page.goto(new URL(scenario.query,base).toString(),{waitUntil:'domcontentloaded',timeout:45000});
   status=response?.status()??null;
-  await page.waitForTimeout(15000);
+  await page.waitForTimeout(Number(process.env.AUDIT_WAIT_MS||45000));
  }catch(e){navError=String(e);}
  const state=await page.evaluate(()=>{
   const q=s=>document.querySelector(s);
   return {title:document.title,canvasCount:document.querySelectorAll('canvas').length,
    bodyText:(document.body?.innerText||'').slice(0,1600),
    gpuSupported:!!navigator.gpu,
+   loadScreenText:(document.body?.innerText||'').slice(0,300),
    appPresent:!!document.querySelector('#app'),
    hudPresent:!!q('.gm-hud'),
    walletText:q('.gm-money')?.textContent??null,
@@ -41,6 +43,7 @@ for(const scenario of scenarios){
  const requestsByPath=[...new Set(requests.map(r=>{try{return new URL(r.url).pathname;}catch{return r.url;}}))].sort();
  const data={scenario:scenario.name,status,navError,state,requestCount:requests.length,requestsByPath,
   requestedGLBs:requestsByPath.filter(p=>p.endsWith('.glb')),
+  failedRequests:failedRequests.slice(0,30),
   errors:errors.slice(0,30),consoleErrors:consoleErrors.slice(0,30),
   caveat:'Chromium smoke only; not iPhone Safari and not a verified playable end-to-end session'};
  results.push(data);
