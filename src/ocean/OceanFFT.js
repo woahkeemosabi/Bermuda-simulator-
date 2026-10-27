@@ -529,6 +529,9 @@ ${ stages }
 		// ---- mip chains in compute (instead of 2 textures x 4 layers x 8 levels of render passes)
 		// A: 16x16 threads per 32x32 texel tile of level 0 -> levels 1..5 through workgroup memory
 		// B: one 8x8 workgroup per layer -> levels 6..8
+		// NOTE: Some adapters still report five storage textures for Ocean Mips A
+		// even with four explicit out bindings. Audit the generated bind group layout
+		// before increasing this pass's storage texture count.
 
 		// threads (lx, ly) < width reduce a 2x2 block of `from` (row length 2*width) into `to`
 		const reduce = ( from, to, width, lvl, t ) => {
