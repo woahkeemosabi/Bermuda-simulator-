@@ -1,0 +1,52 @@
+#!/usr/bin/env node
+// Chromium-only read-only browser smoke. Does not establish iPhone Safari stability.
+import fs from 'node:fs';
+import { chromium } from 'playwright';
+const base=process.env.AUDIT_BASE_URL||'http://127.0.0.1:4173/Bermuda-simulator-/';
+const scenarios=[
+ {name:'desktop-boat',query:'?missions=boat&launch=online'},
+ {name:'desktop-full',query:'?missions=full&launch=online'},
+ {name:'desktop-decor',query:'?missions=boat&worldDecor=1&launch=online'},
+ {name:'mobile-boat',query:'?missions=boat&launch=online',mobile:true}
+];
+const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--enable-features=Vulkan,UseSkiaRenderer,WebGPU']});
+const results=[];
+for(const scenario of scenarios){
+ const context=await browser.newContext({
+  viewport:scenario.mobile?{width:392,height:695}:{width:1280,height:800},
+  deviceScaleFactor:1,isMobile:!!scenario.mobile,hasTouch:!!scenario.mobile,
+  userAgent:scenario.mobile?'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1':undefined
+ });
+ const page=await context.newPage();
+ const requests=[],errors=[],consoleErrors=[];
+ page.on('request',r=>requests.push({url:r.url(),method:r.method(),resourceType:r.resourceType()}));
+ page.on('pageerror',e=>errors.push(String(e)));
+ page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text());});
+ let status=null,navError=null;
+ try{
+  const response=await page.goto(new URL(scenario.query,base).toString(),{waitUntil:'domcontentloaded',timeout:45000});
+  status=response?.status()??null;
+  await page.waitForTimeout(15000);
+ }catch(e){navError=String(e);}
+ const state=await page.evaluate(()=>{
+  const q=s=>document.querySelector(s);
+  return {title:document.title,canvasCount:document.querySelectorAll('canvas').length,
+   bodyText:(document.body?.innerText||'').slice(0,1600),
+   gpuSupported:!!navigator.gpu,
+   appPresent:!!document.querySelector('#app'),
+   hudPresent:!!q('.gm-hud'),
+   walletText:q('.gm-money')?.textContent??null,
+   startVisible:!!q('.tw-start')&&getComputedStyle(q('.tw-start')).display!=='none'};
+ }).catch(e=>({evaluationError:String(e)}));
+ const requestsByPath=[...new Set(requests.map(r=>{try{return new URL(r.url).pathname;}catch{return r.url;}}))].sort();
+ const data={scenario:scenario.name,status,navError,state,requestCount:requests.length,requestsByPath,
+  requestedGLBs:requestsByPath.filter(p=>p.endsWith('.glb')),
+  errors:errors.slice(0,30),consoleErrors:consoleErrors.slice(0,30),
+  caveat:'Chromium smoke only; not iPhone Safari and not a verified playable end-to-end session'};
+ results.push(data);
+ console.log(scenario.name,JSON.stringify({status,canvasCount:state.canvasCount,requestedGLBs:data.requestedGLBs.length,errors:errors.length,navError}));
+ await context.close();
+}
+await browser.close();
+fs.mkdirSync('audit-output',{recursive:true});
+fs.writeFileSync('audit-output/browser-smoke.json',JSON.stringify({base,results},null,2)+'\n');
