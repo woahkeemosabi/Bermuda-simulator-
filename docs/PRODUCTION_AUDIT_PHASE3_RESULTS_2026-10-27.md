@@ -49,3 +49,11 @@ The tested adapter supports four storage textures per compute stage, while `envS
 ## Safety and scope
 
 No permanent deletions. No changes to `main` gameplay, assets, saves or deployment. Chromium on Linux is not iPhone Safari. The 15-second startup timeout is too short to conclude permanent hang, but is sufficient to establish that no gameplay was verified. The full evidence is in GitHub Actions artifact `bermuda-game-audit`.
+
+## Root cause localized in source
+
+`src/ocean/ComputeMips.js` constructs `kernelA` with one writable storage texture per mip level from 1 through `top = min(5, levels-1)`. For a texture with six or more mip levels, this creates **five writable storage texture bindings** in one compute shader. The Chromium adapter reports a limit of four, so `envSource mips A` is invalid. This is not speculative: the binding-count construction directly matches the observed validation error. Remediation should split the fifth mip into a second compute dispatch or implement a device-limit-aware fallback, without deleting reflections or the ocean. Test separately before merging into production.
+
+## Static scanner false-positive warning
+
+`src/core/BenchSeed.js` is side-effect-imported by `src/main.js` but listed as unreached. Thus the 43-file list **cannot** be called dead code. Also `vite.config.js`, service worker, tool scripts and browser audit scripts are not rooted in the scanner's `src/main.js` traversal. No safe-delete verdict is supported yet.
