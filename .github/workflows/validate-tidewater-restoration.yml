@@ -15,6 +15,8 @@ jobs:
       - run: npm ci
       - run: node test/game-logic.mjs
       - run: node test/bermuda-layout.mjs
+      - name: Verify mipmap binding limits
+        run: node test/compute-mips-limits.mjs
       - run: npm run build
 
       - name: Install browser test runner
