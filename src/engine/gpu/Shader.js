@@ -335,8 +335,12 @@ export class BindingSet {
 
 			const l = this.described[ i ].layout;
 			const st = stageOf[ this.names[ i ] ];
-			if ( st === 'fragment' && ( l.visibility & GPUShaderStage.FRAGMENT ) ) l.visibility = GPUShaderStage.FRAGMENT;
-			if ( st === 'vertex' && ( l.visibility & GPUShaderStage.VERTEX ) ) l.visibility = GPUShaderStage.VERTEX;
+			// A declaration can exist in a shared WGSL module without being reached by
+			// this pipeline's entry points. Stage visibility NONE is valid WebGPU
+			// and keeps unused declarations out of per-stage resource budgets.
+			if ( st === 'unused' ) l.visibility = 0;
+			else if ( st === 'fragment' && ( l.visibility & GPUShaderStage.FRAGMENT ) ) l.visibility = GPUShaderStage.FRAGMENT;
+			else if ( st === 'vertex' && ( l.visibility & GPUShaderStage.VERTEX ) ) l.visibility = GPUShaderStage.VERTEX;
 
 		}
 
@@ -530,20 +534,32 @@ export function composeShader( { modules = [], bindings = {}, code = '', defines
 	for ( const k in bindings ) specs[ k ] = bindings[ k ];
 	let stageOf = null;
 	let demote = null;
+	// Compose first and examine entry-point call graphs, rather than counting every
+	// resource declaration inherited from modules. Most specialized passes inherit
+	// textures from sky/ocean/terrain helpers without ever sampling all of them.
+	// Keep their WGSL declarations (unused module functions still type-check), but
+	// give statically unreachable bindings zero stage visibility. This is permitted
+	// by WebGPU and prevents false per-stage limit violations.
+	const fullModules = mods.map( ( m ) => m.code ).join( '\n' ) + '\n';
+	const full = preprocess( fullModules + code, defines );
+	if ( stage === 'compute' && /@compute\s+fn\s+main\b/.test( full ) ) {
+
+		const used = reachableIdentifiers( full, 'main' );
+		stageOf = {};
+		for ( const k in specs ) if ( ! used.has( k ) ) stageOf[ k ] = 'unused';
+
+	}
 	if ( stage === 'render' && /@vertex\s+fn\s+vs\b/.test( code ) ) {
 
-		// bindings only one entry point can reach are declared for that stage only (per-stage limits:
-		// 12 uniform buffers, 16 sampled textures on some adapters)
-		let all = '';
-		for ( const m of mods ) all += m.code + '\n';
-		const full = preprocess( all + code, defines );
+		// Count resources only in stages whose entry points actually reach them.
 		const usedV = reachableIdentifiers( full, 'vs' );
 		const usedF = /@fragment\s+fn\s+fs\b/.test( full ) ? reachableIdentifiers( full, 'fs' ) : null;
 		stageOf = {};
 		for ( const k in specs ) {
 
-			if ( ! usedV.has( k ) && ( ! usedF || usedF.has( k ) ) ) stageOf[ k ] = 'fragment';
-			else if ( usedF && ! usedF.has( k ) && usedV.has( k ) ) stageOf[ k ] = 'vertex';
+			if ( ! usedV.has( k ) && ( ! usedF || ! usedF.has( k ) ) ) stageOf[ k ] = 'unused';
+			else if ( ! usedV.has( k ) ) stageOf[ k ] = 'fragment';
+			else if ( usedF && ! usedF.has( k ) ) stageOf[ k ] = 'vertex';
 
 		}
 
