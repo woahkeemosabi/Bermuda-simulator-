@@ -1,0 +1,45 @@
+{
+  "sourceRun": "https://github.com/woahkeemosabi/Bermuda-simulator-/actions/runs/40737498783",
+  "commit": "19e2d9f00b737a4a75acbc87e6105e8c3b98e4e9",
+  "results": [
+    {
+      "scenario": "desktop-boat",
+      "http": 200,
+      "ready": false,
+      "state": {
+        "title": "Bermuda Simulator",
+        "canvasCount": 3,
+        "loaderText": "COMPILING SHADERS…\n78%\n0:59",
+        "gpu": true
+      },
+      "errors": [],
+      "consoleErrors": [
+        "WebGPU: The number of sampled textures (17) in the Compute stage exceeds the maximum per-stage limit (16).\n - While validating binding counts\n - While validating [BindGroupLayoutDescriptor \"\"Underwater Light Map 0.g1\"\"]\n - While calling [Device].CreateBindGroupLayout([BindGroupLayoutDescriptor \"\"Underwater Light Map 0.g1\"\"]).\n",
+        "WebGPU: pipeline \"Underwater Light Map 0\" failed: [Invalid PipelineLayout (unlabeled)] is invalid due to a previous error.\n    at ValidateObject (../../third_party/dawn/src/dawn/native/Device.cpp:877)\n",
+        "WebGPU: pipeline \"Underwater Light Map 1\" failed: [Invalid PipelineLayout (unlabeled)] is invalid due to a previous error.\n    at ValidateObject (../../third_party/dawn/src/dawn/native/Device.cpp:877)\n",
+        "WebGPU: [Invalid BindGroupLayout \"Underwater Light Map 0.g1\"] is invalid due to a previous error.\n - While calling [Device].CreatePipelineLayout([PipelineLayoutDescriptor]).\n",
+        "WebGPU: [Invalid BindGroupLayout \"Underwater Light Map 0.g1\"] is invalid due to a previous error.\n - While calling [Device].CreatePipelineLayout([PipelineLayoutDescriptor]).\n",
+        "WebGPU: The number of sampled textures (18) in the Vertex stage exceeds the maximum per-stage limit (16).\n - While validating binding counts\n - While validating [BindGroupLayoutDescriptor \"\"beauty (AO + haze + underwater).g1\"\"]\n - While calling [Device].CreateBindGroupLayout([BindGroupLayoutDescriptor \"\"beauty (AO + haze + underwater).g1\"\"]).\n",
+        "WebGPU: [Invalid BindGroupLayout \"beauty (AO + haze + underwater).g1\"] is invalid due to a previous error.\n - While calling [Device].CreatePipelineLayout([PipelineLayoutDescriptor]).\n",
+        "WebGPU: The number of sampled textures (17) in the Vertex stage exceeds the maximum per-stage limit (16).\n - While validating binding counts\n - While validating [BindGroupLayoutDescriptor \"\"haze march.g1\"\"]\n - While calling [Device].CreateBindGroupLayout([BindGroupLayoutDescriptor \"\"haze march.g1\"\"]).\n",
+        "WebGPU: [Invalid BindGroupLayout \"haze march.g1\"] is invalid due to a previous error.\n - While calling [Device].CreatePipelineLayout([PipelineLayoutDescriptor]).\n",
+        "WebGPU: The number of sampled textures (18) in the Vertex stage exceeds the maximum per-stage limit (16).\n - While validating binding counts\n - While validating [BindGroupLayoutDescriptor \"\"haze sun mask.g1\"\"]\n - While calling [Device].CreateBindGroupLayout([BindGroupLayoutDescriptor \"\"haze sun mask.g1\"\"]).\n",
+        "WebGPU: [Invalid BindGroupLayout \"haze sun mask.g1\"] is invalid due to a previous error.\n - While calling [Device].CreatePipelineLayout([PipelineLayoutDescriptor]).\n",
+        "WebGPU: The number of sampled textures (21) in the Vertex stage exceeds the maximum per-stage limit (16).\n - While validating binding counts\n - While validating [BindGroupLayoutDescriptor \"\"haze god rays 0.g1\"\"]\n - While calling [Device].CreateBindGroupLayout([BindGroupLayoutDescriptor \"\"haze god rays 0.g1\"\"]).\n"
+      ]
+    },
+    {
+      "scenario": "mobile-boat",
+      "http": 200,
+      "ready": false,
+      "state": {
+        "title": "Bermuda Simulator",
+        "canvasCount": 2,
+        "loaderText": "STARTING WEBGPU…\n0%\n0:00",
+        "gpu": true
+      },
+      "errors": [],
+      "consoleErrors": []
+    }
+  ]
+}

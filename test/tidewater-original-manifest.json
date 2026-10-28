@@ -1,0 +1,16 @@
+{
+  "upstreamRepository": "https://github.com/dgreenheck/tidewater",
+  "upstreamCommit": "4811ba48d795197de5621985f404e765c0b7c0ef",
+  "sha256": {
+    "src/engine/gpu/GPU.js": "708e0fd59edea32349b5c372f14cc6e09b20dd1e24f536868106ad2a8330428d",
+    "src/engine/Engine.js": "e0ab1f2893204c5996b409931357de0b1429e502a73f2c61f9f058a69e4617bb",
+    "src/engine/render/SceneRenderer.js": "1ad99e121c8f09ccbd4d411f31f4fccc50e749c41429d6131e6be6c80370d5ca",
+    "src/engine/render/MeshRenderer.js": "7efb3ddb9ad751be89416e301ffdfe3e6613c5b011f9f134c42b35d62b3c6782",
+    "src/ocean/UnderwaterLighting.js": "4912e064498dc735e9b768e8778a90ddfa9741c8b6e92c30ae9712d1e86aee3d",
+    "src/ocean/ComputeMips.js": "7afb698431dcfb4afeaebbd6e627cf3a4ac6d3c4d7c1a966e3d9491ea692c933",
+    "src/ocean/OceanFFT.js": "0b49481bdd7aaad20d0cadf4ae5a079f6fca71d712f46b281bde44ab0d03f208",
+    "src/ocean/Caustics.js": "fce47316254ea4ba44c466db852246d5654b5892e18106bb04416f6f81114d81",
+    "src/ocean/WakeSim.js": "4868b0443155f1a96d7f3675ec6ce0c54d28ec79a00c365e03f0d45979fe9c82",
+    "src/ocean/WaterSurface.js": "ca52b7c33a90f1539a6f613ebf1d73f3b90b56cffcea0a87bf953d109b690487"
+  }
+}

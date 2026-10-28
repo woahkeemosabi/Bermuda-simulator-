@@ -1,11 +1,21 @@
-name: Tidewater restoration validation
+name: Tidewater original GPU qualification
 on:
   push:
     branches: [test/tidewater-original-high-limit-20261028]
+    paths-ignore: ['docs/qa/**']
   workflow_dispatch:
+    inputs:
+      hardware:
+        description: Use an already-configured self-hosted runner labeled webgpu
+        type: boolean
+        default: false
+permissions:
+  contents: read
 jobs:
-  build:
+  source-and-cpu:
+    name: Source integrity and CPU checks (not GPU validation)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -13,17 +23,62 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node test/game-logic.mjs
-      - run: node test/bermuda-layout.mjs
+      - run: node test/tidewater-original-integrity.mjs && node test/tidewater-gpu-gate.mjs
+      - run: node test/game-logic.mjs && node test/bermuda-layout.mjs && node test/first-boat-mode.mjs && node test/first-boat-economy.mjs
       - run: npm run build
-
-      - name: Install browser test runner
-        run: npm install --no-save playwright && npx playwright install --with-deps chromium
-      - name: Check WebGPU startup on desktop and emulated mobile
+  hardware-validation:
+    name: Hardware qualification and original / compatibility comparison
+    runs-on: ${{ inputs.hardware && fromJSON('["self-hosted","webgpu"]') || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node test/tidewater-original-integrity.mjs && npm run build
+      - name: Install Chromium on disposable hosted runner
+        if: ${{ !inputs.hardware }}
+        run: npx playwright install --with-deps chromium
+      - name: Install Chromium on prepared hardware runner
+        if: ${{ inputs.hardware }}
+        run: npx playwright install chromium
+      - name: Qualify and validate original renderer
+        id: original
+        continue-on-error: true
+        env:
+          TIDEWATER_QA_OUTPUT: audit-output/original
         run: node scripts/validate-tidewater-browser.mjs
-      - name: Upload browser diagnostics
+      - name: Checkout pinned compatibility baseline
+        uses: actions/checkout@v4
+        with:
+          ref: 19e2d9f00b737a4a75acbc87e6105e8c3b98e4e9
+          path: .qa-compat
+          persist-credentials: false
+      - name: Build compatibility baseline
+        working-directory: .qa-compat
+        run: npm ci && npm run build
+      - name: Run identical validation against compatibility renderer
+        id: compatibility
+        continue-on-error: true
+        env:
+          TIDEWATER_APP_ROOT: .qa-compat
+          TIDEWATER_QA_PORT: '4180'
+          TIDEWATER_QA_OUTPUT: audit-output/compatibility
+        run: node scripts/validate-tidewater-browser.mjs
+      - name: Upload diagnostics even on failure
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tidewater-browser-baseline
-          path: audit-output/tidewater-baseline-browser.json
+          name: tidewater-gpu-evidence
+          path: audit-output/
+          if-no-files-found: error
+      - name: Prevent false green validation on blocked or incomplete results
+        if: always()
+        env:
+          ORIGINAL: ${{ steps.original.outcome }}
+          COMPATIBILITY: ${{ steps.compatibility.outcome }}
+        run: |
+          test "$ORIGINAL" = success
+          test "$COMPATIBILITY" = success
