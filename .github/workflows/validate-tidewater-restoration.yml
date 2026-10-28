@@ -1,7 +1,7 @@
 name: Tidewater restoration validation
 on:
   push:
-    branches: [restore/tidewater-renderer-baseline-20261028]
+    branches: [test/tidewater-original-high-limit-20261028]
   workflow_dispatch:
 jobs:
   build:
