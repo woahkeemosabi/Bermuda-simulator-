@@ -9,10 +9,12 @@ const scenarios=[
  {name:'desktop-decor',query:'?missions=boat&worldDecor=1&launch=online'},
  {name:'mobile-boat',query:'?missions=boat&launch=online',mobile:true}
 ];
-const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--enable-features=Vulkan,UseSkiaRenderer,WebGPU']});
 const results=[];
 fs.mkdirSync('audit-output',{recursive:true});
 for(const scenario of scenarios){
+ // New browser GPU process for each case: previous WebGPUDevice resource residency
+ // must not stall or contaminate subsequent scenarios.
+ const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--enable-features=Vulkan,UseSkiaRenderer,WebGPU']});
  const context=await browser.newContext({
   viewport:scenario.mobile?{width:392,height:695}:{width:1280,height:800},
   deviceScaleFactor:1,isMobile:!!scenario.mobile,hasTouch:!!scenario.mobile,
@@ -57,6 +59,6 @@ for(const scenario of scenarios){
  catch(e){data.screenshotError=String(e);}
  console.log(scenario.name,JSON.stringify({status,canvasCount:state.canvasCount,requestedGLBs:data.requestedGLBs.length,errors:errors.length,navError}));
  await context.close();
+ await browser.close();
 }
-await browser.close();
 fs.writeFileSync('audit-output/browser-smoke.json',JSON.stringify({base,results},null,2)+'\n');
