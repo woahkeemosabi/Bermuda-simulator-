@@ -1,0 +1,56 @@
+name: Non-destructive game inventory audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - audit/asset-reachability-20261027
+permissions:
+  contents: read
+jobs:
+  static-and-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Run read-only static reachability inventory
+        run: node scripts/audit-reachability.mjs
+      - name: Check mip storage-binding regression
+        run: node test/compute-mips-limits.mjs
+      - name: Check entry-point resource visibility
+        run: node test/shader-visibility-limits.mjs
+      - name: Check underwater waves/detail pass separation
+        run: node test/underwater-bake-passes.mjs
+      - name: Run CPU gameplay and Bermuda layout tests
+        run: node test/game-logic.mjs && node test/bermuda-layout.mjs
+      - name: Test fish market to starter-boat economy and save
+        run: node test/first-boat-economy.mjs
+      # test/engine-smoke.mjs requires a native Dawn Vulkan adapter absent on ubuntu-latest.
+      # Chromium browser/WebGPU startup is validated separately below.
+      - name: Build production bundle
+        run: npm run build
+      - name: Install browser audit runner
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+      - name: Start local preview
+        run: |
+          (npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/bermuda-preview.log 2>&1 &)
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/bermuda-preview.log
+          exit 1
+      - name: Collect Chromium network and startup smoke
+        env:
+          AUDIT_BASE_URL: http://127.0.0.1:4173/
+        run: node scripts/audit-browser.mjs
+      - name: Upload inventory and browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bermuda-game-audit
+          path: audit-output/
+          if-no-files-found: warn

@@ -8,6 +8,7 @@ export const gpuAudit={
  queueAckFrame:0,queueAckAt:0,queueStall:'',
  currentFrameComputeCount:0,currentFrameComputes:[],
  lastSubmittedComputeCount:0,lastSubmittedComputes:[],lastSubmitAt:0,
+ submitHistory:[],sinceComputeCount:0,sinceRenderCount:0,
  currentFrameRenderCount:0,currentFrameRenders:[],lastSubmittedRenderCount:0,lastSubmittedRenders:[]
 };
 if(typeof window!=='undefined')window.__bermudaGpuAudit=gpuAudit;
@@ -17,6 +18,8 @@ export function gpuStage(stage,frame){
   gpuAudit.currentFrameComputes=[];
   gpuAudit.currentFrameRenderCount=0;
   gpuAudit.currentFrameRenders=[];
+  gpuAudit.sinceComputeCount=0;
+  gpuAudit.sinceRenderCount=0;
  }
  gpuAudit.stage=stage;gpuAudit.stageAt=Math.round(now()-began);
  if(Number.isFinite(frame))gpuAudit.frame=frame;
@@ -44,6 +47,14 @@ export function gpuSubmit(frame){
  a.lastSubmittedRenderCount=a.currentFrameRenderCount;
  a.lastSubmittedRenders=a.currentFrameRenders.slice(-10);
  a.lastSubmitAt=Math.round(now()-began);
+ // Preserve the individual submission boundaries for split-startup diagnostics.
+ // Historic currentFrame* values remain cumulative for compatibility.
+ a.submitHistory.push({frame,at:a.lastSubmitAt,computeDelta:a.currentFrameComputeCount-a.sinceComputeCount,
+  renderDelta:a.currentFrameRenderCount-a.sinceRenderCount,computes:a.currentFrameComputes.slice(-8),
+  renders:a.currentFrameRenders.slice(-10)});
+ if(a.submitHistory.length>8)a.submitHistory.shift();
+ a.sinceComputeCount=a.currentFrameComputeCount;
+ a.sinceRenderCount=a.currentFrameRenderCount;
  gpuStage('GPU submit',frame);
  a.lastCompute=a.lastSubmittedComputeCount?
   a.lastSubmittedComputes.join(', '):'no compute passes recorded';
