@@ -74,6 +74,9 @@ export const GPU = {
 		this.device = device;
 		this.queue = device.queue;
 		this.limits = device.limits;
+		// Expose a read-only compile backlog to the audit browser; no shader or
+		// gameplay behavior changes, and no buffers or code are exported.
+		if ( typeof window !== 'undefined' ) window.__bermudaPipelineAudit = () => this.pipelineSnapshot();
 		// WebGPU reports reason "destroyed" for explicit device.destroy() calls.
 		// Record a JS stack if our app or a dependency destroys the live device.
 		// Never change the underlying native destroy behavior.
