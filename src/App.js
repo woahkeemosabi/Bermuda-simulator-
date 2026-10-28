@@ -494,7 +494,9 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		}
 
+		gpuStage( 'Precompile: waiting initial pipelines' );
 		await GPU.pipelinesReady();
+		gpuStage( 'Precompile: mesh variants' );
 		mr.precompiling = true;
 		this.refraction.enabled = true;
 		const sr = this.sceneRenderer, hm = sr.hullMaskRT;
@@ -521,8 +523,11 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.waterMaterial.hullOverride = null;
 		mr.precompiling = false;
 		this.refraction.enabled = refr;
+		gpuStage( 'Precompile: waiting mesh variants' );
 		await GPU.pipelinesReady();
+		gpuStage( 'Precompile: waiting GPU queue' );
 		await GPU.queue.onSubmittedWorkDone();
+		gpuStage( 'Precompile: complete' );
 
 	}
 
