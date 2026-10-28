@@ -27,11 +27,23 @@ for(const scenario of scenarios){
  page.on('pageerror',e=>errors.push(String(e)));
  page.on('requestfailed',r=>failedRequests.push({url:r.url(),failure:r.failure()}));
  page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text());});
- let status=null,navError=null;
+ let status=null,navError=null,readyObserved=false,startClicked=false;
  try{
   const response=await page.goto(new URL(scenario.query,base).toString(),{waitUntil:'domcontentloaded',timeout:45000});
   status=response?.status()??null;
-  await page.waitForTimeout(Number(process.env.AUDIT_WAIT_MS||45000));
+  try{
+   await page.waitForFunction(()=>{
+    const loader=document.getElementById('loader');
+    return loader && (getComputedStyle(loader).display==='none'||loader.classList.contains('tw-hidden'));
+   },{timeout:Number(process.env.AUDIT_WAIT_MS||90000),polling:500});
+   readyObserved=true;
+   const start=page.locator('.tw-start-cta');
+   if(await start.isVisible().catch(()=>false)){
+    await start.click({timeout:8000});
+    startClicked=true;
+    await page.waitForTimeout(2500);
+   }
+  }catch(e){/* Explicitly recorded as not-ready rather than misreported as pass. */}
  }catch(e){navError=String(e);}
  const state=await page.evaluate(()=>{
   const q=s=>document.querySelector(s);
@@ -49,15 +61,15 @@ for(const scenario of scenarios){
    startVisible:!!q('.tw-start')&&getComputedStyle(q('.tw-start')).display!=='none'};
  }).catch(e=>({evaluationError:String(e)}));
  const requestsByPath=[...new Set(requests.map(r=>{try{return new URL(r.url).pathname;}catch{return r.url;}}))].sort();
- const data={scenario:scenario.name,status,navError,state,requestCount:requests.length,requestsByPath,
+ const data={scenario:scenario.name,status,navError,readyObserved,startClicked,state,requestCount:requests.length,requestsByPath,
   requestedGLBs:requestsByPath.filter(p=>p.endsWith('.glb')),
   failedRequests:failedRequests.slice(0,30),httpErrors:httpErrors.slice(0,30),
   errors:errors.slice(0,30),consoleErrors:consoleErrors.slice(0,30),
   caveat:'Chromium smoke only; not iPhone Safari and not a verified playable end-to-end session'};
  results.push(data);
- try { await page.screenshot({path:'audit-output/'+scenario.name+'.png',fullPage:false,timeout:10000}); }
+ try { if(readyObserved)await page.screenshot({path:'audit-output/'+scenario.name+'.png',fullPage:false,timeout:12000}); }
  catch(e){data.screenshotError=String(e);}
- console.log(scenario.name,JSON.stringify({status,canvasCount:state.canvasCount,requestedGLBs:data.requestedGLBs.length,errors:errors.length,navError}));
+ console.log(scenario.name,JSON.stringify({status,readyObserved,startClicked,loaderVisible:state.loaderVisible,canvasCount:state.canvasCount,requestedGLBs:data.requestedGLBs.length,errors:errors.length,webgpuErrors:consoleErrors.length,navError}));
  await context.close();
  await browser.close();
 }
