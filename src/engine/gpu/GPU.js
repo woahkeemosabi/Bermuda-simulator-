@@ -200,6 +200,7 @@ export const GPU = {
 	// Handles are { pipeline, label }; `pipeline` is null until the compile finishes. Users that must
 	// run this frame (compute, post) call ready( handle ), which falls back to a synchronous create.
 	_pending: new Set(),
+	_pendingLabels: new Map(),
 	syncCompiles: [], // labels of pipelines needed before their async compile finished (diagnostics)
 
 	renderPipeline( desc ) {
@@ -235,8 +236,12 @@ export const GPU = {
 
 			} );
 
-		} ).finally( () => this._pending.delete( p ) );
+		} ).finally( () => {
+			this._pending.delete( p );
+			this._pendingLabels.delete( p );
+		} );
 		this._pending.add( p );
+		this._pendingLabels.set( p, { label: desc.label, kind, startedAt: typeof performance !== 'undefined' ? performance.now() : Date.now() } );
 		return h;
 
 	},
@@ -255,6 +260,18 @@ export const GPU = {
 	async pipelinesReady() {
 
 		while ( this._pending.size ) await Promise.all( [ ...this._pending ] );
+
+	},
+
+	// Read-only diagnostic: identify the real outstanding shader labels rather than
+	// treating the loading animation's percentage as compilation progress.
+	pipelineSnapshot() {
+
+		const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+		const pending = [ ...this._pendingLabels.values() ].map( p => ( {
+			label: p.label, kind: p.kind, elapsedMs: Math.round( now - p.startedAt ),
+		} ) );
+		return { pendingCount: pending.length, oldest: pending.sort( ( a, b ) => b.elapsedMs - a.elapsedMs ).slice( 0, 20 ), syncCompiles: this.syncCompiles.slice( -20 ) };
 
 	},
 
