@@ -53,6 +53,7 @@ for(const scenario of scenarios){
    gpuSupported:!!navigator.gpu,
    loaderVisible:!!loader && getComputedStyle(loader).display!=='none' && !loader.classList.contains('tw-hidden'),
    gpuLost:window.__bermudaGpuLost||null,
+   pipelineSnapshot:window.__bermudaPipelineAudit?.()||null,
    gpuStage:window.__bermudaGpuAudit?.stage||null,
    gpuAudit:window.__bermudaGpuAudit ? (a=>({stage:a.stage,stageAt:a.stageAt,frame:a.frame,submits:a.submits,queueAckFrame:a.queueAckFrame,queueAckAt:a.queueAckAt,queueStall:a.queueStall,lastSubmitAt:a.lastSubmitAt,currentFrameComputeCount:a.currentFrameComputeCount,lastSubmittedComputeCount:a.lastSubmittedComputeCount,lastSubmittedComputes:a.lastSubmittedComputes,lastSubmittedRenders:a.lastSubmittedRenders,errors:a.errors,reason:a.reason,lastError:a.lastError}))(window.__bermudaGpuAudit) : null,
    worldGate:window.__bermudaWorldGate||null,
