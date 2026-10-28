@@ -7,7 +7,8 @@ const scenarios=[
  {name:'desktop-boat',query:'?missions=boat&launch=online'},
  {name:'desktop-full',query:'?missions=full&launch=online'},
  {name:'desktop-decor',query:'?missions=boat&worldDecor=1&launch=online'},
- {name:'mobile-boat',query:'?missions=boat&launch=online',mobile:true}
+ {name:'mobile-boat',query:'?missions=boat&launch=online',mobile:true},
+ {name:'mobile-boat-split',query:'?missions=boat&launch=online&gpuStartup=split',mobile:true}
 ];
 const results=[];
 fs.mkdirSync('audit-output',{recursive:true});
@@ -55,7 +56,7 @@ for(const scenario of scenarios){
    gpuLost:window.__bermudaGpuLost||null,
    pipelineSnapshot:window.__bermudaPipelineAudit?.()||null,
    gpuStage:window.__bermudaGpuAudit?.stage||null,
-   gpuAudit:window.__bermudaGpuAudit ? (a=>({stage:a.stage,stageAt:a.stageAt,frame:a.frame,submits:a.submits,queueAckFrame:a.queueAckFrame,queueAckAt:a.queueAckAt,queueStall:a.queueStall,lastSubmitAt:a.lastSubmitAt,currentFrameComputeCount:a.currentFrameComputeCount,lastSubmittedComputeCount:a.lastSubmittedComputeCount,lastSubmittedComputes:a.lastSubmittedComputes,lastSubmittedRenders:a.lastSubmittedRenders,errors:a.errors,reason:a.reason,lastError:a.lastError}))(window.__bermudaGpuAudit) : null,
+   gpuAudit:window.__bermudaGpuAudit ? (a=>({stage:a.stage,stageAt:a.stageAt,frame:a.frame,submits:a.submits,queueAckFrame:a.queueAckFrame,queueAckAt:a.queueAckAt,queueStall:a.queueStall,lastSubmitAt:a.lastSubmitAt,submitHistory:a.submitHistory,currentFrameComputeCount:a.currentFrameComputeCount,lastSubmittedComputeCount:a.lastSubmittedComputeCount,lastSubmittedComputes:a.lastSubmittedComputes,lastSubmittedRenders:a.lastSubmittedRenders,errors:a.errors,reason:a.reason,lastError:a.lastError}))(window.__bermudaGpuAudit) : null,
    worldGate:window.__bermudaWorldGate||null,
    loadScreenText:(document.body?.innerText||'').slice(0,300),
    appPresent:!!document.querySelector('#app'),
