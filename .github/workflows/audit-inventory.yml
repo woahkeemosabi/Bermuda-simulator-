@@ -25,8 +25,10 @@ jobs:
         run: node test/shader-visibility-limits.mjs
       - name: Check underwater waves/detail pass separation
         run: node test/underwater-bake-passes.mjs
-      - name: Run game logic and engine smoke suite
-        run: npm test
+      - name: Run CPU gameplay and Bermuda layout tests
+        run: node test/game-logic.mjs && node test/bermuda-layout.mjs
+      # test/engine-smoke.mjs requires a native Dawn Vulkan adapter absent on ubuntu-latest.
+      # Chromium browser/WebGPU startup is validated separately below.
       - name: Build production bundle
         run: npm run build
       - name: Install browser audit runner
