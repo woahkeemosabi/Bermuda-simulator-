@@ -27,6 +27,8 @@ jobs:
         run: node test/underwater-bake-passes.mjs
       - name: Run CPU gameplay and Bermuda layout tests
         run: node test/game-logic.mjs && node test/bermuda-layout.mjs
+      - name: Test fish market to starter-boat economy and save
+        run: node test/first-boat-economy.mjs
       # test/engine-smoke.mjs requires a native Dawn Vulkan adapter absent on ubuntu-latest.
       # Chromium browser/WebGPU startup is validated separately below.
       - name: Build production bundle
