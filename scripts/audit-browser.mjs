@@ -35,7 +35,7 @@ for(const scenario of scenarios){
    await page.waitForFunction(()=>{
     const loader=document.getElementById('loader');
     return loader && (getComputedStyle(loader).display==='none'||loader.classList.contains('tw-hidden'));
-   },{timeout:Number(process.env.AUDIT_WAIT_MS||90000),polling:500});
+   },null,{timeout:Number(process.env.AUDIT_WAIT_MS||90000),polling:500});
    readyObserved=true;
    const start=page.locator('.tw-start-cta');
    if(await start.isVisible().catch(()=>false)){
