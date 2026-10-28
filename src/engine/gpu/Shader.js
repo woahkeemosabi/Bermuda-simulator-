@@ -542,7 +542,7 @@ export function composeShader( { modules = [], bindings = {}, code = '', defines
 	// by WebGPU and prevents false per-stage limit violations.
 	const fullModules = mods.map( ( m ) => m.code ).join( '\n' ) + '\n';
 	const full = preprocess( fullModules + code, defines );
-	if ( stage === 'compute' && /@compute\s+fn\s+main\b/.test( full ) ) {
+	if ( stage === 'compute' && /@compute[^{};]*\bfn\s+main\b/.test( full ) ) {
 
 		const used = reachableIdentifiers( full, 'main' );
 		stageOf = {};
