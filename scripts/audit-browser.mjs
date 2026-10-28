@@ -11,6 +11,7 @@ const scenarios=[
 ];
 const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--enable-features=Vulkan,UseSkiaRenderer,WebGPU']});
 const results=[];
+fs.mkdirSync('audit-output',{recursive:true});
 for(const scenario of scenarios){
  const context=await browser.newContext({
   viewport:scenario.mobile?{width:392,height:695}:{width:1280,height:800},
@@ -18,8 +19,9 @@ for(const scenario of scenarios){
   userAgent:scenario.mobile?'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1':undefined
  });
  const page=await context.newPage();
- const requests=[],errors=[],consoleErrors=[],failedRequests=[];
+ const requests=[],errors=[],consoleErrors=[],failedRequests=[],httpErrors=[];
  page.on('request',r=>requests.push({url:r.url(),method:r.method(),resourceType:r.resourceType()}));
+ page.on('response',r=>{if(r.status()>=400)httpErrors.push({url:r.url(),status:r.status()});});
  page.on('pageerror',e=>errors.push(String(e)));
  page.on('requestfailed',r=>failedRequests.push({url:r.url(),failure:r.failure()}));
  page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text());});
@@ -31,9 +33,13 @@ for(const scenario of scenarios){
  }catch(e){navError=String(e);}
  const state=await page.evaluate(()=>{
   const q=s=>document.querySelector(s);
+  const loader=q('#loader');
   return {title:document.title,canvasCount:document.querySelectorAll('canvas').length,
    bodyText:(document.body?.innerText||'').slice(0,1600),
    gpuSupported:!!navigator.gpu,
+   loaderVisible:!!loader && getComputedStyle(loader).display!=='none' && !loader.classList.contains('tw-hidden'),
+   gpuLost:window.__bermudaGpuLost||null,
+   gpuStage:window.__bermudaGpuStage||null,
    loadScreenText:(document.body?.innerText||'').slice(0,300),
    appPresent:!!document.querySelector('#app'),
    hudPresent:!!q('.gm-hud'),
@@ -43,13 +49,14 @@ for(const scenario of scenarios){
  const requestsByPath=[...new Set(requests.map(r=>{try{return new URL(r.url).pathname;}catch{return r.url;}}))].sort();
  const data={scenario:scenario.name,status,navError,state,requestCount:requests.length,requestsByPath,
   requestedGLBs:requestsByPath.filter(p=>p.endsWith('.glb')),
-  failedRequests:failedRequests.slice(0,30),
+  failedRequests:failedRequests.slice(0,30),httpErrors:httpErrors.slice(0,30),
   errors:errors.slice(0,30),consoleErrors:consoleErrors.slice(0,30),
   caveat:'Chromium smoke only; not iPhone Safari and not a verified playable end-to-end session'};
  results.push(data);
+ try { await page.screenshot({path:'audit-output/'+scenario.name+'.png',fullPage:false,timeout:10000}); }
+ catch(e){data.screenshotError=String(e);}
  console.log(scenario.name,JSON.stringify({status,canvasCount:state.canvasCount,requestedGLBs:data.requestedGLBs.length,errors:errors.length,navError}));
  await context.close();
 }
 await browser.close();
-fs.mkdirSync('audit-output',{recursive:true});
 fs.writeFileSync('audit-output/browser-smoke.json',JSON.stringify({base,results},null,2)+'\n');
