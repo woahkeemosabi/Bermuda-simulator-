@@ -20,7 +20,7 @@ try {
   const response=await page.goto('http://127.0.0.1:'+port+'/?missions=boat&launch=online',{waitUntil:'domcontentloaded',timeout:30000});
   let ready=false;
   try {await page.waitForFunction(()=>{const l=document.querySelector('#loader');return l&&(l.classList.contains('tw-hidden')||getComputedStyle(l).display==='none');},null,{timeout:60000});ready=true;}catch{}
-  const state=await page.evaluate(()=>({title:document.title,canvasCount:document.querySelectorAll('canvas').length,loaderText:document.querySelector('#loader')?.innerText?.slice(0,180)||'',gpu:!!navigator.gpu}));
+  const state=await page.evaluate(async()=>{let adapter=null,adapterError=null;try{adapter=await navigator.gpu?.requestAdapter({powerPreference:'high-performance'});}catch(e){adapterError=String(e);}return {title:document.title,canvasCount:document.querySelectorAll('canvas').length,loaderText:document.querySelector('#loader')?.innerText?.slice(0,180)||'',gpu:!!navigator.gpu,adapterAvailable:!!adapter,maxStorageTexturesPerShaderStage:adapter?.limits?.maxStorageTexturesPerShaderStage??null,adapterError};});
   results.push({scenario:scenario.name,http:response.status(),ready,state,errors:errors.slice(0,12),consoleErrors:consoleErrors.slice(0,12)});
   await context.close();
  }
