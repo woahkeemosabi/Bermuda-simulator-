@@ -4,6 +4,12 @@
 
 No genuine hardware-backed WebGPU environment meeting the requirements was available through this session. Build and CPU-test success are not rendering or gameplay acceptance. Work is isolated on `test/tidewater-original-high-limit-20261028`; production and restoration PR #56 remain unchanged.
 
+## Physical iPhone capability evidence — 29 October update
+
+The user supplied [WebGPU Report output](evidence/iphone-adapter-20261029.txt) from their iPhone: Apple vendor/architecture, fallback false, storage-texture limit 44 and sampled-texture limit 44. This passes the adapter gate and exceeds the preferred 8/32 limits. Exact model, OS/browser version, backend and driver are not present in this export. This is user-supplied capability evidence, not an observed game run. The agent-controlled environments remain unsuitable; physical Safari gameplay acceptance is now awaiting the isolated preview run.
+
+The opt-in `tidewaterQA` recorder captures real requested and granted device limits, shader messages, uncaptured errors, device loss, loader timing and submitted-frame samples. Its bounded local log can be exported using the iPhone share sheet. The previous run can be recovered after a reload; the last seconds before a process crash may be absent. JS heap is recorded only when exposed; GPU memory stays unknown. The preview launch uses the existing `desktop` switch to select full quality while retaining the existing physical-device touch controls. No shader or game save is changed by this recorder. All gameplay remains unverified.
+
 ## Pinned sources
 
 | Source | Commit |
