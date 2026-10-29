@@ -1,7 +1,7 @@
 import { probeAdapter, qualifyAdapter } from '../../scripts/tidewater-gpu-gate.mjs';
 // Opt-in observation only. No shader, capability, quality or save substitution.
 const KEY='tidewater-safari-qa-v1';
-const report={schema:1,build:'original-safari-qa-20261029-v2-uniform13',startedAt:new Date().toISOString(),userAgent:navigator.userAgent,status:'STARTING',devices:[],consoleErrors:[],destroyCalls:[],errors:[],losses:[],shaders:[],samples:[],startupMs:null,gpuMemoryBytes:null,gameplay:'NOT_VERIFIED'};
+const report={schema:1,build:'original-safari-qa-20261029-v3-native-uniform-capacity',startedAt:new Date().toISOString(),userAgent:navigator.userAgent,status:'STARTING',devices:[],consoleErrors:[],destroyCalls:[],pipelineLayouts:[],errors:[],losses:[],shaders:[],samples:[],startupMs:null,gpuMemoryBytes:null,gameplay:'NOT_VERIFIED'};
 let previous=null;try{previous=JSON.parse(localStorage.getItem(KEY));}catch{}
 const keep=(list,value)=>{list.push(value);if(list.length>300)list.shift();};
 const numeric=o=>{const r={};for(let p=o;p&&p!==Object.prototype;p=Object.getPrototypeOf(p))for(const k of Object.getOwnPropertyNames(p))try{if(typeof o[k]==='number')r[k]=o[k];}catch{}return r;};
@@ -36,6 +36,23 @@ export async function prepare(){
    d.lost.then(i=>{keep(report.losses,{reason:i.reason,message:i.message,at:performance.now()});report.status='DEVICE_LOST';panel.open=true;panel.querySelector('pre').textContent='Device lost: '+i.reason+'\n'+(i.message||'Browser supplied no message')+'\nExport this report.';persist();});
    return d;
   }catch(e){keep(report.errors,{type:'requestDevice',message:String(e)});persist();throw e;}
+ };
+ // Observe descriptors without replacing layouts or altering resource bindings.
+ const layoutEntries=new WeakMap();
+ const createGroup=GPUDevice.prototype.createBindGroupLayout;
+ GPUDevice.prototype.createBindGroupLayout=function(...args){const layout=Reflect.apply(createGroup,this,args);layoutEntries.set(layout,[...args[0].entries]);return layout;};
+ const createLayout=GPUDevice.prototype.createPipelineLayout;
+ GPUDevice.prototype.createPipelineLayout=function(...args){
+  const groups=[...args[0].bindGroupLayouts],stages={};
+  for(const [stage,flag] of [['vertex',1],['fragment',2],['compute',4]]){
+   let uniforms=0,known=true;
+   for(const group of groups){if(group===null)continue;const entries=layoutEntries.get(group);if(!entries){known=false;continue;}
+    for(const e of entries)if((e.visibility&flag)&&e.buffer&&(e.buffer.type??'uniform')==='uniform')uniforms++;
+   }
+   stages[stage]={uniforms,complete:known};
+  }
+  keep(report.pipelineLayouts,{at:performance.now(),label:args[0].label||'',stages});
+  return Reflect.apply(createLayout,this,args);
  };
  const originalError=console.error;
  console.error=function(...args){keep(report.consoleErrors,{at:performance.now(),message:args.map(v=>v instanceof Error?v.stack||v.message:String(v)).join(' ')});persist();return Reflect.apply(originalError,this,args);};

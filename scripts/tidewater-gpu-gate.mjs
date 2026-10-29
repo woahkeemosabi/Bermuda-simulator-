@@ -9,9 +9,9 @@ export function qualifyAdapter(probe) {
   if(probe?.available&&!/nvidia|\bamd\b|advanced micro devices|intel|apple|qualcomm|\barm\b|imagination/i.test(identity))
     reasons.push('Hardware identity not established');
   if(!(probe?.limits?.maxStorageTexturesPerShaderStage>=5))reasons.push('Requires at least 5 storage textures per shader stage');
-  // Physical Safari evidence adds a 22-texture / 13-uniform-buffer layout.
+  // Physical Safari evidence adds a 22-texture / 14-uniform-buffer layout.
   if(!(probe?.limits?.maxSampledTexturesPerShaderStage>=22))reasons.push('Requires at least 22 sampled textures per shader stage');
-  if(!(probe?.limits?.maxUniformBuffersPerShaderStage>=13))reasons.push('Requires at least 13 uniform buffers per shader stage');
+  if(!(probe?.limits?.maxUniformBuffersPerShaderStage>=14))reasons.push('Requires at least 14 uniform buffers per shader stage');
   return {status:reasons.length?'BLOCKED_UNSUITABLE_ENVIRONMENT':'CAPABILITY_GATE_PASSED',reasons,
     preferredStorageLimitMet:probe?.limits?.maxStorageTexturesPerShaderStage>=8,gameplayValidated:false};
 }

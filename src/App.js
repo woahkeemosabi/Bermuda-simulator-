@@ -117,8 +117,8 @@ export class App {
 			engine.stop();
 			window.__bermudaOnGPUFailure?.( error.message );
 		} );
-		if ( ! mobileLite && GPU.limits.maxUniformBuffersPerShaderStage < 13 ) {
-			throw new Error( 'Full Tidewater scene requires at least 13 uniform buffers per shader stage; device granted ' + GPU.limits.maxUniformBuffersPerShaderStage );
+		if ( ! mobileLite && GPU.limits.maxUniformBuffersPerShaderStage < 14 ) {
+			throw new Error( 'Full Tidewater scene requires at least 14 uniform buffers per shader stage; device granted ' + GPU.limits.maxUniformBuffersPerShaderStage );
 		}
 		// systems take `renderer` first as in the three.js version: it is the Engine now (GPU access is global)
 		const renderer = engine;

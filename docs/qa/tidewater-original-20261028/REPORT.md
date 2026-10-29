@@ -4,6 +4,14 @@
 
 The user's physical iPhone reports a qualifying Apple adapter, but its first supplied full-quality startup screenshot shows DEVICE_LOST. Agent-controlled environments remain unsuitable. Build and CPU-test success are not rendering or gameplay acceptance. Work is isolated on `test/tidewater-original-high-limit-20261028`; production and restoration PR #56 remain unchanged.
 
+## Second physical run and revised request — latest result
+
+[Raw v2 report](evidence/iphone-runtime-v2-20261029.json) confirms 13 uniform buffers were requested and granted, then records a layout requiring 14. The original 13-buffer request was insufficient for the complete scene. Device loss was recorded at 26.229 s; the 14 > 13 validation message was delivered at 26.584 s. This ordering does not prove causality. Many pipeline rejections have empty messages; no explicit JavaScript destroy call was observed by the installed hook. The loader now displays the loss error rather than creeping indefinitely. Gameplay remains unverified.
+
+The revised isolated candidate requests the native adapter's reported maxUniformBuffersPerShaderStage (44 on this phone). This is a real requestDevice capability negotiation, not a fabricated limit, memory allocation or shader rewrite. Other device requests remain unchanged. The minimum observed uniform floor is now 14; it is not a guarantee of full-scene compatibility. The QA recorder observes per-stage uniform counts in pipeline layout descriptors. This broad uniform-capacity request is a validation policy; right-sizing for release awaits complete scene measurements and performance validation.
+
+The sole GPU.js integrity exception is now the one line requesting L.maxUniformBuffersPerShaderStage; removing it still reconstructs the original upstream file. All original ocean shaders and quality settings remain unchanged. The following sections retain the previous run's history. This revision is not yet physically validated.
+
 ## Runtime JSON diagnosis and repair candidate — 29 October
 
 [Raw physical Safari report](evidence/iphone-runtime-20261029.json) records a concrete validation error: `uniformBufferCount(13) > maxUniformBuffersPerShaderStage(12)`. The adapter supports 44; the game never requested the higher uniform limit. The game did correctly receive 8 storage / 32 sampled textures. The same error lists 22 sampled textures, within its granted 32. The current gate therefore requires at least 5 storage, 22 sampled and 13 uniform buffers per stage.

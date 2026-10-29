@@ -7,7 +7,7 @@ for(const [file,expected] of Object.entries(manifest.sha256)) {
   if(file==='src/engine/gpu/GPU.js') {
     // Sole host-side deviation: request the uniform limit demonstrated by physical Safari.
     // Removing exactly this one line must reconstruct the entire upstream file byte-for-byte.
-    const insertion='\t\t\tmaxUniformBuffersPerShaderStage: 13,\n';
+    const insertion='\t\t\tmaxUniformBuffersPerShaderStage: L.maxUniformBuffersPerShaderStage,\n';
     assert.equal(source.split(insertion).length,2,'Exactly one documented device-limit request');
     source=source.replace(insertion,'');
   }
