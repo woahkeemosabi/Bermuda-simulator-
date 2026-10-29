@@ -30,6 +30,28 @@ This QA change alters no application source or assets. Protected Bermuda world, 
 
 The runtime capability check also found no environment-status tool or network-policy snapshot exposed to this executor. No new hardware access or credential readiness was inferred. A prior local Chromium installation attempt returned invalid/truncated archives; it did not produce a usable browser. The revised workflow uses the browser installer on its separate Actions runner.
 
+## Revised qualification run — confirmed evidence
+
+[Actions run 40786864924](https://github.com/woahkeemosabi/Bermuda-simulator-/actions/runs/40786864924) tested candidate `d5aee2ffcb2f9176343c1f6e4929d9c418a84da1` and pinned compatibility `19e2d9f00b737a4a75acbc87e6105e8c3b98e4e9` on the same hosted runner. The source/CPU/build job passed. The hardware job failed at its mandatory final gate, correctly rejecting both environments instead of reporting green.
+
+| Observation | Original and compatibility |
+|---|---|
+| Browser | Headless Chromium 156.0.8078.4 on Linux |
+| WebGPU identity | vendor google; architecture swiftshader; isFallbackAdapter true |
+| Browser graphics stack | ANGLE / Vulkan 1.3.0 / SwiftShader Device (Subzero); SwANGLE driver 5.0.0 |
+| Dawn backend / driver | Not independently exposed by WebGPU; browser GL metadata above is not proof of Dawn backend |
+| Storage / sampled textures per shader stage | 4 / 16 — below the 5 / 21 gate |
+| Hardware Vulkan support | Browser metadata reports false |
+| Outcome | BLOCKED_UNSUITABLE_ENVIRONMENT before game navigation |
+| Runtime/gameplay/performance | NOT RUN; startup, FPS, JS heap and GPU memory null |
+
+Full numeric limits, all 21 adapter features and 14 WGSL language features are retained in each raw report. Advertised features include timestamp-query, subgroups, float32-filterable, float32-blendable, bgra8unorm-storage and BC/ETC2/ASTC compression; feature availability does not make this software adapter eligible. No game device was created, so empty error arrays do not constitute a clean GPU/gameplay result.
+
+- Original: [raw report](evidence/ci-40786864924/original/report.json), [adapter screenshot](evidence/ci-40786864924/original/adapter.png), [server log](evidence/ci-40786864924/original/server.txt).
+- Compatibility: [raw report](evidence/ci-40786864924/compatibility/report.json), [adapter screenshot](evidence/ci-40786864924/compatibility/adapter.png), [server log](evidence/ci-40786864924/compatibility/server.txt).
+
+Artifact 12859382562 was downloaded and its ZIP SHA-256 verified as `94028791df23874a19865751881287b92200b676b63e388b8399f0e60222fea5`. The screenshot's heading contains a text-encoding blemish; its recorded adapter values are unchanged. These are qualification screenshots, not rendered-game screenshots.
+
 ## Original versus compatibility diagnostics
 
 These are historical **unsupported-environment diagnostics**, not qualifying hardware validation. Both old Actions jobs appeared green because their script logged failed startup without returning a failure exit code.
