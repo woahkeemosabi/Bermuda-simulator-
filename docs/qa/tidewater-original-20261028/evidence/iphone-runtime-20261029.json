@@ -1,0 +1,2458 @@
+{
+  "schema": 1,
+  "build": "original-safari-qa-20261029-v1",
+  "startedAt": "2026-10-29T11:52:29.171Z",
+  "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
+  "status": "DEVICE_LOST",
+  "devices": [
+    {
+      "requested": {
+        "requiredFeatures": [
+          "timestamp-query",
+          "rg11b10ufloat-renderable",
+          "float32-blendable",
+          "shader-f16"
+        ],
+        "requiredLimits": {
+          "maxSampledTexturesPerShaderStage": 32,
+          "maxSamplersPerShaderStage": 16,
+          "maxStorageBuffersPerShaderStage": 10,
+          "maxStorageTexturesPerShaderStage": 8,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxColorAttachmentBytesPerSample": 64,
+          "maxBindingsPerBindGroup": 1000,
+          "maxBufferSize": 1073741824,
+          "maxStorageBufferBindingSize": 536870912
+        }
+      },
+      "limits": {
+        "maxTextureDimension1D": 8192,
+        "maxTextureDimension2D": 8192,
+        "maxTextureDimension3D": 2048,
+        "maxTextureArrayLayers": 256,
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxDynamicUniformBuffersPerPipelineLayout": 8,
+        "maxDynamicStorageBuffersPerPipelineLayout": 4,
+        "maxSampledTexturesPerShaderStage": 32,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBuffersPerShaderStage": 10,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxUniformBufferBindingSize": 65536,
+        "maxStorageBufferBindingSize": 536870912,
+        "minUniformBufferOffsetAlignment": 256,
+        "minStorageBufferOffsetAlignment": 256,
+        "maxVertexBuffers": 8,
+        "maxBufferSize": 1073741824,
+        "maxVertexAttributes": 16,
+        "maxVertexBufferArrayStride": 2048,
+        "maxInterStageShaderComponents": 64,
+        "maxInterStageShaderVariables": 16,
+        "maxColorAttachments": 8,
+        "maxColorAttachmentBytesPerSample": 64,
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeInvocationsPerWorkgroup": 256,
+        "maxComputeWorkgroupSizeX": 256,
+        "maxComputeWorkgroupSizeY": 256,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupsPerDimension": 65535
+      },
+      "features": [
+        "timestamp-query",
+        "rg11b10ufloat-renderable",
+        "float32-blendable",
+        "shader-f16",
+        "core-features-and-limits"
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "type": "GPU",
+      "message": "Resource usage limits exceeded: uniformBufferCount(13) > deviceLimits.maxUniformBuffersPerShaderStage(12) || storageBufferCount(4) > deviceLimits.maxStorageBuffersPerShaderStage(10) || samplerCount(9) > deviceLimits.maxSamplersPerShaderStage(16) || textureCount(22) > deviceLimits.maxSampledTexturesPerShaderStage(32) || storageTextureCount(0) > deviceLimits.maxStorageTexturesPerShaderStage(8)"
+    }
+  ],
+  "losses": [
+    {
+      "reason": "destroyed",
+      "message": "",
+      "at": 7575
+    }
+  ],
+  "shaders": [],
+  "samples": [
+    {
+      "at": 3262,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nBUILDING THE VILLAGE…\n8%\n0:02\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 6041,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n25%\n0:05\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 8040.000000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n37%\n0:07\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 10040.000000000002,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n40%\n0:09\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 12043.000000000002,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n42%\n0:11\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 14041,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n45%\n0:13\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 16043,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n47%\n0:15\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 18048,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n50%\n0:17\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 20051.000000000004,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n52%\n0:19\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 22056,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n54%\n0:21\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 24060.000000000004,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n56%\n0:23\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 26064,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n58%\n0:25\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 28067,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n60%\n0:27\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 30071,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n61%\n0:29\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 32075.000000000004,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n63%\n0:31\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 34080,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n64%\n0:33\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 36084,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n66%\n0:35\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 38088,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n67%\n0:37\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 40092,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n69%\n0:39\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 42095,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n70%\n0:41\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 44099.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n71%\n0:43\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 46108.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n72%\n0:45\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 48108.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n73%\n0:47\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 50112,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n74%\n0:49\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 52115,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n75%\n0:51\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 54120.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n76%\n0:53\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 56123.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n77%\n0:55\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 58127,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n78%\n0:57\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 60132,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n79%\n0:59\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 62136,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n80%\n1:01\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 64140,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n80%\n1:03\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 66143,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n81%\n1:05\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 68147,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n82%\n1:07\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 70151,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n82%\n1:09\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 72157,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n83%\n1:11\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 74160,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n83%\n1:13\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 76164,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n84%\n1:15\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 78168,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n85%\n1:17\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 80171,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n85%\n1:19\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 82175,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n85%\n1:21\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 84179,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n86%\n1:23\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 86183,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n86%\n1:25\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 88188,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n87%\n1:27\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 90192,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n87%\n1:29\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 92195.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n87%\n1:31\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 94201.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n88%\n1:33\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 96203,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n88%\n1:35\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 98207.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n88%\n1:37\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 100212,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n89%\n1:39\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 102216.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n89%\n1:41\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 104220,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n89%\n1:43\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 106224,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n90%\n1:45\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 108229,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n90%\n1:47\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 110231.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n90%\n1:49\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 112235,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n90%\n1:51\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 114239,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n90%\n1:53\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 116243.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n91%\n1:55\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 118247,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n91%\n1:57\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 120251,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n91%\n1:59\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 122256,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n91%\n2:01\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 124259,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n91%\n2:03\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 126263,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n91%\n2:05\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 128267,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n92%\n2:07\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 130271.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n92%\n2:09\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 132275,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n92%\n2:11\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 134279,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n92%\n2:13\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 136283.00000000003,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n92%\n2:15\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 138287,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n92%\n2:17\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 140291,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n92%\n2:19\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 142296,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n92%\n2:21\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 144300,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:23\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 146304,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:25\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 148307.00000000003,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:27\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 150312,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:29\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 152315,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:31\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 154319.00000000003,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:33\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 156324,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:35\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 158328,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:37\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 160332,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:39\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 162335,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:41\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 164339,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:43\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 166344,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:45\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 168347,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n93%\n2:47\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 170352,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n2:49\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 172355,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n2:51\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 174360,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n2:53\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 176363,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n2:55\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 178367,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n2:57\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 180371,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n2:59\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 182375,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:01\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 184380,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:03\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 186383,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:05\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 188388,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:07\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 190393,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:09\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 192395,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:11\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 194400,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:13\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 196404,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:15\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 198408.00000000003,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:17\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 200412,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:19\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 202416,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:21\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 204421,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:23\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 206423,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:25\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 208427,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:27\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 210432.00000000003,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:29\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 212435,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n94%\n3:31\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    }
+  ],
+  "startupMs": null,
+  "gpuMemoryBytes": null,
+  "gameplay": "NOT_VERIFIED",
+  "adapter": {
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
+    "secureContext": true,
+    "apiAvailable": true,
+    "available": true,
+    "info": {
+      "vendor": "apple",
+      "architecture": "apple",
+      "device": "apple",
+      "description": "apple",
+      "isFallbackAdapter": false
+    },
+    "limits": {
+      "maxTextureDimension1D": 16384,
+      "maxTextureDimension2D": 16384,
+      "maxTextureDimension3D": 2048,
+      "maxTextureArrayLayers": 2048,
+      "maxBindGroups": 11,
+      "maxBindGroupsPlusVertexBuffers": 30,
+      "maxBindingsPerBindGroup": 65535,
+      "maxDynamicUniformBuffersPerPipelineLayout": 65535,
+      "maxDynamicStorageBuffersPerPipelineLayout": 65535,
+      "maxSampledTexturesPerShaderStage": 44,
+      "maxSamplersPerShaderStage": 22,
+      "maxStorageBuffersPerShaderStage": 44,
+      "maxStorageTexturesPerShaderStage": 44,
+      "maxUniformBuffersPerShaderStage": 44,
+      "maxUniformBufferBindingSize": 1073741824,
+      "maxStorageBufferBindingSize": 1073741824,
+      "minUniformBufferOffsetAlignment": 32,
+      "minStorageBufferOffsetAlignment": 32,
+      "maxVertexBuffers": 12,
+      "maxBufferSize": 1073741824,
+      "maxVertexAttributes": 30,
+      "maxVertexBufferArrayStride": 65532,
+      "maxInterStageShaderComponents": 124,
+      "maxInterStageShaderVariables": 124,
+      "maxColorAttachments": 8,
+      "maxColorAttachmentBytesPerSample": 64,
+      "maxComputeWorkgroupStorageSize": 32768,
+      "maxComputeInvocationsPerWorkgroup": 1024,
+      "maxComputeWorkgroupSizeX": 1024,
+      "maxComputeWorkgroupSizeY": 1024,
+      "maxComputeWorkgroupSizeZ": 1024,
+      "maxComputeWorkgroupsPerDimension": 65535
+    },
+    "features": [
+      "bgra8unorm-storage",
+      "core-features-and-limits",
+      "depth-clip-control",
+      "depth32float-stencil8",
+      "float16-renderable",
+      "float32-blendable",
+      "float32-renderable",
+      "indirect-first-instance",
+      "rg11b10ufloat-renderable",
+      "shader-f16",
+      "texture-compression-astc",
+      "texture-compression-astc-sliced-3d",
+      "texture-compression-etc2",
+      "texture-formats-tier1",
+      "timestamp-query"
+    ],
+    "backend": null,
+    "driver": null,
+    "wgslLanguageFeatures": [
+      "packed_4x8_integer_dot_product",
+      "pointer_composite_access",
+      "readonly_and_readwrite_storage_textures",
+      "unrestricted_pointer_parameters"
+    ],
+    "isFallbackAdapter": false
+  },
+  "qualification": {
+    "status": "CAPABILITY_GATE_PASSED",
+    "reasons": [],
+    "preferredStorageLimitMet": true,
+    "gameplayValidated": false
+  },
+  "shaderCount": 165
+}

@@ -4,6 +4,18 @@
 
 The user's physical iPhone reports a qualifying Apple adapter, but its first supplied full-quality startup screenshot shows DEVICE_LOST. Agent-controlled environments remain unsuitable. Build and CPU-test success are not rendering or gameplay acceptance. Work is isolated on `test/tidewater-original-high-limit-20261028`; production and restoration PR #56 remain unchanged.
 
+## Runtime JSON diagnosis and repair candidate — 29 October
+
+[Raw physical Safari report](evidence/iphone-runtime-20261029.json) records a concrete validation error: `uniformBufferCount(13) > maxUniformBuffersPerShaderStage(12)`. The adapter supports 44; the game never requested the higher uniform limit. The game did correctly receive 8 storage / 32 sampled textures. The same error lists 22 sampled textures, within its granted 32. The current gate therefore requires at least 5 storage, 22 sampled and 13 uniform buffers per stage.
+
+Device loss occurred at 7,575 ms with reason `destroyed` and an empty message. The counter remained at frame 2, the loader stayed visible and startupMs stayed null. Full-quality settings were observed: four cascades, 512/256 caustics, 512 wake and renderScale 1. There were 165 shader modules and no captured compilation messages, which does not prove successful pipeline compilation. Memory was unavailable. This JSON covers about 212 seconds and is recorded separately from the earlier screenshot; their timing is not assumed identical. The report does not prove that the uniform-limit validation error caused device loss or who destroyed the device.
+
+The repair adds exactly one host-side request to GPU.js: `maxUniformBuffersPerShaderStage: 13`, bounded by the real adapter ceiling. Ocean shaders, dispatches, quality and assets are unchanged. Nine protected files remain byte-identical upstream; the integrity test reconstructs the tenth (GPU.js) by removing only this documented line before comparing its original hash. Earlier statements about ten byte-identical files describe the pre-repair candidate.
+
+App startup now races pipeline/queue waits against native device loss and reports the failure through the existing UI. Precompile exceptions propagate, with temporary flags restored. The QA recorder now timestamps GPU errors, records explicit destroy calls and console pipeline errors, and counts pending shader-info queries. It still returns native WebGPU objects unchanged.
+
+Request-descriptor and lifecycle regression tests use explicit test doubles and pass; they are not hardware results. The full-quality repair remains awaiting another physical Safari run. No playable-success claim or production promotion.
+
 ## Physical iPhone capability evidence — 29 October update
 
 The user supplied [WebGPU Report output](evidence/iphone-adapter-20261029.txt) from their iPhone: Apple vendor/architecture, fallback false, storage-texture limit 44 and sampled-texture limit 44. This passes the adapter gate and exceeds the preferred 8/32 limits. Exact model, OS/browser version, backend and driver are not present in this export. This is user-supplied capability evidence, not an observed game run. The agent-controlled environments remain unsuitable. The subsequent physical iPhone startup attempt failed, as documented below.

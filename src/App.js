@@ -5,6 +5,7 @@ import { SunShadows } from './engine/render/Shadows.js';
 import { FrameUniforms } from './engine/render/Frame.js';
 
 import { Engine } from './core/Engine.js';
+import { observeDeviceLoss } from './core/GpuDeviceFailure.js';
 import { Input } from './core/Input.js';
 import { CDLOD } from './core/CDLOD.js';
 import { G } from './core/Globals.js';
@@ -101,6 +102,7 @@ export class App {
 		// report a stage, then let the page paint it before the (synchronous) stage work starts
 		const progress = async ( p, text, until ) => {
 
+			this.deviceLifecycle?.throwIfLost();
 			onProgress( p, text, until );
 			if ( typeof requestAnimationFrame === 'function' ) await new Promise( ( r ) => requestAnimationFrame( () => setTimeout( r, 0 ) ) );
 
@@ -110,6 +112,14 @@ export class App {
 		if ( mobileLite ) engine.renderScale = Number( window.__bermudaMobileOutputScale ) || 0.64;
 		// High-end ocean and simulation are preserved. Reduce only frame-buffer pixel count.
 		await engine.init();
+		this.deviceLifecycle = observeDeviceLoss( GPU.device, ( error ) => {
+			GPU.fatalError = error;
+			engine.stop();
+			window.__bermudaOnGPUFailure?.( error.message );
+		} );
+		if ( ! mobileLite && GPU.limits.maxUniformBuffersPerShaderStage < 13 ) {
+			throw new Error( 'Full Tidewater scene requires at least 13 uniform buffers per shader stage; device granted ' + GPU.limits.maxUniformBuffersPerShaderStage );
+		}
 		// systems take `renderer` first as in the three.js version: it is the Engine now (GPU access is global)
 		const renderer = engine;
 		const { scene, camera } = engine;
@@ -461,7 +471,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// stage weights: in the browser the pipeline compile below takes far longer than everything before it
 		await progress( 0.36, 'Compiling shaders…', 0.95 );
 		gpuStage('Precompile shaders');
-		await this.precompile();
+		await this.deviceLifecycle.wait( this.precompile() );
 		gpuStage('Startup GPU warmup');
 		await progress( 0.96, 'Warming up…' );
 		// All simulation effects remain available. Prime on the loading screen, one GPU
@@ -469,7 +479,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		for ( let i = 0; i < ( mobileLite ? 1 : 2 ); i ++ ) {
 			if ( GPU.fatalError ) throw GPU.fatalError;
 			this.frame( 1 / 60 );
-			await GPU.queue.onSubmittedWorkDone();
+			await this.deviceLifecycle.wait( GPU.queue.onSubmittedWorkDone() );
 			gpuQueueAck(GPU.frame);
 			if ( GPU.fatalError ) throw GPU.fatalError;
 		}
@@ -494,7 +504,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		}
 
-		await GPU.pipelinesReady();
+		await this.deviceLifecycle.wait( GPU.pipelinesReady() );
 		mr.precompiling = true;
 		this.refraction.enabled = true;
 		const sr = this.sceneRenderer, hm = sr.hullMaskRT;
@@ -507,22 +517,21 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			// both water variants: with the hull-mask discard (a hull on screen) and without
 			for ( const hull of [ 0, 1 ] ) {
 
+				this.deviceLifecycle.throwIfLost();
 				this.waterMaterial.hullOverride = hull;
 				this.frame( 1 / 60 );
 
 			}
 
-		} catch ( e ) {
+		} finally {
 
-			console.warn( 'precompile failed', e );
+			this.waterMaterial.hullOverride = null;
+			mr.precompiling = false;
+			this.refraction.enabled = refr;
 
 		}
-
-		this.waterMaterial.hullOverride = null;
-		mr.precompiling = false;
-		this.refraction.enabled = refr;
-		await GPU.pipelinesReady();
-		await GPU.queue.onSubmittedWorkDone();
+		await this.deviceLifecycle.wait( GPU.pipelinesReady() );
+		await this.deviceLifecycle.wait( GPU.queue.onSubmittedWorkDone() );
 
 	}
 

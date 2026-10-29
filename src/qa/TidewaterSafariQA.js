@@ -1,7 +1,7 @@
 import { probeAdapter, qualifyAdapter } from '../../scripts/tidewater-gpu-gate.mjs';
 // Opt-in observation only. No shader, capability, quality or save substitution.
 const KEY='tidewater-safari-qa-v1';
-const report={schema:1,build:'original-safari-qa-20261029-v1',startedAt:new Date().toISOString(),userAgent:navigator.userAgent,status:'STARTING',devices:[],errors:[],losses:[],shaders:[],samples:[],startupMs:null,gpuMemoryBytes:null,gameplay:'NOT_VERIFIED'};
+const report={schema:1,build:'original-safari-qa-20261029-v2-uniform13',startedAt:new Date().toISOString(),userAgent:navigator.userAgent,status:'STARTING',devices:[],consoleErrors:[],destroyCalls:[],errors:[],losses:[],shaders:[],samples:[],startupMs:null,gpuMemoryBytes:null,gameplay:'NOT_VERIFIED'};
 let previous=null;try{previous=JSON.parse(localStorage.getItem(KEY));}catch{}
 const keep=(list,value)=>{list.push(value);if(list.length>300)list.shift();};
 const numeric=o=>{const r={};for(let p=o;p&&p!==Object.prototype;p=Object.getPrototypeOf(p))for(const k of Object.getOwnPropertyNames(p))try{if(typeof o[k]==='number')r[k]=o[k];}catch{}return r;};
@@ -32,15 +32,19 @@ export async function prepare(){
   try{
    const d=await Reflect.apply(request,this,args);
    keep(report.devices,{requested:args[0],limits:numeric(d.limits),features:[...d.features]});persist();
-   d.addEventListener('uncapturederror',e=>{keep(report.errors,{type:'GPU',message:e.error.message});persist();});
-   d.lost.then(i=>{keep(report.losses,{reason:i.reason,message:i.message,at:performance.now()});report.status='DEVICE_LOST';persist();});
+   d.addEventListener('uncapturederror',e=>{keep(report.errors,{type:'GPU',message:e.error.message,at:performance.now()});persist();});
+   d.lost.then(i=>{keep(report.losses,{reason:i.reason,message:i.message,at:performance.now()});report.status='DEVICE_LOST';panel.open=true;panel.querySelector('pre').textContent='Device lost: '+i.reason+'\n'+(i.message||'Browser supplied no message')+'\nExport this report.';persist();});
    return d;
   }catch(e){keep(report.errors,{type:'requestDevice',message:String(e)});persist();throw e;}
  };
+ const originalError=console.error;
+ console.error=function(...args){keep(report.consoleErrors,{at:performance.now(),message:args.map(v=>v instanceof Error?v.stack||v.message:String(v)).join(' ')});persist();return Reflect.apply(originalError,this,args);};
+ const destroy=GPUDevice.prototype.destroy;
+ GPUDevice.prototype.destroy=function(...args){keep(report.destroyCalls,{at:performance.now(),stack:new Error('GPUDevice.destroy called').stack});persist();return Reflect.apply(destroy,this,args);};
  const create=GPUDevice.prototype.createShaderModule;
  GPUDevice.prototype.createShaderModule=function(...args){
-  const m=Reflect.apply(create,this,args);report.shaderCount=(report.shaderCount||0)+1;
-  m.getCompilationInfo().then(i=>{for(const x of i.messages)keep(report.shaders,{label:args[0]?.label,type:x.type,message:x.message,line:x.lineNum});persist();}).catch(e=>keep(report.errors,{type:'compilationInfo',message:String(e)}));return m;
+  const m=Reflect.apply(create,this,args);report.shaderCount=(report.shaderCount||0)+1;report.pendingShaderInfo=(report.pendingShaderInfo||0)+1;
+  m.getCompilationInfo().then(i=>{for(const x of i.messages)keep(report.shaders,{label:args[0]?.label,type:x.type,message:x.message,line:x.lineNum});persist();}).catch(e=>keep(report.errors,{type:'compilationInfo',message:String(e)})).finally(()=>{report.pendingShaderInfo--;persist();});return m;
  };
  report.status='LOADING';
  setInterval(()=>{

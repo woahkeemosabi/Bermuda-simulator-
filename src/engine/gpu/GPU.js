@@ -36,6 +36,7 @@ export const GPU = {
 		const want = {
 			maxSampledTexturesPerShaderStage: 32,
 			maxSamplersPerShaderStage: 16,
+			maxUniformBuffersPerShaderStage: 13,
 			maxStorageBuffersPerShaderStage: 10,
 			maxStorageTexturesPerShaderStage: 8,
 			maxComputeWorkgroupStorageSize: 32768,

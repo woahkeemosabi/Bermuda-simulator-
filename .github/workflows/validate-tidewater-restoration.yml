@@ -23,7 +23,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node test/tidewater-original-integrity.mjs && node test/tidewater-gpu-gate.mjs
+      - run: node test/tidewater-original-integrity.mjs && node test/tidewater-gpu-gate.mjs && node test/tidewater-device-limits.mjs && node test/gpu-device-failure.mjs
       - run: node test/game-logic.mjs && node test/bermuda-layout.mjs && node test/first-boat-mode.mjs && node test/first-boat-economy.mjs
       - run: npm run build
   hardware-validation:
