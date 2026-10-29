@@ -4,7 +4,21 @@
 
 The user's physical iPhone reports a qualifying Apple adapter, but its first supplied full-quality startup screenshot shows DEVICE_LOST. Agent-controlled environments remain unsuitable. Build and CPU-test success are not rendering or gameplay acceptance. Work is isolated on `test/tidewater-original-high-limit-20261028`; production and restoration PR #56 remain unchanged.
 
-## Second physical run and revised request — latest result
+## Third physical run — native uniform capacity granted, device loss persists
+
+[Raw v3 report](evidence/iphone-runtime-v3-20261029.json) and [derived summary](evidence/iphone-runtime-v3-summary.json) record build `original-safari-qa-20261029-v3-native-uniform-capacity`, candidate `6ce4a01824a64d2c9f7bbcee971a8abddca9fbcb`. The session started 29 October at 13:02:46.998 Atlantic/Bermuda (16:02:46.998 UTC). This is user-operated physical iPhone evidence, not an agent-controlled run.
+
+**FAIL: startup and interactivity.** The device was granted 44 uniform buffers, 8 storage textures and 32 sampled textures per shader stage. All 234 captured layout records have complete uniform counts; observed maxima are vertex 16, fragment 15 and compute 10. The earlier uniform-limit validation error is absent. These counts cover recorded layouts, not every future gameplay state. No further limit increase is justified by this report.
+
+Device loss occurred at 20.243 s with reason `destroyed` and an empty message. No JavaScript destroy call was observed by the installed hook. Pipeline failure console messages began at 20.212 s with no explanation, across many unrelated materials, including water. Callback ordering does not establish which operation caused the loss. The report contains no uncaptured GPU errors or shader compilation messages; 218 shader modules and zero pending compilation-info queries do not prove successful pipelines or rendering.
+
+Across 18 samples (last at 40.357 s), the frame counter remained at two, startupMs stayed null, and the loader stayed visible with a device-loss error. Last sampled FPS is zero, not a successful performance benchmark. Full quality remained enabled: renderScale 1, four FFT cascades, 512/256 caustics and 512 wake. CPU heap and GPU memory are unavailable. Legacy loader Submits 0 counters are not hooked into the restored GPU module and cannot establish absence of submissions.
+
+The uniform-request change removed the previously observed validation failure but did not resolve device loss. Root cause remains unknown. Compiler/driver failure and resource pressure are hypotheses, not findings. Next diagnostic work should observe native async/sync pipeline completion and rejection name/reason, peak concurrent compilation, queue submission/completion and startup phase timing before changing scheduling. Compare any scheduling experiment against this baseline on the same physical device without changing shaders, assets or quality. No further runtime change is made on the strength of this inconclusive loss report alone.
+
+FFT execution, caustics, wake, visible rendering and all gameplay acceptance (fishing, selling to Joe, saving BMD 3,200 and buying the boat) remain unverified. No new compatible-versus-original physical comparison is available. Production stays unchanged; PR #58 remains draft and not ready to merge.
+
+## Second physical run and revised request — historical result
 
 [Raw v2 report](evidence/iphone-runtime-v2-20261029.json) confirms 13 uniform buffers were requested and granted, then records a layout requiring 14. The original 13-buffer request was insufficient for the complete scene. Device loss was recorded at 26.229 s; the 14 > 13 validation message was delivered at 26.584 s. This ordering does not prove causality. Many pipeline rejections have empty messages; no explicit JavaScript destroy call was observed by the installed hook. The loader now displays the loss error rather than creeping indefinitely. Gameplay remains unverified.
 
