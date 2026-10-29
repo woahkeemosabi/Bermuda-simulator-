@@ -1,14 +1,32 @@
 # Original Tidewater GPU validation — 28 October 2026
 
-**Release verdict: BLOCKED. No verified playable candidate yet. Do not merge.**
+**Release verdict: FAIL — physical iPhone startup lost its GPU device. No verified playable candidate. Do not merge.**
 
-No genuine hardware-backed WebGPU environment meeting the requirements was available through this session. Build and CPU-test success are not rendering or gameplay acceptance. Work is isolated on `test/tidewater-original-high-limit-20261028`; production and restoration PR #56 remain unchanged.
+The user's physical iPhone reports a qualifying Apple adapter, but its first supplied full-quality startup screenshot shows DEVICE_LOST. Agent-controlled environments remain unsuitable. Build and CPU-test success are not rendering or gameplay acceptance. Work is isolated on `test/tidewater-original-high-limit-20261028`; production and restoration PR #56 remain unchanged.
 
 ## Physical iPhone capability evidence — 29 October update
 
-The user supplied [WebGPU Report output](evidence/iphone-adapter-20261029.txt) from their iPhone: Apple vendor/architecture, fallback false, storage-texture limit 44 and sampled-texture limit 44. This passes the adapter gate and exceeds the preferred 8/32 limits. Exact model, OS/browser version, backend and driver are not present in this export. This is user-supplied capability evidence, not an observed game run. The agent-controlled environments remain unsuitable; physical Safari gameplay acceptance is now awaiting the isolated preview run.
+The user supplied [WebGPU Report output](evidence/iphone-adapter-20261029.txt) from their iPhone: Apple vendor/architecture, fallback false, storage-texture limit 44 and sampled-texture limit 44. This passes the adapter gate and exceeds the preferred 8/32 limits. Exact model, OS/browser version, backend and driver are not present in this export. This is user-supplied capability evidence, not an observed game run. The agent-controlled environments remain unsuitable. The subsequent physical iPhone startup attempt failed, as documented below.
 
 The opt-in `tidewaterQA` recorder captures real requested and granted device limits, shader messages, uncaptured errors, device loss, loader timing and submitted-frame samples. Its bounded local log can be exported using the iPhone share sheet. The previous run can be recovered after a reload; the last seconds before a process crash may be absent. JS heap is recorded only when exposed; GPU memory stays unknown. The preview launch uses the existing `desktop` switch to select full quality while retaining the existing physical-device touch controls. No shader or game save is changed by this recorder. All gameplay remains unverified.
+
+## Physical iPhone startup failure — 29 October
+
+The user supplied [this screenshot](evidence/iphone-device-lost-20261029.jpeg) after opening the isolated original-renderer preview. It shows **QA · DEVICE_LOST · 0 fps**, **COMPILING SHADERS…**, **94%**, and an elapsed loader display of **5:32**. The same screenshot was attached twice; it is one observed failure, not two independent test runs.
+
+Candidate: `74edf2bb17c4a7178e6dd8d0fd03bc4d96db9911`. Preview: `dpl_EXHPXF6G59EZzrw7w2jJCBVUmGiT` at `bermuda-simulator-bfd95nx5i-akeemalbouy-1327.vercel.app`. The screenshot only shows a shortened hostname, so its association with this candidate is based on the conversation and supplied test link, pending the exported runtime report.
+
+**Confirmed:** the QA recorder observed device loss; the loading screen remained visible at capture; interactive gameplay was not demonstrated. **Unknown:** exact loss time/reason/message, granted game-device limits, failing pipeline, shader diagnostics, peak memory and whether any earlier work completed. The displayed 5:32 is elapsed loading time at screenshot capture, not the device-loss timestamp or successful startup duration. The 0 fps display is a sampled submitted-frame counter, not a GPU execution benchmark.
+
+Source review at the candidate commit:
+
+- `src/App.js:462–525`: the “Compiling shaders” stage covers post-pipeline construction, pipeline readiness waits, two precompile frames and a queue-completion wait. The screenshot does not distinguish those substeps.
+- `src/ui/UI.js:3209–3240`: progress creeps toward the stage ceiling over time. 94% does not mean 94% of shaders compiled.
+- `src/engine/gpu/GPU.js:64–65, 159–198`: the original device-loss listener logs to the console; asynchronous pipeline failures are handled/logged; pipeline readiness waits for pending promises. The original module does not invoke Bermuda's separate failure callback.
+- `src/main.js:229–265`: the loading error UI depends on startup rejection or the Bermuda failure callback.
+- `src/qa/TidewaterSafariQA.js`: the observer independently records device loss and updates its QA status. It does not terminate the application's pending startup. This explains the conflicting failure badge and continuing loader without establishing the cause of GPU loss.
+
+No speculative shader or quality change was made in response. Next evidence is **QA → Export report** from the same tab (or **Previous run** after one reload). That JSON contains the loss event, native requested/granted limits and captured shader/errors. A runtime repair and another full-quality physical-device run are required before a playable claim. Fishing, Joe selling, earning 3,200 and boat purchase remain untested through the real UI.
 
 ## Pinned sources
 
@@ -21,7 +39,7 @@ The opt-in `tidewaterQA` recorder captures real requested and granted device lim
 
 Ten core engine/ocean files match the upstream bytes, including GPU scheduling, Engine, scene/mesh rendering, ComputeMips, FFT, underwater lighting, caustics, wake and water surface. See the [hash manifest](../../../test/tidewater-original-manifest.json) and [comparison evidence](evidence/source-integrity.json).
 
-This QA change alters no application source or assets. Protected Bermuda world, gameplay, player, mobile, UI, App, main and public-asset paths also match the pinned compatibility and production revisions. The entire Bermuda application is not pristine upstream: existing WebP support in GLTF, FullscreenPass diagnostics, WaterQuery mobile throttling, MobileWake and Environment scheduling are preserved.
+The initial QA commit altered no application source or assets. The subsequent opt-in Safari QA commit adds an early conditional import in index.html, a diagnostic module and a separate test launcher; it does not change engine/ocean code or existing Bermuda assets. Protected Bermuda world, gameplay, player, mobile, UI, App, main and public-asset paths also match the pinned compatibility and production revisions. The entire Bermuda application is not pristine upstream: existing WebP support in GLTF, FullscreenPass diagnostics, WaterQuery mobile throttling, MobileWake and Environment scheduling are preserved.
 
 ## Environment findings
 
@@ -87,14 +105,14 @@ The historical scripts retained only the first 12 errors. These are not exhausti
 | Build | PASS — build only |
 | Game logic, harbour layout, first-boat mode | PASS — CPU only |
 | Earn/save 3,200 and purchase/save boat | PASS — CPU integration only; supplied catches, no real UI |
-| Qualifying genuine GPU | BLOCKED |
-| Shader compilation on qualifying hardware | NOT RUN |
+| Qualifying genuine GPU | PASS — user-supplied Apple adapter capabilities; actual game-device limits await JSON export |
+| Shader compilation on qualifying hardware | ATTEMPTED, NOT VERIFIED — device lost while loader showed shader stage |
 | FFT numerical output / animated ocean | NOT RUN |
 | Caustics / moving-boat wake | NOT RUN |
-| Rendering and loader disappearance | NOT VERIFIED; historical runs failed |
+| Rendering and loader disappearance | FAIL — physical iPhone screenshot still shows loader at 94% with DEVICE_LOST |
 | Walk/look/cast/fight/catch / sell to Joe through UI | NOT RUN |
 | Earn 3,200 / reload / purchase / board / drive through UI | NOT RUN |
-| Physical iPhone Safari | NOT RUN |
+| Physical iPhone Safari | FAIL — user-supplied startup screenshot; exact browser/OS still await runtime report |
 | Comparable hardware FPS and memory | NOT RUN |
 
 CPU evidence: [verification log](evidence/local-verification.txt). The economy test supplies 521 grunt catches/sales, moves the wallet from 75 to 3,201, reloads, buys for exactly 3,200, prevents a duplicate charge and verifies persisted ownership with 1 remaining. It tests neither fishing input nor Joe's actual interface. No real browser save receives injected fish or cash.
