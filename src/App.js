@@ -1,5 +1,6 @@
 import { Vector3, Euler, Color, MathUtils, Mesh } from './engine/index.js';
 import { GPU } from './engine/gpu/GPU.js';
+import { installRenderCompileQueue } from './core/RenderCompileQueue.js';
 import { gpuStage, gpuQueueAck } from './mobile/GpuAudit.js';
 import { SunShadows } from './engine/render/Shadows.js';
 import { FrameUniforms } from './engine/render/Frame.js';
@@ -113,6 +114,8 @@ export class App {
 		if ( mobileLite ) engine.renderScale = Number( window.__bermudaMobileOutputScale ) || 0.64;
 		// High-end ocean and simulation are preserved. Reduce only frame-buffer pixel count.
 		await engine.init();
+		this.renderCompileQueue = installRenderCompileQueue( GPU.device, 2 );
+		window.__bermudaCompileQueue = this.renderCompileQueue.stats;
 		this.deviceLifecycle = observeDeviceLoss( GPU.device, ( error ) => {
 			GPU.fatalError = error;
 			engine.stop();
@@ -510,6 +513,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		window.__bermudaQAPhase?.( 'compute-post-pipelines-wait' );
 		await this.deviceLifecycle.wait( GPU.pipelinesReady() );
+		this.renderCompileQueue.throwIfFailed();
 		window.__bermudaQAPhase?.( 'compute-post-pipelines-ready' );
 		mr.precompiling = true;
 		this.refraction.enabled = true;
@@ -539,6 +543,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		}
 		window.__bermudaQAPhase?.( 'scene-pipelines-wait' );
 		await this.deviceLifecycle.wait( GPU.pipelinesReady() );
+		this.renderCompileQueue.throwIfFailed();
 		window.__bermudaQAPhase?.( 'scene-pipelines-ready' );
 		await this.deviceLifecycle.wait( GPU.queue.onSubmittedWorkDone() );
 		window.__bermudaQAPhase?.( 'precompile-queue-complete' );

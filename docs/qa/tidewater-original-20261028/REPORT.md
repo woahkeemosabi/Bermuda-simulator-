@@ -4,6 +4,16 @@
 
 The user's physical iPhone reports a qualifying Apple adapter, but its first supplied full-quality startup screenshot shows DEVICE_LOST. Agent-controlled environments remain unsuitable. Build and CPU-test success are not rendering or gameplay acceptance. Work is isolated on `test/tidewater-original-high-limit-20261028`; production and restoration PR #56 remain unchanged.
 
+## V5 startup scheduling repair candidate — 29 October
+
+Historical comparison identified October 14 commit d7f931404dc7b87c9d4fcacc2ed2aa12de213b43, which already used parallel pipeline compilation. Commit messages and archived deployment names do not establish it as a verified last-good build. No historical rollback is claimed or performed. The 140-request burst in v4 is a concrete observation, not proof of root cause.
+
+V5 now limits native asynchronous **render** pipeline compilation to two concurrent calls through a host-side queue installed after device initialization. Every descriptor reaches the same native compiler unchanged; synchronous and compute compilation are untouched. The scheduler stops launching queued jobs on first rejection or device loss, settles waiting callers, and startup checks its failure state after pipeline readiness. This also fixes the previous possibility of continuing startup after the engine logged and swallowed a render-pipeline rejection. Longer startup is a possible tradeoff. Loss and compilation overlap remain possible; efficacy needs physical validation.
+
+The native observer is installed before the scheduling wrapper, so it sees actual native calls, not the queued application requests. A separate compileQueue report exposes queued/active/completed/cancelled counts and the first failure. Native promise identity is preserved by observation, but the scheduler necessarily returns its own waiting promise. This host scheduling deviation is explicit; original protected GPU.js still has only the prior uniform-limit request insertion and all protected shader files retain their hashes.
+
+Validation: 140-job queue unit test verified concurrency two, FIFO descriptor/result identity, cancellation on failure, no later launches after failure, and device loss settling waiters even if native calls never finish. Observer, startup-loss and source-integrity tests passed; Vite build passed. Unit doubles are not hardware validation. The legacy mobile-audit assertion limitation described below remains. Assets, geography, HUD, controls, gameplay and all quality settings are unchanged. Production remains untouched. No v5 physical result or playable acceptance yet.
+
 ## Fourth physical run — native trace localizes failure to scene precompile
 
 [Raw v4 report](evidence/iphone-runtime-v4-20261029.json) identifies commit `9ad6503be693891b58196851473041050cdd6204` and the correct full-quality preview URL/options. **Startup FAIL.** Device loss occurred at 6.279 s, reason destroyed, empty message. Startup remains incomplete and gameplay unverified.

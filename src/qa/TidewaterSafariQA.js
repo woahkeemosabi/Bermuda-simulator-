@@ -3,11 +3,11 @@ import { observeNativeGPU } from './NativeGPUTrace.js';
 // Opt-in observation only. No shader, capability, quality or save substitution.
 const KEY='tidewater-safari-qa-v1';
 const flags=new URLSearchParams(location.search);
-const report={schema:2,build:'original-safari-qa-20261029-v4-native-trace',commit:typeof __BERMUDA_QA_COMMIT__==='undefined'?null:__BERMUDA_QA_COMMIT__,page:{origin:location.origin,path:location.pathname,options:Object.fromEntries(['desktop','tidewaterQA','quality','recovery','atmotest','envtest','cloudtest','waterTest','noClouds','missions','launch'].filter(k=>flags.has(k)).map(k=>[k,flags.get(k)]))},startedAt:new Date().toISOString(),userAgent:navigator.userAgent,status:'STARTING',devices:[],nativeTraces:[],phases:[],consoleErrors:[],destroyCalls:[],pipelineLayouts:[],errors:[],losses:[],shaders:[],samples:[],startupMs:null,gpuMemoryBytes:null,gameplay:'NOT_VERIFIED'};
+const report={schema:2,build:'original-safari-qa-20261029-v5-render-queue2',commit:typeof __BERMUDA_QA_COMMIT__==='undefined'?null:__BERMUDA_QA_COMMIT__,page:{origin:location.origin,path:location.pathname,options:Object.fromEntries(['desktop','tidewaterQA','quality','recovery','atmotest','envtest','cloudtest','waterTest','noClouds','missions','launch'].filter(k=>flags.has(k)).map(k=>[k,flags.get(k)]))},startedAt:new Date().toISOString(),userAgent:navigator.userAgent,status:'STARTING',devices:[],nativeTraces:[],phases:[],consoleErrors:[],destroyCalls:[],pipelineLayouts:[],errors:[],losses:[],shaders:[],samples:[],startupMs:null,gpuMemoryBytes:null,gameplay:'NOT_VERIFIED'};
 let previous=null;try{previous=JSON.parse(localStorage.getItem(KEY));}catch{}
 const keep=(list,value)=>{list.push(value);if(list.length>300)list.shift();};
 const numeric=o=>{const r={};for(let p=o;p&&p!==Object.prototype;p=Object.getPrototypeOf(p))for(const k of Object.getOwnPropertyNames(p))try{if(typeof o[k]==='number')r[k]=o[k];}catch{}return r;};
-const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(report));}catch{}};
+const persist=()=>{report.compileQueue=window.__bermudaCompileQueue??null;try{localStorage.setItem(KEY,JSON.stringify(report));}catch{}};
 // Batch diagnostic writes so completion bursts do not synchronously serialize every event.
 let persistTimer=null;
 const persistSoon=()=>{if(persistTimer===null)persistTimer=setTimeout(()=>{persistTimer=null;persist();},1000);};
