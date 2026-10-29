@@ -70,6 +70,7 @@ export function gpuReport(app,attempt=0){
  const a=gpuAudit,scene=app?.sceneRenderer,engine=app?.engine;
  return [
   a.version+' | retry '+attempt,
+  ...(typeof window!=='undefined'&&window.__bermudaQASummary?window.__bermudaQASummary():[]),
   'Elapsed '+Math.round((now()-began)/1000)+'s | Frame '+a.frame+' | Submits '+a.submits,
   'Last stage '+a.stage+' @'+a.stageAt+'ms | Last submit '+a.lastSubmitAt+'ms',
   'Compute in last submit '+a.lastSubmittedComputeCount+' | Last kernels '+(a.lastSubmittedComputes.join(' > ')||'none recorded'),

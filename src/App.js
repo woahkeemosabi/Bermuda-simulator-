@@ -102,6 +102,7 @@ export class App {
 		// report a stage, then let the page paint it before the (synchronous) stage work starts
 		const progress = async ( p, text, until ) => {
 
+			window.__bermudaQAPhase?.( 'progress', { progress: p, text } );
 			this.deviceLifecycle?.throwIfLost();
 			onProgress( p, text, until );
 			if ( typeof requestAnimationFrame === 'function' ) await new Promise( ( r ) => requestAnimationFrame( () => setTimeout( r, 0 ) ) );
@@ -472,17 +473,20 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		await progress( 0.36, 'Compiling shaders…', 0.95 );
 		gpuStage('Precompile shaders');
 		await this.deviceLifecycle.wait( this.precompile() );
+		window.__bermudaQAPhase?.( 'precompile-complete' );
 		gpuStage('Startup GPU warmup');
 		await progress( 0.96, 'Warming up…' );
 		// All simulation effects remain available. Prime on the loading screen, one GPU
 		// submission at a time; never let startup pretend success after a failed device.
 		for ( let i = 0; i < ( mobileLite ? 1 : 2 ); i ++ ) {
+			window.__bermudaQAPhase?.( 'warmup-frame', { index: i } );
 			if ( GPU.fatalError ) throw GPU.fatalError;
 			this.frame( 1 / 60 );
 			await this.deviceLifecycle.wait( GPU.queue.onSubmittedWorkDone() );
 			gpuQueueAck(GPU.frame);
 			if ( GPU.fatalError ) throw GPU.fatalError;
 		}
+		window.__bermudaQAPhase?.( 'startup-gpu-ready' );
 
 	}
 
@@ -504,7 +508,9 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		}
 
+		window.__bermudaQAPhase?.( 'compute-post-pipelines-wait' );
 		await this.deviceLifecycle.wait( GPU.pipelinesReady() );
+		window.__bermudaQAPhase?.( 'compute-post-pipelines-ready' );
 		mr.precompiling = true;
 		this.refraction.enabled = true;
 		const sr = this.sceneRenderer, hm = sr.hullMaskRT;
@@ -517,6 +523,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			// both water variants: with the hull-mask discard (a hull on screen) and without
 			for ( const hull of [ 0, 1 ] ) {
 
+				window.__bermudaQAPhase?.( 'scene-precompile-frame', { hull } );
 				this.deviceLifecycle.throwIfLost();
 				this.waterMaterial.hullOverride = hull;
 				this.frame( 1 / 60 );
@@ -530,8 +537,11 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			this.refraction.enabled = refr;
 
 		}
+		window.__bermudaQAPhase?.( 'scene-pipelines-wait' );
 		await this.deviceLifecycle.wait( GPU.pipelinesReady() );
+		window.__bermudaQAPhase?.( 'scene-pipelines-ready' );
 		await this.deviceLifecycle.wait( GPU.queue.onSubmittedWorkDone() );
+		window.__bermudaQAPhase?.( 'precompile-queue-complete' );
 
 	}
 
