@@ -4,6 +4,20 @@
 
 The user's physical iPhone reports a qualifying Apple adapter, but its first supplied full-quality startup screenshot shows DEVICE_LOST. Agent-controlled environments remain unsuitable. Build and CPU-test success are not rendering or gameplay acceptance. Work is isolated on `test/tidewater-original-high-limit-20261028`; production and restoration PR #56 remain unchanged.
 
+## Fourth physical run — native trace localizes failure to scene precompile
+
+[Raw v4 report](evidence/iphone-runtime-v4-20261029.json) identifies commit `9ad6503be693891b58196851473041050cdd6204` and the correct full-quality preview URL/options. **Startup FAIL.** Device loss occurred at 6.279 s, reason destroyed, empty message. Startup remains incomplete and gameplay unverified.
+
+Native observation recorded 231 async pipeline requests: 91 resolved and 140 rejected, with peak pending 140. All 140 rejected calls are render pipelines with GPUPipelineError reason validation and empty messages. These are pipeline-promise rejections, despite the separate uncaptured-error array being empty. Ten synchronous calls returned without throwing; this alone does not establish successful validation.
+
+The initial compute/post readiness wait completed at 5.342 s. Scene precompile frames began at 5.344 s and 5.670 s; scene-pipeline waiting began at 5.725 s. The burst of render-pipeline failures and device-loss callbacks arrived around 6.278–6.281 s. Ordering of these callbacks does not establish whether validation caused the loss or failures followed device destruction. No specific bad shader or excessive resource allocation is identified.
+
+Two native queue submissions were recorded. The sampled completion fence covered only submission 1 and resolved at 6.278 s. Submission 2 is not covered by that fence; it has no recorded completion acknowledgment. This is not proof it hung or failed. CPU callback timings are not GPU execution durations.
+
+Full quality remained enabled (four cascades, 512/256 caustics, 512 wake, renderScale 1). The loader remained visible at frame 2. No successful rendering, FPS benchmark, memory measurement or gameplay acceptance follows from this trace. Original shaders and production remain unchanged.
+
+The next controlled experiment should separate scene-pipeline compilation from submitted warmup work, or limit concurrent compilation while retaining exactly the same pipeline descriptors, shaders and quality. Change one variable per candidate and retain this v4 baseline. Concurrency pressure is a hypothesis, not a confirmed cause; a reduction in failures would require repeated physical-device validation before a repair claim.
+
 ## Additional mobile trace and v4 observation candidate — 29 October
 
 The user supplied a [separate copied mobile trace](evidence/iphone-mobile-frame76-unattributed-20261029.txt): 76 submissions, last submit at 10.899 s, last queue-completion callback at 10.927 s, elapsed report time 23 s, reason destroyed, empty loss message, and no JavaScript destroy observed. It shows single-pass mobile presentation, a 284×480 scene / 334×565 canvas, staged atmosphere, progressive 64px reflections frozen after priming, and nine render passes in the last recorded submit. No compute passes were recorded in that last submit; this does not exclude earlier compute work. Neither queue callbacks nor pass names establish visible, correct rendering or gameplay.
