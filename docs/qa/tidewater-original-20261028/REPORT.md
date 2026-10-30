@@ -4,6 +4,28 @@
 
 The user's physical iPhone reports a qualifying Apple adapter, but its first supplied full-quality startup screenshot shows DEVICE_LOST. Agent-controlled environments remain unsuitable. Build and CPU-test success are not rendering or gameplay acceptance. Work is isolated on `test/tidewater-original-high-limit-20261028`; production and restoration PR #56 remain unchanged.
 
+## V6 candidate — serialized startup GPU stages
+
+V5 failed despite enforcing render concurrency two. V6 retains that limit and changes startup submission pacing: constructor texture/foam bakes are flushed first; each precompile and warmup frame then submits player/wake, atmosphere, FFT/detail, water queries, caustics, shore/particles, underwater lighting, spray/clouds, reflections, world bakes, shadows, scene rendering and post-presentation as separate stages. Each stage waits for its native queue fence and checks device health before advancing. Pending pipeline compilation is awaited before encoding the next stage. There is no asynchronous wait between encoding a stage and submitting it, avoiding holding a canvas currentTexture across a pipeline-compilation wait.
+
+The initial reflection bake uses every existing Environment step, at the same resolution and shader/sample settings, with a fence between steps. All steps finish behind the loader and the previous progressive-prime setting is restored even on failure. This changes host initialization scheduling, not original shader code or quality. Normal play consumes the same frame traversal synchronously and retains one submission per frame. Successful staged startup would not establish sustained gameplay stability.
+
+Validation: the actual App frame traversal was exercised with explicit GPU-system unit doubles. Normal and staged paths invoked the same system operations in the same order, including all 15 reflection steps; normal play submitted once and abort restored priming state. Scheduler tests cover no next-stage encoding before a fence completes, no successful completion marker after loss, cleanup, and pipeline rejection blocking later stages. Observer, render-queue, device-loss and upstream integrity tests passed; Vite build passed. These are not physical GPU results. The legacy mobile-audit source assertion limitation remains documented below.
+
+No v6 physical run exists yet. The shader source, quality, world assets and gameplay are preserved. The purpose is to remove overlapping startup batches and make any remaining failure attributable to a smaller stage; no root-cause or crash-fixed claim. Production and restoration PR #56 remain unchanged.
+
+## Fifth physical run — compilation limit enforced, crash persists
+
+[Raw v5 report](evidence/iphone-runtime-v5-20261029.json) verifies commit `1bf16090ed0820fb40240107b5848ee6a558224f`, full desktop-quality options and the intended preview. **FAIL: the compilation concurrency change did not solve device loss.** The session began 2026-10-29T21:38:14.659Z; loss was reported at 21.162 seconds, reason destroyed, empty message. The loader remained visible at frame 2; startupMs is null and gameplay remains unverified.
+
+The render queue reports peakActive 2: 179 requests, 33 native starts, 31 completions, 2 native rejections and 146 queued cancellations. The two rejected native calls are hullMask color and Terrain depth, both GPUPipelineError reason validation with blank messages at 21.162 s. Their labels do not prove either shader caused the loss. The aggregate observer peak pending 54 includes compute compilation and does not contradict the render-only limit. Overall native async totals: 93 started, 91 resolved, 2 rejected. Ten synchronous calls returned, not proof of successful validation. No JavaScript destroy call or uncaptured GPU error was recorded.
+
+Initial compute/post pipeline readiness completed at 19.132 s. Two precompile frames began at 19.135 s and 19.857 s. The second native submit was at 20.366 s. The sampled fence covering submission 1 resolved at 21.167 s, **five milliseconds after device loss**. This callback cannot establish successful rendering or healthy execution of that frame. Submission 2 has no recorded completion. Report elapsed time and CPU callback timing are not GPU timings.
+
+The v4 140-way render-compilation burst was not necessary for the observed device loss: it recurred with only two native render calls active. This does not exclude a compiler fault, an individual shader problem or resource pressure. Neither captured error messages nor memory data identifies a root cause. Full-quality settings remain four cascades, 512/256 caustics, 512 wake and renderScale 1. Do not claim the scheduling candidate is playable or repaired.
+
+Source review confirms that precompile calls two complete App.frame executions, submitting simulation, atmosphere, reflections and post-processing before awaiting scene pipeline readiness. The next investigation must distinguish actual submitted initialization work from pipeline creation. It requires a qualifying device and GPU-level validation/debugging or a controlled staged-initialization comparison. No additional speculative shader, quality, asset or production change is made from this report alone. All gameplay acceptance and physical compatibility comparison remain blocked.
+
 ## V5 startup scheduling repair candidate — 29 October
 
 Historical comparison identified October 14 commit d7f931404dc7b87c9d4fcacc2ed2aa12de213b43, which already used parallel pipeline compilation. Commit messages and archived deployment names do not establish it as a verified last-good build. No historical rollback is claimed or performed. The 140-request burst in v4 is a concrete observation, not proof of root cause.

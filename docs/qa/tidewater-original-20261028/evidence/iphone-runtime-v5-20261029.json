@@ -1,0 +1,6486 @@
+{
+  "schema": 2,
+  "build": "original-safari-qa-20261029-v5-render-queue2",
+  "commit": "1bf16090ed0820fb40240107b5848ee6a558224f",
+  "page": {
+    "origin": "https://bermuda-simulator-bzv1jexnx-akeemalbouy-1327.vercel.app",
+    "path": "/",
+    "options": {
+      "desktop": "",
+      "tidewaterQA": "1",
+      "missions": "boat",
+      "launch": "online"
+    }
+  },
+  "startedAt": "2026-10-29T21:38:14.659Z",
+  "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
+  "status": "DEVICE_LOST",
+  "devices": [
+    {
+      "requested": {
+        "requiredFeatures": [
+          "timestamp-query",
+          "rg11b10ufloat-renderable",
+          "float32-blendable",
+          "shader-f16"
+        ],
+        "requiredLimits": {
+          "maxSampledTexturesPerShaderStage": 32,
+          "maxSamplersPerShaderStage": 16,
+          "maxUniformBuffersPerShaderStage": 44,
+          "maxStorageBuffersPerShaderStage": 10,
+          "maxStorageTexturesPerShaderStage": 8,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxColorAttachmentBytesPerSample": 64,
+          "maxBindingsPerBindGroup": 1000,
+          "maxBufferSize": 1073741824,
+          "maxStorageBufferBindingSize": 536870912
+        }
+      },
+      "limits": {
+        "maxTextureDimension1D": 8192,
+        "maxTextureDimension2D": 8192,
+        "maxTextureDimension3D": 2048,
+        "maxTextureArrayLayers": 256,
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxDynamicUniformBuffersPerPipelineLayout": 8,
+        "maxDynamicStorageBuffersPerPipelineLayout": 4,
+        "maxSampledTexturesPerShaderStage": 32,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBuffersPerShaderStage": 10,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxUniformBuffersPerShaderStage": 44,
+        "maxUniformBufferBindingSize": 65536,
+        "maxStorageBufferBindingSize": 536870912,
+        "minUniformBufferOffsetAlignment": 256,
+        "minStorageBufferOffsetAlignment": 256,
+        "maxVertexBuffers": 8,
+        "maxBufferSize": 1073741824,
+        "maxVertexAttributes": 16,
+        "maxVertexBufferArrayStride": 2048,
+        "maxInterStageShaderComponents": 64,
+        "maxInterStageShaderVariables": 16,
+        "maxColorAttachments": 8,
+        "maxColorAttachmentBytesPerSample": 64,
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeInvocationsPerWorkgroup": 256,
+        "maxComputeWorkgroupSizeX": 256,
+        "maxComputeWorkgroupSizeY": 256,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupsPerDimension": 65535
+      },
+      "features": [
+        "timestamp-query",
+        "rg11b10ufloat-renderable",
+        "float32-blendable",
+        "shader-f16",
+        "core-features-and-limits"
+      ]
+    }
+  ],
+  "nativeTraces": [
+    {
+      "clock": "performance.now (CPU callback time, not GPU execution duration)",
+      "hooks": {
+        "createRenderPipeline": "installed",
+        "createRenderPipelineAsync": "installed",
+        "createComputePipeline": "installed",
+        "createComputePipelineAsync": "installed",
+        "onSubmittedWorkDone": "installed",
+        "submit": "installed"
+      },
+      "pipelines": [
+        {
+          "id": 1,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Atmosphere Transmittance",
+          "at": 1986,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 2,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Atmosphere MultiScat",
+          "at": 1986,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 3,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Atmosphere SkyView",
+          "at": 1986,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 4,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Atmosphere Irradiance",
+          "at": 1986,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 5,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Cloud Weather",
+          "at": 1986,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 6,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Cloud Weather Bounds",
+          "at": 1986,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 7,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Clouds Trace",
+          "at": 1986,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 8,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Clouds Resolve",
+          "at": 1986,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 9,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Clouds Panorama",
+          "at": 1986,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 10,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Clouds Shadow",
+          "at": 1986,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 11,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env Face 0",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 12,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env Face 1",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 13,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env Face 2",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 14,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env Face 3",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 15,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env Face 4",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 16,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env Face 5",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 17,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 0",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 18,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 1",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 19,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 2",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 20,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 3",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 21,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 4",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 22,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 5",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 23,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 0",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 24,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 1",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 25,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 2",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 26,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 3",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 27,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 4",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 28,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env GGX 5",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 29,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env SH",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 30,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Env SH",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 31,
+          "kind": "compute",
+          "mode": "async",
+          "label": "envSource mips A",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 32,
+          "kind": "compute",
+          "mode": "async",
+          "label": "envSource mips B",
+          "at": 2313,
+          "status": "resolved",
+          "finishedAt": 9249
+        },
+        {
+          "id": 33,
+          "kind": "render",
+          "mode": "sync",
+          "label": "mipmap rgba8unorm",
+          "at": 5112,
+          "status": "returned",
+          "finishedAt": 5112
+        },
+        {
+          "id": 34,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Terrain Sun Shadow",
+          "at": 6576.000000000001,
+          "status": "resolved",
+          "finishedAt": 9694
+        },
+        {
+          "id": 35,
+          "kind": "compute",
+          "mode": "sync",
+          "label": "Foam Pattern",
+          "at": 7863,
+          "status": "returned",
+          "finishedAt": 7863
+        },
+        {
+          "id": 36,
+          "kind": "render",
+          "mode": "sync",
+          "label": "mipmap rgba16float",
+          "at": 7863,
+          "status": "returned",
+          "finishedAt": 7863
+        },
+        {
+          "id": 37,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Ocean Init Spectrum",
+          "at": 9235,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 38,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Ocean Conjugate",
+          "at": 9235,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 39,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Ocean Copy H0",
+          "at": 9235,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 40,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Ocean FFT Rows",
+          "at": 9235,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 41,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Ocean FFT Columns",
+          "at": 9235,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 42,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Ocean Mips A",
+          "at": 9235,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 43,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Ocean Mips A",
+          "at": 9235,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 44,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Ocean Mips B",
+          "at": 9235,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 45,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Ocean Mips B",
+          "at": 9235,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 46,
+          "kind": "compute",
+          "mode": "async",
+          "label": "causticsFine mips A",
+          "at": 9235,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 47,
+          "kind": "compute",
+          "mode": "async",
+          "label": "causticsFine mips B",
+          "at": 9235,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 48,
+          "kind": "render",
+          "mode": "async",
+          "label": "causticsFine0",
+          "at": 9236,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 49,
+          "kind": "render",
+          "mode": "async",
+          "label": "causticsFine1",
+          "at": 9236,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 50,
+          "kind": "compute",
+          "mode": "async",
+          "label": "causticsBroad mips A",
+          "at": 9236,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 51,
+          "kind": "compute",
+          "mode": "async",
+          "label": "causticsBroad mips B",
+          "at": 9236,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 52,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Shore Sim",
+          "at": 9236,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 53,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Underwater Light Map 0",
+          "at": 9236,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 54,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Underwater Light Map 1",
+          "at": 9236,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 55,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Ground Bounce Bake",
+          "at": 9236,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 56,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Ground Bounce Blur",
+          "at": 9236,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 57,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Surf Crests",
+          "at": 9236,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 58,
+          "kind": "render",
+          "mode": "sync",
+          "label": "mipmap rgba8unorm-srgb",
+          "at": 10943,
+          "status": "returned",
+          "finishedAt": 10943
+        },
+        {
+          "id": 59,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Wake Rows",
+          "at": 11790.000000000002,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 60,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Wake Columns",
+          "at": 11790.000000000002,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 61,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Wake Inverse",
+          "at": 11790.000000000002,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 62,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Swash Probe",
+          "at": 11790.000000000002,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 63,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Motion Blur Tiles",
+          "at": 11885,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 64,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Motion Blur Neighbourhood",
+          "at": 11885,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 65,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Lens Flare Visibility",
+          "at": 11885,
+          "status": "resolved",
+          "finishedAt": 14238
+        },
+        {
+          "id": 66,
+          "kind": "compute",
+          "mode": "async",
+          "label": "Auto Exposure",
+          "at": 11906,
+          "status": "resolved",
+          "finishedAt": 14427
+        },
+        {
+          "id": 67,
+          "kind": "render",
+          "mode": "async",
+          "label": "causticsBroad0",
+          "at": 14238,
+          "status": "resolved",
+          "finishedAt": 14796.000000000002
+        },
+        {
+          "id": 68,
+          "kind": "render",
+          "mode": "async",
+          "label": "causticsBroad1",
+          "at": 14238,
+          "status": "resolved",
+          "finishedAt": 14796.000000000002
+        },
+        {
+          "id": 69,
+          "kind": "render",
+          "mode": "async",
+          "label": "sky background",
+          "at": 14796.000000000002,
+          "status": "resolved",
+          "finishedAt": 15083
+        },
+        {
+          "id": 70,
+          "kind": "render",
+          "mode": "async",
+          "label": "AO depth",
+          "at": 14796.000000000002,
+          "status": "resolved",
+          "finishedAt": 15083
+        },
+        {
+          "id": 71,
+          "kind": "render",
+          "mode": "async",
+          "label": "AO blur x",
+          "at": 15083,
+          "status": "resolved",
+          "finishedAt": 15375
+        },
+        {
+          "id": 72,
+          "kind": "render",
+          "mode": "async",
+          "label": "AO blur y",
+          "at": 15083,
+          "status": "resolved",
+          "finishedAt": 15375
+        },
+        {
+          "id": 73,
+          "kind": "render",
+          "mode": "async",
+          "label": "TAAU",
+          "at": 15375,
+          "status": "resolved",
+          "finishedAt": 15637
+        },
+        {
+          "id": 74,
+          "kind": "render",
+          "mode": "async",
+          "label": "TAAU",
+          "at": 15375,
+          "status": "resolved",
+          "finishedAt": 15637
+        },
+        {
+          "id": 75,
+          "kind": "render",
+          "mode": "async",
+          "label": "medium",
+          "at": 15637,
+          "status": "resolved",
+          "finishedAt": 16341.000000000002
+        },
+        {
+          "id": 76,
+          "kind": "render",
+          "mode": "async",
+          "label": "beauty (AO + haze + underwater)",
+          "at": 15637,
+          "status": "resolved",
+          "finishedAt": 16341.000000000002
+        },
+        {
+          "id": 77,
+          "kind": "render",
+          "mode": "async",
+          "label": "GTAO",
+          "at": 16341.000000000002,
+          "status": "resolved",
+          "finishedAt": 16908
+        },
+        {
+          "id": 78,
+          "kind": "render",
+          "mode": "async",
+          "label": "haze march",
+          "at": 16341.000000000002,
+          "status": "resolved",
+          "finishedAt": 16908
+        },
+        {
+          "id": 79,
+          "kind": "render",
+          "mode": "async",
+          "label": "haze sun mask",
+          "at": 16908,
+          "status": "resolved",
+          "finishedAt": 17411
+        },
+        {
+          "id": 80,
+          "kind": "render",
+          "mode": "async",
+          "label": "haze god rays 0",
+          "at": 16908,
+          "status": "resolved",
+          "finishedAt": 17411
+        },
+        {
+          "id": 81,
+          "kind": "render",
+          "mode": "async",
+          "label": "haze god rays 1",
+          "at": 17411,
+          "status": "resolved",
+          "finishedAt": 17826
+        },
+        {
+          "id": 82,
+          "kind": "render",
+          "mode": "async",
+          "label": "haze god rays 2",
+          "at": 17411,
+          "status": "resolved",
+          "finishedAt": 17826
+        },
+        {
+          "id": 83,
+          "kind": "render",
+          "mode": "async",
+          "label": "haze shafts temporal",
+          "at": 17826,
+          "status": "resolved",
+          "finishedAt": 18129
+        },
+        {
+          "id": 84,
+          "kind": "render",
+          "mode": "async",
+          "label": "haze shafts temporal",
+          "at": 17826,
+          "status": "resolved",
+          "finishedAt": 18129
+        },
+        {
+          "id": 85,
+          "kind": "render",
+          "mode": "async",
+          "label": "underwater shafts",
+          "at": 18129,
+          "status": "resolved",
+          "finishedAt": 18576
+        },
+        {
+          "id": 86,
+          "kind": "render",
+          "mode": "async",
+          "label": "bloom down",
+          "at": 18129,
+          "status": "resolved",
+          "finishedAt": 18576
+        },
+        {
+          "id": 87,
+          "kind": "render",
+          "mode": "async",
+          "label": "bloom down",
+          "at": 18576,
+          "status": "resolved",
+          "finishedAt": 18718
+        },
+        {
+          "id": 88,
+          "kind": "render",
+          "mode": "async",
+          "label": "bloom down",
+          "at": 18576,
+          "status": "resolved",
+          "finishedAt": 18718
+        },
+        {
+          "id": 89,
+          "kind": "render",
+          "mode": "async",
+          "label": "bloom down",
+          "at": 18718,
+          "status": "resolved",
+          "finishedAt": 18719
+        },
+        {
+          "id": 90,
+          "kind": "render",
+          "mode": "async",
+          "label": "bloom down",
+          "at": 18718,
+          "status": "resolved",
+          "finishedAt": 18719
+        },
+        {
+          "id": 91,
+          "kind": "render",
+          "mode": "async",
+          "label": "bloom up",
+          "at": 18719,
+          "status": "resolved",
+          "finishedAt": 18859
+        },
+        {
+          "id": 92,
+          "kind": "render",
+          "mode": "async",
+          "label": "bloom up",
+          "at": 18719,
+          "status": "resolved",
+          "finishedAt": 18859
+        },
+        {
+          "id": 93,
+          "kind": "render",
+          "mode": "async",
+          "label": "bloom up",
+          "at": 18859,
+          "status": "resolved",
+          "finishedAt": 18860
+        },
+        {
+          "id": 94,
+          "kind": "render",
+          "mode": "async",
+          "label": "bloom up",
+          "at": 18859,
+          "status": "resolved",
+          "finishedAt": 18860
+        },
+        {
+          "id": 95,
+          "kind": "render",
+          "mode": "async",
+          "label": "final (grade + tonemap)",
+          "at": 18860,
+          "status": "resolved",
+          "finishedAt": 19132
+        },
+        {
+          "id": 96,
+          "kind": "compute",
+          "mode": "sync",
+          "label": "Water Queries",
+          "at": 19140,
+          "status": "returned",
+          "finishedAt": 19140
+        },
+        {
+          "id": 97,
+          "kind": "compute",
+          "mode": "sync",
+          "label": "Spray Update",
+          "at": 19142,
+          "status": "returned",
+          "finishedAt": 19142
+        },
+        {
+          "id": 98,
+          "kind": "render",
+          "mode": "sync",
+          "label": "veg leaf atlas bake",
+          "at": 19148,
+          "status": "returned",
+          "finishedAt": 19148
+        },
+        {
+          "id": 99,
+          "kind": "render",
+          "mode": "sync",
+          "label": "veg-impostor-bake-albedo color",
+          "at": 19151,
+          "status": "returned",
+          "finishedAt": 19151
+        },
+        {
+          "id": 100,
+          "kind": "render",
+          "mode": "sync",
+          "label": "veg-impostor-bake-normal color",
+          "at": 19153,
+          "status": "returned",
+          "finishedAt": 19153
+        },
+        {
+          "id": 101,
+          "kind": "render",
+          "mode": "sync",
+          "label": "opaque depth half",
+          "at": 19550,
+          "status": "returned",
+          "finishedAt": 19550
+        },
+        {
+          "id": 102,
+          "kind": "render",
+          "mode": "async",
+          "label": "hullMask color",
+          "at": 20366,
+          "status": "rejected",
+          "finishedAt": 21162,
+          "error": {
+            "name": "GPUPipelineError",
+            "reason": "validation",
+            "message": "",
+            "stack": "_"
+          }
+        },
+        {
+          "id": 103,
+          "kind": "render",
+          "mode": "async",
+          "label": "Terrain depth",
+          "at": 20366,
+          "status": "rejected",
+          "finishedAt": 21162,
+          "error": {
+            "name": "GPUPipelineError",
+            "reason": "validation",
+            "message": "",
+            "stack": "_"
+          }
+        }
+      ],
+      "droppedPipelineRecords": 0,
+      "pipelineCounts": {
+        "asyncStarted": 93,
+        "asyncPending": 0,
+        "peakAsyncPending": 54,
+        "resolved": 91,
+        "rejected": 2,
+        "syncCalls": 10,
+        "syncThrows": 0
+      },
+      "queue": {
+        "submits": 2,
+        "lastSubmitAt": 20366,
+        "completedThroughSubmit": 1,
+        "lastCompletionAt": 21167,
+        "pendingWaits": 0,
+        "rejectedWaits": 0
+      },
+      "queueEvents": [
+        {
+          "source": "qa-sampled-fence",
+          "throughSubmit": 1,
+          "at": 19856,
+          "status": "resolved",
+          "finishedAt": 21167
+        }
+      ],
+      "droppedQueueRecords": 0,
+      "lost": {
+        "at": 21162,
+        "reason": "destroyed",
+        "message": ""
+      }
+    }
+  ],
+  "phases": [
+    {
+      "at": 1946,
+      "name": "progress",
+      "progress": 0.02,
+      "text": "Starting WebGPU…"
+    },
+    {
+      "at": 1962,
+      "name": "progress",
+      "progress": 0.04,
+      "text": "Building the atmosphere…"
+    },
+    {
+      "at": 2313,
+      "name": "progress",
+      "progress": 0.06,
+      "text": "Shaping the island…"
+    },
+    {
+      "at": 4829,
+      "name": "progress",
+      "progress": 0.12,
+      "text": "Building the village…"
+    },
+    {
+      "at": 4833,
+      "name": "progress",
+      "progress": 0.14,
+      "text": "Planting the island…"
+    },
+    {
+      "at": 5675,
+      "name": "progress",
+      "progress": 0.19,
+      "text": "Rolling in the swell…"
+    },
+    {
+      "at": 6576.000000000001,
+      "name": "progress",
+      "progress": 0.23,
+      "text": "Growing the reef…"
+    },
+    {
+      "at": 7855,
+      "name": "progress",
+      "progress": 0.3,
+      "text": "Simulating the ocean…"
+    },
+    {
+      "at": 11790.000000000002,
+      "name": "progress",
+      "progress": 0.34,
+      "text": "Preparing the shaders…"
+    },
+    {
+      "at": 11885,
+      "name": "progress",
+      "progress": 0.36,
+      "text": "Compiling shaders…"
+    },
+    {
+      "at": 11906,
+      "name": "compute-post-pipelines-wait"
+    },
+    {
+      "at": 19132,
+      "name": "compute-post-pipelines-ready"
+    },
+    {
+      "at": 19135,
+      "name": "scene-precompile-frame",
+      "hull": 0
+    },
+    {
+      "at": 19857,
+      "name": "scene-precompile-frame",
+      "hull": 1
+    },
+    {
+      "at": 20366,
+      "name": "scene-pipelines-wait"
+    }
+  ],
+  "consoleErrors": [
+    {
+      "at": 21165,
+      "message": "WebGPU device lost: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Terrain depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Rocks depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Reef depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"boatHull depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"boatGelcoat depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"boatWood depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"boatFittings depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"boatGlow depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"boatTrap depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Whale depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Birds depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"fishStand depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"FishProps depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"starterBoatSaleSign depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"BoatFishFinderVisual depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"BoatIceChestVisual depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"BoatFishHoldVisual depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"BoatFuelUpgradeVisual depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"BoatLongRangeFuelVisual depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"BoatRebuiltEngineCue depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"BoatTurboEngineCue depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"BoatDeckLightHardware depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"harbourCottageDoor depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"harbourCottageSaleSign depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"harbourCottageInterior depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"harbourCottageGarage depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"waterfrontHomeDoor depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"waterfrontHomeInterior depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"privateBerth depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"joeStormUmbrella depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"bermudaSideQuestTarget depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"harbourJobsBoard depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"miniMissionWaypoint depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"skinned-body depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"skinned-body depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"skinned-head depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"skinned-head depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"skinned-opacity depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"stall depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"veg-plant-leaf depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"veg-canopy depth\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"veg-grass main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Terrain main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Rocks main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Reef main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"ReefSoft main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"ReefFade main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"ReefSoftFade main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Fish main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"FishFade main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"boatHull main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"boatGelcoat main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"boatWood main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"boatFittings main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"boatGlow main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"MarineSnow main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Whale main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Birds main\" failed: "
+    },
+    {
+      "at": 21167,
+      "message": "WebGPU: pipeline \"Critters main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"fishingRod main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"bobber main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"fishingLine main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"fishStand main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"FishProps main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"FishPropsFade main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"spinyLobster main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"speargun main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"starterBoatSaleSign main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BoatFishFinderVisual main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BoatIceChestVisual main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BoatFishHoldVisual main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BoatFuelUpgradeVisual main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BoatLongRangeFuelVisual main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BoatRebuiltEngineCue main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BoatTurboEngineCue main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BoatDeckLightHardware main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"harbourCottageDoor main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"harbourCottageSaleSign main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"harbourCottageInterior main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"harbourCottageGarage main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"cottageGarageUpgradeSign main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"cottageFreezer main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"waterfrontHomeDoor main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"waterfrontHomeSaleSign main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"waterfrontHomeInterior main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"privateBerth main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"privateBerthSaleSign main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"joeStormUmbrella main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"bermudaSideQuestTarget main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"harbourJobsBoard main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"miniMissionWaypoint main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"harbourJobNotices main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"harbourBoardLight main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"skinned-body main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"skinned-body main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"skinned-head main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"skinned-head main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"skinned-opacity main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"stall main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"veg-plant-leaf main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"veg-canopy main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"veg-impostor main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"mobile-wake-transom-right main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"material53 main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"mobile-wake-shoulder-right main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"mobile-wake-outer-right main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"mobile-wake-transom-left main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"mobile-wake-prop-wash main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"mobile-wake-shoulder-left main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"mobile-wake-outer-left main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"Terrain color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"Rocks color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"Reef color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"ReefSoft color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"ReefFade color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"ReefSoftFade color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"Fish color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"FishFade color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"boatHull color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"boatGelcoat color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"boatWood color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"boatFittings color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"MarineSnow color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"Whale color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"fishingRod color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"bobber color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"fishingLine color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"FishProps color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"FishPropsFade color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"spinyLobster color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"speargun color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BoatIceChestVisual color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BoatFishHoldVisual color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BoatLongRangeFuelVisual color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"waterfrontHomeDoor color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"waterfrontHomeSaleSign color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"bermudaSideQuestTarget color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"miniMissionWaypoint color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"material53 color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"boatTrap main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"water main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"ContactShadows main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"boatGlass main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"BreakerLip main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"Spray main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"AirMotes main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"water main\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "WebGPU: pipeline \"hullMask color\" failed: "
+    },
+    {
+      "at": 21168,
+      "message": "@https://bermuda-simulator-bzv1jexnx-akeemalbouy-1327.vercel.app/assets/main-CXv3v18C.js:439:16073"
+    }
+  ],
+  "destroyCalls": [],
+  "pipelineLayouts": [
+    {
+      "at": 1983,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 1983,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 1983,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 1984,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 1985,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 1985,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 1985,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 1986,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 1986,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 1986,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2310,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2310,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2311,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2311,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2311,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2311,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2311,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2311,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2313,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2313,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2313,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 6516,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7862,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7862,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7862,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7862,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7862,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7863,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7863,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7863,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7863,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7863,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7926,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7926,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7928,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7928,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7930.000000000001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7930.000000000001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7930.000000000001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7931,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8327,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8328,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 10,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8329,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 10,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8329,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8329,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8331,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 9225,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 6,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11777.000000000002,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11778,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11778,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11789,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11794,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11795,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11795,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11796,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11797,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11797,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11798,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11798,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11891,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 9,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11893,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 10,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 15,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11893,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11895,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 9,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11896,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11898,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11899,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11900,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11901,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11902.000000000002,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11903,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 9,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11903,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11904,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11904,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11904,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11904,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11904,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11905,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11905,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11905,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11905,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 11906,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19135,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19140,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 5,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19142,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 7,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19148,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19151,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19153,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19164,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 6,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19165,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19165,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19166,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19166,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19167,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19167,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19168,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19168,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19169,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19169,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19170,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19171,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19171,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19172,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19172,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19173,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19427,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19428,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19429.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19429.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19430,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19430,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19431,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19431,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19432.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19432.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19433,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19433,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19434,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19434,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19434,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19435,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19435,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19436,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19436,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19436,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19437,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19437,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19439,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19440,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19444,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19446,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19448,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19450,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19451,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19453,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19455.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19458.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19460,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19462,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19463,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19465,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19466,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19468,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19470,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 16,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19471,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19473,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19475,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19476,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19478,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19479,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19481,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19483,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19486,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19487.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19489,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19490.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19492,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19493.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19495,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19496,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19498,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19499,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19501,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19502,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19504,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19505,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19506,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19508,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19509,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19511,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19512,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19514,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19515,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19517,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19518,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19520,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19521,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19523,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19524,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19525.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19527,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19528,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19529,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19531,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19532,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19533,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19535,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19537,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19538,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19540,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19541,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19542,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19544,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19545,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19546,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19547,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19548,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19549,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19550,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19562,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19564,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19566,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19567,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19569,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19571,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19573,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19575,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19576,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19577,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19579,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19580.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19582,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 16,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19583.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19585,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19586.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19587,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19589,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19592,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19593,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19594,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19596,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19597,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19599,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19600,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19601,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19603,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19604,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19605,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19607,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19611,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 8,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 15,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19612.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19772.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19774,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 10,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19776,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19778,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 9,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 20362.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 8,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 15,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "losses": [
+    {
+      "reason": "destroyed",
+      "message": "",
+      "at": 21162
+    }
+  ],
+  "shaders": [],
+  "samples": [
+    {
+      "at": 4831,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nBUILDING THE VILLAGE…\n8%\n0:02\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 7859,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n25%\n0:05\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 9858,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n31%\n0:07\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 11885,
+      "visible": "visible",
+      "frame": 0,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n34%\n0:09\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 13896,
+      "visible": "visible",
+      "frame": 0,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n38%\n0:11\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 15896,
+      "visible": "visible",
+      "frame": 0,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n41%\n0:13\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 17897.000000000004,
+      "visible": "visible",
+      "frame": 0,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n44%\n0:15\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 20368.000000000004,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n45%\n0:17\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0.8093889113719142
+    },
+    {
+      "at": 22370,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n46%\n0:18\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nQA build original-safari-qa-20261029-v5-render-queue2 | commit 1bf16090ed0820fb40240107b5848ee6a558224f\nQA page https://bermuda-simulator-bzv1jexnx-akeemalbouy-1327.vercel.app/ | options {\"desktop\":\"\",\"tidewaterQA\":\"1\",\"missions\":\"boat\",\"launch\":\"online\"}\nQA phase scene-pipelines-wait\nNative async pipelines 93 | peak pending 54 | pending 0 | resolved 91 | rejected 2 | sync calls 10\nNative queue submits 2 | last submit @20366ms | completed through submit 1 @21167ms\nQA → Export report includes pipeline and queue details; these counters do not verify visible rendering.\nElapsed 19s | Frame 2 | Submits 0\nLast stage Post/presentation @18421ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 24374,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n46%\n0:18\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nQA build original-safari-qa-20261029-v5-render-queue2 | commit 1bf16090ed0820fb40240107b5848ee6a558224f\nQA page https://bermuda-simulator-bzv1jexnx-akeemalbouy-1327.vercel.app/ | options {\"desktop\":\"\",\"tidewaterQA\":\"1\",\"missions\":\"boat\",\"launch\":\"online\"}\nQA phase scene-pipelines-wait\nNative async pipelines 93 | peak pending 54 | pending 0 | resolved 91 | rejected 2 | sync calls 10\nNative queue submits 2 | last submit @20366ms | completed through submit 1 @21167ms\nQA → Export report includes pipeline and queue details; these counters do not verify visible rendering.\nElapsed 19s | Frame 2 | Submits 0\nLast stage Post/presentation @18421ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    }
+  ],
+  "startupMs": null,
+  "gpuMemoryBytes": null,
+  "gameplay": "NOT_VERIFIED",
+  "adapter": {
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
+    "secureContext": true,
+    "apiAvailable": true,
+    "available": true,
+    "info": {
+      "vendor": "apple",
+      "architecture": "apple",
+      "device": "apple",
+      "description": "apple",
+      "isFallbackAdapter": false
+    },
+    "limits": {
+      "maxTextureDimension1D": 16384,
+      "maxTextureDimension2D": 16384,
+      "maxTextureDimension3D": 2048,
+      "maxTextureArrayLayers": 2048,
+      "maxBindGroups": 11,
+      "maxBindGroupsPlusVertexBuffers": 30,
+      "maxBindingsPerBindGroup": 65535,
+      "maxDynamicUniformBuffersPerPipelineLayout": 65535,
+      "maxDynamicStorageBuffersPerPipelineLayout": 65535,
+      "maxSampledTexturesPerShaderStage": 44,
+      "maxSamplersPerShaderStage": 22,
+      "maxStorageBuffersPerShaderStage": 44,
+      "maxStorageTexturesPerShaderStage": 44,
+      "maxUniformBuffersPerShaderStage": 44,
+      "maxUniformBufferBindingSize": 1073741824,
+      "maxStorageBufferBindingSize": 1073741824,
+      "minUniformBufferOffsetAlignment": 32,
+      "minStorageBufferOffsetAlignment": 32,
+      "maxVertexBuffers": 12,
+      "maxBufferSize": 1073741824,
+      "maxVertexAttributes": 30,
+      "maxVertexBufferArrayStride": 65532,
+      "maxInterStageShaderComponents": 124,
+      "maxInterStageShaderVariables": 124,
+      "maxColorAttachments": 8,
+      "maxColorAttachmentBytesPerSample": 64,
+      "maxComputeWorkgroupStorageSize": 32768,
+      "maxComputeInvocationsPerWorkgroup": 1024,
+      "maxComputeWorkgroupSizeX": 1024,
+      "maxComputeWorkgroupSizeY": 1024,
+      "maxComputeWorkgroupSizeZ": 1024,
+      "maxComputeWorkgroupsPerDimension": 65535
+    },
+    "features": [
+      "bgra8unorm-storage",
+      "core-features-and-limits",
+      "depth-clip-control",
+      "depth32float-stencil8",
+      "float16-renderable",
+      "float32-blendable",
+      "float32-renderable",
+      "indirect-first-instance",
+      "rg11b10ufloat-renderable",
+      "shader-f16",
+      "texture-compression-astc",
+      "texture-compression-astc-sliced-3d",
+      "texture-compression-etc2",
+      "texture-formats-tier1",
+      "timestamp-query"
+    ],
+    "backend": null,
+    "driver": null,
+    "wgslLanguageFeatures": [
+      "packed_4x8_integer_dot_product",
+      "pointer_composite_access",
+      "readonly_and_readwrite_storage_textures",
+      "unrestricted_pointer_parameters"
+    ],
+    "isFallbackAdapter": false
+  },
+  "qualification": {
+    "status": "CAPABILITY_GATE_PASSED",
+    "reasons": [],
+    "preferredStorageLimitMet": true,
+    "gameplayValidated": false
+  },
+  "compileQueue": {
+    "concurrency": 2,
+    "requested": 179,
+    "started": 33,
+    "completed": 31,
+    "rejected": 2,
+    "cancelled": 146,
+    "queued": 0,
+    "active": 0,
+    "peakActive": 2,
+    "failure": {
+      "label": "Terrain depth",
+      "name": "GPUPipelineError",
+      "reason": "validation",
+      "message": ""
+    }
+  },
+  "shaderCount": 230,
+  "pendingShaderInfo": 0
+}
