@@ -192,12 +192,7 @@ fn _uwMapLookup( xz: vec2f, waves: bool ) -> UwMapSample {
 `,
 	} );
 
-	let bakedOnce = false;
 	const update = ( camera ) => {
-
-		// Low-GPU mobile keeps the first valid light maps instead of recomputing
-		// two 512x512 underwater compute passes on every rendered frame.
-		if ( typeof window !== 'undefined' && window.__bermudaFreezeUnderwaterLight && bakedOnce ) return;
 
 		for ( const lv of levels ) {
 
@@ -211,7 +206,6 @@ fn _uwMapLookup( xz: vec2f, waves: bool ) -> UwMapSample {
 		}
 
 		for ( const lv of levels ) lv.kernel.dispatch( [ MAP_N / 8, MAP_N / 8, 1 ] );
-		bakedOnce = true;
 
 	};
 

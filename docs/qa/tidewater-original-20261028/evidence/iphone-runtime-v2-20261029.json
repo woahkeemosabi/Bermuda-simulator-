@@ -1,0 +1,945 @@
+{
+  "schema": 1,
+  "build": "original-safari-qa-20261029-v2-uniform13",
+  "startedAt": "2026-10-29T15:50:48.588Z",
+  "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
+  "status": "DEVICE_LOST",
+  "devices": [
+    {
+      "requested": {
+        "requiredFeatures": [
+          "timestamp-query",
+          "rg11b10ufloat-renderable",
+          "float32-blendable",
+          "shader-f16"
+        ],
+        "requiredLimits": {
+          "maxSampledTexturesPerShaderStage": 32,
+          "maxSamplersPerShaderStage": 16,
+          "maxUniformBuffersPerShaderStage": 13,
+          "maxStorageBuffersPerShaderStage": 10,
+          "maxStorageTexturesPerShaderStage": 8,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxColorAttachmentBytesPerSample": 64,
+          "maxBindingsPerBindGroup": 1000,
+          "maxBufferSize": 1073741824,
+          "maxStorageBufferBindingSize": 536870912
+        }
+      },
+      "limits": {
+        "maxTextureDimension1D": 8192,
+        "maxTextureDimension2D": 8192,
+        "maxTextureDimension3D": 2048,
+        "maxTextureArrayLayers": 256,
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxDynamicUniformBuffersPerPipelineLayout": 8,
+        "maxDynamicStorageBuffersPerPipelineLayout": 4,
+        "maxSampledTexturesPerShaderStage": 32,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBuffersPerShaderStage": 10,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxUniformBuffersPerShaderStage": 13,
+        "maxUniformBufferBindingSize": 65536,
+        "maxStorageBufferBindingSize": 536870912,
+        "minUniformBufferOffsetAlignment": 256,
+        "minStorageBufferOffsetAlignment": 256,
+        "maxVertexBuffers": 8,
+        "maxBufferSize": 1073741824,
+        "maxVertexAttributes": 16,
+        "maxVertexBufferArrayStride": 2048,
+        "maxInterStageShaderComponents": 64,
+        "maxInterStageShaderVariables": 16,
+        "maxColorAttachments": 8,
+        "maxColorAttachmentBytesPerSample": 64,
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeInvocationsPerWorkgroup": 256,
+        "maxComputeWorkgroupSizeX": 256,
+        "maxComputeWorkgroupSizeY": 256,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupsPerDimension": 65535
+      },
+      "features": [
+        "timestamp-query",
+        "rg11b10ufloat-renderable",
+        "float32-blendable",
+        "shader-f16",
+        "core-features-and-limits"
+      ]
+    }
+  ],
+  "consoleErrors": [
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"fishingRod color\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"BoatDeckLightHardware depth\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"cottageFreezer main\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"mobile-wake-shoulder-left main\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"Whale color\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"waterfrontHomeSaleSign color\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"spinyLobster color\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"ReefFade main\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"boatWood depth\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"ContactShadows main\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"harbourCottageGarage depth\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"Reef depth\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"privateBerth depth\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"BoatFishHoldVisual depth\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"Rocks main\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"boatGlass main\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"boatHull depth\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"bermudaSideQuestTarget color\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"ReefSoftFade main\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"BoatLongRangeFuelVisual depth\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"hullMask color\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"ReefSoftFade color\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"BoatIceChestVisual main\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"veg-canopy main\" failed: "
+    },
+    {
+      "at": 26224,
+      "message": "WebGPU: pipeline \"mobile-wake-prop-wash main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"boatHull main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"harbourJobsBoard depth\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"spinyLobster main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"starterBoatSaleSign depth\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"BoatRebuiltEngineCue main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"harbourBoardLight main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"privateBerthSaleSign main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"harbourCottageSaleSign depth\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"FishPropsFade color\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"MarineSnow color\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"Fish main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"Reef main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"boatTrap depth\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"fishingLine main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"waterfrontHomeDoor color\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"veg-grass main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"miniMissionWaypoint depth\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"Whale main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"BoatLongRangeFuelVisual main\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"FishProps color\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"BoatIceChestVisual color\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"harbourCottageDoor depth\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"veg-plant-leaf depth\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"fishStand depth\" failed: "
+    },
+    {
+      "at": 26225,
+      "message": "WebGPU: pipeline \"Fish color\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"boatGelcoat depth\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"boatWood color\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"AirMotes main\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"boatGlow depth\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"bermudaSideQuestTarget depth\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"FishFade main\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"boatWood main\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"bobber main\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"BoatFishHoldVisual main\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"BoatFishFinderVisual depth\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"miniMissionWaypoint main\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"FishFade color\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"boatFittings color\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"miniMissionWaypoint color\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"BoatTurboEngineCue depth\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"Terrain main\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"harbourCottageInterior depth\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"BoatFuelUpgradeVisual main\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"mobile-wake-transom-right main\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"material53 color\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"boatHull color\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"bermudaSideQuestTarget main\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"boatGelcoat color\" failed: "
+    },
+    {
+      "at": 26226,
+      "message": "WebGPU: pipeline \"bobber color\" failed: "
+    },
+    {
+      "at": 26227,
+      "message": "WebGPU: pipeline \"Whale depth\" failed: "
+    },
+    {
+      "at": 26227,
+      "message": "WebGPU: pipeline \"waterfrontHomeInterior depth\" failed: "
+    },
+    {
+      "at": 26227,
+      "message": "WebGPU: pipeline \"mobile-wake-shoulder-right main\" failed: "
+    },
+    {
+      "at": 26227,
+      "message": "WebGPU: pipeline \"boatTrap main\" failed: "
+    },
+    {
+      "at": 26227,
+      "message": "WebGPU: pipeline \"joeStormUmbrella main\" failed: "
+    },
+    {
+      "at": 26227,
+      "message": "WebGPU: pipeline \"mobile-wake-outer-left main\" failed: "
+    },
+    {
+      "at": 26227,
+      "message": "WebGPU: pipeline \"BreakerLip main\" failed: "
+    },
+    {
+      "at": 26227,
+      "message": "WebGPU: pipeline \"speargun color\" failed: "
+    },
+    {
+      "at": 26228,
+      "message": "WebGPU: pipeline \"FishPropsFade main\" failed: "
+    },
+    {
+      "at": 26228,
+      "message": "WebGPU: pipeline \"veg-canopy depth\" failed: "
+    },
+    {
+      "at": 26228,
+      "message": "WebGPU: pipeline \"speargun main\" failed: "
+    },
+    {
+      "at": 26228,
+      "message": "WebGPU: pipeline \"BoatRebuiltEngineCue depth\" failed: "
+    },
+    {
+      "at": 26228,
+      "message": "WebGPU: pipeline \"harbourCottageDoor main\" failed: "
+    },
+    {
+      "at": 26228,
+      "message": "WebGPU: pipeline \"ReefSoft color\" failed: "
+    },
+    {
+      "at": 26228,
+      "message": "WebGPU: pipeline \"veg-plant-leaf main\" failed: "
+    },
+    {
+      "at": 26229,
+      "message": "WebGPU: pipeline \"BoatIceChestVisual depth\" failed: "
+    },
+    {
+      "at": 26229,
+      "message": "WebGPU: pipeline \"harbourCottageInterior main\" failed: "
+    },
+    {
+      "at": 26229,
+      "message": "WebGPU: pipeline \"water main\" failed: "
+    },
+    {
+      "at": 26229,
+      "message": "WebGPU: pipeline \"boatGlow main\" failed: "
+    },
+    {
+      "at": 26229,
+      "message": "WebGPU: pipeline \"mobile-wake-outer-right main\" failed: "
+    },
+    {
+      "at": 26233,
+      "message": "WebGPU device lost: "
+    },
+    {
+      "at": 26234,
+      "message": "WebGPU: pipeline \"Critters main\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"waterfrontHomeDoor depth\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"starterBoatSaleSign main\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"ReefFade color\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"ReefSoft main\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"water main\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"waterfrontHomeInterior main\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"BoatLongRangeFuelVisual color\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"Spray main\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"harbourCottageSaleSign main\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"BoatTurboEngineCue main\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"boatFittings main\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"joeStormUmbrella depth\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"harbourJobsBoard main\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"privateBerth main\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"FishProps depth\" failed: "
+    },
+    {
+      "at": 26235,
+      "message": "WebGPU: pipeline \"BoatFuelUpgradeVisual depth\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"BoatFishHoldVisual color\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"mobile-wake-transom-left main\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"fishingLine color\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"material53 main\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"harbourJobNotices main\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"BoatFishFinderVisual main\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"cottageGarageUpgradeSign main\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"Terrain depth\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"fishStand main\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"Birds depth\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"boatGelcoat main\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"Birds main\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"waterfrontHomeDoor main\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"Terrain color\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"Reef color\" failed: "
+    },
+    {
+      "at": 26236,
+      "message": "WebGPU: pipeline \"harbourCottageGarage main\" failed: "
+    },
+    {
+      "at": 26237.000000000004,
+      "message": "WebGPU: pipeline \"boatFittings depth\" failed: "
+    },
+    {
+      "at": 26237.000000000004,
+      "message": "WebGPU: pipeline \"Rocks depth\" failed: "
+    },
+    {
+      "at": 26237.000000000004,
+      "message": "WebGPU: pipeline \"BoatDeckLightHardware main\" failed: "
+    },
+    {
+      "at": 26237.000000000004,
+      "message": "WebGPU: pipeline \"Rocks color\" failed: "
+    },
+    {
+      "at": 26237.000000000004,
+      "message": "WebGPU: pipeline \"waterfrontHomeSaleSign main\" failed: "
+    },
+    {
+      "at": 26237.000000000004,
+      "message": "WebGPU: pipeline \"veg-impostor main\" failed: "
+    },
+    {
+      "at": 26237.000000000004,
+      "message": "WebGPU: pipeline \"fishingRod main\" failed: "
+    },
+    {
+      "at": 26237.000000000004,
+      "message": "WebGPU: pipeline \"MarineSnow main\" failed: "
+    },
+    {
+      "at": 26237.000000000004,
+      "message": "WebGPU: pipeline \"FishProps main\" failed: "
+    },
+    {
+      "at": 26245,
+      "message": "@https://bermuda-simulator-k0nqo28p0-akeemalbouy-1327.vercel.app/assets/main-DmZRlsxO.js:439:16073"
+    },
+    {
+      "at": 26585,
+      "message": "WebGPU: Resource usage limits exceeded: uniformBufferCount(14) > deviceLimits.maxUniformBuffersPerShaderStage(13) || storageBufferCount(4) > deviceLimits.maxStorageBuffersPerShaderStage(10) || samplerCount(9) > deviceLimits.maxSamplersPerShaderStage(16) || textureCount(22) > deviceLimits.maxSampledTexturesPerShaderStage(32) || storageTextureCount(0) > deviceLimits.maxStorageTexturesPerShaderStage(8)"
+    },
+    {
+      "at": 31718,
+      "message": "Chandlery: stall assets failed, using the plain table createView@[native code]\nIr@https://bermuda-simulator-k0nqo28p0-akeemalbouy-1327.vercel.app/assets/main-DmZRlsxO.js:165:440\nLr@https://bermuda-simulator-k0nqo28p0-akeemalbouy-1327.vercel.app/assets/main-DmZRlsxO.js:165:1037\nzb@https://bermuda-simulator-k0nqo28p0-akeemalbouy-1327.vercel.app/assets/main-DmZRlsxO.js:11779:22350\nHb@https://bermuda-simulator-k0nqo28p0-akeemalbouy-1327.vercel.app/assets/main-DmZRlsxO.js:11779:22947"
+    }
+  ],
+  "destroyCalls": [],
+  "errors": [
+    {
+      "type": "GPU",
+      "message": "Resource usage limits exceeded: uniformBufferCount(14) > deviceLimits.maxUniformBuffersPerShaderStage(13) || storageBufferCount(4) > deviceLimits.maxStorageBuffersPerShaderStage(10) || samplerCount(9) > deviceLimits.maxSamplersPerShaderStage(16) || textureCount(22) > deviceLimits.maxSampledTexturesPerShaderStage(32) || storageTextureCount(0) > deviceLimits.maxStorageTexturesPerShaderStage(8)",
+      "at": 26584
+    }
+  ],
+  "losses": [
+    {
+      "reason": "destroyed",
+      "message": "",
+      "at": 26229
+    }
+  ],
+  "shaders": [],
+  "samples": [
+    {
+      "at": 2653,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nPREPARING THE ISLAND…\n0%\n0:00\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 6810.000000000001,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nBUILDING THE VILLAGE…\n9%\n0:03\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 9306.000000000002,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n25%\n0:05\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 11305,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n31%\n0:07\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 13306.000000000002,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n32%\n0:09\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 15308,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n33%\n0:11\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 17310,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n33%\n0:13\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 19314,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n34%\n0:15\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 21318,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n34%\n0:17\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 23322,
+      "visible": "visible",
+      "frame": 0,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n36%\n0:19\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 25851,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n38%\n0:21\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0.7908264136022143
+    },
+    {
+      "at": 27851,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:22\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 23s | Frame 2 | Submits 0\nLast stage Post/presentation @22294ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 29859,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:22\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 23s | Frame 2 | Submits 0\nLast stage Post/presentation @22294ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 31859,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:22\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 23s | Frame 2 | Submits 0\nLast stage Post/presentation @22294ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    }
+  ],
+  "startupMs": null,
+  "gpuMemoryBytes": null,
+  "gameplay": "NOT_VERIFIED",
+  "adapter": {
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
+    "secureContext": true,
+    "apiAvailable": true,
+    "available": true,
+    "info": {
+      "vendor": "apple",
+      "architecture": "apple",
+      "device": "apple",
+      "description": "apple",
+      "isFallbackAdapter": false
+    },
+    "limits": {
+      "maxTextureDimension1D": 16384,
+      "maxTextureDimension2D": 16384,
+      "maxTextureDimension3D": 2048,
+      "maxTextureArrayLayers": 2048,
+      "maxBindGroups": 11,
+      "maxBindGroupsPlusVertexBuffers": 30,
+      "maxBindingsPerBindGroup": 65535,
+      "maxDynamicUniformBuffersPerPipelineLayout": 65535,
+      "maxDynamicStorageBuffersPerPipelineLayout": 65535,
+      "maxSampledTexturesPerShaderStage": 44,
+      "maxSamplersPerShaderStage": 22,
+      "maxStorageBuffersPerShaderStage": 44,
+      "maxStorageTexturesPerShaderStage": 44,
+      "maxUniformBuffersPerShaderStage": 44,
+      "maxUniformBufferBindingSize": 1073741824,
+      "maxStorageBufferBindingSize": 1073741824,
+      "minUniformBufferOffsetAlignment": 32,
+      "minStorageBufferOffsetAlignment": 32,
+      "maxVertexBuffers": 12,
+      "maxBufferSize": 1073741824,
+      "maxVertexAttributes": 30,
+      "maxVertexBufferArrayStride": 65532,
+      "maxInterStageShaderComponents": 124,
+      "maxInterStageShaderVariables": 124,
+      "maxColorAttachments": 8,
+      "maxColorAttachmentBytesPerSample": 64,
+      "maxComputeWorkgroupStorageSize": 32768,
+      "maxComputeInvocationsPerWorkgroup": 1024,
+      "maxComputeWorkgroupSizeX": 1024,
+      "maxComputeWorkgroupSizeY": 1024,
+      "maxComputeWorkgroupSizeZ": 1024,
+      "maxComputeWorkgroupsPerDimension": 65535
+    },
+    "features": [
+      "bgra8unorm-storage",
+      "core-features-and-limits",
+      "depth-clip-control",
+      "depth32float-stencil8",
+      "float16-renderable",
+      "float32-blendable",
+      "float32-renderable",
+      "indirect-first-instance",
+      "rg11b10ufloat-renderable",
+      "shader-f16",
+      "texture-compression-astc",
+      "texture-compression-astc-sliced-3d",
+      "texture-compression-etc2",
+      "texture-formats-tier1",
+      "timestamp-query"
+    ],
+    "backend": null,
+    "driver": null,
+    "wgslLanguageFeatures": [
+      "packed_4x8_integer_dot_product",
+      "pointer_composite_access",
+      "readonly_and_readwrite_storage_textures",
+      "unrestricted_pointer_parameters"
+    ],
+    "isFallbackAdapter": false
+  },
+  "qualification": {
+    "status": "CAPABILITY_GATE_PASSED",
+    "reasons": [],
+    "preferredStorageLimitMet": true,
+    "gameplayValidated": false
+  },
+  "shaderCount": 218,
+  "pendingShaderInfo": 0
+}

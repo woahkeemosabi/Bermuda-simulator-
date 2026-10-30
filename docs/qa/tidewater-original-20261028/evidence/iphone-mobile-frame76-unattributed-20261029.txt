@@ -1,0 +1,21 @@
+Graphics device failed: WebGPU device lost (destroyed): Browser provided no device-loss details
+GPU lifecycle trace 5 | retry 0
+Elapsed 23s | Frame 76 | Submits 76
+Last stage GPU submit @10899ms | Last submit 10899ms
+Compute in last submit 0 | Last kernels none recorded
+Compute in current frame 0
+Render passes in last submit 9 | Last passes shadow cascade 0 > shadow cascade 1 > shadow cascade 2 > opaque > opaque depth half > hull mask > refraction > water + transparent > Bermuda mobile one-pass ACES finish
+Last queue completion frame 76 @10927ms
+GPUDevice.destroy() hook installed | Called from JS NO
+Scene 284x480 | Canvas 334x565
+Post single-pass mobile
+Cloud experiment unknown
+Atmosphere staged | Initialization step 3
+Water query diagnostic normal | Held updates 0 | Valid initial sample YES
+SkyView dispatches 1 | Hold after prime NO | Water query overlap skipped 1
+Render isolation full
+Reflection experiment freeze-after-prime | Refreshes 1 | Prime progressive | Step -1 | Cube 64px
+Loss reason destroyed
+Browser device-loss message none provided
+Last reported error none
+Recent lost: destroyed
