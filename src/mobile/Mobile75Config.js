@@ -1,9 +1,10 @@
-// Experimental iPhone preset. ?graphics=stable selects the unchanged fallback.
+// iPhone full-effects preset. ?graphics=stable keeps the low-GPU fallback.
 export const MOBILE_75 = Object.freeze( {
-	renderScale: 0.75,
-	// The extra internal scale makes this a temporary stability profile at
-	// 56.25% CSS linear resolution. Restore clarity only after real-device QA.
-	sceneScale: 0.75,
+	// Present at CSS-pixel resolution, rather than blurring a 75%-size canvas.
+	// The scene remains at 80% resolution to protect iPhone GPU headroom.
+	// This is twice the scene pixel count of the previous 0.75 * 0.75 preset.
+	renderScale: 1,
+	sceneScale: 0.8,
 	shoreSimRes: 256,
 	sprayGpuCapacity: 2048,
 	sprayCpuCapacity: 512,
