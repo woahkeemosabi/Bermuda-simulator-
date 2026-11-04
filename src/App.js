@@ -69,6 +69,7 @@ import { MobileWake } from './ocean/MobileWake.js';
 import { Vegetation } from './world/Vegetation.js';
 import { SoundScape } from './audio/SoundScape.js';
 import { updateCameraVelocity, useStaticVelocity } from './post/CameraVelocity.js';
+import { MOBILE_75 } from './mobile/Mobile75Config.js';
 
 const _up = new Vector3( 0, 1, 0 );
 
@@ -97,6 +98,7 @@ export class App {
 			/iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 			( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 ) );
 		this.mobileLite = mobileLite;
+		this.mobileGraphics75 = mobileLite && typeof window !== 'undefined' && Boolean( window.__bermudaMobileGraphics75 );
 		this.recoveryMode = mobileLite && qs.get('recovery') === '1';
 		// report a stage, then let the page paint it before the (synchronous) stage work starts
 		const progress = async ( p, text, until ) => {
@@ -160,7 +162,7 @@ export class App {
 		// contact-hardening filter sized by the sun's disc on the near cascade. Each cascade's depth range
 		// is its light margin (200 m) + its extent, which keeps the depth bias small in metres.
 		// Shadows come from the opaque and the late (transparent-pass) layers.
-		this.csm = this.shadows = new SunShadows( { size: this.recoveryMode ? 512 : (mobileLite ? 1024 : 2048), splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
+		this.csm = this.shadows = new SunShadows( { size: this.mobileGraphics75 ? MOBILE_75.shadowSize : (this.recoveryMode ? 512 : (mobileLite ? 1024 : 2048)), splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
 		this.shadows.layerMask = ( 1 << LAYERS.OPAQUE ) | ( 1 << LAYERS.TRANSPARENT );
 
 		// Reduce the mobile IBL *cubemap* face work (not the ocean, terrain or
@@ -221,6 +223,8 @@ export class App {
 
 		// ---------------------------------------------------------------- ocean
 		await progress( 0.3, 'Simulating the ocean…' );
+		// The 75% profile deliberately uses Tidewater's ORIGINAL four-cascade
+		// FFT, its native tile sizes, its real dispersion and every-frame update.
 		this.fft = new OceanFFT( renderer, qs.has('freezeFFT') ? {cascades:1} : (this.recoveryMode ? {cascades:2} : {}) );
 		if ( this.reef.setOcean ) this.reef.setOcean( this.fft ); // coral / sea fan sway follows the simulated swell
 		this.foamTexture = createFoamTexture( renderer );
@@ -236,7 +240,7 @@ export class App {
 
 		if ( ! qs.has( 'noSim' ) ) {
 
-			this.shoreSim = new ShoreSim( renderer, { terrainGPU: this.terrainGPU, shore: this.shore, res: mobileLite ? 512 : 768 } );
+			this.shoreSim = new ShoreSim( renderer, { terrainGPU: this.terrainGPU, shore: this.shore, res: this.mobileGraphics75 ? MOBILE_75.shoreSimRes : ( mobileLite ? 512 : 768 ) } );
 			this.surface.shoreSim = this.shoreSim;
 			// WGSL: fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f (x = wetness, y = sand foam)
 			this.terrain.wetness = {
@@ -334,7 +338,8 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// spray.emit() / emitAlongPoints() for boat bow spray and splashes)
 		this.spray = new Spray( renderer, { query: this.query, terrain: this.terrainGPU,
 			sceneCopy: this.sceneRenderer.opaqueCopy, clouds: this.clouds,
-			gpuCapacity: mobileLite ? 8192 : 32768, cpuCapacity: mobileLite ? 2048 : 8192 } );
+			gpuCapacity: this.mobileGraphics75 ? MOBILE_75.sprayGpuCapacity : ( mobileLite ? 8192 : 32768 ),
+			cpuCapacity: this.mobileGraphics75 ? MOBILE_75.sprayCpuCapacity : ( mobileLite ? 2048 : 8192 ) } );
 		scene.add( this.spray.mesh );
 		if ( this.reef.setSpray ) this.reef.setSpray( this.spray ); // splashes of leaping fish
 		this.breakers = new Breakers( renderer, {

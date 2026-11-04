@@ -10,6 +10,7 @@ import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
 import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
 import { gpuStage, gpuReport } from './mobile/GpuAudit.js';
+import { MOBILE_75, configureMobile75Url } from './mobile/Mobile75Config.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
 // Buildings and decorative world assets stream separately instead of crowding the spawn beach.
@@ -20,11 +21,16 @@ const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
-// Low-GPU iPhone default: retain gameplay, freeze FFT ocean and remove expensive sky passes.
-const mobileLowGPU = mobileFastStart; // Full compute ocean is not safe on this mobile driver.
-window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
-window.__bermudaThrottleWaterQueries = mobileLowGPU;
-window.__bermudaDisableSwashProbe = mobileLowGPU;
+// The preview defaults to active effects at 75%; ?graphics=stable restores
+// the known-running low-GPU mode without redirecting players to another site.
+const mobileGraphics75 = mobileFastStart && !mobileRecovery &&
+	new URLSearchParams(location.search).get('graphics') !== 'stable';
+const mobileLowGPU = mobileFastStart && !mobileGraphics75;
+window.__bermudaMobileGraphics75 = mobileGraphics75;
+// Preserve the existing safe query and underwater-light readback scheduling.
+window.__bermudaFreezeUnderwaterLight = mobileFastStart;
+window.__bermudaThrottleWaterQueries = mobileFastStart;
+window.__bermudaDisableSwashProbe = mobileFastStart;
 window.__bermudaSparseVegetation = mobileFastStart;
 window.__bermudaBuildMarker = 'webgpu-isolation-v5-20261023';
 const missionIsolation = new URLSearchParams(location.search).get('missions') === 'off';
@@ -36,7 +42,8 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64));
+window.__bermudaMobileOutputScale = mobileGraphics75 ? MOBILE_75.renderScale :
+	( mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64)) );
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -79,6 +86,7 @@ if ( mobileFastStart ) {
 		}
 		if (url.searchParams.get('gpuTest') !== 'minimal') url.searchParams.set( 'G', '12' );
 	}
+	if ( mobileGraphics75 ) configureMobile75Url( url );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	App.prototype.precompile = async function() {
@@ -99,12 +107,14 @@ if ( mobileFastStart ) {
 
 function applyMobileMemoryProfile( app ) {
 	if ( ! mobileFastStart || ! app ) return;
-	window.__bermudaMobileMemoryProfile = mobileRecovery ? 'recovery-ocean2-progressive-lighting' : 'all-effects-mobile-compute-budget-v1';
+	window.__bermudaMobileMemoryProfile = mobileGraphics75 ? 'effects75-original-four-cascade-fft' :
+		(mobileRecovery ? 'recovery-ocean2-progressive-lighting' : 'frozen-ocean-mobile-stable');
 	window.__bermudaMobileBudget = {
 		oceanCascades: app.fft?.cascades,
 		wakeGrid: '256x256', shoreFoamGrid: app.shoreSim?.res,
 		sprayParticleCapacity: app.spray?.N,
-		cloudSteps: 128, caustics: true
+		cloudSteps: mobileGraphics75 ? 'panorama-only' : 0,
+		caustics: Boolean( app.caustics )
 	};
 }
 
@@ -130,7 +140,7 @@ app.init( ( p, text, until ) => {
 } ).then( async () => {
 
 	if ( mobileFastStart ) applyMobileMemoryProfile( app );
-	if (mobileFastStart) {
+	if (mobileFastStart && (!mobileGraphics75 || new URLSearchParams(location.search).has('debugBuild'))) {
 		const profile = app.vegetation ? (window.__bermudaSparseVegetation ? 'SPARSE' : 'FULL') : 'OFF';
 		window.__bermudaVegetationProfile = profile;
 		console.info('[Bermuda build]',window.__bermudaBuildMarker,'vegetation',profile,'palms',app.vegetation?.records?.palms?.length ?? 0);
@@ -252,8 +262,17 @@ function showWorldFailure(message){
 	const retry=document.getElementById('bm-loader-retry');
 	if(retry){
 		retry.hidden=false;
+		if (mobileGraphics75) retry.textContent='Use stable graphics';
 		retry.onclick=()=>{
-			// Retrying allocates a fresh GPUDevice with fewer pixels per frame, not fewer FX.
+			// If the experimental effects overload iPhone WebGPU, the button
+			// returns to the known-running profile within this same preview.
+			if (mobileGraphics75) {
+				const fallback=new URL(location.href);
+				fallback.searchParams.set('graphics','stable');
+				location.assign(fallback.href);
+				return;
+			}
+			// Normal retries retain the established production behavior.
 			try { sessionStorage.setItem('bermudaGpuRetryLevel',String(Math.min(3,mobileRetryLevel+1))); }
 			catch(_){}
 			location.reload();
