@@ -20,10 +20,11 @@ export class Chandlery {
 		this.group.position.set( CHANDLERY.x, y, CHANDLERY.z );
 		this.group.rotation.y = CHANDLERY.yaw;
 		scene.add( this.group );
-		// Keep the cheap Tidewater table visible immediately on iPhone. The full
-		// photographed shop atlas is loaded once the player approaches, avoiding a
-		// 100+ MiB GPU upload during the very first ocean frames.
+		// Keep the lightweight Tidewater table interactive on iPhone. The full
+		// photographed shop atlas remains an explicit diagnostic opt-in; proximity
+		// alone must not schedule its large texture uploads during startup.
 		this._mobileDeferred = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test( navigator.userAgent );
+		this._mobileDetailOptIn = typeof location !== 'undefined' && new URLSearchParams( location.search ).get( 'shopDetail' ) === '1';
 		this._visualStarted = false;
 		this._fallback = null;
 		this.ready = Promise.resolve();
@@ -99,7 +100,7 @@ export class Chandlery {
 
 	loadDetailWhenNear( position ) {
 
-		if ( ! this._mobileDeferred || this._visualStarted || ! position ) return;
+		if ( ! this._mobileDeferred || ! this._mobileDetailOptIn || this._visualStarted || ! position ) return;
 		const dx = position.x - CHANDLERY.x, dz = position.z - CHANDLERY.z;
 		if ( dx * dx + dz * dz < 12 * 12 ) this._startDetailed();
 
