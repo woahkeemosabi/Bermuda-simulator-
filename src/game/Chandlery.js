@@ -20,21 +20,48 @@ export class Chandlery {
 		this.group.position.set( CHANDLERY.x, y, CHANDLERY.z );
 		this.group.rotation.y = CHANDLERY.yaw;
 		scene.add( this.group );
-		this.ready = loadStallAssets().then( ( a ) => {
+		// Keep the cheap Tidewater table visible immediately on iPhone. The full
+		// photographed shop atlas is loaded once the player approaches, avoiding a
+		// 100+ MiB GPU upload during the very first ocean frames.
+		this._mobileDeferred = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test( navigator.userAgent );
+		this._visualStarted = false;
+		this._fallback = null;
+		this.ready = Promise.resolve();
+		this._startDetailed = () => {
 
-			const mesh = new Mesh( buildChandleryKit( a ), a.material );
-			mesh.name = 'ChandleryStall';
-			mesh.castShadow = true;
-			this.group.add( mesh );
+			if ( this._visualStarted ) return this.ready;
+			this._visualStarted = true;
+			this.ready = loadStallAssets().then( ( a ) => {
 
-		} ).catch( ( e ) => {
+				const mesh = new Mesh( buildChandleryKit( a ), a.material );
+				mesh.name = 'ChandleryStall';
+				mesh.castShadow = true;
+				this.group.add( mesh );
+				if ( this._fallback ) this.group.remove( this._fallback );
+				this._fallback = null;
 
-			console.error( 'Chandlery: stall assets failed, using the plain table', e );
-			const mesh = new Mesh( buildTable(), this.material );
-			mesh.castShadow = true;
-			this.group.add( mesh );
+			} ).catch( ( e ) => {
 
-		} );
+				console.error( 'Chandlery: stall assets failed, using the plain table', e );
+				if ( ! this._fallback ) {
+
+					this._fallback = new Mesh( buildTable(), this.material );
+					this._fallback.castShadow = true;
+					this.group.add( this._fallback );
+
+				}
+
+			} );
+			return this.ready;
+
+		};
+		if ( this._mobileDeferred ) {
+
+			this._fallback = new Mesh( buildTable(), this.material );
+			this._fallback.castShadow = true;
+			this.group.add( this._fallback );
+
+		} else this._startDetailed();
 
 		const local = new Vector3( 0, 0, - 0.75 ).applyAxisAngle( new Vector3( 0, 1, 0 ), CHANDLERY.yaw );
 		const vx = CHANDLERY.x + local.x, vz = CHANDLERY.z + local.z;
@@ -67,6 +94,14 @@ export class Chandlery {
 	update( dt, player ) {
 
 		this.vendor.update( dt, player );
+
+	}
+
+	loadDetailWhenNear( position ) {
+
+		if ( ! this._mobileDeferred || this._visualStarted || ! position ) return;
+		const dx = position.x - CHANDLERY.x, dz = position.z - CHANDLERY.z;
+		if ( dx * dx + dz * dz < 12 * 12 ) this._startDetailed();
 
 	}
 

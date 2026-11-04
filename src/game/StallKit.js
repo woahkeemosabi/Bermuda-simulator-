@@ -61,12 +61,36 @@ async function pixels( url ) {
 // one texture array from same-sized images
 function arrayTexture( label, imgs, srgb ) {
 
-	const w = imgs[ 0 ].width, h = imgs[ 0 ].height;
+	// These arrays are photographed shop props, not the FFT ocean. A 2x reduction
+	// on iPhone cuts their GPU footprint by 75% while keeping full desktop detail.
+	const mobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test( navigator.userAgent );
+	const sourceW = imgs[ 0 ].width, sourceH = imgs[ 0 ].height;
+	const w = mobile ? Math.max( 1, sourceW >> 1 ) : sourceW;
+	const h = mobile ? Math.max( 1, sourceH >> 1 ) : sourceH;
 	const data = new Uint8Array( w * h * 4 * imgs.length );
 	imgs.forEach( ( im, i ) => {
 
-		if ( im.width !== w || im.height !== h ) throw new Error( 'StallKit: ' + label + ' layer ' + i + ' is ' + im.width + 'x' + im.height );
-		data.set( im.data, w * h * 4 * i );
+		if ( im.width !== sourceW || im.height !== sourceH ) throw new Error( 'StallKit: ' + label + ' layer ' + i + ' is ' + im.width + 'x' + im.height );
+		if ( ! mobile ) {
+
+			data.set( im.data, w * h * 4 * i );
+
+		} else {
+
+			// Average 2x2 texels to avoid the shimmering of nearest-neighbour LODs.
+			for ( let y = 0; y < h; y ++ ) for ( let x = 0; x < w; x ++ ) {
+
+				const sx = x * 2, sy = y * 2;
+				const a = ( sy * sourceW + sx ) * 4;
+				const b = a + 4;
+				const c = a + sourceW * 4;
+				const d = c + 4;
+				const dst = ( i * w * h + y * w + x ) * 4;
+				for ( let ch = 0; ch < 4; ch ++ ) data[ dst + ch ] = ( im.data[ a + ch ] + im.data[ b + ch ] + im.data[ c + ch ] + im.data[ d + ch ] + 2 ) >> 2;
+
+			}
+
+		}
 
 	} );
 	const tex = new Texture( { label, width: w, height: h, depth: imgs.length, dimension: '2d-array', format: srgb ? 'rgba8unorm-srgb' : 'rgba8unorm', mips: true, usage: [ 'sample', 'copyDst' ], data } );
@@ -92,11 +116,25 @@ async function _load() {
 	const index = new Uint32Array( bin, info.indexByteOffset, info.indexCount );
 	const set = ( names, prefix ) => Promise.all( [ 'a', 'n', 'r' ].map( ( m ) => Promise.all( names.map( ( n ) => pixels( BASE + prefix + n + '_' + m + '.jpg' ) ) ) ) );
 	const [ surf, prop, signs ] = await Promise.all( [ set( SURF.map( ( s ) => s.name ), 's_' ), set( info.layers, 'p_' ), pixels( BASE + 'signs.png' ) ] );
+	// GPU textures and their mipmaps must not all arrive in the same frame on
+	// mobile Safari. Pace the uploads independently of ocean simulation frames.
+	const mobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test( navigator.userAgent );
+	const staged = async ( label, imgs, srgb ) => {
+
+		const texture = arrayTexture( label, imgs, srgb );
+		if ( mobile ) await new Promise( resolve => setTimeout( resolve, 90 ) );
+		return texture;
+
+	};
+	const surfTextures = [], propTextures = [];
+	for ( let i = 0; i < 3; i ++ ) surfTextures.push( await staged( [ 'stallSurfA', 'stallSurfN', 'stallSurfR' ][ i ], surf[ i ], i === 0 ) );
+	for ( let i = 0; i < 3; i ++ ) propTextures.push( await staged( [ 'stallPropA', 'stallPropN', 'stallPropR' ][ i ], prop[ i ], i === 0 ) );
+	const signTexture = await staged( 'stallSigns', [ signs ], true );
 	const assets = {
 		info, verts, index,
-		surf: { a: arrayTexture( 'stallSurfA', surf[ 0 ], true ), n: arrayTexture( 'stallSurfN', surf[ 1 ], false ), r: arrayTexture( 'stallSurfR', surf[ 2 ], false ) },
-		prop: { a: arrayTexture( 'stallPropA', prop[ 0 ], true ), n: arrayTexture( 'stallPropN', prop[ 1 ], false ), r: arrayTexture( 'stallPropR', prop[ 2 ], false ) },
-		signs: arrayTexture( 'stallSigns', [ signs ], true ),
+		surf: { a: surfTextures[ 0 ], n: surfTextures[ 1 ], r: surfTextures[ 2 ] },
+		prop: { a: propTextures[ 0 ], n: propTextures[ 1 ], r: propTextures[ 2 ] },
+		signs: signTexture,
 	};
 	assets.material = createStallMaterial( assets );
 	assets.loadMs = performance.now() - t0;

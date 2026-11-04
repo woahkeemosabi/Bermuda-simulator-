@@ -34,9 +34,14 @@ export class Vendor {
 		this._t = Math.random() * 10;
 		this._yawOff = 0;
 		this.character = null;
+		this._pendingCharacter = null;
 		this.talking = false;
 		this._near = false;
-		if ( character ) this.loadCharacter( character.url, character ).catch( ( e ) => console.warn( 'Vendor: character failed to load', e ) );
+		// Animated GLB figures contain many full-resolution textures. Delay their
+		// upload on iPhone until the player can actually see the vendor up close.
+		const mobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test( navigator.userAgent );
+		if ( character && mobile ) this._pendingCharacter = character;
+		else if ( character ) this.loadCharacter( character.url, character ).catch( ( e ) => console.warn( 'Vendor: character failed to load', e ) );
 
 	}
 
@@ -75,6 +80,16 @@ export class Vendor {
 	// idle motion: breathing, a slow weight shift, turning toward the player when near
 	update( dt, lookAt = null ) {
 
+		if ( this._pendingCharacter && lookAt ) {
+
+			const dx = lookAt.x - this.position.x, dz = lookAt.z - this.position.z;
+			if ( dx * dx + dz * dz < 6 * 6 ) {
+				const character = this._pendingCharacter;
+				this._pendingCharacter = null;
+				this.loadCharacter( character.url, character ).catch( ( e ) => console.warn( 'Vendor: character failed to load', e ) );
+			}
+
+		}
 		this._t += dt;
 		let want = 0;
 		if ( lookAt ) {

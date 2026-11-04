@@ -286,6 +286,7 @@ export class Game {
 		this.updateBoat( dt );
 
 		// the traders
+		this.chandlery.loadDetailWhenNear( p.mode === 'walk' ? p.position : null );
 		for ( const v of this.vendors ) v.update( dt, p.mode === 'walk' ? p.position : null );
 		this.updateVendors( inp, p );
 
