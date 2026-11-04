@@ -94,7 +94,9 @@ export function applyBermudaBootLook( app ) {
 	installBermudaTerrainProfile();
 	// The whale is now streamed after startup on mobile, not disabled.
 	app.settings.timeOfDay = look.daylight.timeOfDay;
-	app.settings.exposure = look.daylight.exposure;
+	// The one-pass iPhone path has no desktop indirect-light/post chain;
+	// keep storm-time docks readable without touching FFT wave simulation.
+	app.settings.exposure = mobileHardware() ? 0.84 : look.daylight.exposure;
 	G.waterAbsorption.value.set( ...look.water.absorption );
 	G.waterScattering.value.set( ...look.water.scattering );
 	G.windSpeed.value = look.wind.speed;

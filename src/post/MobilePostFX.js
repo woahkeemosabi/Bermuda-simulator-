@@ -30,8 +30,8 @@ export class MobilePostFX {
   this._hasPrev=false;
   this.uniforms=new UniformBlock('MobileColorParams',{
    aoStrength:['f32',1],bloom:['f32',.05],
-   vignette:['f32',.22],saturation:['f32',1.06],contrast:['f32',1.04],
-   warmth:['f32',.02],grain:['f32',.009],sharpen:['f32',.22]
+   vignette:['f32',.08],saturation:['f32',1.06],contrast:['f32',1.02],
+   warmth:['f32',.02],grain:['f32',.003],sharpen:['f32',.30]
   },{label:'bermuda-mobile-filmic'});
   this.params=this.uniforms.fields;
   const colorModule=new ShaderModule({name:'bermudaMobileColor',
