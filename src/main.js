@@ -21,7 +21,7 @@ const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
-// The preview defaults to active effects at 75%; ?graphics=stable restores
+// The mobile build defaults to active effects at 75%; ?graphics=stable restores
 // the known-running low-GPU mode without redirecting players to another site.
 const mobileGraphics75 = mobileFastStart && !mobileRecovery &&
 	new URLSearchParams(location.search).get('graphics') !== 'stable';
@@ -42,7 +42,10 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = mobileGraphics75 ? MOBILE_75.renderScale :
+// MobilePostFX does NOT perform temporal upscaling. Its 75%-scale scene is
+// rendered *inside* the canvas, so shrinking the canvas by another 75% caused
+// an accidental 56%-width scene and a visibly blocky lobster boat/ocean.
+window.__bermudaMobileOutputScale = mobileGraphics75 ? MOBILE_75.outputScale :
 	( mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64)) );
 
 if ( mobileDevice ) {
