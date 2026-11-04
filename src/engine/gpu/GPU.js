@@ -8,7 +8,7 @@
 // range written twice in one frame keeps only the last value for every pass. Anything that changes
 // between passes of a frame needs its own buffer (or its own offset).
 
-import { gpuStage, gpuCompute, gpuSubmit, gpuError, gpuDeviceDestroyObserved, gpuDestroyHookStatus } from '../../mobile/GpuAudit.js';
+import { gpuAudit, gpuStage, gpuCompute, gpuSubmit, gpuQueueAck, gpuQueueStall, gpuTraceEvent, gpuError, gpuDeviceDestroyObserved, gpuDestroyHookStatus } from '../../mobile/GpuAudit.js';
 
 export const GPU = {
 
@@ -74,6 +74,9 @@ export const GPU = {
 		this.device = device;
 		this.queue = device.queue;
 		this.limits = device.limits;
+		gpuTraceEvent('device', 'limits: sampled='+device.limits.maxSampledTexturesPerShaderStage+
+			' storageTextures='+device.limits.maxStorageTexturesPerShaderStage+
+			' max2D='+device.limits.maxTextureDimension2D);
 		// WebGPU reports reason "destroyed" for explicit device.destroy() calls.
 		// Record a JS stack if our app or a dependency destroys the live device.
 		// Never change the underlying native destroy behavior.
@@ -162,6 +165,13 @@ export const GPU = {
 		if ( this.fatalError ) throw this.fatalError;
 		if ( ! this.encoder ) {
 			try {
+				if(gpuAudit.traceEnabled){
+					// Error scopes catch validation / OOM diagnostics that WebKit does
+					// not necessarily report through uncapturederror or device.lost.
+					this.device.pushErrorScope('validation');
+					this.device.pushErrorScope('out-of-memory');
+					this._traceErrorScopesOpen=true;
+				}
 				this.encoder = this.device.createCommandEncoder();
 			} catch ( error ) {
 				this.fatalError = new Error( 'WebGPU command encoder unavailable: ' + ( error?.message || error ) );
@@ -182,8 +192,24 @@ export const GPU = {
 		this._submitHooks = [];
 		for ( const h of hooks ) if ( h.before ) h.before( this.encoder );
 		this.queue.submit( [ this.encoder.finish() ] );
-		gpuSubmit( this.frame );
+		const sequence = gpuSubmit( this.frame );
 		this.encoder = null;
+		if(this._traceErrorScopesOpen){
+			this._traceErrorScopesOpen=false;
+			this.device.popErrorScope().then(error=>{if(error)gpuError('GPU out-of-memory',error.message);},
+				error=>gpuError('error scope',String(error?.message||error)));
+			this.device.popErrorScope().then(error=>{if(error)gpuError('GPU validation',error.message);},
+				error=>gpuError('error scope',String(error?.message||error)));
+		}
+		if ( gpuAudit.traceEnabled ) {
+			// This also covers GPU submits during startup, before Engine.start() begins
+			// its separate frame-pacing acknowledgements. No readbacks or GPU work.
+			const frame = this.frame;
+			this.queue.onSubmittedWorkDone().then( () => {
+				gpuTraceEvent( 'queue ack', 'submit #'+sequence );
+				gpuQueueAck( frame );
+			}, error => gpuQueueStall( 'submit #'+sequence+': '+String( error?.message||error ) ) );
+		}
 		for ( const h of hooks ) if ( h.after ) h.after();
 
 	},
@@ -231,6 +257,7 @@ export const GPU = {
 			}, ( e ) => {
 
 				h.failed = true;
+				gpuError( 'pipeline '+kind, desc.label+': '+String(e?.message||e) );
 				console.error( `WebGPU: pipeline "${ desc.label }" failed: ${ e.message.split( '\n' ).slice( 0, 6 ).join( '\n' ) }` );
 
 			} );
@@ -246,6 +273,7 @@ export const GPU = {
 
 		if ( h.pipeline || h.failed ) return h.pipeline;
 		this.syncCompiles.push( h.label );
+		gpuTraceEvent('sync pipeline',h.kind+' '+h.label);
 		h.pipeline = h.kind === 'render' ? this.device.createRenderPipeline( h.desc ) : this.device.createComputePipeline( h.desc );
 		return h.pipeline;
 

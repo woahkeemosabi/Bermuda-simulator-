@@ -9,8 +9,9 @@ import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
 import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
-import { gpuStage, gpuReport } from './mobile/GpuAudit.js';
+import { gpuStage, gpuReport, gpuDetailedReport, gpuTraceEvent } from './mobile/GpuAudit.js';
 import { MOBILE_75, configureMobile75Url } from './mobile/Mobile75Config.js';
+import { getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from './mobile/GpuTraceCases.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
 // Buildings and decorative world assets stream separately instead of crowding the spawn beach.
@@ -19,12 +20,14 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
 const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
+const gpuTraceActive = mobileFastStart && new URLSearchParams(location.search).get('gpuTrace')==='1';
+const gpuTraceCase = getGpuTraceCase(new URLSearchParams(location.search).get('traceCase'));
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
 // The mobile build defaults to active effects at 75%; ?graphics=stable restores
 // the known-running low-GPU mode without redirecting players to another site.
 const mobileGraphics75 = mobileFastStart && !mobileRecovery &&
-	new URLSearchParams(location.search).get('graphics') !== 'stable';
+	(gpuTraceActive || new URLSearchParams(location.search).get('graphics') !== 'stable');
 const mobileLowGPU = mobileFastStart && !mobileGraphics75;
 window.__bermudaMobileGraphics75 = mobileGraphics75;
 // Preserve the existing safe query and underwater-light readback scheduling.
@@ -42,10 +45,8 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-// MobilePostFX does NOT perform temporal upscaling. Its 75%-scale scene is
-// rendered *inside* the canvas, so shrinking the canvas by another 75% caused
-// an accidental 56%-width scene and a visibly blocky lobster boat/ocean.
-window.__bermudaMobileOutputScale = mobileGraphics75 ? MOBILE_75.outputScale :
+window.__bermudaMobileOutputScale = gpuTraceActive && mobileGraphics75
+	? (gpuTraceCase.id==='resolution'?MOBILE_75.renderScale:1.35) : mobileGraphics75 ? MOBILE_75.renderScale :
 	( mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64)) );
 
 if ( mobileDevice ) {
@@ -90,6 +91,7 @@ if ( mobileFastStart ) {
 		if (url.searchParams.get('gpuTest') !== 'minimal') url.searchParams.set( 'G', '12' );
 	}
 	if ( mobileGraphics75 ) configureMobile75Url( url );
+	if ( gpuTraceActive && mobileGraphics75 ) configureGpuTraceUrl( url );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
 	App.prototype.precompile = async function() {
@@ -136,6 +138,7 @@ applyBermudaBranding( mobileDevice );
 const app = new App();
 applyBermudaBootLook( app );
 window.__ui = ui;
+if(gpuTraceActive)installGpuTraceControls();
 
 app.init( ( p, text, until ) => {
   gpuStage('Loading: '+String(text||''));
@@ -219,6 +222,12 @@ app.init( ( p, text, until ) => {
 			// ?audio=on is an explicit diagnostic opt-in; sound is not required to play.
 			gpuStage('Starting simulation (mobile audio disabled)');
 			try { app.start(); } catch (error) { showWorldFailure('Simulation start failed: ' + String(error?.message || error)); return; }
+			if(gpuTraceActive)setTimeout(()=>{
+				if(!window.__bermudaTraceFailed && !window.__bermudaGpuLost){
+					gpuTraceEvent('checkpoint','30 seconds of gameplay without device loss');
+					saveGpuTraceOutcome('30s checkpoint','No GPU loss observed in first 30 seconds');
+				}
+			},30000);
 			if ( app.audio && new URLSearchParams(location.search).get('audio') === 'on' ) {
 				try { app.audio.resume(); } catch (error) { console.warn('Audio resume failed', error); }
 			}
@@ -248,16 +257,25 @@ app.init( ( p, text, until ) => {
 // deploy-marker: deferred-mobile-first-frame
 
 function showWorldFailure(message){
+	if(gpuTraceActive){
+		if(!window.__bermudaTraceFailed){
+			window.__bermudaTraceFailed=true;
+			gpuTraceEvent('failure screen',message);
+			saveGpuTraceOutcome('lost',message);
+			try{sessionStorage.setItem('bermudaGpuLastTrace',gpuDetailedReport(app,mobileRetryLevel));}catch(_){}
+		}
+	}
 	const L=document.getElementById('loader');
 	if(L){L.style.display='';L.classList.remove('tw-hidden');}
 	ui.setLoadingError(message);
 	const diag=document.getElementById('bm-gpu-trace');
-	if(diag){diag.textContent=gpuReport(app,mobileRetryLevel);diag.hidden=false;}
+	if(diag){diag.textContent=gpuReport(app,mobileRetryLevel)+
+		(gpuTraceActive?'\nGPU TRACE '+gpuTraceCase.id+' — tap Copy diagnostics to get complete event history.':'');diag.hidden=false;}
 	const copy=document.getElementById('bm-gpu-copy');
 	if(copy){
 		copy.hidden=false;
 		copy.onclick=async()=>{
-			try{await navigator.clipboard.writeText(message+'\n'+gpuReport(app,mobileRetryLevel));
+			try{await navigator.clipboard.writeText(message+'\n'+(gpuTraceActive?gpuDetailedReport(app,mobileRetryLevel):gpuReport(app,mobileRetryLevel)));
 				copy.textContent='Diagnostics copied';}
 			catch(e){copy.textContent='Screenshot diagnostics';}
 		};
@@ -265,8 +283,10 @@ function showWorldFailure(message){
 	const retry=document.getElementById('bm-loader-retry');
 	if(retry){
 		retry.hidden=false;
-		if (mobileGraphics75) retry.textContent='Use stable graphics';
+		if (gpuTraceActive) retry.textContent='Next GPU diagnostic';
+		else if (mobileGraphics75) retry.textContent='Use stable graphics';
 		retry.onclick=()=>{
+			if(gpuTraceActive){location.assign(nextGpuTraceUrl(location.href).href);return;}
 			// If the experimental effects overload iPhone WebGPU, the button
 			// returns to the known-running profile within this same preview.
 			if (mobileGraphics75) {
@@ -281,6 +301,42 @@ function showWorldFailure(message){
 			location.reload();
 		};
 	}
+}
+function saveGpuTraceOutcome(status,detail){
+	if(!gpuTraceActive)return;
+	try{
+		const key='bermudaGpuTraceOutcomes';
+		const previous=JSON.parse(sessionStorage.getItem(key)||'[]');
+		const list=Array.isArray(previous)?previous.slice(-18):[];
+		list.push({case:gpuTraceCase.id,status,detail:String(detail).slice(0,160),time:new Date().toISOString()});
+		sessionStorage.setItem(key,JSON.stringify(list));
+	}catch(_){}
+}
+function installGpuTraceControls(){
+	// A small, opt-in DOM-only control: no GPU render passes, readbacks or server telemetry.
+	const toggle=document.createElement('button');
+	toggle.textContent='GPU TRACE · '+gpuTraceCase.id;
+	Object.assign(toggle.style,{position:'fixed',bottom:'max(145px, env(safe-area-inset-bottom))',left:'8px',zIndex:'2147483647',background:'#071c2a',color:'#e0fcff',border:'1px solid #4ec4bd',borderRadius:'10px',padding:'8px 10px',font:'600 11px system-ui'});
+	const panel=document.createElement('div');
+	Object.assign(panel.style,{position:'fixed',left:'8px',right:'8px',bottom:'max(192px, env(safe-area-inset-bottom))',zIndex:'2147483647',background:'#071823',color:'#f0fafb',border:'1px solid #4ec4bd',borderRadius:'10px',padding:'12px',font:'12px system-ui',maxHeight:'40vh',overflowY:'auto',display:'none'});
+	const title=document.createElement('div');title.textContent='GPU isolation: '+gpuTraceCase.label+' · original FFT stays active';panel.appendChild(title);
+	const status=document.createElement('pre');status.style.whiteSpace='pre-wrap';panel.appendChild(status);
+	const actions=document.createElement('div');Object.assign(actions.style,{display:'flex',gap:'8px',marginTop:'8px'});panel.appendChild(actions);
+	const makeButton=(text,fn)=>{const b=document.createElement('button');b.textContent=text;b.style.cssText='border:1px solid #4ec4bd;border-radius:8px;padding:8px;color:white;background:#16404a';b.onclick=fn;actions.appendChild(b);};
+	makeButton('Copy full trace',async()=>{
+		let past='';try{past=sessionStorage.getItem('bermudaGpuLastTrace')||'';}catch(_){}
+		const body=gpuDetailedReport(app,mobileRetryLevel)+(past?'\n\nPREVIOUS FAILED CASE\n'+past:'');
+		try{await navigator.clipboard.writeText(body);status.textContent='Full trace copied.\n'+body.slice(0,1100);}catch(_){status.textContent=body;}
+	});
+	makeButton('Next test',()=>location.assign(nextGpuTraceUrl(location.href).href));
+	toggle.onclick=()=>{
+		panel.style.display=panel.style.display==='none'?'block':'none';
+		if(panel.style.display==='block'){
+			let previous='';try{previous=JSON.parse(sessionStorage.getItem('bermudaGpuTraceOutcomes')||'[]').map(x=>x.case+': '+x.status).join('\n');}catch(_){}
+			status.textContent=(previous||'No previous test outcomes')+'\n\n'+gpuReport(app,mobileRetryLevel);
+		}
+	};
+	document.body.append(toggle,panel);
 }
 window.__bermudaOnGPUFailure=message=>{
 	app.engine?.stop();

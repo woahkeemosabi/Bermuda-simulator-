@@ -1,4 +1,5 @@
 import { GPU } from './GPU.js';
+import { gpuDispatch } from '../../mobile/GpuAudit.js';
 import { composeShader, createShaderModule } from './Shader.js';
 
 // A compute pipeline built from modules + a main WGSL body.
@@ -51,6 +52,7 @@ export class ComputeKernel {
 
 		const [ x, y = 1, z = 1 ] = Array.isArray( counts ) ? counts : [ counts ];
 		if ( ! indirect && ( x === 0 || y === 0 || z === 0 ) ) return;
+		gpuDispatch( this.label, indirect ? [ 'indirect', indirect.offset || 0 ] : [ x, y, z ] );
 		const run = ( p ) => {
 
 			p.setPipeline( GPU.ready( this.handle ) );

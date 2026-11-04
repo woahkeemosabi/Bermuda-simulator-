@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import { GPU_TRACE_CASES, getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from '../src/mobile/GpuTraceCases.js';
+import { gpuAudit, gpuStage, gpuCompute, gpuDispatch, gpuRender, gpuSubmit, gpuQueueAck, gpuTexture, gpuDetailedReport } from '../src/mobile/GpuAudit.js';
+
+for ( const test of GPU_TRACE_CASES ) {
+	const url = configureGpuTraceUrl( new URL( 'https://example.test/?gpuTrace=1&traceCase=' + test.id ) );
+	assert.equal( url.searchParams.has( 'freezeFFT' ), false, `${ test.id } must keep original FFT animating` );
+	assert.equal( url.searchParams.get( 'G' ), '24' );
+	assert.equal( url.searchParams.get( 'traceCase' ), test.id );
+	for ( const [ key, value ] of Object.entries( test.flags || {} ) ) assert.equal( url.searchParams.get( key ), value );
+}
+let current = new URL( 'https://example.test/?gpuTrace=1&traceCase=full' );
+for ( let i = 1; i < GPU_TRACE_CASES.length; i ++ ) {
+	current = nextGpuTraceUrl( current );
+	assert.equal( getGpuTraceCase( current.searchParams.get( 'traceCase' ) ).id, GPU_TRACE_CASES[ i ].id );
+}
+assert.equal( getGpuTraceCase( 'bad-id' ).id, 'full' );
+
+// Enable the read-only in-memory tracer in Node to validate the event timeline.
+gpuAudit.traceEnabled = true;
+gpuStage( 'Frame begin', 18 );
+gpuCompute( 'FFT butterfly' );
+gpuDispatch( 'FFT butterfly', [ 8, 8, 1 ] );
+gpuRender( 'water + transparent' );
+gpuSubmit( 18 );
+assert.equal( gpuAudit.pendingSubmissions.length, 1 );
+assert.ok( gpuAudit.pendingSubmissions[ 0 ].commands.some( e => e.kind === 'dispatch' ) );
+gpuQueueAck( 18 );
+assert.equal( gpuAudit.pendingSubmissions.length, 0 );
+gpuTexture( 'create', 7, 'waterTexture', 256, 256, 'rgba16float', 524288 );
+assert.equal( gpuAudit.trackedTextureBytes, 524288 );
+gpuTexture( 'destroy', 7, 'waterTexture' );
+assert.equal( gpuAudit.trackedTextureBytes, 0 );
+assert.match( gpuDetailedReport(), /FFT butterfly/ );
+console.log( 'GPU trace cases, submit-to-ack timeline and memory accounting pass.' );

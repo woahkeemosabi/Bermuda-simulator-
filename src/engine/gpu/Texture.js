@@ -1,4 +1,5 @@
 import { GPU, formatInfo, sampleTypeOf } from './GPU.js';
+import { gpuAudit, gpuTexture } from '../../mobile/GpuAudit.js';
 
 // GPU texture wrapper. Created lazily, re-created by resize(); `version` changes whenever the
 // underlying GPUTexture does, which is how bind groups know to rebuild.
@@ -108,6 +109,13 @@ export class Texture {
 		} );
 		this._views.clear();
 		this.version ++;
+		if(gpuAudit.traceEnabled){
+			const mipFactor=this.mipLevelCount>1?1.34:1;
+			let bytesPerPixel=4;
+			try{bytesPerPixel=formatInfo(this.format).bytes;}catch(_){}
+			gpuTexture('create',this.id,this.label,this.width,this.height,this.format,
+				Math.round(this.width*this.height*this.depth*bytesPerPixel*this.sampleCount*mipFactor));
+		}
 		if ( this.pendingData ) {
 
 			const d = this.pendingData;
@@ -147,6 +155,7 @@ export class Texture {
 
 			// commands recorded earlier this frame may still use it: free it after the submit
 			const old = this.gpu;
+			gpuTexture('destroy',this.id,this.label);
 			GPU.onSubmit( null, () => old.destroy() );
 			this.gpu = null;
 
@@ -192,6 +201,7 @@ export class Texture {
 	destroy() {
 
 		if ( this.gpu ) this.gpu.destroy();
+		gpuTexture('destroy',this.id,this.label);
 		this.gpu = null;
 		this.version ++;
 

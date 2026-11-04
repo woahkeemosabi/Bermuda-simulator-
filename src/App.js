@@ -162,7 +162,10 @@ export class App {
 		// contact-hardening filter sized by the sun's disc on the near cascade. Each cascade's depth range
 		// is its light margin (200 m) + its extent, which keeps the depth bias small in metres.
 		// Shadows come from the opaque and the late (transparent-pass) layers.
-		this.csm = this.shadows = new SunShadows( { size: this.mobileGraphics75 ? MOBILE_75.shadowSize : (this.recoveryMode ? 512 : (mobileLite ? 1024 : 2048)), splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
+		// Trace-only recreation of the failing higher-resolution shadow workload;
+		// the normal playable 75% graphics profile is unchanged.
+		const traceShadowSize = mobileLite && qs.get('gpuTrace')==='1' && qs.get('traceCase')!=='shadows' ? 768 : null;
+		this.csm = this.shadows = new SunShadows( { size: traceShadowSize || (this.mobileGraphics75 ? MOBILE_75.shadowSize : (this.recoveryMode ? 512 : (mobileLite ? 1024 : 2048))), splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
 		this.shadows.layerMask = ( 1 << LAYERS.OPAQUE ) | ( 1 << LAYERS.TRANSPARENT );
 
 		// Reduce the mobile IBL *cubemap* face work (not the ocean, terrain or
