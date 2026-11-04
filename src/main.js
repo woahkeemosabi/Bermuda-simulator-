@@ -9,8 +9,9 @@ import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
 import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
-import { gpuStage, gpuReport, gpuDetailedReport, gpuTraceEvent } from './mobile/GpuAudit.js';
+import { gpuStage, gpuQueueAck, gpuReport, gpuDetailedReport, gpuTraceEvent } from './mobile/GpuAudit.js';
 import { MOBILE_75, configureMobile75Url } from './mobile/Mobile75Config.js';
+import { preloadMobileStartup } from './mobile/MobileStartupPreload.js';
 import { getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from './mobile/GpuTraceCases.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
@@ -189,7 +190,8 @@ app.init( ( p, text, until ) => {
 		}
 
 	}
-	ui.setLoading( 1, 'Ready' );
+	// Keep the loader visible until mobile scene verification and startup priming
+	// have actually finished; the desktop/benchmark paths finish below.
 
 	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
 	if ( app.qs.has( 'bench' ) ) {
@@ -212,6 +214,21 @@ app.init( ( p, text, until ) => {
 		} else {
 			await verifyMobileWorld( app, attempt => ui.setLoading(
 				Math.min(.975+attempt*.003,.99), 'Rendering Bermuda world…', .995 ) );
+		}
+		if ( !mobileRecovery && !app.qs.has( 'renderTest' ) ) {
+			gpuStage( 'Mobile world preload' );
+			await preloadMobileStartup( {
+				frame: dt => app.frame( dt ),
+				queueDone: () => GPU.queue.onSubmittedWorkDone(),
+				pipelinesReady: () => GPU.pipelinesReady(),
+				checkDevice: () => {
+					if ( GPU.fatalError || window.__bermudaGpuLost )
+						throw GPU.fatalError || new Error( window.__bermudaGpuLost );
+				},
+				onProgress: ( step, total, status ) => ui.setLoading(
+					0.983 + 0.012 * ( step - 1 ) / total, status, .995 ),
+				onQueueAck: () => gpuQueueAck( GPU.frame ),
+			} );
 		}
 		ui.setLoading( 1, 'World ready' );
 		let started = false;
