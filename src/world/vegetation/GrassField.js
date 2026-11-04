@@ -406,11 +406,32 @@ export class GrassField {
 		const maskData = mask.data, mres = mask.res;
 
 		// terrain heights (float, loaded + bilinearly filtered manually) and density mask
-		this.heightTex = new Texture( { label: 'grassHeights', width: res, height: res, format: 'r32float', data: terrain.heights } );
+		// iPhone vegetation does not need one grass-height texel per metre across
+		// the whole island. A 2m GPU map uses a quarter of the storage; the CPU
+		// terrain, colliders, coast geometry and original FFT remain untouched.
+		const mobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test( navigator.userAgent );
+		const heightRes = mobile ? Math.max( 1, res >> 1 ) : res;
+		const compactHeights = () => {
+
+			if ( heightRes === res ) return terrain.heights;
+			const result = new Float32Array( heightRes * heightRes );
+			const step = res / heightRes;
+			for ( let y = 0; y < heightRes; y ++ ) for ( let x = 0; x < heightRes; x ++ ) {
+
+				let total = 0;
+				for ( let dy = 0; dy < step; dy ++ ) for ( let dx = 0; dx < step; dx ++ )
+					total += terrain.heights[ ( y * step + dy ) * res + x * step + dx ];
+				result[ y * heightRes + x ] = total / ( step * step );
+
+			}
+			return result;
+
+		};
+		this.heightTex = new Texture( { label: 'grassHeights', width: heightRes, height: heightRes, format: 'r32float', data: compactHeights() } );
 		// three-style handle: `heightTex.needsUpdate = true` re-uploads terrain.heights (Vegetation.refreshTerrain)
 		Object.defineProperty( this.heightTex, 'needsUpdate', { set: ( v ) => {
 
-			if ( v ) this.heightTex.upload( terrain.heights );
+			if ( v ) this.heightTex.upload( compactHeights() );
 
 		} } );
 		this.maskTex = new Texture( { label: 'grassMask', width: mres, height: mres, format: 'rgba8unorm', data: maskData, sampler: 'linearClamp' } );
@@ -696,7 +717,8 @@ fn vegGrassTierFade( tier: f32, d: f32, cut: f32 ) -> f32 {
 function createGrassMaterial( field ) {
 
 	const t = field.terrain;
-	const res = t.res;
+	const res = field.heightTex.width;
+	const texel = t.size / res;
 
 	const mat = new Material( {
 		name: 'veg-grass',
@@ -780,7 +802,7 @@ function createGrassMaterial( field ) {
 	let cy = cos( yaw ); let sy = sin( yaw );
 
 	// terrain height (float texels loaded and bilinearly filtered manually)
-	let hfp = ( xz - ${ f( t.origin ) } ) / ${ f( t.texel ) } - 0.5;
+	let hfp = ( xz - ${ f( t.origin ) } ) / ${ f( texel ) } - 0.5;
 	let hfi = floor( hfp );
 	let hfr = hfp - hfi;
 	let ij = vec2i( clamp( hfi, vec2f( 0.0 ), vec2f( ${ f( res - 2 ) } ) ) );

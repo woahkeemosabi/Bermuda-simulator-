@@ -20,7 +20,9 @@ export const LEAF_TILES = [
 	{ grid: 3, leaves: 6, width: 0.45 },
 	{ grid: 3, leaves: 8, width: 0.22 },
 ];
-const SIZE = 1024;
+// The baked leaf cards are heavily minified on a phone. The original desktop
+// atlas remains full-size; only the iPhone GPU allocation is reduced.
+const SIZE = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test( navigator.userAgent ) ? 512 : 1024;
 
 // leaf rosettes tiled G x G over a card: each cell holds one rosette with its own rotation /
 // size; leaves have a short petiole gap at the centre. Returns ( d: signed distance to the leaf

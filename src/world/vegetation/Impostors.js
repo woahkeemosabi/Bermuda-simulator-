@@ -74,7 +74,12 @@ export class ImpostorAtlas {
 		}
 
 		this.variantCount = v;
-		const W = v * OCT_N * FRAME_PX, H = OCT_N * FRAME_PX;
+		// Far crowns occupy only a few screen pixels on iPhone. Baking 128px
+		// cards there costs three 3840x768 render targets (plus mipmaps) while
+		// contributing no visible detail. Keep all views, variants and materials.
+		const mobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test( navigator.userAgent );
+		const framePx = mobile ? FRAME_PX / 2 : FRAME_PX;
+		const W = v * OCT_N * framePx, H = OCT_N * framePx;
 		const make = ( name ) => {
 
 			const texture = new Texture( { label: name, width: W, height: H, format: 'rgba8unorm', mips: true, usage: [ 'sample', 'render', 'copyDst', 'copySrc' ], sampler: 'linearClamp' } );
