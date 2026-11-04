@@ -382,6 +382,9 @@ export class GameHUD {
 		}
 
 		const c = this.catchCard;
+		// showCatch rebuilds its DOM canvas; release any previous WebGPU surface
+		// BEFORE replacing that node so repeated catches cannot retain swapchains.
+		if ( this.portrait ) this.portrait.detach();
 		c.style.setProperty( '--gm-catch-ms', `${ ms }ms` );
 		c.innerHTML = `
 			<div class="gm-catch-top">

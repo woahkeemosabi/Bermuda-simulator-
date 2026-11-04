@@ -28,7 +28,11 @@ const PARK = new Vector3( 0, 4800, 0 );
 // model frame (nose +z, back +y, left flank +x) -> nose toward -x (left on screen), back up, left
 // flank toward +z (the camera)
 const PORTRAIT = new Matrix4().makeBasis( new Vector3( 0, 0, 1 ), new Vector3( 0, 1, 0 ), new Vector3( - 1, 0, 0 ) );
-const SS = 2; // supersampling per axis (the silhouette is the whole picture: no aliased edges)
+const MOBILE_PORTRAIT = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test( navigator.userAgent );
+// A catch card was allocating a 4x-CSS-resolution second WebGPU surface on
+// iPhone while the full FFT world was still rendering. Keep detailed 3D fish,
+// but use a much smaller mobile render target and lower its refresh cadence.
+const SS = MOBILE_PORTRAIT ? 1 : 2;
 const THUMB_W = 360, THUMB_H = 170;
 const VFOV = 16; // degrees: a long lens, little perspective distortion
 
@@ -95,6 +99,7 @@ export class FishPortrait {
 		this.queue = []; // [ { species, resolve } ]
 		this.pending = new Map(); // species -> Promise
 		this.busy = false;
+		this._lastLiveRender = - Infinity;
 
 	}
 
@@ -233,6 +238,7 @@ fn fragment( in: FSIn ) -> vec4f {
 		if ( ! hasDOM || ! canvas || ! navigator.gpu ) return false;
 		if ( this.canvas !== canvas ) {
 
+			this.detach();
 			this.canvas = canvas;
 			this.context = canvas.getContext( 'webgpu' );
 			this.format = navigator.gpu.getPreferredCanvasFormat();
@@ -256,6 +262,15 @@ fn fragment( in: FSIn ) -> vec4f {
 	detach() {
 
 		this.live = null;
+		// Removed catch-card canvases must not retain a live GPU swapchain.
+		// Safari can keep the detached surface alive after its DOM node is gone.
+		if ( this.context ) {
+			try { this.context.unconfigure(); } catch ( _ ) { /* device may be lost */ }
+		}
+		this.canvas = null;
+		this.context = null;
+		this.present = null;
+		this._lastLiveRender = - Infinity;
 
 	}
 
@@ -371,8 +386,13 @@ fn fragment( in: FSIn ) -> vec4f {
 		if ( lv && this.context ) {
 
 			lv.t += dt;
+			if ( MOBILE_PORTRAIT ) {
+				const now = performance.now();
+				if ( now - this._lastLiveRender < 1000 / 12 ) return;
+				this._lastLiveRender = now;
+			}
 			const c = this.canvas;
-			const dpr = Math.min( 2, globalThis.devicePixelRatio || 1 );
+			const dpr = MOBILE_PORTRAIT ? Math.min( 1.25, globalThis.devicePixelRatio || 1 ) : Math.min( 2, globalThis.devicePixelRatio || 1 );
 			const cw = Math.max( 2, Math.min( 1600, Math.round( c.clientWidth * dpr ) ) ), ch = Math.max( 2, Math.round( cw * ( c.clientHeight / Math.max( 1, c.clientWidth ) ) ) );
 			if ( c.width !== cw || c.height !== ch ) {
 
