@@ -1,9 +1,9 @@
 // Experimental iPhone preset. ?graphics=stable selects the unchanged fallback.
 export const MOBILE_75 = Object.freeze( {
 	renderScale: 0.75,
-	// Canvas output is already 75% of CSS dimensions. Do not multiply the
-	// internal scene by another 0.75 (0.75² = 56.25%, visibly pixelated).
-	sceneScale: 1,
+	// The extra internal scale makes this a temporary stability profile at
+	// 56.25% CSS linear resolution. Restore clarity only after real-device QA.
+	sceneScale: 0.75,
 	shoreSimRes: 256,
 	sprayGpuCapacity: 2048,
 	sprayCpuCapacity: 512,

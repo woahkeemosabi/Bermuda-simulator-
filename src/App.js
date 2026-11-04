@@ -605,8 +605,23 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		if ( this.clouds?.coverage ) this.clouds.coverage.value += ( profile.coverage - this.clouds.coverage.value ) * Math.min( 1, dt * 0.8 );
 		if ( this.fft?.local ) {
 
+			const oldWind = this.fft.local.windSpeed;
 			this.fft.local.windSpeed += ( profile.wind - this.fft.local.windSpeed ) * Math.min( 1, dt * 0.45 );
-			if ( this.fft.updateSpectrumUniforms ) this.fft.updateSpectrumUniforms();
+			// The original FFT evolves EVERY frame; only its starting spectrum needs
+			// regeneration when the weather-driven wind has materially changed.
+			// Rebuilding H0/conjugates/copies for tiny changes every frame was adding
+			// three unnecessary GPU compute passes to each iPhone frame.
+			this._weatherSpectrumWind ??= oldWind;
+			this._weatherSpectrumElapsed = ( this._weatherSpectrumElapsed || 0 ) + Math.max( 0, dt );
+			const drift = Math.abs( this.fft.local.windSpeed - this._weatherSpectrumWind );
+			const settled = Math.abs( profile.wind - this.fft.local.windSpeed ) < 0.025;
+			if ( this.fft.updateSpectrumUniforms && (
+				( drift >= 0.3 && this._weatherSpectrumElapsed >= 0.75 ) || ( settled && drift >= 0.025 )
+			) ) {
+				this.fft.updateSpectrumUniforms();
+				this._weatherSpectrumWind = this.fft.local.windSpeed;
+				this._weatherSpectrumElapsed = 0;
+			}
 
 		}
 		if ( this.fft?.choppiness ) this.fft.choppiness.value += ( profile.chop - this.fft.choppiness.value ) * Math.min( 1, dt * 0.7 );

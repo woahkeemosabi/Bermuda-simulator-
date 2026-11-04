@@ -7,7 +7,7 @@ for ( const key of [ 'freezeFFT', 'noSim', 'noCaustics', 'noSpray', 'noClouds', 
 	assert.equal( url.searchParams.has( key ), false, `${ key } must not disable the 75% visual preset` );
 assert.equal( url.searchParams.get( 'missions' ), 'boat', 'preserve gameplay state' );
 assert.equal( MOBILE_75.renderScale, 0.75, 'keep the output canvas at the requested 75% scale' );
-assert.equal( Number( url.searchParams.get( 'scale' ) ), 1, 'do not apply a second internal 75% downscale' );
+assert.equal( Number( url.searchParams.get( 'scale' ) ), 0.75, 'hold the last observed playable internal scene size for GPU workload isolation' );
 assert.equal( url.searchParams.get( 'cloudtest' ), 'panorama' );
 assert.equal( 'oceanCascades' in MOBILE_75, false, 'original FFT cascades must remain unchanged' );
 assert.equal( 'oceanSizes' in MOBILE_75, false, 'original FFT frequencies must remain unchanged' );

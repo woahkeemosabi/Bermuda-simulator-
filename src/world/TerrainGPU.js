@@ -36,7 +36,10 @@ import { detailBinding } from './terrain/TerrainShading.js';
 // Bindings: terrainParams (TerrainParams: origin, size, res, shoreRes, sunBake, sunBaked), terrainHeightTex,
 // terrainNormalTex, terrainSplatTex, terrainDetailTex (tileable: sample with smpLinearRepeat / smpAnisoRepeat),
 // terrainShoreTex, terrainSunShadowTex.
-const SUN_N = 512;
+// Soft heightfield shadows do not benefit from 4 m texels on an iPhone.
+// Quarter the mobile bake workload while preserving sunlight and terrain shadows.
+const MOBILE_SUN_BAKE = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test( navigator.userAgent );
+const SUN_N = MOBILE_SUN_BAKE ? 256 : 512;
 const SUN_T0 = 24; // m: nearer occluders are left to the shadow map / N.L
 const SUN_DT0 = 6;
 const SUN_GROWTH = 1.22;
@@ -188,10 +191,15 @@ fn main( @builtin( global_invocation_id ) gid: vec3u ) {
 	updateSunShadow( renderer, force = false ) {
 
 		const L = G.sunDir.value;
+		const now = performance.now();
+		// Time of day advances continuously; don't launch a 24-step terrain ray
+		// march plus ground-bounce bake on successive iPhone frames.
+		if ( ! force && MOBILE_SUN_BAKE && this._sunBaked && now - ( this._lastSunBakeMs || 0 ) < 1000 ) return false;
 		if ( ! force && this._sunBaked && L.angleTo( this.uSunBake.value ) < 0.0015 ) return false;
 		this.uSunBake.value.copy( L );
 		this.sunShadowKernel.dispatch( [ SUN_N / 8, SUN_N / 8, 1 ] );
 		this._sunBaked = true;
+		this._lastSunBakeMs = now;
 		this.uSunBaked.value = 1;
 		return true;
 
