@@ -127,7 +127,7 @@ fn waterSurfaceCascadeAttenuation( c: i32, depth: f32 ) -> f32 {
 		// band-limit to the mesh spacing to avoid aliasing / swimming
 		let level = max( log2( spacing / ${ f( texel ) } ) + 0.7, 0.0 );
 		let att = waterSurfaceCascadeAttenuation( ${ c }, depth );
-		let uv = worldXZ / ocean.sizes[ ${ c } ].x;
+		let uv = advectedXZ / ocean.sizes[ ${ c } ].x;
 		let s = textureSampleLevel( oceanDisplacement, smpLinearRepeat, uv, ${ c }, level );
 		disp += s.xyz * att;
 		// foam coverage is smooth enough to evaluate per vertex (sampled at a fixed detail level,
@@ -165,6 +165,7 @@ fn waterSurfaceVertex( node: vec4f, grid: vec2f ) -> WaterSurfaceVertex {
 	let spacing = lod.spacing;
 	let ground = ${ T ? 'terrainHeightAt( worldXZ )' : '-500.0' };
 	let depth = ${ T ? 'frame.seaLevel - ground' : '500.0' };
+	let advectedXZ = oceanAdvectedXZ( worldXZ );
 
 	var disp = vec3f( 0.0 );
 	var foam = 0.0;
@@ -245,7 +246,7 @@ ${ T ? /* wgsl */`
 			if ( DT && c >= C - 2 ) att += ' * rough';
 			else if ( DT && c === C - 3 ) att += ' * mix( 1.0, rough, 0.4 )';
 			// (4x anisotropy: 8x only sharpened the far grazing sea imperceptibly, at ~0.1 ms)
-			cascadesF += `\td += textureSample( oceanDerivatives, smpAniso4Repeat, lagXZ / ocean.sizes[ ${ c } ].x, ${ c } ) * ( ${ att } );\n`;
+			cascadesF += `\td += textureSample( oceanDerivatives, smpAniso4Repeat, advectedXZ / ocean.sizes[ ${ c } ].x, ${ c } ) * ( ${ att } );\n`;
 
 		}
 
@@ -272,6 +273,7 @@ ${ SF ? '	foamInfo: SurfFoamInfo,' : '' }
 // extraFoam: foam carried by the water (ShoreSim); simState: ShoreSim.sample() here; surfMask
 // (clear face of a plunging wave, whitewater roller relief, from the vertex stage)
 fn waterSurfaceFragment( lagXZ: vec2f, footprint: f32, depth: f32, vertexFoam: f32, shoreN: vec3f, shoreFoam: f32, extraFoam: f32, simState: vec4f, surfMask: vec2f, P: vec3f ) -> WaterSurfaceFrag {
+	let advectedXZ = oceanAdvectedXZ( lagXZ );
 	var d = vec4f( 0.0 );
 	var foamSum = 0.0;
 	// the clear concave face of a plunging wave overhangs the trough: the foam carried by the
@@ -296,8 +298,8 @@ ${ cascadesF }
 	// small. Damped in slicks with the short wind waves. Explicit LOD: this runs in a branch.
 	let near = smoothstep( 0.04, 0.01, footprint ) * rough;
 	if ( near > 0.002 ) {
-		let c1 = textureSampleLevel( oceanDerivatives, smpLinearRepeat, ${ rot( 'lagXZ', 0.63 ) } * ${ f( k1 / Lf ) }, ${ cN }, max( log2( footprint / ${ f( texel1 ) } ), 0.0 ) );
-		let c2 = textureSampleLevel( oceanDerivatives, smpLinearRepeat, ${ rot( 'lagXZ', 2.14 ) } * ${ f( k2 / Lf ) }, ${ cN }, max( log2( footprint / ${ f( texel2 ) } ), 0.0 ) );
+		let c1 = textureSampleLevel( oceanDerivatives, smpLinearRepeat, ${ rot( 'advectedXZ', 0.63 ) } * ${ f( k1 / Lf ) }, ${ cN }, max( log2( footprint / ${ f( texel1 ) } ), 0.0 ) );
+		let c2 = textureSampleLevel( oceanDerivatives, smpLinearRepeat, ${ rot( 'advectedXZ', 2.14 ) } * ${ f( k2 / Lf ) }, ${ cN }, max( log2( footprint / ${ f( texel2 ) } ), 0.0 ) );
 		// gradients back into world axes (transpose of the rotation)
 		let g1 = c1.xy; let g2 = c2.xy;
 		let g = ${ rot( 'g1', - 0.63 ) } * 0.55 + ${ rot( 'g2', - 2.14 ) } * 0.35;
@@ -347,7 +349,7 @@ ${ DT ? '	whitecaps = whitecaps * mix( 0.5, 1.5, det.gust ) + det.streak * 0.5;'
 
 	// foam pattern: an irregular bubbly mat thresholded by coverage, so foam grows, tears into
 	// lace and dissolves naturally
-	let fuv = lagXZ * waterSurface.foamScale;
+	let fuv = advectedXZ * waterSurface.foamScale;
 	let p1 = textureSample( waterFoamTex, smpAniso4Repeat, fuv );
 	// second layer at another scale, rotated, to break repetition
 	let r2 = vec2f( fuv.x * 0.8 - fuv.y * 0.6, fuv.x * 0.6 + fuv.y * 0.8 );

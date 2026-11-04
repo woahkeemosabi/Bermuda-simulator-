@@ -79,7 +79,7 @@ fn waterQueryCameraState() -> vec4f { return waterQueryResults[ 0 ]; }
 		let casc = '';
 		for ( let c = 0; c < C; c ++ ) {
 
-			casc += `\td += textureSampleLevel( oceanDisplacement, smpLinearRepeat, x0 / ocean.sizes[ ${ c } ].x, ${ c }, ${ c === C - 1 ? '2.0' : '0.0' } ).xyz * waterSurfaceCascadeAttenuation( ${ c }, depth );\n`;
+			casc += `\td += textureSampleLevel( oceanDisplacement, smpLinearRepeat, advectedXZ / ocean.sizes[ ${ c } ].x, ${ c }, ${ c === C - 1 ? '2.0' : '0.0' } ).xyz * waterSurfaceCascadeAttenuation( ${ c }, depth );\n`;
 
 		}
 
@@ -91,6 +91,7 @@ fn waterQueryCameraState() -> vec4f { return waterQueryResults[ 0 ]; }
 			uniformName: 'waterSurface',
 			code: /* wgsl */`
 fn waterQueryDispAt( x0: vec2f, depth: f32 ) -> vec3f {
+	let advectedXZ = oceanAdvectedXZ( x0 );
 	var d = vec3f( 0.0 );
 ${ casc }
 	d *= waterSurface.amplitude;

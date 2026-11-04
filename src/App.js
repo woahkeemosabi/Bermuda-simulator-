@@ -35,6 +35,7 @@ import { Wildlife } from './world/wildlife/Wildlife.js';
 import { Whale } from './world/marine/Whale.js';
 
 import { OceanFFT } from './ocean/OceanFFT.js';
+import { mobileFrozenOceanOptions } from './ocean/MobileOceanPreset.js';
 import { WaterSurface } from './ocean/WaterSurface.js';
 import { WaterMaterial } from './ocean/WaterMaterial.js';
 import { createFoamTexture } from './ocean/FoamTexture.js';
@@ -221,7 +222,14 @@ export class App {
 
 		// ---------------------------------------------------------------- ocean
 		await progress( 0.3, 'Simulating the ocean…' );
-		this.fft = new OceanFFT( renderer, qs.has('freezeFFT') ? {cascades:1} : (this.recoveryMode ? {cascades:2} : {}) );
+		// The stable iPhone path keeps one cached FFT cascade. Translate that cached
+		// field at sampling time for visible swell motion without dispatching new FFT
+		// kernels after startup. This is not enabled for desktop/full simulation.
+		// A 240 m tile at 256 samples retains ~2 m surface features while using
+		// exactly the same one-cascade GPU allocation as the stable 733 m preset.
+		// Independent URL switches allow an immediate A/B without another deploy.
+		const frozenOceanOptions = mobileFrozenOceanOptions( qs );
+		this.fft = new OceanFFT( renderer, qs.has( 'freezeFFT' ) ? frozenOceanOptions : ( this.recoveryMode ? { cascades:2 } : {} ) );
 		if ( this.reef.setOcean ) this.reef.setOcean( this.fft ); // coral / sea fan sway follows the simulated swell
 		this.foamTexture = createFoamTexture( renderer );
 		this.oceanLOD = new CDLOD( { gridSize: Number( qs.get( 'G' ) || 32 ), leafSize: 8, levels: 12, minY: - 25, maxY: 25 } );
