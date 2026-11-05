@@ -26,3 +26,12 @@ export function configureMobile75Url( url ) {
 	if ( !url.searchParams.has( 'envtest' ) ) url.searchParams.set( 'envtest', 'freeze' );
 	return url;
 }
+// Opt-in staged image-quality trial. Keep the baseline 75% profile unchanged.
+export const MOBILE_SHARP_85 = Object.freeze({ renderScale: 0.85, sceneScale: 0.85 });
+
+export function configureMobileSharp85Url( url ) {
+	url.searchParams.set( 'scale', String( MOBILE_SHARP_85.sceneScale ) );
+	// Hold the diagnostic A/B condition constant: dynamic IBL cubemap bake off.
+	url.searchParams.set( 'envtest', 'skip' );
+	return url;
+}

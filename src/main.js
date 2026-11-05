@@ -10,7 +10,7 @@ import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
 import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
 import { gpuStage, gpuQueueAck, gpuReport, gpuDetailedReport, gpuTraceEvent } from './mobile/GpuAudit.js';
-import { MOBILE_75, configureMobile75Url } from './mobile/Mobile75Config.js';
+import { MOBILE_75, MOBILE_SHARP_85, configureMobile75Url, configureMobileSharp85Url } from './mobile/Mobile75Config.js';
 import { preloadMobileStartup } from './mobile/MobileStartupPreload.js';
 import { cacheStartupAssets, holdUntilMobileReady, isStartupCacheReady, markStartupCacheReady } from './mobile/StartupAssetCache.js';
 import { getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from './mobile/GpuTraceCases.js';
@@ -31,6 +31,10 @@ const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).g
 const mobileGraphics75 = mobileFastStart && !mobileRecovery &&
 	(gpuTraceActive || new URLSearchParams(location.search).get('graphics') !== 'stable');
 const mobileLowGPU = mobileFastStart && !mobileGraphics75;
+// Opt-in quality trial: more real scene pixels, same FFT and GPU effects,
+// with reflection baking isolated as in the five-minute-stable iPhone run.
+const mobileSharp85Test = mobileGraphics75 && !gpuTraceActive &&
+	new URLSearchParams(location.search).get('qualityTest') === 'sharp85';
 window.__bermudaMobileGraphics75 = mobileGraphics75;
 // Preserve the existing safe query and underwater-light readback scheduling.
 window.__bermudaFreezeUnderwaterLight = mobileFastStart;
@@ -48,7 +52,7 @@ if ( mobileFastStart ) {
 	} catch (_) { /* storage may be blocked */ }
 }
 window.__bermudaMobileOutputScale = gpuTraceActive && mobileGraphics75
-	? (gpuTraceCase.id==='resolution'?MOBILE_75.renderScale:1.35) : mobileGraphics75 ? MOBILE_75.renderScale :
+	? (gpuTraceCase.id==='resolution'?MOBILE_75.renderScale:1.35) : mobileSharp85Test ? MOBILE_SHARP_85.renderScale : mobileGraphics75 ? MOBILE_75.renderScale :
 	( mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64)) );
 
 if ( mobileDevice ) {
@@ -93,6 +97,7 @@ if ( mobileFastStart ) {
 		if (url.searchParams.get('gpuTest') !== 'minimal') url.searchParams.set( 'G', '12' );
 	}
 	if ( mobileGraphics75 ) configureMobile75Url( url );
+	if ( mobileSharp85Test ) configureMobileSharp85Url( url );
 	if ( gpuTraceActive && mobileGraphics75 ) configureGpuTraceUrl( url );
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
