@@ -23,6 +23,9 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
 const gpuTraceActive = mobileFastStart && new URLSearchParams(location.search).get('gpuTrace')==='1';
+// Use the normal mobile budget when diagnosing a crash. High-resolution
+// repro is opt-in; otherwise tracing itself changes the variable under test.
+const gpuTraceHighRes = gpuTraceActive && new URLSearchParams(location.search).get('traceHighRes')==='1';
 const gpuTraceCase = getGpuTraceCase(new URLSearchParams(location.search).get('traceCase'));
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
@@ -52,7 +55,7 @@ if ( mobileFastStart ) {
 	} catch (_) { /* storage may be blocked */ }
 }
 window.__bermudaMobileOutputScale = gpuTraceActive && mobileGraphics75
-	? (gpuTraceCase.id==='resolution'?MOBILE_75.renderScale:1.35) : mobileSharp85Test ? MOBILE_SHARP_85.renderScale : mobileGraphics75 ? MOBILE_75.renderScale :
+	? (gpuTraceHighRes ? 1.35 : MOBILE_75.renderScale) : mobileSharp85Test ? MOBILE_SHARP_85.renderScale : mobileGraphics75 ? MOBILE_75.renderScale :
 	( mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64)) );
 
 if ( mobileDevice ) {

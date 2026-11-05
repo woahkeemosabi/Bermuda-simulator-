@@ -5,10 +5,14 @@ import { gpuAudit, gpuStage, gpuCompute, gpuDispatch, gpuRender, gpuSubmit, gpuQ
 for ( const test of GPU_TRACE_CASES ) {
 	const url = configureGpuTraceUrl( new URL( 'https://example.test/?gpuTrace=1&traceCase=' + test.id ) );
 	assert.equal( url.searchParams.has( 'freezeFFT' ), false, `${ test.id } must keep original FFT animating` );
-	assert.equal( url.searchParams.get( 'G' ), '24' );
+	assert.equal( url.searchParams.get( 'G' ), '12', 'normal GPU trace must use mobile 75% scene budget' );
 	assert.equal( url.searchParams.get( 'traceCase' ), test.id );
 	for ( const [ key, value ] of Object.entries( test.flags || {} ) ) assert.equal( url.searchParams.get( key ), value );
 }
+const high = configureGpuTraceUrl( new URL( 'https://example.test/?gpuTrace=1&traceHighRes=1&traceCase=full' ) );
+assert.equal( high.searchParams.get( 'G' ), '24', 'high-stress trace must be explicitly requested' );
+assert.equal( getGpuTraceCase('fftcore').flags.noWake, '1' );
+assert.equal( getGpuTraceCase('fftcore').flags.noShadows, '1' );
 let current = new URL( 'https://example.test/?gpuTrace=1&traceCase=full' );
 for ( let i = 1; i < GPU_TRACE_CASES.length; i ++ ) {
 	current = nextGpuTraceUrl( current );

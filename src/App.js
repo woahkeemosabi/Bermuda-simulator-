@@ -165,9 +165,11 @@ export class App {
 		// Shadows come from the opaque and the late (transparent-pass) layers.
 		// Trace-only recreation of the failing higher-resolution shadow workload;
 		// the normal playable 75% graphics profile is unchanged.
-		const traceShadowSize = mobileLite && qs.get('gpuTrace')==='1' && qs.get('traceCase')!=='shadows' ? 768 : null;
+		const traceShadowSize = mobileLite && qs.get('gpuTrace')==='1' && qs.get('traceHighRes')==='1' && qs.get('traceCase')!=='shadows' ? 768 : null;
 		this.csm = this.shadows = new SunShadows( { size: traceShadowSize || (this.mobileGraphics75 ? MOBILE_75.shadowSize : (this.recoveryMode ? 512 : (mobileLite ? 1024 : 2048))), splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
 		this.shadows.layerMask = ( 1 << LAYERS.OPAQUE ) | ( 1 << LAYERS.TRANSPARENT );
+		// Controlled FFT-core A/B: skip the optional cascaded shadow draws.
+		if ( mobileLite && qs.has( 'noShadows' ) ) this.shadows.enabled = false;
 
 		// Reduce the mobile IBL *cubemap* face work (not the ocean, terrain or
 		// reflection shader). The iPhone diagnostic can force the former 128px
@@ -390,6 +392,17 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			this.boatSpray.update = () => {};
 			this.wake.update = () => {};
 			this.surface.wake = null;
+		}
+		// Isolation only: retain Tidewater's live FFT while leaving auxiliary
+		// Kelvin wake / surf-crest GPU dispatches unrecorded.
+		if (qs.has('noWake')) {
+			this.wake.update = () => {};
+			this.surface.wake = null;
+			this.boatSpray.update = () => {};
+		}
+		if (qs.has('noBreakers')) {
+			this.breakers.update = () => {};
+			if (this.breakers.mesh) this.breakers.mesh.visible = false;
 		}
 		if (qs.has('noSpray')) {
 			if (this.spray?.mesh) this.spray.mesh.visible = false;
