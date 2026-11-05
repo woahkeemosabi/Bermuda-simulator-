@@ -20,6 +20,9 @@ export function configureMobile75Url( url ) {
 	// Show the cloud panorama without costly full-screen cloud ray marching.
 	url.searchParams.set( 'cloudtest', 'panorama' );
 	// Keep the progressive cubemap prime, then hold the reflection cache.
-	url.searchParams.set( 'envtest', 'freeze' );
+	// Keep explicit GPU diagnostics at the regular mobile resolution.
+	// Previous normalization silently replaced ?envtest=skip with freeze,
+	// preventing reliable A/B isolation of the cubemap-bake stage.
+	if ( !url.searchParams.has( 'envtest' ) ) url.searchParams.set( 'envtest', 'freeze' );
 	return url;
 }
