@@ -12,7 +12,7 @@ import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
 import { gpuStage, gpuQueueAck, gpuReport, gpuDetailedReport, gpuTraceEvent } from './mobile/GpuAudit.js';
 import { MOBILE_75, configureMobile75Url } from './mobile/Mobile75Config.js';
 import { preloadMobileStartup } from './mobile/MobileStartupPreload.js';
-import { cacheStartupAssets, holdUntilMobileReady } from './mobile/StartupAssetCache.js';
+import { cacheStartupAssets, holdUntilMobileReady, isStartupCacheReady, markStartupCacheReady } from './mobile/StartupAssetCache.js';
 import { getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from './mobile/GpuTraceCases.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
@@ -240,15 +240,18 @@ app.init( ( p, text, until ) => {
 				onProgress: ( done, total ) => ui.setLoading(
 					.994, `Saving game files · ${done}/${total}…`, .995 ),
 			} );
-			await holdUntilMobileReady( {
-				startedAt: 0, // minimum elapsed time since the page opened
-				checkDevice: () => {
-					if ( GPU.fatalError || window.__bermudaGpuLost )
-						throw GPU.fatalError || new Error( window.__bermudaGpuLost );
-				},
-				onProgress: seconds => ui.setLoading(
-					.994, `World prepared · Explore available in ${seconds}s`, .995 ),
-			} );
+			if ( !isStartupCacheReady( window.__bermudaAssetCacheState, window.localStorage ) ) {
+				await holdUntilMobileReady( {
+					startedAt: 0, // first complete load takes at least a minute
+					checkDevice: () => {
+						if ( GPU.fatalError || window.__bermudaGpuLost )
+							throw GPU.fatalError || new Error( window.__bermudaGpuLost );
+					},
+					onProgress: seconds => ui.setLoading(
+						.994, `World prepared · Explore available in ${seconds}s`, .995 ),
+				} );
+				markStartupCacheReady( window.__bermudaAssetCacheState, window.localStorage );
+			}
 		}
 		ui.setLoading( 1, 'World ready' );
 		let started = false;

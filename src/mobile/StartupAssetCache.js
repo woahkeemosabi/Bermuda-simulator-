@@ -2,6 +2,7 @@
 // startup minute. The service worker caches additional downloaded models and
 // textures during gameplay; WebGPU device resources cannot be persisted.
 export const ASSET_CACHE_NAME = 'bermuda-assets-20261105-v1';
+export const STARTUP_CACHE_READY_KEY = 'bermuda-startup-ready-20261105-v1';
 export const MOBILE_STARTUP_MIN_MS = 60_000;
 export const STARTUP_ASSETS = [
 	'ui/bermuda-loading.jpg',
@@ -10,6 +11,19 @@ export const STARTUP_ASSETS = [
 ];
 
 const pause = ms => new Promise( resolve => setTimeout( resolve, ms ) );
+
+export function isStartupCacheReady( state, storage ) {
+	if ( !state?.available || state.reused !== STARTUP_ASSETS.length ) return false;
+	try { return storage?.getItem( STARTUP_CACHE_READY_KEY ) === '1'; }
+	catch (_) { return false; }
+}
+
+export function markStartupCacheReady( state, storage ) {
+	if ( !state?.available || state.failed !== 0 ||
+		state.stored + state.reused !== STARTUP_ASSETS.length ) return false;
+	try { storage?.setItem( STARTUP_CACHE_READY_KEY, '1' ); return true; }
+	catch (_) { return false; }
+}
 
 export async function cacheStartupAssets( {
 	baseUrl,

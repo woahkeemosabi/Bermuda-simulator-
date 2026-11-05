@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { cacheStartupAssets, holdUntilMobileReady, MOBILE_STARTUP_MIN_MS } from '../src/mobile/StartupAssetCache.js';
+import { cacheStartupAssets, holdUntilMobileReady, MOBILE_STARTUP_MIN_MS, isStartupCacheReady, markStartupCacheReady } from '../src/mobile/StartupAssetCache.js';
 
 const files = new Map();
 const storage = { open: async () => ({
@@ -17,6 +17,14 @@ assert.deepEqual(first, { available: true, stored: 3, reused: 0, failed: 0 });
 const second = await cacheStartupAssets(config);
 assert.deepEqual(second, { available: true, stored: 0, reused: 3, failed: 0 });
 assert.equal(downloads, 3, 'second visit must reuse the asset cache');
+const localItems = new Map();
+const local = {
+	getItem: key => localItems.get( key ) ?? null,
+	setItem: (key,value) => localItems.set( key, value ),
+};
+assert.equal(isStartupCacheReady(second, local), false, 'cache alone does not imply a completed minute');
+assert.equal(markStartupCacheReady(first, local), true);
+assert.equal(isStartupCacheReady(second, local), true, 'next visit may use a completed asset cache');
 
 let elapsed = 8200;
 const remaining = [];
