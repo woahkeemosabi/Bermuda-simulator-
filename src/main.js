@@ -12,6 +12,7 @@ import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
 import { gpuStage, gpuQueueAck, gpuReport, gpuDetailedReport, gpuTraceEvent } from './mobile/GpuAudit.js';
 import { MOBILE_75, configureMobile75Url } from './mobile/Mobile75Config.js';
 import { preloadMobileStartup } from './mobile/MobileStartupPreload.js';
+import { cacheStartupAssets, holdUntilMobileReady } from './mobile/StartupAssetCache.js';
 import { getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from './mobile/GpuTraceCases.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
@@ -228,6 +229,25 @@ app.init( ( p, text, until ) => {
 				onProgress: ( step, total, status ) => ui.setLoading(
 					0.983 + 0.012 * ( step - 1 ) / total, status, .995 ),
 				onQueueAck: () => gpuQueueAck( GPU.frame ),
+			} );
+		}
+		if ( !app.qs.has( 'renderTest' ) && !gpuTraceActive && !app.qs.has( 'bench' ) ) {
+			gpuStage( 'Caching reusable mobile assets' );
+			const baseUrl = new URL( import.meta.env.BASE_URL || './', location.href );
+			ui.setLoading( .994, 'Saving reusable game files…', .995 );
+			window.__bermudaAssetCacheState = await cacheStartupAssets( {
+				baseUrl,
+				onProgress: ( done, total ) => ui.setLoading(
+					.994, `Saving game files · ${done}/${total}…`, .995 ),
+			} );
+			await holdUntilMobileReady( {
+				startedAt: 0, // minimum elapsed time since the page opened
+				checkDevice: () => {
+					if ( GPU.fatalError || window.__bermudaGpuLost )
+						throw GPU.fatalError || new Error( window.__bermudaGpuLost );
+				},
+				onProgress: seconds => ui.setLoading(
+					.994, `World prepared · Explore available in ${seconds}s`, .995 ),
 			} );
 		}
 		ui.setLoading( 1, 'World ready' );

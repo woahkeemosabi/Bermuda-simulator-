@@ -42,34 +42,13 @@
 		</div>
 	</div>
 	<script type="module">
-		// Online-only launch: retire legacy offline/PWA workers before loading the engine.
-		// Never delete localStorage: wallet, boats, inventory and progress live there.
-		if ( 'serviceWorker' in navigator ) {
+		// Cache only downloadable 3D assets. Game code and local wallet/save data are
+		// deliberately outside the service worker cache, so updates remain current.
+		if ( 'serviceWorker' in navigator && location.protocol === 'https:' && !new URLSearchParams(location.search).has('gpuProbe') ) {
 			try {
-				const registrations = await navigator.serviceWorker.getRegistrations();
-				const wasControlled = !!navigator.serviceWorker.controller;
-				if ( registrations.length || wasControlled ) {
-					// Replace the old controller with the one-time cleanup worker, then unregister.
-					try {
-						const cleanup = await navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' });
-						await cleanup.update();
-					} catch ( error ) { console.warn('Cleanup worker unavailable', error); }
-					const active = await navigator.serviceWorker.getRegistrations();
-					await Promise.all(active.map(reg => reg.unregister().catch(() => false)));
-					if ('caches' in window) {
-						const keys = await caches.keys();
-						await Promise.all(keys.map(key => caches.delete(key)));
-					}
-					// A previously controlled document may still use cached modules until navigation.
-					// Reload only once per tab, and only after the old controller has been retired.
-					if (wasControlled && !sessionStorage.getItem('bermuda-online-clean-v2')) {
-						sessionStorage.setItem('bermuda-online-clean-v2', '1');
-						location.reload();
-						await new Promise(() => {});
-					}
-				}
+				await navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' });
 			} catch (error) {
-				console.warn('Legacy worker cleanup failed; starting online browser build', error);
+				console.warn('Asset cache unavailable; continuing online', error);
 			}
 		}
 		// GPU probe runs without importing any Bermuda rendering or gameplay module.
