@@ -99,6 +99,7 @@ export class FishPortrait {
 		this.queue = []; // [ { species, resolve } ]
 		this.pending = new Map(); // species -> Promise
 		this.busy = false;
+		this.renderedThisFrame = false;
 		this._lastLiveRender = - Infinity;
 
 	}
@@ -381,6 +382,7 @@ fn fragment( in: FSIn ) -> vec4f {
 
 	update( dt ) {
 
+		this.renderedThisFrame = false;
 		if ( ! GPU.device ) return;
 		const lv = this.live;
 		if ( lv && this.context ) {
@@ -409,11 +411,15 @@ fn fragment( in: FSIn ) -> vec4f {
 			this._draw( T );
 			if ( ! this.present ) this.present = this._pass( this.format, () => this.targets.live.hdr );
 			this.present.render( { colorViews: [ this.context.getCurrentTexture().createView() ], clear: [ 0, 0, 0, 0 ] } );
+			this.renderedThisFrame = true;
 			return;
 
 		}
 
-		if ( ! this.busy && this.queue.length ) this._renderThumb( this.queue.shift() );
+		if ( ! this.busy && this.queue.length ) {
+			this._renderThumb( this.queue.shift() );
+			this.renderedThisFrame = true;
+		}
 
 	}
 

@@ -70,6 +70,7 @@ import { Vegetation } from './world/Vegetation.js';
 import { SoundScape } from './audio/SoundScape.js';
 import { updateCameraVelocity, useStaticVelocity } from './post/CameraVelocity.js';
 import { MOBILE_75 } from './mobile/Mobile75Config.js';
+import { isMobileCatchModal, isolateMobilePortraitFrame } from './mobile/PortraitIsolation.js';
 
 const _up = new Vector3( 0, 1, 0 );
 
@@ -786,13 +787,32 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			if ( this.ui ) this.ui.ui.toast( this.audio.muted ? 'Sound off' : 'Sound on' );
 
 		}
-		this.boatCtl.update( dt );
-		this.boatSpray.update( dt );
-		this.wake.update( dt );
-		if ( this.mobileWake ) this.mobileWake.update( dt );
-		if ( this.freeCam ) this.fly.update( dt );
-		else this.player.update( dt );
+		// The catch card is modal on phones. Hold locomotion as well as world
+		// rendering, so the player does not travel invisibly behind the card.
+		const catchModalOpen = isMobileCatchModal( this );
+		if ( ! catchModalOpen ) {
+			this.boatCtl.update( dt );
+			this.boatSpray.update( dt );
+			this.wake.update( dt );
+			if ( this.mobileWake ) this.mobileWake.update( dt );
+			if ( this.freeCam ) this.fly.update( dt );
+			else this.player.update( dt );
+		}
 		this.game.update( dt );
+		// Safari isolation: a catch-card portrait uses a second WebGPU canvas and
+		// its own HDR/depth targets. Do not submit the entire FFT ocean, shadow
+		// cascades and post chain alongside that portrait. The last two extended
+		// iPhone losses both ended on an overlapping portrait + world submit.
+		// Gameplay/UI continue; the already-rendered world holds behind the card.
+		if ( isolateMobilePortraitFrame( this ) ) {
+			gpuStage( 'Fish portrait isolated (world paused)', GPU.frame );
+			GPU.submit();
+			this.profiler.update( dt );
+			this.updateAudio( dt );
+			if ( this.ui ) this.ui.update( dt );
+			this.input.endFrame();
+			return;
+		}
 		this.updateSun();
 
 		this.atmosphere.update( dt, this.camera.position.y );
