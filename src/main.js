@@ -40,11 +40,15 @@ const mobileSharp85Test = mobileGraphics75 && !gpuTraceActive &&
 	new URLSearchParams(location.search).get('qualityTest') === 'sharp85';
 // Opt-in quality trials only for the already-stable FFT-core isolation case.
 // Other diagnostic cases and the default test retain their original budgets.
-const mobileFftVisualTest = mobileGraphics75 && gpuTraceActive && gpuTraceCase.id === 'fftcore'
+const mobileFftVisualTest = mobileGraphics75 && gpuTraceActive && (gpuTraceCase.id === 'fftcore' || gpuTraceCase.id === 'full')
 	? getFftCoreVisualProfile(new URLSearchParams(location.search).get('qualityTest')) : null;
+// Opt-in maximum visual fidelity while retaining the GPU failure trace.
+const mobileFullEffects = mobileGraphics75 && gpuTraceActive && gpuTraceCase.id === 'full' &&
+	new URLSearchParams(location.search).get('qualityTest') === 'crisp';
+window.__bermudaMobileFullEffects = mobileFullEffects;
 window.__bermudaMobileGraphics75 = mobileGraphics75;
 // Preserve the existing safe query and underwater-light readback scheduling.
-window.__bermudaFreezeUnderwaterLight = mobileFastStart;
+window.__bermudaFreezeUnderwaterLight = mobileFastStart && !mobileFullEffects;
 window.__bermudaThrottleWaterQueries = mobileFastStart;
 window.__bermudaDisableSwashProbe = mobileFastStart;
 window.__bermudaSparseVegetation = mobileFastStart;
@@ -133,7 +137,7 @@ function applyMobileMemoryProfile( app ) {
 		oceanCascades: app.fft?.cascades,
 		wakeGrid: '256x256', shoreFoamGrid: app.shoreSim?.res,
 		sprayParticleCapacity: app.spray?.N,
-		cloudSteps: mobileGraphics75 ? 'panorama-only' : 0,
+		cloudSteps: app.clouds?.mobilePanoramaOnly ? 'panorama-only' : (app.clouds ? 'full-clouds' : 0),
 		caustics: Boolean( app.caustics )
 	};
 }
