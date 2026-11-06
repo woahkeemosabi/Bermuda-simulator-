@@ -161,6 +161,52 @@ replace_once("src/main.js",
         document.addEventListener('touchend', restoreQAAudio, {capture:true, passive:true});
         ui.showStartOverlay( () => {""")
 
+# Bermuda QA vegetation: retain mixed trees, shrubs and coastal greenery,
+# but stop filling the hills and walking corridors with repeated coconut palms.
+# The same palm meshes and lighting are kept; only placement and far draw
+# distance change. No shader, ocean, physics or save changes.
+replace_once("src/world/Vegetation.js",
+    "const fractions = { palms: 0.16, trees: 0.12, bananas: 0.12, shrubs: 0.12,",
+    "const fractions = { palms: 0.09, trees: 0.12, bananas: 0.12, shrubs: 0.12,")
+replace_once("src/world/Vegetation.js",
+    "youngPalms: 0.10, ferns: 0.10, monsteras: 0.10, elephantEars: 0.10,",
+    "youngPalms: 0.06, ferns: 0.10, monsteras: 0.10, elephantEars: 0.10,")
+replace_once("src/world/Vegetation.js",
+    "\t\t\trecs.villagePalms = Math.min( recs.villagePalms || 0, recs.palms.length );",
+    """            // Deterministic, spatially separated palms: retain coastal
+            // character without endless repeating palm rows on hillsides.
+            // The original scatter's biome and ground-height checks still apply.
+            const spaced = [];
+            for (const r of recs.palms) {
+                const coastal = site.inBay(r.x, r.z) && site.height(r.x, r.z) < 8.5;
+                // A few landmark palms may occur farther inland, not a forest.
+                if (!coastal && Math.floor(r.seed * 100003) % 4 !== 0) continue;
+                const radius = coastal ? 17 : 29;
+                const tooClose = spaced.some(p => {
+                    const minSpace = (radius + p.radius) * 0.5;
+                    return (p.x-r.x)**2 + (p.z-r.z)**2 < minSpace**2;
+                });
+                if (tooClose) continue;
+                spaced.push({...r, radius});
+            }
+            recs.palms = spaced.map(({radius, ...p}) => p);
+            recs.villagePalms = Math.min(recs.villagePalms || 0, recs.palms.length);
+            if (typeof window !== 'undefined') {
+                window.__bermudaPalmLayout = {
+                    profile:'open-coastal-palms', palms:recs.palms.length,
+                    trees:recs.trees.length, youngPalms:recs.youngPalms.length
+                };
+            }""")
+replace_once("src/world/Vegetation.js",
+    "far: { parts: [ { geometry: palmFar.geometry, material: leafMat, name: 'veg-palm-far' } ], fade: CANOPY_FAR },",
+    "far: { parts: [ { geometry: palmFar.geometry, material: leafMat, name: 'veg-palm-far' } ], fade: mobileSparse ? [380, 520] : CANOPY_FAR },")
+replace_once("src/world/Vegetation.js",
+    "nearRange: mobileSparse ? 45 : PALM_NEAR, margin: 10, refreshDistance: 6, farExcludeNear: true, sortNear: true,",
+    "nearRange: mobileSparse ? 40 : PALM_NEAR, margin: 10, refreshDistance: 6, farExcludeNear: true, sortNear: true,")
+assert "open-coastal-palms" in (root / "src/world/Vegetation.js").read_text()
+assert "palms: 0.09" in (root / "src/world/Vegetation.js").read_text()
+print("QA vegetation: fewer palms, coastal grouping, minimum spacing and closer far LOD")
+
 # Optional paced GPU isolation without changing render targets, FFT resolution,
 # visuals, save keys or gameplay mechanics. Baseline remains 42 ms; ?gpuPace=steady
 # caps the render loop at ~17 fps, lowering sustained WebGPU submission pressure.
