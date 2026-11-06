@@ -444,9 +444,9 @@ jobs:
           assert sound.count(old_fetch) == 1, 'SoundScape lazy fetch anchor missing'
           sound = sound.replace(old_fetch, """
 const prepared = this._preloadedAudioBytes?.get( name );
-\t\t\tconst p = prepared
+\t\t\tconst p = ( prepared
 \t\t\t\t? Promise.resolve( { ok: true, arrayBuffer: () => Promise.resolve( prepared.slice( 0 ) ) } )
-\t\t\t\t: fetch( this.baseUrl + BANK[ name ].file )""".strip(), 1)
+\t\t\t\t: fetch( this.baseUrl + BANK[ name ].file ) )""".strip(), 1)
           sound_file.write_text(sound)
           main_anchor = "if ( !mobileRecovery && !app.qs.has( 'renderTest' ) ) {"
           assert main.count(main_anchor) == 1, 'QA audio preloading start anchor missing'
