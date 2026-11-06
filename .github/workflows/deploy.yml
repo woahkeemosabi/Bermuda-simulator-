@@ -490,6 +490,20 @@ const prepared = this._preloadedAudioBytes?.get( name );
         document.addEventListener('pointerdown', restoreGameAudio, { capture: true, passive: true });
         document.addEventListener('touchend', restoreGameAudio, { capture: true, passive: true });
 		ui.showStartOverlay( () => {""")
+          # Explore should not appear before the core sound-bank is ready.
+          # The first minute already does the real work; allow at most seven
+          # extra seconds for unusually slow first-time connections.
+          qa_replace(
+            "\t\tui.setLoading( 1, 'World ready' );",
+            """\t\tif (gpuTraceActive && app.audio) {
+                gpuStage('Preparing ambient audio');
+                ui.setLoading(.997, 'Finishing island sound…', .998);
+                await Promise.race([
+                    app.audio.preloadCoreAudio(),
+                    new Promise(resolve => setTimeout(resolve, 7000)),
+                ]);
+            }
+\t\tui.setLoading( 1, 'World ready' );""")
           assert "Starting simulation (mobile audio enabled)" in main
           assert "const restoreGameAudio = () =>" in main
           assert "document.addEventListener('touchend', restoreGameAudio" in main
