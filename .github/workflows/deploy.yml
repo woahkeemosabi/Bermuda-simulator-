@@ -380,6 +380,15 @@ jobs:
                     });
                 }
 \t\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive && !app.qs.has( 'bench' ) ) {""")
+          # Execute real, low-workload FFT-core scene frames over the entire
+          # first minute (rather than idling after six frames). Each submission
+          # is awaited before the next, preserving the known-working effect budget.
+          qa_replace(
+            "frameCount: mobileFullEffects ? MOBILE_FULL_PRELOAD_FRAMES : undefined,",
+            "frameCount: gpuTraceActive && gpuTraceCase.id === 'fftcore' ? MOBILE_FULL_PRELOAD_FRAMES : undefined,")
+          qa_replace(
+            "frameWaitMs: mobileFullEffects ? MOBILE_FULL_PRELOAD_WAIT_MS : undefined,",
+            "frameWaitMs: gpuTraceActive && gpuTraceCase.id === 'fftcore' ? MOBILE_FULL_PRELOAD_WAIT_MS : undefined,")
           assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in main
           assert "getFftCoreVisualProfile('crisp')" in main
           assert "minimumMs: 60000" in main
