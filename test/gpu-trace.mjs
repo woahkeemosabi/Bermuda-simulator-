@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { GPU_TRACE_CASES, getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from '../src/mobile/GpuTraceCases.js';
 import { getFftCoreVisualProfile } from '../src/mobile/Mobile75Config.js';
 import { vendorStreamEnabled, vendorReleaseReady } from '../src/mobile/VendorStreamConfig.js';
@@ -73,3 +74,13 @@ assert.equal(gpuAudit.movementSamples.at(-1).nearVendor,5);
 assert.match(gpuDetailedReport(), /PLAYER MOVEMENT[\s\S]*sprint=YES/);
 assert.match( gpuDetailedReport(), /FFT butterfly/ );
 console.log( 'GPU trace cases, submit-to-ack timeline and memory accounting pass.' );
+
+// Full-quality iPhone startup must pace WGSL modules while keeping every visual effect.
+const meshSource = readFileSync(new URL('../src/engine/render/MeshRenderer.js', import.meta.url), 'utf8');
+const appSource = readFileSync(new URL('../src/App.js', import.meta.url), 'utf8');
+const mainSource = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+assert.match(meshSource, /this\._shaderBudgetUsed >= 8/);
+assert.match(meshSource, /if \( ! p \) continue; \/\/ full-effects iPhone shader budget/);
+assert.match(appSource, /this\.mobileFullEffects \? 12/);
+assert.doesNotMatch(mainSource, /Next GPU diagnostic|makeButton\('Next test'/);
+assert.match(mainSource, /Retry full graphics/);
