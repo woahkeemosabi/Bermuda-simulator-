@@ -489,11 +489,16 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		await progress( 0.96, 'Warming up…' );
 		// All simulation effects remain available. Prime on the loading screen, one GPU
 		// submission at a time; never let startup pretend success after a failed device.
-		for ( let i = 0; i < ( mobileLite ? 1 : 2 ); i ++ ) {
+		// The full-effects iPhone path may require dozens of distinct WGSL variants.
+		// Spread compilation across warm-up frames instead of asking WebKit to compile
+		// every fish, terrain, boat, vegetation and water material simultaneously.
+		const warmupFrames = this.mobileFullEffects ? 12 : ( mobileLite ? 1 : 2 );
+		for ( let i = 0; i < warmupFrames; i ++ ) {
 			if ( GPU.fatalError ) throw GPU.fatalError;
 			this.frame( 1 / 60 );
 			await GPU.queue.onSubmittedWorkDone();
 			gpuQueueAck(GPU.frame);
+			if ( this.mobileFullEffects ) await GPU.pipelinesReady();
 			if ( GPU.fatalError ) throw GPU.fatalError;
 		}
 
