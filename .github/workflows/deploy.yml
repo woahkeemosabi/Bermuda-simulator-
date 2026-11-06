@@ -298,7 +298,7 @@ jobs:
       - name: Checkout iPhone FFT core diagnostic snapshot
         uses: actions/checkout@v4
         with:
-          ref: 3c5606750de1b5f24b5123b7752e8675462359b2
+          ref: eb4a81f5c710ebb29572f7902320125f9039b850
           path: _qa/fftcore
           persist-credentials: false
       - name: Build isolated iPhone FFT diagnostic in /qa/fftcore/
