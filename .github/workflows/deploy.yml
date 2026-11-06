@@ -400,15 +400,16 @@ jobs:
           # restricted audio to ?audio=on, so sound could remain suspended
           # until an unrelated gesture. Always unlock from Tap to Explore.
           qa_replace(
+            "// Keep sound off on mobile until the renderer is proven stable.\n\t\t\t// ?audio=on is an explicit diagnostic opt-in; sound is not required to play.",
+            "// Start Web Audio during the player gesture; GPU effects remain unchanged.")
+          qa_replace(
             "gpuStage('Starting simulation (mobile audio disabled)');",
             """gpuStage('Starting simulation (mobile audio enabled)');
             // This runs synchronously inside the Tap to Explore click gesture,
             // before awaiting anything; Safari permits AudioContext.resume().
             if (app.audio) void app.audio.resume().catch(error => console.warn('Mobile audio start:', error));""")
           qa_replace(
-            """if ( app.audio && new URLSearchParams(location.search).get('audio') === 'on' ) {
-                try { app.audio.resume(); } catch (error) { console.warn('Audio resume failed', error); }
-            }""",
+            "if ( app.audio && new URLSearchParams(location.search).get('audio') === 'on' ) {\n\t\t\t\ttry { app.audio.resume(); } catch (error) { console.warn('Audio resume failed', error); }\n\t\t\t}",
             "// Audio already unlocked at the start of this gesture.")
           qa_replace(
             "let started = false;\n\t\tui.showStartOverlay( () => {",
