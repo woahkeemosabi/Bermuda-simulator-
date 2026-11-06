@@ -389,6 +389,13 @@ jobs:
           qa_replace(
             "frameWaitMs: mobileFullEffects ? MOBILE_FULL_PRELOAD_WAIT_MS : undefined,",
             "frameWaitMs: gpuTraceActive && gpuTraceCase.id === 'fftcore' ? MOBILE_FULL_PRELOAD_WAIT_MS : undefined,")
+          # Ensure copied diagnostics identify the enforced test, even if the
+          # player reopens an older ?traceCase=full link cached by Safari.
+          audit_file = root / 'src/mobile/GpuAudit.js'
+          audit = audit_file.read_text()
+          old_audit = "traceCase:typeof location!=='undefined'?new URLSearchParams(location.search).get('traceCase')||'full':'none',"
+          assert audit.count(old_audit) == 1, 'GPU audit trace-case anchor missing'
+          audit_file.write_text(audit.replace(old_audit, "traceCase:'fftcore',", 1))
           assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in main
           assert "getFftCoreVisualProfile('crisp')" in main
           assert "minimumMs: 60000" in main
