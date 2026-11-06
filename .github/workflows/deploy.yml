@@ -293,6 +293,58 @@ jobs:
           test -s dist/archive/oct14/index.html
           test -s dist/archive/sep30/index.html
           find dist/archive -name index.html -maxdepth 3 -print
+      # QA uses a separate URL and storage keys; neither main game nor saved
+      # progress is touched. Keep the tested source revision fixed.
+      - name: Checkout iPhone FFT core diagnostic snapshot
+        uses: actions/checkout@v4
+        with:
+          ref: 697e0e4e3f98ce5632608ab21e05020a0de7fc6b
+          path: _qa/fftcore
+          persist-credentials: false
+      - name: Build isolated iPhone FFT diagnostic in /qa/fftcore/
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('_qa/fftcore')
+          changes = {
+            'src/game/GameState.js': [
+              ("const SAVE_KEY = 'tidewater.save.v1';",
+               "const SAVE_KEY = 'bermuda.qa.fftcore.save.v1';"),
+            ],
+            'src/mobile/StartupAssetCache.js': [
+              ("'bermuda-assets-20261105-v1'",
+               "'bermuda-qa-fftcore-assets-v1'"),
+              ("'bermuda-startup-ready-20261105-v1'",
+               "'bermuda-qa-fftcore-startup-ready-v1'"),
+            ],
+            'public/sw.js': [
+              ("const CACHE = 'bermuda-assets-20261105-v1';",
+               "const CACHE = 'bermuda-qa-fftcore-assets-v1';"),
+              ("const PREFIX = 'bermuda-assets-';",
+               "const PREFIX = 'bermuda-qa-fftcore-assets-';"),
+            ],
+          }
+          for path, pairs in changes.items():
+            file = root / path
+            content = file.read_text()
+            for old, new in pairs:
+              assert content.count(old) == 1, f'{path}: expected exact isolation anchor: {old}'
+              content = content.replace(old, new, 1)
+            file.write_text(content)
+          print('QA gameplay saves, startup marker and cache namespace isolated')
+          PY
+          cd _qa/fftcore
+          npm ci
+          node test/gpu-trace.mjs
+          npm run build
+          cd ../..
+          mkdir -p dist/qa/fftcore
+          cp -a _qa/fftcore/dist/. dist/qa/fftcore/
+          test -s dist/qa/fftcore/index.html
+          test -s dist/qa/fftcore/sw.js
+          test -d dist/qa/fftcore/assets
+          echo 'GitHub Pages QA built at /qa/fftcore/; production root unchanged'
+
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
