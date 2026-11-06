@@ -11,11 +11,24 @@ export const gpuAudit={
  trackedBuffers:new Map(),trackedBufferBytes:0,peakTrackedBufferBytes:0,
  explicitDestroyCall:false,destroyCallStack:'',destroyHook:'not installed',
  queueAckFrame:0,queueAckAt:0,queueStall:'',lastQueueLatencyMs:0,peakQueueLatencyMs:0,
+ peakQueueFrame:0,peakQueueAt:0,
  currentFrameComputeCount:0,currentFrameComputes:[],
  lastSubmittedComputeCount:0,lastSubmittedComputes:[],lastSubmitAt:0,
+ movementSamples:[],lastMovementSampleAt:-Infinity,lifecycleEvents:[],
  currentFrameRenderCount:0,currentFrameRenders:[],lastSubmittedRenderCount:0,lastSubmittedRenders:[]
 };
 if(typeof window!=='undefined')window.__bermudaGpuAudit=gpuAudit;
+// Keep page lifecycle signals independently of the short per-frame event ring.
+if (typeof window!=='undefined' && typeof document!=='undefined' && gpuAudit.traceEnabled) {
+ const track=(kind,detail='')=>{
+  const item={time:Math.round(now()-began),kind,detail};
+  gpuAudit.lifecycleEvents.push(item);
+  if(gpuAudit.lifecycleEvents.length>20)gpuAudit.lifecycleEvents.shift();
+ };
+ document.addEventListener('visibilitychange',()=>track('visibility',document.visibilityState));
+ for(const name of ['pagehide','pageshow','blur','focus'])window.addEventListener(name,e=>track(name,name==='pagehide'?'persisted='+Boolean(e.persisted):document.visibilityState));
+ track('start',document.visibilityState);
+}
 function traceEvent(kind,description){
  const a=gpuAudit;
  if(!a.traceEnabled)return;
@@ -95,13 +108,30 @@ export function gpuQueueAck(frame){
   const complete=gpuAudit.pendingSubmissions.filter(s=>s.frame<=frame);
   if(complete.length){
    gpuAudit.lastQueueLatencyMs=Math.max(0,gpuAudit.queueAckAt-complete[complete.length-1].time);
-   gpuAudit.peakQueueLatencyMs=Math.max(gpuAudit.peakQueueLatencyMs,gpuAudit.lastQueueLatencyMs);
+   if(gpuAudit.lastQueueLatencyMs>gpuAudit.peakQueueLatencyMs){
+    gpuAudit.peakQueueLatencyMs=gpuAudit.lastQueueLatencyMs;
+    gpuAudit.peakQueueFrame=complete[complete.length-1].frame;
+    gpuAudit.peakQueueAt=gpuAudit.queueAckAt;
+   }
   }
   gpuAudit.pendingSubmissions=gpuAudit.pendingSubmissions.filter(s=>s.frame>frame);
   traceEvent('queue complete',complete.length+' submission(s), latest frame '+frame);
  }
 }
-export function gpuQueueStall(message){gpuAudit.queueStall=String(message||'').slice(0,150);}
+// Sample movement every 2 seconds: near-zero cost, even during a long play session.
+export function gpuPlayerMovement(player,input,vendors=[]){
+ const a=gpuAudit;
+ if(!a.traceEnabled||!player)return;
+ const t=Math.round(now()-began);
+ if(t-a.lastMovementSampleAt<2000)return;
+ a.lastMovementSampleAt=t;
+ const p=player.position||{x:0,y:0,z:0},v=player.velocity||{x:0,y:0,z:0};
+ const sprint=Boolean(input?.down?.('ShiftLeft')||input?.down?.('ShiftRight'));
+ const nearest=Math.min(...vendors.filter(v=>v?.position).map(v=>Math.hypot(p.x-v.position.x,p.z-v.position.z)),Infinity);
+ const item={t,mode:player.mode||'unknown',speed:+Math.hypot(v.x||0,v.y||0,v.z||0).toFixed(2),sprint,nearVendor:Number.isFinite(nearest)?+nearest.toFixed(1):null,x:+(p.x||0).toFixed(1),z:+(p.z||0).toFixed(1),textureMiB:+(a.trackedTextureBytes/1048576).toFixed(1)};
+ a.movementSamples.push(item);
+ if(a.movementSamples.length>90)a.movementSamples.shift();
+}
 export function gpuError(kind,message,reason=''){
  const a=gpuAudit,msg=String(message||'').slice(0,300);
  if(msg)a.lastError=msg;
@@ -149,7 +179,7 @@ export function gpuReport(app,attempt=0){
   'Compute in current frame '+a.currentFrameComputeCount,
   'Render passes in last submit '+a.lastSubmittedRenderCount+' | Last passes '+(a.lastSubmittedRenders.join(' > ')||'none'),
   'Last queue completion frame '+a.queueAckFrame+' @'+a.queueAckAt+'ms'+
-   (a.traceEnabled?' | Queue latency '+a.lastQueueLatencyMs+'ms | Peak '+a.peakQueueLatencyMs+'ms':'')+
+   (a.traceEnabled?' | Queue latency '+a.lastQueueLatencyMs+'ms | Peak '+a.peakQueueLatencyMs+'ms (frame '+a.peakQueueFrame+' @'+a.peakQueueAt+'ms)':'')+
    (a.queueStall?' | Stall '+a.queueStall:''),
   'GPUDevice.destroy() hook '+a.destroyHook+' | Called from JS '+(a.explicitDestroyCall?'YES':'NO'),
   ...(a.destroyCallStack?['Destroy caller '+a.destroyCallStack]:[]),
@@ -158,6 +188,9 @@ export function gpuReport(app,attempt=0){
   'Post '+(app?.post?.isCompatibility?'single-pass mobile':'desktop'),
   ...(a.traceEnabled?['GPU textures tracked '+(a.trackedTextureBytes/1048576).toFixed(1)+' MiB | Peak '+(a.peakTrackedTextureBytes/1048576).toFixed(1)+' MiB | Storage buffers '+(a.trackedBufferBytes/1048576).toFixed(1)+' MiB (partial engine estimate only)']:[]),
   'Vendor texture streaming '+(typeof window!=='undefined'?(JSON.stringify(window.__bermudaVendorStreamStats||'off')):'not browser'),
+  'Page visibility '+(typeof document!=='undefined'?document.visibilityState:'unavailable')+
+  ' | Recent lifecycle '+(a.lifecycleEvents.slice(-5).map(e=>e.kind+'@'+e.time+'ms:'+e.detail).join(' > ')||'none'),
+  'Last movement '+(a.movementSamples.length?JSON.stringify(a.movementSamples[a.movementSamples.length-1]):'none'),
   'Cloud experiment '+(typeof window!=='undefined'?(window.__bermudaCloudExperiment||'unknown'):'not browser'),
   'Atmosphere '+(app?.atmosphere?.mobileMode??'unknown')+' | Initialization step '+(app?.atmosphere?.mobileInitStage??'unknown'),
   'Water query diagnostic '+(typeof location!=='undefined'?(new URLSearchParams(location.search).get('waterTest')||'normal'):'unknown')+
@@ -185,6 +218,9 @@ export function gpuDetailedReport(app,attempt=0){
   .map(e=>`${fmt(e.bytes)} | ${e.label} (${e.width}x${e.height} ${e.format})`);
  const rankedBuffers=[...a.trackedBuffers.values()].sort((a,b)=>b.bytes-a.bytes).slice(0,12)
   .map(e=>`${fmt(e.bytes)} | ${e.label}`);
+ const movements=a.movementSamples.slice(-40).map(e=>
+  `${e.t}ms ${e.mode} ${e.speed}m/s sprint=${e.sprint?'YES':'NO'} nearVendor=${e.nearVendor??'none'}m pos=(${e.x},${e.z}) tex=${e.textureMiB}MiB`);
+ const lifecycle=a.lifecycleEvents.map(e=>`${e.time}ms ${e.kind}: ${e.detail}`);
  const entries=a.traceEvents.slice(-100).map(e=>
   `${String(e.t).padStart(6,' ')}ms frame ${e.frame} ${e.kind}: ${e.description}`);
  const pending=a.pendingSubmissions.map(s=>
@@ -198,6 +234,8 @@ export function gpuDetailedReport(app,attempt=0){
   ' | count '+a.trackedBuffers.size+' (excludes mesh buffers and driver allocations)\n'+
   'TOP RESIDENT GPU TEXTURES\n'+(rankedTextures.join('\n')||'none')+'\n'+
   'TOP RESIDENT STORAGE BUFFERS\n'+(rankedBuffers.join('\n')||'none')+'\n'+
+  'PAGE LIFECYCLE (oldest first)\n'+(lifecycle.join('\n')||'none')+'\n'+
+  'PLAYER MOVEMENT (last 80 seconds, oldest first)\n'+(movements.join('\n')||'none')+'\n'+
   'GPU SUBMISSIONS WAITING FOR CONFIRMATION\n'+(pending.join('\n')||'none')+'\n'+
   'RECENT GPU EVENT TIMELINE (newest last)\n'+(entries.join('\n')||'none');
 }

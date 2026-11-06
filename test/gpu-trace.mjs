@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { GPU_TRACE_CASES, getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from '../src/mobile/GpuTraceCases.js';
 import { getFftCoreVisualProfile } from '../src/mobile/Mobile75Config.js';
 import { vendorStreamEnabled, vendorReleaseReady } from '../src/mobile/VendorStreamConfig.js';
-import { gpuAudit, gpuStage, gpuCompute, gpuDispatch, gpuRender, gpuSubmit, gpuQueueAck, gpuTexture, gpuBuffer, gpuDetailedReport } from '../src/mobile/GpuAudit.js';
+import { gpuAudit, gpuStage, gpuCompute, gpuDispatch, gpuRender, gpuSubmit, gpuQueueAck, gpuTexture, gpuBuffer, gpuPlayerMovement, gpuDetailedReport } from '../src/mobile/GpuAudit.js';
 
 for ( const test of GPU_TRACE_CASES ) {
 	const url = configureGpuTraceUrl( new URL( 'https://example.test/?gpuTrace=1&traceCase=' + test.id ) );
@@ -57,5 +57,10 @@ assert.match( gpuDetailedReport(), /TOP RESIDENT STORAGE BUFFERS[\s\S]*oceanSpec
 gpuTexture( 'destroy', 8, 'terrainHeights' );
 gpuBuffer( 'destroy', 9, 'oceanSpectrum' );
 assert.equal( gpuAudit.trackedBufferBytes, 0 );
+gpuAudit.lastMovementSampleAt=-Infinity;
+gpuPlayerMovement({mode:'walk',position:{x:0,y:0,z:0},velocity:{x:6.2,y:0,z:0}}, {down:key=>key==='ShiftLeft'},[{position:{x:0,z:5}}]);
+assert.equal(gpuAudit.movementSamples.at(-1).sprint,true);
+assert.equal(gpuAudit.movementSamples.at(-1).nearVendor,5);
+assert.match(gpuDetailedReport(), /PLAYER MOVEMENT[\s\S]*sprint=YES/);
 assert.match( gpuDetailedReport(), /FFT butterfly/ );
 console.log( 'GPU trace cases, submit-to-ack timeline and memory accounting pass.' );

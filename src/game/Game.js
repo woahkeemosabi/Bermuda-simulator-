@@ -1,6 +1,7 @@
 import { Vector3, Color } from '../engine/index.js';
 import { WORLD } from '../world/WorldLayout.js';
 import { FISH } from './FishTable.js';
+import { gpuPlayerMovement } from '../mobile/GpuAudit.js';
 import { habitatAt, pickSpecies, rollWeight, biteDelay } from './Bites.js';
 import { CatchMinigame } from './CatchMinigame.js';
 import { GameState } from './GameState.js';
@@ -291,6 +292,7 @@ export class Game {
 			v.update( dt, p.mode === 'walk' ? p.position : null );
 			v.streamTexturesWhenFar( p.position, dt );
 		}
+		gpuPlayerMovement( p, inp, this.vendors );
 		this.updateVendors( inp, p );
 
 		// prompts when the player has nothing to say
