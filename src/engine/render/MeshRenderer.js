@@ -331,7 +331,20 @@ export class MeshRenderer {
 		if ( c && c.materialKey === material.__pk ) return c.p;
 		const key = `${ material.__pk }|${ vl.key }|${ passKey }`;
 		let p = this.pipelines.get( key );
-		if ( ! p ) p = this._createPipeline( material, vl, pass, key );
+		if ( ! p ) {
+			// The full-quality mobile scene can request many dozens of shader modules
+			// in frame 1. Pace only first-time compilation; never disable an effect.
+			// Deferred materials become visible when their pipelines are ready.
+			if ( typeof window !== 'undefined' && window.__bermudaMobileFullEffects ) {
+				if ( this._shaderBudgetFrame !== GPU.frame ) {
+					this._shaderBudgetFrame = GPU.frame;
+					this._shaderBudgetUsed = 0;
+				}
+				if ( this._shaderBudgetUsed >= 8 ) return null;
+				this._shaderBudgetUsed ++;
+			}
+			p = this._createPipeline( material, vl, pass, key );
+		}
 		if ( vl.pipelines ) vl.pipelines.set( passKey, { materialKey: material.__pk, p } );
 		return p;
 
@@ -552,6 +565,7 @@ export class MeshRenderer {
 
 			vl = this._cachedLayout( o, geo, material );
 			p = this._pipeline( material, vl, pass );
+			if ( ! p ) continue; // full-effects iPhone shader budget, retry next frame
 			const pipeline = p.handle.pipeline || ( this.syncPipelines ? GPU.ready( p.handle ) : null );
 			if ( ! pipeline ) continue; // still compiling
 			if ( p !== lastPipeline ) {
