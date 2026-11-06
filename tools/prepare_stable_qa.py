@@ -161,6 +161,24 @@ replace_once("src/main.js",
         document.addEventListener('touchend', restoreQAAudio, {capture:true, passive:true});
         ui.showStartOverlay( () => {""")
 
+# Optional paced GPU isolation without changing render targets, FFT resolution,
+# visuals, save keys or gameplay mechanics. Baseline remains 42 ms; ?gpuPace=steady
+# caps the render loop at ~17 fps, lowering sustained WebGPU submission pressure.
+# This must be user-selectable: the prior 12-minute run used baseline pacing.
+replace_once("src/main.js",
+    "window.__bermudaMobileGraphics75 = mobileGraphics75;",
+    """window.__bermudaMobileGraphics75 = mobileGraphics75;
+window.__bermudaMobilePaceMs = (
+    mobileFastStart && new URLSearchParams(location.search).get('gpuPace') === 'steady'
+) ? 60 : 42;""")
+replace_once("src/engine/Engine.js",
+    "t - this._mobileLastFrame < 42",
+    "t - this._mobileLastFrame < (window.__bermudaMobilePaceMs || 42)")
+replace_once("src/mobile/GpuAudit.js",
+    "'Loss reason '+(a.reason||'not reported'),",
+    """'GPU pacing '+(typeof window!=='undefined'?(window.__bermudaMobilePaceMs||42):42)+'ms nominal',
+  'Loss reason '+(a.reason||'not reported'),""")
+
 main = (root / "src/main.js").read_text()
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in main
 assert "getFftCoreVisualProfile('crisp')" in main
