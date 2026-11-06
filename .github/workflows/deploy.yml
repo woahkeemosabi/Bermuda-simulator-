@@ -396,6 +396,42 @@ jobs:
           old_audit = "traceCase:typeof location!=='undefined'?new URLSearchParams(location.search).get('traceCase')||'full':'none',"
           assert audit.count(old_audit) == 1, 'GPU audit trace-case anchor missing'
           audit_file.write_text(audit.replace(old_audit, "traceCase:'fftcore',", 1))
+          # Safari audio fix, QA only. The existing mobile entry intentionally
+          # restricted audio to ?audio=on, so sound could remain suspended
+          # until an unrelated gesture. Always unlock from Tap to Explore.
+          qa_replace(
+            "gpuStage('Starting simulation (mobile audio disabled)');",
+            """gpuStage('Starting simulation (mobile audio enabled)');
+            // This runs synchronously inside the Tap to Explore click gesture,
+            // before awaiting anything; Safari permits AudioContext.resume().
+            if (app.audio) void app.audio.resume().catch(error => console.warn('Mobile audio start:', error));""")
+          qa_replace(
+            """if ( app.audio && new URLSearchParams(location.search).get('audio') === 'on' ) {
+                try { app.audio.resume(); } catch (error) { console.warn('Audio resume failed', error); }
+            }""",
+            "// Audio already unlocked at the start of this gesture.")
+          qa_replace(
+            "let started = false;\n\t\tui.showStartOverlay( () => {",
+            """let started = false;
+        // Safari suspends Web Audio whenever the page backgrounds. Try to
+        // resume on visibility/focus, then on the FIRST real touch if autoplay
+        // policy requires a fresh gesture. Never reset the AudioContext,
+        // save file, graphics device, or the user's mute state.
+        const restoreGameAudio = () => {
+            if (!started || document.hidden || !app.audio || app.audio.muted || app.audio.enabled) return;
+            void app.audio.resume().catch(error => console.warn('Mobile audio restore:', error));
+        };
+        document.addEventListener('visibilitychange', restoreGameAudio);
+        window.addEventListener('pageshow', restoreGameAudio);
+        window.addEventListener('focus', restoreGameAudio);
+        document.addEventListener('pointerdown', restoreGameAudio, { capture: true, passive: true });
+        document.addEventListener('touchend', restoreGameAudio, { capture: true, passive: true });
+		ui.showStartOverlay( () => {""")
+          assert "Starting simulation (mobile audio enabled)" in main
+          assert "const restoreGameAudio = () =>" in main
+          assert "document.addEventListener('touchend', restoreGameAudio" in main
+          main_file.write_text(main)
+          print('QA audio unlocks on Explore and resumes after Safari backgrounding')
           assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in main
           assert "getFftCoreVisualProfile('crisp')" in main
           assert "minimumMs: 60000" in main
