@@ -331,6 +331,61 @@ jobs:
               assert content.count(old) == 1, f'{path}: expected exact isolation anchor: {old}'
               content = content.replace(old, new, 1)
             file.write_text(content)
+          # Lock ONLY the GitHub Pages QA build to the user-confirmed stable
+          # 4-cascade FFT core. The main game, other archives and shader sources
+          # remain untouched. Full-effects query URLs no longer override this.
+          main_file = root / 'src/main.js'
+          main = main_file.read_text()
+          def qa_replace(old, new):
+            global main
+            assert main.count(old) == 1, f'QA source anchor missing: {old[:90]}'
+            main = main.replace(old, new, 1)
+          qa_replace(
+            "const gpuTraceActive = mobileFastStart && new URLSearchParams(location.search).get('gpuTrace')==='1';",
+            "const gpuTraceActive = mobileFastStart; // GitHub QA iPhone: always use the proven FFT-core isolation profile.")
+          qa_replace(
+            "const gpuTraceCase = getGpuTraceCase(new URLSearchParams(location.search).get('traceCase'));",
+            "const gpuTraceCase = getGpuTraceCase('fftcore'); // Lock out the crashing full-effects profile in QA.")
+          qa_replace(
+            "getFftCoreVisualProfile(new URLSearchParams(location.search).get('qualityTest'))",
+            "getFftCoreVisualProfile('crisp')")
+          qa_replace(
+            "if ( gpuTraceActive && mobileGraphics75 ) configureGpuTraceUrl( url );",
+            """if ( gpuTraceActive && mobileGraphics75 ) {
+                url.searchParams.set('gpuTrace', '1');
+                url.searchParams.set('traceCase', 'fftcore');
+                url.searchParams.set('qualityTest', 'crisp');
+                url.searchParams.set('graphics', '75');
+                url.searchParams.set('envtest', 'skip');
+                // configureGpuTraceUrl enforces G=12 and disables auxiliary
+                // shoreline, cloud, spray, wake, caustic, haze and shadow passes.
+                configureGpuTraceUrl( url );
+            }""")
+          qa_replace(
+            "\t\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive && !app.qs.has( 'bench' ) ) {",
+            """\t\t// Hold entry until at least 60 seconds since navigation, after
+                // the small FFT-core frame warm-up. Unlike the full-effects
+                // experiment, do NOT submit 30 expensive all-effects frames.
+                if ( gpuTraceActive && gpuTraceCase.id === 'fftcore' ) {
+                    gpuStage('60-second FFT-core readiness gate');
+                    await holdUntilMobileReady({
+                        startedAt: 0,
+                        minimumMs: 60000,
+                        checkDevice: () => {
+                            if ( GPU.fatalError || window.__bermudaGpuLost )
+                                throw GPU.fatalError || new Error(window.__bermudaGpuLost);
+                        },
+                        onProgress: seconds => ui.setLoading(
+                            .993, 'Preparing stable Bermuda · ' + seconds + 's remaining', .995 ),
+                    });
+                }
+\t\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive && !app.qs.has( 'bench' ) ) {""")
+          assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in main
+          assert "getFftCoreVisualProfile('crisp')" in main
+          assert "minimumMs: 60000" in main
+          main_file.write_text(main)
+          print('QA locked to full-resolution FFT-core and 60-second minimum entry gate')
+
           print('QA gameplay saves, startup marker and cache namespace isolated')
           PY
           cd _qa/fftcore
