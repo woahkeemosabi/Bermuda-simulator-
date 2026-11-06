@@ -497,8 +497,17 @@ export class SkinnedModel {
 
 	dispose() {
 
+		// Character textures are shared across this model's materials but are not
+		// shared between character instances. Release each resident GPU map once.
+		const ownedTextures = new Set();
+		for ( const mat of this.materials ) for ( const binding of Object.values( mat.bindings || {} ) ) {
+			const t = binding && binding.texture;
+			if ( t?.isTexture ) ownedTextures.add( t );
+		}
+		for ( const texture of ownedTextures ) texture.destroy();
 		this.jointBuffer.destroy();
 		for ( const m of this.meshes ) m.geometry.dispose && m.geometry.dispose();
+		this.group.clear();
 
 	}
 

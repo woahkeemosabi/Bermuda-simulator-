@@ -157,6 +157,7 @@ export function gpuReport(app,attempt=0){
    ' | Canvas '+(engine?engine.width+'x'+engine.height:'unavailable'),
   'Post '+(app?.post?.isCompatibility?'single-pass mobile':'desktop'),
   ...(a.traceEnabled?['GPU textures tracked '+(a.trackedTextureBytes/1048576).toFixed(1)+' MiB | Peak '+(a.peakTrackedTextureBytes/1048576).toFixed(1)+' MiB | Storage buffers '+(a.trackedBufferBytes/1048576).toFixed(1)+' MiB (partial engine estimate only)']:[]),
+  'Vendor texture streaming '+(typeof window!=='undefined'?(JSON.stringify(window.__bermudaVendorStreamStats||'off')):'not browser'),
   'Cloud experiment '+(typeof window!=='undefined'?(window.__bermudaCloudExperiment||'unknown'):'not browser'),
   'Atmosphere '+(app?.atmosphere?.mobileMode??'unknown')+' | Initialization step '+(app?.atmosphere?.mobileInitStage??'unknown'),
   'Water query diagnostic '+(typeof location!=='undefined'?(new URLSearchParams(location.search).get('waterTest')||'normal'):'unknown')+

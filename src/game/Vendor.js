@@ -1,6 +1,8 @@
 import { Group, Mesh, Vector3 } from '../engine/index.js';
 import { SkinnedModel } from '../engine/render/Skinning.js';
 import { loadGLB } from '../engine/loaders/GLTF.js';
+import { GPU } from '../engine/gpu/GPU.js';
+import { vendorStreamEnabled, vendorReleaseReady } from '../mobile/VendorStreamConfig.js';
 import { prepare, mergePrepared, cylinder, sphere, roundedBox, box, rod, mat4 } from '../world/boat/GeoKit.js';
 import { createPropMaterial, PAT } from './GameMaterials.js';
 
@@ -31,12 +33,19 @@ export class Vendor {
 		this.figure = new Mesh( buildFigure( look ), this.material );
 		this.figure.castShadow = true;
 		this.model.add( this.figure );
+		this._fallbackFigure = this.figure;
 		this._t = Math.random() * 10;
 		this._yawOff = 0;
 		this.character = null;
 		this._pendingCharacter = null;
 		this.talking = false;
 		this._near = false;
+		this._farSeconds = 0;
+		this._characterConfig = character;
+		this._streamCharacters = vendorStreamEnabled(
+			typeof location !== 'undefined' ? location.search : '',
+			typeof navigator !== 'undefined' ? navigator.userAgent : ''
+		);
 		// Animated GLB figures contain many full-resolution textures. Delay their
 		// upload on iPhone until the player can actually see the vendor up close.
 		const mobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test( navigator.userAgent );
@@ -60,6 +69,11 @@ export class Vendor {
 		this.character = model;
 		this.characterYaw = yaw;
 		this.setModel( model.group );
+		if ( this._streamCharacters && typeof window !== 'undefined' ) {
+			const stats = window.__bermudaVendorStreamStats ||= { loads: 0, releases: 0, last: '' };
+			stats.loads ++;
+			stats.last = 'Loaded ' + this.name;
+		}
 
 	}
 
@@ -74,6 +88,38 @@ export class Vendor {
 	inRange( p ) {
 
 		return Math.hypot( p.x - this.position.x, p.z - this.position.z ) < this.radius && Math.abs( p.y - this.position.y ) < 2.5;
+
+	}
+
+
+	// Experimental, opt-in QA only: keep 1024px vendor materials when near,
+	// but release their GPU textures after leaving the harbour. On returning,
+	// the original high-resolution GLB is loaded again. No render-scale change.
+	streamTexturesWhenFar( position, dt ) {
+
+		if ( ! this._streamCharacters || ! this.character || ! position || this.talking ) return;
+		const dx = position.x - this.position.x, dz = position.z - this.position.z;
+		const d2 = dx * dx + dz * dz;
+		this._farSeconds = d2 > 24 * 24 ? this._farSeconds + dt : 0;
+		if ( ! vendorReleaseReady( d2, this._farSeconds ) ) return;
+		const old = this.character;
+		this.character = null;
+		this._near = false;
+		this._farSeconds = 0;
+		this.setModel( this._fallbackFigure );
+		this._pendingCharacter = this._characterConfig;
+		if ( typeof window !== 'undefined' ) {
+			const stats = window.__bermudaVendorStreamStats ||= { loads: 0, releases: 0, last: '' };
+			stats.releases ++;
+			stats.last = 'Released ' + this.name;
+		}
+		// Wait for prior GPU uses to complete before destroying its 1024px maps.
+		const safelyDispose = () => { try { old.dispose(); } catch ( e ) { console.warn( 'Vendor GPU disposal deferred', e ); } };
+		try {
+			const done = GPU.queue?.onSubmittedWorkDone?.();
+			if ( done ) done.then( safelyDispose, safelyDispose );
+			else safelyDispose();
+		} catch ( e ) { safelyDispose(); }
 
 	}
 

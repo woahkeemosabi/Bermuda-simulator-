@@ -287,7 +287,10 @@ export class Game {
 
 		// the traders
 		this.chandlery.loadDetailWhenNear( p.mode === 'walk' ? p.position : null );
-		for ( const v of this.vendors ) v.update( dt, p.mode === 'walk' ? p.position : null );
+		for ( const v of this.vendors ) {
+			v.update( dt, p.mode === 'walk' ? p.position : null );
+			v.streamTexturesWhenFar( p.position, dt );
+		}
 		this.updateVendors( inp, p );
 
 		// prompts when the player has nothing to say

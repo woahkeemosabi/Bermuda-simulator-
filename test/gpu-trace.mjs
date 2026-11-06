@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { GPU_TRACE_CASES, getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from '../src/mobile/GpuTraceCases.js';
 import { getFftCoreVisualProfile } from '../src/mobile/Mobile75Config.js';
+import { vendorStreamEnabled, vendorReleaseReady } from '../src/mobile/VendorStreamConfig.js';
 import { gpuAudit, gpuStage, gpuCompute, gpuDispatch, gpuRender, gpuSubmit, gpuQueueAck, gpuTexture, gpuBuffer, gpuDetailedReport } from '../src/mobile/GpuAudit.js';
 
 for ( const test of GPU_TRACE_CASES ) {
@@ -18,6 +19,12 @@ assert.deepEqual( getFftCoreVisualProfile('balanced'), { renderScale: 0.90, scen
 assert.deepEqual( getFftCoreVisualProfile('crisp'), { renderScale: 1.00, sceneScale: 1.00 } );
 assert.equal( getFftCoreVisualProfile(''), null );
 assert.equal( getFftCoreVisualProfile('unknown'), null );
+assert.equal(vendorStreamEnabled('?gpuTrace=1&traceCase=fftcore&vendorStream=1','Mozilla/5.0 iPhone Safari'),true);
+assert.equal(vendorStreamEnabled('?gpuTrace=1&traceCase=fftcore','Mozilla/5.0 iPhone Safari'),false);
+assert.equal(vendorStreamEnabled('?gpuTrace=1&traceCase=fftcore&vendorStream=1','Desktop Chrome'),false);
+assert.equal(vendorReleaseReady(25*25,3.1),true);
+assert.equal(vendorReleaseReady(23*23,20),false);
+assert.equal(vendorReleaseReady(25*25,2.9),false);
 let current = new URL( 'https://example.test/?gpuTrace=1&traceCase=full' );
 for ( let i = 1; i < GPU_TRACE_CASES.length; i ++ ) {
 	current = nextGpuTraceUrl( current );
