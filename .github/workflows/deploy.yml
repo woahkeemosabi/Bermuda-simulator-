@@ -345,6 +345,66 @@ jobs:
           test -d dist/qa/fftcore/assets
           echo 'GitHub Pages QA built at /qa/fftcore/; production root unchanged'
 
+      # Keep the full-resolution models once. All three secondary builds use
+      # exactly the same GLBs as production; verify byte equality before dedup.
+      # Their other assets, JS, saves and URLs remain isolated.
+      - name: Share identical 3D models without reducing visual quality
+        if: github.ref == 'refs/heads/main'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import filecmp
+          root = Path('dist')
+          canonical = root / 'models'
+          variants = [root / 'qa/fftcore', root / 'archive/oct14', root / 'archive/sep30']
+          duplicates = []
+          for site in variants:
+            assert (site / 'index.html').is_file(), f'Missing published site {site}'
+            glbs = sorted((site / 'models').rglob('*.glb'))
+            assert len(glbs) >= 50, f'Unexpected model inventory in {site}: {len(glbs)}'
+            for source in glbs:
+              target = canonical / source.relative_to(site / 'models')
+              assert target.is_file() and filecmp.cmp(source, target, shallow=False), (
+                f'Do not share differing visual asset: {source}')
+              duplicates.append(source)
+
+          # This is installed before the Vite module starts. Every GLB fetch from
+          # the secondary site uses the same verified bytes at the canonical path.
+          # Keep all JPEG/PNG/BIN/CSS/JS on their existing archive or QA URLs.
+          shim = r"""<script>
+          (() => {
+            const originalFetch = window.fetch.bind(window);
+            const local = new URL('./models/', document.baseURI).pathname;
+            const common = new URL('../../models/', document.baseURI).pathname;
+            window.fetch = (resource, init) => {
+              const raw = typeof resource === 'string' ? resource :
+                (resource && (resource.url || resource.href));
+              if (raw) {
+                let url;
+                try { url = new URL(raw, document.baseURI); } catch (_) {}
+                if (url && url.origin === location.origin &&
+                    url.pathname.startsWith(local) && /\.glb$/i.test(url.pathname)) {
+                  url.pathname = common + url.pathname.slice(local.length);
+                  if (typeof Request !== 'undefined' && resource instanceof Request)
+                    return originalFetch(new Request(url.href, resource), init);
+                  return originalFetch(url.href, init);
+                }
+              }
+              return originalFetch(resource, init);
+            };
+          })();
+          </script>"""
+          for site in variants:
+            index = site / 'index.html'
+            source = index.read_text()
+            assert source.count('<head>') == 1, f'Missing HTML head in {index}'
+            index.write_text(source.replace('<head>', '<head>\n' + shim, 1))
+          for source in duplicates:
+            source.unlink()
+          print(f'Shared {len(duplicates)} byte-identical GLBs; full fidelity maintained')
+          print(f'Published model library: {canonical} (all secondary builds load it)')
+          PY
+
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
