@@ -495,6 +495,10 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		const warmupFrames = this.mobileFullEffects ? 12 : ( mobileLite ? 1 : 2 );
 		for ( let i = 0; i < warmupFrames; i ++ ) {
 			if ( GPU.fatalError ) throw GPU.fatalError;
+			// iOS lost the device at frame 18 after the first twelve shader
+			// warm-up frames ran in a burst. Allow the GPU process to settle.
+			if ( this.mobileFullEffects ) await new Promise( resolve => setTimeout( resolve, 750 ) );
+			if ( GPU.fatalError ) throw GPU.fatalError;
 			this.frame( 1 / 60 );
 			await GPU.queue.onSubmittedWorkDone();
 			gpuQueueAck(GPU.frame);
