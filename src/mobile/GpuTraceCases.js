@@ -27,9 +27,16 @@ export function getGpuTraceCase( id ) {
 export function configureGpuTraceUrl( url ) {
 	const test = getGpuTraceCase( url.searchParams.get( 'traceCase' ) );
 	url.searchParams.set( 'traceCase', test.id );
-	// Normal tracing must not silently raise the ocean mesh / pixel budget.
-	// Request ?traceHighRes=1 explicitly to reproduce the old stress test.
-	url.searchParams.set( 'G', url.searchParams.get('traceHighRes')==='1' ? '24' : '12' );
+	// Explicit full-fidelity Crisp mode restores the unmodified 32-grid ocean
+	// and every visual pass. All other diagnostic cases retain their budgets.
+	const fullFidelity = test.id === 'full' && url.searchParams.get('qualityTest') === 'crisp';
+	url.searchParams.set( 'G', fullFidelity ? '32' : (url.searchParams.get('traceHighRes')==='1' ? '24' : '12') );
+	if ( fullFidelity ) {
+		for ( const key of [ 'freezeFFT', 'noClouds', 'noSim', 'noSpray', 'noCaustics', 'noHaze', 'noWake', 'noBreakers', 'noShadows' ] )
+			url.searchParams.delete( key );
+		url.searchParams.delete( 'cloudtest' ); // volumetric clouds, not panorama-only
+		url.searchParams.set( 'envtest', 'full' ); // full 128px dynamic reflections
+	}
 	for ( const [ key, value ] of Object.entries( test.flags || {} ) )
 		url.searchParams.set( key, value );
 	return url;
