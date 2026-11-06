@@ -13,7 +13,7 @@ import { gpuStage, gpuQueueAck, gpuReport, gpuDetailedReport, gpuTraceEvent } fr
 import { MOBILE_75, MOBILE_SHARP_85, configureMobile75Url, configureMobileSharp85Url, getFftCoreVisualProfile } from './mobile/Mobile75Config.js';
 import { preloadMobileStartup } from './mobile/MobileStartupPreload.js';
 import { cacheStartupAssets, holdUntilMobileReady, isStartupCacheReady, markStartupCacheReady } from './mobile/StartupAssetCache.js';
-import { getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from './mobile/GpuTraceCases.js';
+import { getGpuTraceCase, configureGpuTraceUrl } from './mobile/GpuTraceCases.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
 // Buildings and decorative world assets stream separately instead of crowding the spawn beach.
@@ -115,9 +115,11 @@ if ( mobileFastStart ) {
 
 	App.prototype.precompile = async function() {
 
+		// Full fidelity compiles more shader variants. Give pending compute pipelines
+		// time to settle before gradually warming the mesh shaders on later frames.
 		await Promise.race( [
 			GPU.pipelinesReady(),
-			new Promise( ( resolve ) => setTimeout( resolve, 6500 ) ),
+			new Promise( ( resolve ) => setTimeout( resolve, mobileFullEffects ? 20000 : 6500 ) ),
 		] );
 		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;
 
@@ -157,7 +159,7 @@ applyBermudaBranding( mobileDevice );
 const app = new App();
 applyBermudaBootLook( app );
 window.__ui = ui;
-if(gpuTraceActive)installGpuTraceControls();
+if(gpuTraceActive && gpuTraceCase.id !== 'full')installGpuTraceControls();
 
 app.init( ( p, text, until ) => {
   gpuStage('Loading: '+String(text||''));
@@ -327,7 +329,9 @@ function showWorldFailure(message){
 	ui.setLoadingError(message);
 	const diag=document.getElementById('bm-gpu-trace');
 	if(diag){diag.textContent=gpuReport(app,mobileRetryLevel)+
-		(gpuTraceActive?'\nGPU TRACE '+gpuTraceCase.id+' — tap Copy diagnostics to get complete event history.':'');diag.hidden=false;}
+		(gpuTraceActive?'\nGPU TRACE '+gpuTraceCase.id+' — tap Copy diagnostics to get complete event history.':'');
+		// Keep full-mode failure screens readable; Copy diagnostics preserves the trace.
+		diag.hidden=gpuTraceActive && gpuTraceCase.id === 'full';}
 	const copy=document.getElementById('bm-gpu-copy');
 	if(copy){
 		copy.hidden=false;
@@ -340,10 +344,10 @@ function showWorldFailure(message){
 	const retry=document.getElementById('bm-loader-retry');
 	if(retry){
 		retry.hidden=false;
-		if (gpuTraceActive) retry.textContent='Next GPU diagnostic';
+		if (gpuTraceActive) retry.textContent='Retry full graphics';
 		else if (mobileGraphics75) retry.textContent='Use stable graphics';
 		retry.onclick=()=>{
-			if(gpuTraceActive){location.assign(nextGpuTraceUrl(location.href).href);return;}
+			if(gpuTraceActive){location.reload();return;}
 			// If the experimental effects overload iPhone WebGPU, the button
 			// returns to the known-running profile within this same preview.
 			if (mobileGraphics75) {
@@ -385,7 +389,6 @@ function installGpuTraceControls(){
 		const body=gpuDetailedReport(app,mobileRetryLevel)+(past?'\n\nPREVIOUS FAILED CASE\n'+past:'');
 		try{await navigator.clipboard.writeText(body);status.textContent='Full trace copied.\n'+body.slice(0,1100);}catch(_){status.textContent=body;}
 	});
-	makeButton('Next test',()=>location.assign(nextGpuTraceUrl(location.href).href));
 	toggle.onclick=()=>{
 		panel.style.display=panel.style.display==='none'?'block':'none';
 		if(panel.style.display==='block'){
