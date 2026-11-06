@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { GPU_TRACE_CASES, getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from '../src/mobile/GpuTraceCases.js';
 import { getFftCoreVisualProfile } from '../src/mobile/Mobile75Config.js';
-import { gpuAudit, gpuStage, gpuCompute, gpuDispatch, gpuRender, gpuSubmit, gpuQueueAck, gpuTexture, gpuDetailedReport } from '../src/mobile/GpuAudit.js';
+import { gpuAudit, gpuStage, gpuCompute, gpuDispatch, gpuRender, gpuSubmit, gpuQueueAck, gpuTexture, gpuBuffer, gpuDetailedReport } from '../src/mobile/GpuAudit.js';
 
 for ( const test of GPU_TRACE_CASES ) {
 	const url = configureGpuTraceUrl( new URL( 'https://example.test/?gpuTrace=1&traceCase=' + test.id ) );
@@ -36,9 +36,19 @@ assert.equal( gpuAudit.pendingSubmissions.length, 1 );
 assert.ok( gpuAudit.pendingSubmissions[ 0 ].commands.some( e => e.kind === 'dispatch' ) );
 gpuQueueAck( 18 );
 assert.equal( gpuAudit.pendingSubmissions.length, 0 );
+assert.ok( gpuAudit.lastQueueLatencyMs >= 0 );
+assert.ok( gpuAudit.peakQueueLatencyMs >= gpuAudit.lastQueueLatencyMs );
 gpuTexture( 'create', 7, 'waterTexture', 256, 256, 'rgba16float', 524288 );
 assert.equal( gpuAudit.trackedTextureBytes, 524288 );
 gpuTexture( 'destroy', 7, 'waterTexture' );
 assert.equal( gpuAudit.trackedTextureBytes, 0 );
+gpuTexture( 'create', 8, 'terrainHeights', 2048, 2048, 'r32float', 16777216 );
+gpuBuffer( 'create', 9, 'oceanSpectrum', 8388608 );
+assert.equal( gpuAudit.trackedBufferBytes, 8388608 );
+assert.match( gpuDetailedReport(), /TOP RESIDENT GPU TEXTURES[\s\S]*terrainHeights/ );
+assert.match( gpuDetailedReport(), /TOP RESIDENT STORAGE BUFFERS[\s\S]*oceanSpectrum/ );
+gpuTexture( 'destroy', 8, 'terrainHeights' );
+gpuBuffer( 'destroy', 9, 'oceanSpectrum' );
+assert.equal( gpuAudit.trackedBufferBytes, 0 );
 assert.match( gpuDetailedReport(), /FFT butterfly/ );
 console.log( 'GPU trace cases, submit-to-ack timeline and memory accounting pass.' );

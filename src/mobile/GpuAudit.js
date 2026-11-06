@@ -8,8 +8,9 @@ export const gpuAudit={
  traceCase:typeof location!=='undefined'?new URLSearchParams(location.search).get('traceCase')||'full':'none',
  traceEvents:[],currentCommands:[],pendingSubmissions:[],recentSubmissions:[],
  trackedTextures:new Map(),trackedTextureBytes:0,peakTrackedTextureBytes:0,
+ trackedBuffers:new Map(),trackedBufferBytes:0,peakTrackedBufferBytes:0,
  explicitDestroyCall:false,destroyCallStack:'',destroyHook:'not installed',
- queueAckFrame:0,queueAckAt:0,queueStall:'',
+ queueAckFrame:0,queueAckAt:0,queueStall:'',lastQueueLatencyMs:0,peakQueueLatencyMs:0,
  currentFrameComputeCount:0,currentFrameComputes:[],
  lastSubmittedComputeCount:0,lastSubmittedComputes:[],lastSubmitAt:0,
  currentFrameRenderCount:0,currentFrameRenders:[],lastSubmittedRenderCount:0,lastSubmittedRenders:[]
@@ -92,6 +93,10 @@ export function gpuQueueAck(frame){
  gpuAudit.queueAckAt=Math.round(now()-began);
  if(gpuAudit.traceEnabled){
   const complete=gpuAudit.pendingSubmissions.filter(s=>s.frame<=frame);
+  if(complete.length){
+   gpuAudit.lastQueueLatencyMs=Math.max(0,gpuAudit.queueAckAt-complete[complete.length-1].time);
+   gpuAudit.peakQueueLatencyMs=Math.max(gpuAudit.peakQueueLatencyMs,gpuAudit.lastQueueLatencyMs);
+  }
   gpuAudit.pendingSubmissions=gpuAudit.pendingSubmissions.filter(s=>s.frame>frame);
   traceEvent('queue complete',complete.length+' submission(s), latest frame '+frame);
  }
@@ -113,12 +118,26 @@ export function gpuTexture(action,id,label,width=0,height=0,format='',bytes=0){
  const old=a.trackedTextures.get(id);
  if(old){a.trackedTextureBytes-=old.bytes;a.trackedTextures.delete(id);}
  if(action==='create'){
-  const entry={label,bytes:Math.max(0,bytes)};
+  const entry={label,bytes:Math.max(0,bytes),width,height,format};
   a.trackedTextures.set(id,entry);
   a.trackedTextureBytes+=entry.bytes;
   a.peakTrackedTextureBytes=Math.max(a.peakTrackedTextureBytes,a.trackedTextureBytes);
  }
  traceEvent('texture '+action,label+' '+width+'x'+height+' '+format+' '+Math.round(bytes/1048576*100)/100+'MiB');
+}
+// Tracks engine storage buffers separately; mesh and driver allocations remain untracked.
+export function gpuBuffer(action,id,label,bytes=0){
+ const a=gpuAudit;
+ if(!a.traceEnabled)return;
+ const old=a.trackedBuffers.get(id);
+ if(old){a.trackedBufferBytes-=old.bytes;a.trackedBuffers.delete(id);}
+ if(action==='create'){
+  const entry={label,bytes:Math.max(0,bytes)};
+  a.trackedBuffers.set(id,entry);
+  a.trackedBufferBytes+=entry.bytes;
+  a.peakTrackedBufferBytes=Math.max(a.peakTrackedBufferBytes,a.trackedBufferBytes);
+ }
+ traceEvent('buffer '+action,label+' '+(bytes/1048576).toFixed(2)+'MiB');
 }
 export function gpuReport(app,attempt=0){
  const a=gpuAudit,scene=app?.sceneRenderer,engine=app?.engine;
@@ -129,13 +148,15 @@ export function gpuReport(app,attempt=0){
   'Compute in last submit '+a.lastSubmittedComputeCount+' | Last kernels '+(a.lastSubmittedComputes.join(' > ')||'none recorded'),
   'Compute in current frame '+a.currentFrameComputeCount,
   'Render passes in last submit '+a.lastSubmittedRenderCount+' | Last passes '+(a.lastSubmittedRenders.join(' > ')||'none'),
-  'Last queue completion frame '+a.queueAckFrame+' @'+a.queueAckAt+'ms'+(a.queueStall?' | Stall '+a.queueStall:''),
+  'Last queue completion frame '+a.queueAckFrame+' @'+a.queueAckAt+'ms'+
+   (a.traceEnabled?' | Queue latency '+a.lastQueueLatencyMs+'ms | Peak '+a.peakQueueLatencyMs+'ms':'')+
+   (a.queueStall?' | Stall '+a.queueStall:''),
   'GPUDevice.destroy() hook '+a.destroyHook+' | Called from JS '+(a.explicitDestroyCall?'YES':'NO'),
   ...(a.destroyCallStack?['Destroy caller '+a.destroyCallStack]:[]),
   'Scene '+(scene?scene.width+'x'+scene.height:'unavailable')+
    ' | Canvas '+(engine?engine.width+'x'+engine.height:'unavailable'),
   'Post '+(app?.post?.isCompatibility?'single-pass mobile':'desktop'),
-  ...(a.traceEnabled?['GPU textures tracked '+(a.trackedTextureBytes/1048576).toFixed(1)+' MiB | Peak '+(a.peakTrackedTextureBytes/1048576).toFixed(1)+' MiB (engine estimate only)']:[]),
+  ...(a.traceEnabled?['GPU textures tracked '+(a.trackedTextureBytes/1048576).toFixed(1)+' MiB | Peak '+(a.peakTrackedTextureBytes/1048576).toFixed(1)+' MiB | Storage buffers '+(a.trackedBufferBytes/1048576).toFixed(1)+' MiB (partial engine estimate only)']:[]),
   'Cloud experiment '+(typeof window!=='undefined'?(window.__bermudaCloudExperiment||'unknown'):'not browser'),
   'Atmosphere '+(app?.atmosphere?.mobileMode??'unknown')+' | Initialization step '+(app?.atmosphere?.mobileInitStage??'unknown'),
   'Water query diagnostic '+(typeof location!=='undefined'?(new URLSearchParams(location.search).get('waterTest')||'normal'):'unknown')+
@@ -159,6 +180,10 @@ export function gpuReport(app,attempt=0){
 export function gpuDetailedReport(app,attempt=0){
  const a=gpuAudit;
  const fmt=b=> (b/1048576).toFixed(1)+' MiB';
+ const rankedTextures=[...a.trackedTextures.values()].sort((a,b)=>b.bytes-a.bytes).slice(0,16)
+  .map(e=>`${fmt(e.bytes)} | ${e.label} (${e.width}x${e.height} ${e.format})`);
+ const rankedBuffers=[...a.trackedBuffers.values()].sort((a,b)=>b.bytes-a.bytes).slice(0,12)
+  .map(e=>`${fmt(e.bytes)} | ${e.label}`);
  const entries=a.traceEvents.slice(-100).map(e=>
   `${String(e.t).padStart(6,' ')}ms frame ${e.frame} ${e.kind}: ${e.description}`);
  const pending=a.pendingSubmissions.map(s=>
@@ -168,6 +193,10 @@ export function gpuDetailedReport(app,attempt=0){
   'DIAGNOSTIC CASE '+a.traceCase+' | Trace '+(a.traceEnabled?'ENABLED':'OFF')+'\n'+
   'Tracked engine textures '+fmt(a.trackedTextureBytes)+' | peak '+fmt(a.peakTrackedTextureBytes)+
   ' | count '+a.trackedTextures.size+' (does not include driver allocations)\n'+
+  'Tracked engine storage buffers '+fmt(a.trackedBufferBytes)+' | peak '+fmt(a.peakTrackedBufferBytes)+
+  ' | count '+a.trackedBuffers.size+' (excludes mesh buffers and driver allocations)\n'+
+  'TOP RESIDENT GPU TEXTURES\n'+(rankedTextures.join('\n')||'none')+'\n'+
+  'TOP RESIDENT STORAGE BUFFERS\n'+(rankedBuffers.join('\n')||'none')+'\n'+
   'GPU SUBMISSIONS WAITING FOR CONFIRMATION\n'+(pending.join('\n')||'none')+'\n'+
   'RECENT GPU EVENT TIMELINE (newest last)\n'+(entries.join('\n')||'none');
 }

@@ -1,5 +1,5 @@
 import { GPU, formatInfo, sampleTypeOf } from './GPU.js';
-import { gpuAudit, gpuTexture } from '../../mobile/GpuAudit.js';
+import { gpuAudit, gpuTexture, gpuBuffer } from '../../mobile/GpuAudit.js';
 
 // GPU texture wrapper. Created lazily, re-created by resize(); `version` changes whenever the
 // underlying GPUTexture does, which is how bind groups know to rebuild.
@@ -284,6 +284,7 @@ export class StorageBuffer {
 			let u = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC;
 			for ( const k of this.extraUsage ) u |= { vertex: GPUBufferUsage.VERTEX, index: GPUBufferUsage.INDEX, indirect: GPUBufferUsage.INDIRECT, uniform: GPUBufferUsage.UNIFORM }[ k ];
 			this.gpu = GPU.device.createBuffer( { label: this.label, size: Math.ceil( this.byteLength / 4 ) * 4, usage: u } );
+			gpuBuffer( 'create', this.id, this.label, Math.ceil( this.byteLength / 4 ) * 4 );
 			this.version ++;
 			if ( this.pendingData ) {
 
@@ -322,6 +323,7 @@ export class StorageBuffer {
 	destroy() {
 
 		if ( this.gpu ) this.gpu.destroy();
+		gpuBuffer( 'destroy', this.id, this.label );
 		this.gpu = null;
 
 	}
