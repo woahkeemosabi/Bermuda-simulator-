@@ -11,6 +11,11 @@ for ( const test of GPU_TRACE_CASES ) {
 	assert.equal( url.searchParams.get( 'traceCase' ), test.id );
 	for ( const [ key, value ] of Object.entries( test.flags || {} ) ) assert.equal( url.searchParams.get( key ), value );
 }
+const crispFull = configureGpuTraceUrl( new URL( 'https://example.test/?gpuTrace=1&traceCase=full&qualityTest=crisp&noShadows=1&noWake=1&noCaustics=1&cloudtest=panorama&envtest=skip' ) );
+assert.equal( crispFull.searchParams.get('G'), '32' );
+for (const key of ['noShadows','noWake','noCaustics','noClouds','noSpray','noSim','noBreakers','noHaze','freezeFFT','cloudtest'])
+  assert.equal( crispFull.searchParams.has(key), false, `Full Crisp must restore ${key}` );
+assert.equal( crispFull.searchParams.get('envtest'), 'full' );
 const high = configureGpuTraceUrl( new URL( 'https://example.test/?gpuTrace=1&traceHighRes=1&traceCase=full' ) );
 assert.equal( high.searchParams.get( 'G' ), '24', 'high-stress trace must be explicitly requested' );
 assert.equal( getGpuTraceCase('fftcore').flags.noWake, '1' );
@@ -21,6 +26,8 @@ assert.equal( getFftCoreVisualProfile(''), null );
 assert.equal( getFftCoreVisualProfile('unknown'), null );
 assert.equal(vendorStreamEnabled('?gpuTrace=1&traceCase=fftcore&vendorStream=1','Mozilla/5.0 iPhone Safari'),true);
 assert.equal(vendorStreamEnabled('?gpuTrace=1&traceCase=fftcore','Mozilla/5.0 iPhone Safari'),false);
+assert.equal(vendorStreamEnabled('?gpuTrace=1&traceCase=full&qualityTest=crisp&vendorStream=1','Mozilla/5.0 iPhone Safari'),true);
+assert.equal(vendorStreamEnabled('?gpuTrace=1&traceCase=full&vendorStream=1','Mozilla/5.0 iPhone Safari'),false);
 assert.equal(vendorStreamEnabled('?gpuTrace=1&traceCase=fftcore&vendorStream=1','Desktop Chrome'),false);
 assert.equal(vendorReleaseReady(25*25,3.1),true);
 assert.equal(vendorReleaseReady(23*23,20),false);
