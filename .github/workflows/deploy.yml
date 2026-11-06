@@ -348,6 +348,9 @@ jobs:
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
+      - name: Report Pages package footprint
+        if: github.ref == 'refs/heads/main'
+        run: du -h --max-depth=2 dist | sort -h | tail -n 30
       - name: Upload GitHub Pages artifact
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
@@ -364,5 +367,9 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # GitHub's large 2.3 GB artifact sometimes needs longer than the 10-minute default.
+          # Render settings and production/QA paths are unchanged.
+          timeout: 1800000
 
 # Redeploy marker: lobster startup fix verified 2026-09-28
