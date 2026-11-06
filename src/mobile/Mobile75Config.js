@@ -35,3 +35,17 @@ export function configureMobileSharp85Url( url ) {
 	url.searchParams.set( 'envtest', 'skip' );
 	return url;
 }
+
+// The FFT-only diagnostic disabled auxiliary passes. Measure whether the
+// recovered headroom can support real scene detail on iPhone. These profiles
+// change only output and internal render size; FFT simulation stays original.
+// Normal gameplay and ?gpuTrace=1&traceCase=fftcore (no qualityTest) are unchanged.
+export const FFTCORE_VISUAL_PROFILES = Object.freeze({
+	balanced: Object.freeze({ renderScale: 0.90, sceneScale: 0.90 }),
+	crisp: Object.freeze({ renderScale: 1.00, sceneScale: 1.00 }),
+});
+
+export function getFftCoreVisualProfile( id ) {
+	return Object.prototype.hasOwnProperty.call( FFTCORE_VISUAL_PROFILES, id )
+		? FFTCORE_VISUAL_PROFILES[ id ] : null;
+}

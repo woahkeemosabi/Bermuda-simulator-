@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { GPU_TRACE_CASES, getGpuTraceCase, configureGpuTraceUrl, nextGpuTraceUrl } from '../src/mobile/GpuTraceCases.js';
+import { getFftCoreVisualProfile } from '../src/mobile/Mobile75Config.js';
 import { gpuAudit, gpuStage, gpuCompute, gpuDispatch, gpuRender, gpuSubmit, gpuQueueAck, gpuTexture, gpuDetailedReport } from '../src/mobile/GpuAudit.js';
 
 for ( const test of GPU_TRACE_CASES ) {
@@ -13,6 +14,10 @@ const high = configureGpuTraceUrl( new URL( 'https://example.test/?gpuTrace=1&tr
 assert.equal( high.searchParams.get( 'G' ), '24', 'high-stress trace must be explicitly requested' );
 assert.equal( getGpuTraceCase('fftcore').flags.noWake, '1' );
 assert.equal( getGpuTraceCase('fftcore').flags.noShadows, '1' );
+assert.deepEqual( getFftCoreVisualProfile('balanced'), { renderScale: 0.90, sceneScale: 0.90 } );
+assert.deepEqual( getFftCoreVisualProfile('crisp'), { renderScale: 1.00, sceneScale: 1.00 } );
+assert.equal( getFftCoreVisualProfile(''), null );
+assert.equal( getFftCoreVisualProfile('unknown'), null );
 let current = new URL( 'https://example.test/?gpuTrace=1&traceCase=full' );
 for ( let i = 1; i < GPU_TRACE_CASES.length; i ++ ) {
 	current = nextGpuTraceUrl( current );
