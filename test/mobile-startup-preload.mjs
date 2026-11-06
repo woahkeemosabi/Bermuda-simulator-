@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { preloadMobileStartup, MOBILE_STARTUP_PRELOAD_FRAMES } from '../src/mobile/MobileStartupPreload.js';
+import { preloadMobileStartup, MOBILE_STARTUP_PRELOAD_FRAMES, MOBILE_FULL_PRELOAD_FRAMES, MOBILE_FULL_PRELOAD_WAIT_MS } from '../src/mobile/MobileStartupPreload.js';
 
 const events = [];
 let pending = false;
@@ -40,3 +40,21 @@ await assert.rejects( preloadMobileStartup( {
 assert.equal( frames, 2, 'preloader stops submitting on device loss' );
 
 console.log( 'mobile startup preload stages and device-loss stop verified' );
+
+let fullFrames = 0, waitedMs = 0, fullProgress = [];
+await preloadMobileStartup({
+	frame: () => fullFrames++,
+	queueDone: async () => {},
+	pipelinesReady: async () => {},
+	checkDevice: () => {},
+	onProgress: (step,total,status) => fullProgress.push({step,total,status}),
+	frameCount: MOBILE_FULL_PRELOAD_FRAMES,
+	frameWaitMs: MOBILE_FULL_PRELOAD_WAIT_MS,
+	wait: async ms => { waitedMs += ms; },
+});
+assert.equal(MOBILE_FULL_PRELOAD_FRAMES, 30);
+assert.equal(MOBILE_FULL_PRELOAD_WAIT_MS, 2000);
+assert.equal(fullFrames, 30, 'full graphics must warm 30 real scene frames');
+assert.ok(waitedMs >= 60000, 'full graphics must wait at least 60 seconds before Explore');
+assert.match(fullProgress[0].status, /60s remaining/);
+assert.match(fullProgress.at(-1).status, /2s remaining/);
