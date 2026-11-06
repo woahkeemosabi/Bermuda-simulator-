@@ -11,7 +11,7 @@ import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
 import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
 import { gpuStage, gpuQueueAck, gpuReport, gpuDetailedReport, gpuTraceEvent } from './mobile/GpuAudit.js';
 import { MOBILE_75, MOBILE_SHARP_85, configureMobile75Url, configureMobileSharp85Url, getFftCoreVisualProfile } from './mobile/Mobile75Config.js';
-import { preloadMobileStartup } from './mobile/MobileStartupPreload.js';
+import { preloadMobileStartup, MOBILE_FULL_PRELOAD_FRAMES, MOBILE_FULL_PRELOAD_WAIT_MS } from './mobile/MobileStartupPreload.js';
 import { cacheStartupAssets, holdUntilMobileReady, isStartupCacheReady, markStartupCacheReady } from './mobile/StartupAssetCache.js';
 import { getGpuTraceCase, configureGpuTraceUrl } from './mobile/GpuTraceCases.js';
 
@@ -236,7 +236,7 @@ app.init( ( p, text, until ) => {
 				Math.min(.975+attempt*.003,.99), 'Rendering Bermuda world…', .995 ) );
 		}
 		if ( !mobileRecovery && !app.qs.has( 'renderTest' ) ) {
-			gpuStage( 'Mobile world preload' );
+			gpuStage( mobileFullEffects ? '60-second full graphics world preload' : 'Mobile world preload' );
 			await preloadMobileStartup( {
 				frame: dt => app.frame( dt ),
 				queueDone: () => GPU.queue.onSubmittedWorkDone(),
@@ -245,8 +245,13 @@ app.init( ( p, text, until ) => {
 					if ( GPU.fatalError || window.__bermudaGpuLost )
 						throw GPU.fatalError || new Error( window.__bermudaGpuLost );
 				},
-				onProgress: ( step, total, status ) => ui.setLoading(
-					0.983 + 0.012 * ( step - 1 ) / total, status, .995 ),
+				onProgress: ( step, total, status ) => {
+					ui.setLoading( 0.983 + 0.012 * ( step - 1 ) / total, status, .995 );
+					if ( mobileFullEffects && ( step === 1 || step % 5 === 0 ) )
+						gpuTraceEvent( 'full graphics preload', step + '/' + total + ': ' + status );
+				},
+				frameCount: mobileFullEffects ? MOBILE_FULL_PRELOAD_FRAMES : undefined,
+				frameWaitMs: mobileFullEffects ? MOBILE_FULL_PRELOAD_WAIT_MS : undefined,
 				onQueueAck: () => gpuQueueAck( GPU.frame ),
 			} );
 		}
