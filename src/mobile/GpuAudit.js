@@ -118,6 +118,7 @@ export function gpuQueueAck(frame){
   traceEvent('queue complete',complete.length+' submission(s), latest frame '+frame);
  }
 }
+export function gpuQueueStall(message){gpuAudit.queueStall=String(message||'').slice(0,150);}
 // Sample movement every 2 seconds: near-zero cost, even during a long play session.
 export function gpuPlayerMovement(player,input,vendors=[]){
  const a=gpuAudit;
