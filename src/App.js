@@ -100,6 +100,7 @@ export class App {
 			( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 ) );
 		this.mobileLite = mobileLite;
 		this.mobileGraphics75 = mobileLite && typeof window !== 'undefined' && Boolean( window.__bermudaMobileGraphics75 );
+		this.mobileFullEffects = mobileLite && typeof window !== 'undefined' && Boolean( window.__bermudaMobileFullEffects );
 		this.recoveryMode = mobileLite && qs.get('recovery') === '1';
 		// report a stage, then let the page paint it before the (synchronous) stage work starts
 		const progress = async ( p, text, until ) => {
@@ -166,7 +167,7 @@ export class App {
 		// Trace-only recreation of the failing higher-resolution shadow workload;
 		// the normal playable 75% graphics profile is unchanged.
 		const traceShadowSize = mobileLite && qs.get('gpuTrace')==='1' && qs.get('traceHighRes')==='1' && qs.get('traceCase')!=='shadows' ? 768 : null;
-		this.csm = this.shadows = new SunShadows( { size: traceShadowSize || (this.mobileGraphics75 ? MOBILE_75.shadowSize : (this.recoveryMode ? 512 : (mobileLite ? 1024 : 2048))), splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
+		this.csm = this.shadows = new SunShadows( { size: traceShadowSize || (this.mobileFullEffects ? 1024 : (this.mobileGraphics75 ? MOBILE_75.shadowSize : (this.recoveryMode ? 512 : (mobileLite ? 1024 : 2048)))), splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
 		this.shadows.layerMask = ( 1 << LAYERS.OPAQUE ) | ( 1 << LAYERS.TRANSPARENT );
 		// Controlled FFT-core A/B: skip the optional cascaded shadow draws.
 		if ( mobileLite && qs.has( 'noShadows' ) ) this.shadows.enabled = false;
@@ -241,12 +242,12 @@ export class App {
 		this.surface.detail = this.seaDetail;
 		this.shore = new ShoreWaves( this.terrainGPU );
 		this.surface.shore = this.shore;
-		this.caustics = qs.has( 'noCaustics' ) ? null : new Caustics( renderer, this.fft, { mobile: mobileLite } );
+		this.caustics = qs.has( 'noCaustics' ) ? null : new Caustics( renderer, this.fft, { mobile: mobileLite && !this.mobileFullEffects } );
 		if ( this.caustics ) this.caustics.detail = this.seaDetail;
 
 		if ( ! qs.has( 'noSim' ) ) {
 
-			this.shoreSim = new ShoreSim( renderer, { terrainGPU: this.terrainGPU, shore: this.shore, res: this.mobileGraphics75 ? MOBILE_75.shoreSimRes : ( mobileLite ? 512 : 768 ) } );
+			this.shoreSim = new ShoreSim( renderer, { terrainGPU: this.terrainGPU, shore: this.shore, res: this.mobileFullEffects ? 512 : (this.mobileGraphics75 ? MOBILE_75.shoreSimRes : ( mobileLite ? 512 : 768 )) } );
 			this.surface.shoreSim = this.shoreSim;
 			// WGSL: fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f (x = wetness, y = sand foam)
 			this.terrain.wetness = {
@@ -344,8 +345,8 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// spray.emit() / emitAlongPoints() for boat bow spray and splashes)
 		this.spray = new Spray( renderer, { query: this.query, terrain: this.terrainGPU,
 			sceneCopy: this.sceneRenderer.opaqueCopy, clouds: this.clouds,
-			gpuCapacity: this.mobileGraphics75 ? MOBILE_75.sprayGpuCapacity : ( mobileLite ? 8192 : 32768 ),
-			cpuCapacity: this.mobileGraphics75 ? MOBILE_75.sprayCpuCapacity : ( mobileLite ? 2048 : 8192 ) } );
+			gpuCapacity: this.mobileFullEffects ? 8192 : (this.mobileGraphics75 ? MOBILE_75.sprayGpuCapacity : ( mobileLite ? 8192 : 32768 )),
+			cpuCapacity: this.mobileFullEffects ? 2048 : (this.mobileGraphics75 ? MOBILE_75.sprayCpuCapacity : ( mobileLite ? 2048 : 8192 )) } );
 		scene.add( this.spray.mesh );
 		if ( this.reef.setSpray ) this.reef.setSpray( this.spray ); // splashes of leaping fish
 		this.breakers = new Breakers( renderer, {
