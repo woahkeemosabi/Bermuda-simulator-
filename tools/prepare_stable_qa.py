@@ -15,7 +15,7 @@ assert (root / "src/main.js").is_file(), "Missing pinned QA checkout"
 # adapter-safe mip shaders from this tested repository commit, so a successful
 # change can be evaluated at the SAME /qa/fftcore/ URL rather than deploying
 # an untested alternate game or modifying production saves.
-for relative in ("src/ocean/ComputeMips.js", "src/ocean/OceanFFT.js"):
+for relative in ("src/ocean/ComputeMips.js", "src/ocean/OceanFFT.js", "src/ocean/FoamTexture.js"):
     current = Path(relative)
     target = root / relative
     assert current.is_file() and target.is_file(), f"Missing QA mip source: {relative}"
@@ -48,6 +48,19 @@ replace_once("public/sw.js",
     "const PREFIX = 'bermuda-assets-';",
     "const PREFIX = 'bermuda-qa-fftcore-assets-';")
 
+
+# Minimal console checkpoints in the *pinned* QA revision, without changing
+# gameplay, shader output, GPU allocations or cache namespaces. The worktree's
+# OceanFFT and FoamTexture sources have matching passive diagnostics.
+for old, label in (
+    ("this.fft = new OceanFFT( renderer, qs.has('freezeFFT') ? {cascades:1} : (this.recoveryMode ? {cascades:2} : {}) );", "FFT constructor"),
+    ("this.foamTexture = createFoamTexture( renderer );", "foam texture construction"),
+    ("this.oceanLOD = new CDLOD( { gridSize: Number( qs.get( 'G' ) || 32 ), leafSize: 8, levels: 12, minY: - 25, maxY: 25 } );", "ocean LOD geometry"),
+    ("this.surface = new WaterSurface( { fft: this.fft, cdlod: this.oceanLOD, foamTexture: this.foamTexture } );", "water surface module"),
+):
+    prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " start');\\n"
+    suffix = "\\nif (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " complete');"
+    replace_once("src/App.js", old, prefix + old + suffix)
 
 # All graphical settings match the playable Crisp FFT-core case.
 replace_once("src/main.js",
