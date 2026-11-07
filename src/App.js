@@ -238,17 +238,31 @@ export class App {
 
 		// ---------------------------------------------------------------- ocean
 		await progress( 0.3, 'Simulating the ocean…' );
+		traceInit('ocean FFT constructor start');
 		this.fft = new OceanFFT( renderer, qs.has('freezeFFT') ? {cascades:1} : (this.recoveryMode ? {cascades:2} : {}) );
+		traceInit('ocean FFT constructor complete');
 		if ( this.reef.setOcean ) this.reef.setOcean( this.fft ); // coral / sea fan sway follows the simulated swell
+		traceInit('foam texture and mip generator start');
 		this.foamTexture = createFoamTexture( renderer );
+		traceInit('foam texture and mip generator complete');
+		traceInit('ocean CDLOD geometry start');
 		this.oceanLOD = new CDLOD( { gridSize: Number( qs.get( 'G' ) || 32 ), leafSize: 8, levels: 12, minY: - 25, maxY: 25 } );
+		traceInit('ocean CDLOD geometry complete');
+		traceInit('water surface material start');
 		this.surface = new WaterSurface( { fft: this.fft, cdlod: this.oceanLOD, foamTexture: this.foamTexture } );
+		traceInit('water surface material complete');
 		this.surface.terrain = this.terrainGPU;
+		traceInit('ocean sea detail start');
 		this.seaDetail = new SeaDetail();
+		traceInit('ocean sea detail complete');
 		this.surface.detail = this.seaDetail;
+		traceInit('shore waves start');
 		this.shore = new ShoreWaves( this.terrainGPU );
+		traceInit('shore waves complete');
 		this.surface.shore = this.shore;
+		traceInit('caustics startup start');
 		this.caustics = qs.has( 'noCaustics' ) ? null : new Caustics( renderer, this.fft, { mobile: mobileLite } );
+		traceInit('caustics startup complete');
 		if ( this.caustics ) this.caustics.detail = this.seaDetail;
 
 		if ( ! qs.has( 'noSim' ) ) {
