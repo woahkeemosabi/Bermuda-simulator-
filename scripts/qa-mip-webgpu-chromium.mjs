@@ -33,7 +33,7 @@ try {
     userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
   });
   const page=await context.newPage();
-  page.on('console',msg=>{if(msg.type()==='error')results.console.push(msg.text().slice(0,1000));});
+  page.on('console',msg=>{const line=msg.text();if(msg.type()==='error'||line.startsWith('[Bermuda init]'))results.console.push(line.slice(0,1000));});
   page.on('pageerror',e=>results.pageErrors.push(String(e).slice(0,1000)));
   page.on('requestfailed',req=>{if(/\.wgsl($|\?)/.test(req.url()))results.errors.push('WGSL fetch '+req.url());});
   await page.goto(address+'/?gpuTrace=1&traceCase=fftcore&qualityTest=crisp&vendorStream=1',{waitUntil:'domcontentloaded',timeout:30000});
