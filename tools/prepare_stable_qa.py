@@ -323,6 +323,67 @@ replace_once("src/App.js",
             }""")
 print("QA diagnostic: opt-in bounded rAF transition (rafTest=bounded), no GPU fidelity change")
 
+# Controlled software-WebGPU experiment: ?pipelineBatch=2 bounds simultaneous
+# createRenderPipelineAsync/createComputePipelineAsync promises to TWO.
+# The shaders, GPU resource types, FFT quality and recorded render passes are
+# unchanged. The default deployed QA game does NOT enable this A/B setting.
+# Console checkpoints identify any one shader that starves the GPU process.
+replace_once("src/engine/gpu/GPU.js",
+    """\t\tconst p = Promise.resolve().then( () => {
+
+\t\t\tif ( h.pipeline ) return;
+\t\t\tconst create = kind === 'render' ? this.device.createRenderPipelineAsync : this.device.createComputePipelineAsync;
+\t\t\treturn create.call( this.device, desc ).then( ( pipeline ) => {
+
+\t\t\t\tif ( ! h.pipeline ) h.pipeline = pipeline;
+\t\t\t\th.desc = null;
+
+\t\t\t}, ( e ) => {
+
+\t\t\t\th.failed = true;
+\t\t\t\tgpuError( 'pipeline '+kind, desc.label+': '+String(e?.message||e) );
+\t\t\t\tconsole.error( \`WebGPU: pipeline "\${ desc.label }" failed: \${ e.message.split( '\\n' ).slice( 0, 6 ).join( '\\n' ) }\` );
+
+\t\t\t} );
+
+\t\t} ).finally( () => this._pending.delete( p ) );""",
+    """\t\tconst p = Promise.resolve().then( async () => {
+
+\t\t\tif ( h.pipeline ) return;
+\t\t\tconst batch = typeof location !== 'undefined' &&
+\t\t\t\tnew URLSearchParams(location.search).get('pipelineBatch') === '2';
+\t\t\tlet gate = null;
+\t\t\tif (batch) {
+\t\t\t\tgate = this._mobileCompileGate ||= { active: 0, waiters: [] };
+\t\t\t\tif (gate.active < 2) gate.active++;
+\t\t\t\telse await new Promise(resolve => gate.waiters.push(resolve));
+\t\t\t\tconsole.info('[Bermuda compile] start ' + kind + ' ' +
+\t\t\t\t\tdesc.label + ' active=' + gate.active +
+\t\t\t\t\t' queued=' + gate.waiters.length);
+\t\t\t}
+\t\t\ttry {
+\t\t\t\tconst create = kind === 'render' ?
+\t\t\t\t\tthis.device.createRenderPipelineAsync : this.device.createComputePipelineAsync;
+\t\t\t\treturn await create.call(this.device, desc).then(pipeline => {
+\t\t\t\t\tif (!h.pipeline) h.pipeline = pipeline;
+\t\t\t\t\th.desc = null;
+\t\t\t\t}, e => {
+\t\t\t\t\th.failed = true;
+\t\t\t\t\tgpuError('pipeline '+kind, desc.label+': '+String(e?.message||e));
+\t\t\t\t\tconsole.error('WebGPU: pipeline "'+desc.label+'" failed: '+String(e?.message||e));
+\t\t\t\t});
+\t\t\t} finally {
+\t\t\t\tif (gate) {
+\t\t\t\t\tconsole.info('[Bermuda compile] settled ' + kind + ' ' + desc.label);
+\t\t\t\t\tconst next = gate.waiters.shift();
+\t\t\t\t\tif (next) next();
+\t\t\t\t\telse gate.active = Math.max(0, gate.active - 1);
+\t\t\t\t}
+\t\t\t}
+
+\t\t} ).finally( () => this._pending.delete( p ) );""")
+print("QA experiment: concurrency-limited WebGPU pipeline compilation (pipelineBatch=2)")
+
 # Bermuda QA vegetation: retain mixed trees, shrubs and coastal greenery,
 # but stop filling the hills and walking corridors with repeated coconut palms.
 # The same palm meshes and lighting are kept; only placement and far draw
