@@ -207,6 +207,53 @@ assert "open-coastal-palms" in (root / "src/world/Vegetation.js").read_text()
 assert "palms: 0.09" in (root / "src/world/Vegetation.js").read_text()
 print("QA vegetation: fewer palms, coastal grouping, minimum spacing and closer far LOD")
 
+# Controlled iPhone-only test: when the player is stationary on genuinely
+# dry inland terrain, far from the boat, avoid repeated WebGPU height-query
+# dispatches/readbacks. Resume immediately upon walking, swimming, boating
+# or approaching shore. Keep one refresh every two seconds while idle.
+# This is opt-in with ?waterTest=idle, leaving the normal query unchanged.
+replace_once("src/main.js",
+    "window.__bermudaThrottleWaterQueries = mobileFastStart;",
+    """window.__bermudaThrottleWaterQueries = mobileFastStart;
+window.__bermudaIdleWaterQueryTest = mobileFastStart &&
+    new URLSearchParams(location.search).get('waterTest') === 'idle';""")
+replace_once("src/ocean/WaterQuery.js",
+    "\t\t// built on first use: the wake / shore attached to the surface after construction are included",
+    """        // Safari diagnostic: suppress needless inland GPU readbacks while
+        // the walker is stationary. Never do this at sea, while approaching
+        // the shoreline, on a boat, swimming, or before the first valid height.
+        const app = typeof window !== 'undefined' ? window.__app : null;
+        const p = app?.player;
+        const b = app?.boatCtl;
+        const dryIdle = typeof window !== 'undefined' &&
+            window.__bermudaIdleWaterQueryTest &&
+            this.cpuValid && p && b && app.terrainData &&
+            p.mode === 'walk' && p.grounded && p.wade < 0.02 &&
+            Math.hypot(p.velocity.x, p.velocity.z) < 0.08 &&
+            !b.driven &&
+            Math.hypot(p.position.x - b.position.x, p.position.z - b.position.z) > 25 &&
+            app.terrainData.heightAt(p.position.x, p.position.z) > 2.8 &&
+            app.terrainData.coastDistance(p.position.x, p.position.z).d < -8;
+        if (dryIdle) {
+            const nowMs = performance.now();
+            if (!this._dryIdleLastQueryMs) this._dryIdleLastQueryMs = nowMs;
+            if (nowMs - this._dryIdleLastQueryMs < 2000) {
+                this.dryIdleSkippedUpdates = (this.dryIdleSkippedUpdates || 0) + 1;
+                return;
+            }
+            this._dryIdleLastQueryMs = nowMs;
+        } else {
+            this._dryIdleLastQueryMs = 0;
+        }
+
+\t\t// built on first use: the wake / shore attached to the surface after construction are included""")
+replace_once("src/mobile/GpuAudit.js",
+    "'Water query diagnostic '+(typeof location!=='undefined'?",
+    """'Dry inland idle-query skips '+(app?.query?.dryIdleSkippedUpdates??0),
+  'Water query diagnostic '+(typeof location!=='undefined'?""")
+assert "dryIdleSkippedUpdates" in (root / "src/ocean/WaterQuery.js").read_text()
+assert "window.__bermudaIdleWaterQueryTest" in (root / "src/main.js").read_text()
+print("QA optional waterTest=idle: avoid repeated inland stationary water-query GPU dispatch")
 # Optional paced GPU isolation without changing render targets, FFT resolution,
 # visuals, save keys or gameplay mechanics. Baseline remains 42 ms; ?gpuPace=steady
 # caps the render loop at ~17 fps, lowering sustained WebGPU submission pressure.
