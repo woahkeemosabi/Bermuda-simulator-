@@ -92,6 +92,13 @@ export class App {
 	async init( onProgress = () => {} ) {
 
 		const qs = this.qs;
+		// CPU/GPU startup checkpoints for Chromium software-adapter isolation.
+		// No GPU allocations, shader changes, or normal-gameplay overhead.
+		const traceInit = (label) => {
+			if (qs.get('gpuTrace') !== '1') return;
+			gpuStage(label);
+			console.info('[Bermuda init] ' + label);
+		};
 		// Select the small scene before allocating any buffers, shaders or GPU textures.
 		const mobileLite = !qs.has( 'desktop' ) && ( qs.get( 'quality' ) === 'mobile-safe' ||
 			/iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
@@ -192,17 +199,27 @@ export class App {
 		if ( ! qs.has( 'noVeg' ) ) {
 
 			await progress( 0.14, 'Planting the island…' );
+			traceInit('vegetation construction start');
 			this.vegetation = new Vegetation( { scene, terrain: this.terrainData, village: this.village } );
+			traceInit('vegetation construction complete');
 			useStaticVelocity( this.vegetation.group );
 
 		}
 
 		await progress( 0.19, 'Rolling in the swell…' );
+		traceInit('shorefield CPU computation start');
 		this.shoreField = computeShoreField( this.terrainData, { res: 512, swellDir: [ WORLD.swellDir.x, WORLD.swellDir.y ] } );
+		traceInit('shorefield CPU computation complete');
+		traceInit('terrain GPU resources start');
 		this.terrainGPU = new TerrainGPU( this.terrainData, this.shoreField );
+		traceInit('terrain GPU resources complete');
 		// terrain and rocks apply the heightfield sun shadow (long hill shadows) in their own lighting
+		traceInit('terrain mesh/material start');
 		this.terrain = new Terrain( { scene, terrainData: this.terrainData, terrainGPU: this.terrainGPU, renderer } );
+		traceInit('terrain mesh/material complete');
+		traceInit('rocks mesh/material start');
 		this.rocks = new Rocks( { scene, terrain: this.terrain, village: this.village, colliders: this.colliders } );
+		traceInit('rocks mesh/material complete');
 		// Bermuda rebuild: the legacy Tidewater debris field (wheelbarrows, crate stacks,
 		// barrels, beached skiffs and village yard clutter) is deliberately disabled.
 		// Keep this slot for compatibility; Bermuda-specific harbour props are loaded separately.
