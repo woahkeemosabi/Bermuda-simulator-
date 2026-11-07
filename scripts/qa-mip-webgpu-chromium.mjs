@@ -70,13 +70,22 @@ try {
     }));
     const material = [...results.console, ...results.pageErrors, ...results.errors];
     const limit=material.filter(s=>/maxStorageTexturesPerShaderStage|5\s+(writable|storage)|storage\s+textures?.{0,80}(limit|4)|exceeded.{0,50}storage\s+texture/i.test(s));
+    const lost=material.filter(s=>/GPU device lost|external Instance reference no longer exists|GPUPipelineError/i.test(s));
     if(limit.length) {
       results.status='failed-storage-texture-validation';
       failure=new Error('4-storage-texture WebGPU validation failed: '+limit.slice(0,2).join(' | '));
+    } else if(lost.length || results.frame?.gpuLost) {
+      results.status='failed-software-adapter-device-loss';
+      failure=new Error('Chromium software adapter/device invalid: '+(lost[0] || results.frame.gpuLost));
+    } else if(results.frame?.frame===0 || results.frame?.frame===null) {
+      // No five-texture error is not proof that the patched shader ran.
+      // Chromium has previously remained in precompile for several minutes.
+      results.status='blocked-precompiling-shaders-zero-frames';
+      failure=new Error('Shader precompile incomplete; no scene frame rendered');
     } else if(results.adapter.maxStorageTexturesPerShaderStage!==4) {
       results.status='inconclusive-adapter-not-four';
     } else {
-      results.status='no-five-texture-errors-observed-in-55s';
+      results.status='rendered-without-five-texture-errors';
     }
   } else results.status='inconclusive-no-webgpu-adapter';
   await context.close();
