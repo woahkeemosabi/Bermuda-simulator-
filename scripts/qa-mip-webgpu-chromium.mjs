@@ -36,7 +36,7 @@ try {
     userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
   });
   const page=await context.newPage();
-  page.on('console',msg=>{const line=msg.text();if(msg.type()==='error'||/^\[Bermuda (?:init|FFT|Foam|precompile)\]/.test(line)){results.console.push(line.slice(0,1000)); if(/^\[Bermuda (?:init|FFT|Foam|precompile)\]/.test(line))console.log('INIT_CHECKPOINT '+line);}});
+  page.on('console',msg=>{const line=msg.text();if(msg.type()==='error'||/^\[Bermuda (?:init|FFT|Foam|precompile|mobile-precompile)\]/.test(line)){results.console.push(line.slice(0,1000)); if(/^\[Bermuda (?:init|FFT|Foam|precompile|mobile-precompile)\]/.test(line))console.log('INIT_CHECKPOINT '+line);}});
   page.on('pageerror',e=>results.pageErrors.push(String(e).slice(0,1000)));
   page.on('requestfailed',req=>{if(/\.wgsl($|\?)/.test(req.url()))results.errors.push('WGSL fetch '+req.url());});
   await page.goto(address+'/?gpuTrace=1&traceCase=fftcore&qualityTest=crisp&vendorStream=1',{waitUntil:'domcontentloaded',timeout:30000});
