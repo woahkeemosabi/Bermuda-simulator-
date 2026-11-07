@@ -280,6 +280,23 @@ replace_once("src/main.js",
     };""")
 print("QA diagnostic: active mobile precompile override now reports pending shader count and race winner")
 
+# The previous SwiftShader run stopped after post-processing setup, before
+# even entering the actual mobile precompile override. Split that remaining
+# initialization interval into passive checkpoints, no rendering changes.
+for old, label in (
+    ("this.setRenderScale( this.settings.renderScale );", "render scale apply"),
+    ("this.audio = qs.has( 'noAudio' ) ? null : new SoundScape();", "soundscape creation"),
+    ("this.game = new Game( this );", "fishing and vendor gameplay creation"),
+    ("this.profiler = new Profiler( renderer );", "profiler creation"),
+    ("this.updateSun();", "lighting and sun update"),
+    ("installDebugViews( this );", "debug view installation"),
+    ("await progress( 0.36, 'Compiling shaders…', 0.95 );", "precompile progress animation"),
+):
+    prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " start');\n"
+    suffix = "\nif (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " complete');"
+    replace_once("src/App.js", old, prefix + old + suffix)
+print("QA diagnostic: traced all remaining initialization work before mobile shader precompile")
+
 # Bermuda QA vegetation: retain mixed trees, shrubs and coastal greenery,
 # but stop filling the hills and walking corridors with repeated coconut palms.
 # The same palm meshes and lighting are kept; only placement and far draw
