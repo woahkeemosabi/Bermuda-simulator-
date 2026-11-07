@@ -237,6 +237,49 @@ replace_once("src/main.js",
         document.addEventListener('touchend', restoreQAAudio, {capture:true, passive:true});
         ui.showStartOverlay( () => {""")
 
+# The mobile page *overrides* App.prototype.precompile in main.js. Markers
+# inside App.precompile therefore do not observe the actual mobile execution.
+# Trace the Promise.race winner and pending pipelines in that override directly.
+# This is observational only: it keeps the original time limit, the FFT,
+# resolution and the existing startup/saved-game behaviour unchanged.
+replace_once("src/main.js",
+    "App.prototype.precompile = async function() {\n\n"
+    "\t\t// Full fidelity compiles more shader variants. Give pending compute pipelines\n"
+    "\t\t// time to settle before gradually warming the mesh shaders on later frames.\n"
+    "\t\tawait Promise.race( [\n"
+    "\t\t\tGPU.pipelinesReady(),\n"
+    "\t\t\tnew Promise( ( resolve ) => setTimeout( resolve, mobileFullEffects ? 20000 : 6500 ) ),\n"
+    "\t\t] );\n"
+    "\t\tif ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;\n\n"
+    "\t};",
+    """App.prototype.precompile = async function() {
+        const started = performance.now();
+        const initialPending = GPU._pending?.size ?? -1;
+        console.info('[Bermuda mobile-precompile] enter pending=' + initialPending);
+        const pipelines = GPU.pipelinesReady().then(() => {
+            console.info('[Bermuda mobile-precompile] pending complete after=' +
+                Math.round(performance.now() - started) + 'ms');
+            return 'ready';
+        });
+        let timerId;
+        const timeout = new Promise(resolve => {
+            timerId = setTimeout(() => {
+                console.info('[Bermuda mobile-precompile] timeout pending=' +
+                    (GPU._pending?.size ?? -1) + ' after=' +
+                    Math.round(performance.now() - started) + 'ms');
+                resolve('timeout');
+            }, mobileFullEffects ? 20000 : 6500);
+        });
+        const winner = await Promise.race([pipelines, timeout]);
+        clearTimeout(timerId);
+        console.info('[Bermuda mobile-precompile] exit winner=' + winner +
+            ' pending=' + (GPU._pending?.size ?? -1) +
+            ' elapsed=' + Math.round(performance.now() - started) + 'ms');
+        if (this.engine && this.engine.meshRenderer)
+            this.engine.meshRenderer.syncPipelines = false;
+    };""")
+print("QA diagnostic: active mobile precompile override now reports pending shader count and race winner")
+
 # Bermuda QA vegetation: retain mixed trees, shrubs and coastal greenery,
 # but stop filling the hills and walking corridors with repeated coconut palms.
 # The same palm meshes and lighting are kept; only placement and far draw
