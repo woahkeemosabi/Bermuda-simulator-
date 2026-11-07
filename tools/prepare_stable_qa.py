@@ -268,13 +268,18 @@ replace_once("src/main.js",
                     (GPU._pending?.size ?? -1) + ' after=' +
                     Math.round(performance.now() - started) + 'ms');
                 resolve('timeout');
-            }, mobileFullEffects ? 20000 : 6500);
+            }, new URLSearchParams(location.search).get('pipelineBatch') === '2' ? 45000 : (mobileFullEffects ? 20000 : 6500));
         });
         const winner = await Promise.race([pipelines, timeout]);
         clearTimeout(timerId);
         console.info('[Bermuda mobile-precompile] exit winner=' + winner +
             ' pending=' + (GPU._pending?.size ?? -1) +
             ' elapsed=' + Math.round(performance.now() - started) + 'ms');
+        if (winner === 'timeout' &&
+            new URLSearchParams(location.search).get('pipelineBatch') === '2') {
+            throw new Error('QA shader readiness timeout with ' +
+                (GPU._pending?.size ?? -1) + ' pipelines pending');
+        }
         if (this.engine && this.engine.meshRenderer)
             this.engine.meshRenderer.syncPipelines = false;
     };""")
@@ -383,6 +388,31 @@ replace_once("src/engine/gpu/GPU.js",
 
 \t\t} ).finally( () => this._pending.delete( p ) );""")
 print("QA experiment: concurrency-limited WebGPU pipeline compilation (pipelineBatch=2)")
+
+# Bound the FIRST GPU queue fence on the experimental pipelineBatch=2 path.
+# Do not continue to Explore after an unacknowledged GPU submission. Preserve
+# the untouched timing/behaviour for the original iPhone QA link.
+replace_once("src/App.js",
+    "this.frame( 1 / 60 );\n\t\t\tawait GPU.queue.onSubmittedWorkDone();\n\t\t\tgpuQueueAck(GPU.frame);",
+    """this.frame( 1 / 60 );
+            if (qs.get('pipelineBatch') === '2') {
+                console.info('[Bermuda warmup] awaiting queue completion frame=' + GPU.frame);
+                let timerId;
+                try {
+                    await Promise.race([
+                        GPU.queue.onSubmittedWorkDone(),
+                        new Promise((_, reject) => {
+                            timerId = setTimeout(() => reject(
+                                new Error('QA GPU queue did not complete within 20s; frame=' + GPU.frame)), 20000);
+                        })
+                    ]);
+                    console.info('[Bermuda warmup] queue acknowledged frame=' + GPU.frame);
+                } finally { clearTimeout(timerId); }
+            } else {
+                await GPU.queue.onSubmittedWorkDone();
+            }
+            gpuQueueAck(GPU.frame);""")
+print("QA experiment: wait for all shader pipelines before warmup; reject unacknowledged first submit")
 
 # Bermuda QA vegetation: retain mixed trees, shrubs and coastal greenery,
 # but stop filling the hills and walking corridors with repeated coconut palms.
