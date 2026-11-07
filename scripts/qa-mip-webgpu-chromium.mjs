@@ -39,7 +39,7 @@ try {
   page.on('console',msg=>{const line=msg.text();if(msg.type()==='error'||/^\[Bermuda (?:init|FFT|Foam|precompile|mobile-precompile)\]/.test(line)){results.console.push(line.slice(0,1000)); if(/^\[Bermuda (?:init|FFT|Foam|precompile|mobile-precompile)\]/.test(line))console.log('INIT_CHECKPOINT '+line);}});
   page.on('pageerror',e=>results.pageErrors.push(String(e).slice(0,1000)));
   page.on('requestfailed',req=>{if(/\.wgsl($|\?)/.test(req.url()))results.errors.push('WGSL fetch '+req.url());});
-  await page.goto(address+'/?gpuTrace=1&traceCase=fftcore&qualityTest=crisp&vendorStream=1',{waitUntil:'domcontentloaded',timeout:30000});
+  await page.goto(address+'/?gpuTrace=1&traceCase=fftcore&qualityTest=crisp&vendorStream=1&rafTest=bounded',{waitUntil:'domcontentloaded',timeout:30000});
   const adapterPromise=page.evaluate(async()=>{
     if(!navigator.gpu)return {available:false,reason:'navigator.gpu unavailable'};
     const adapter=await navigator.gpu.requestAdapter();
