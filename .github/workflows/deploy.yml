@@ -301,9 +301,47 @@ jobs:
           ref: cdc2e9eb800be092901b7772967d177a98ef2c5b
           path: _qa/fftcore
           persist-credentials: false
+      # Publish the isolated QA shader compatibility fix from the tested
+      # recovery commit. Production main and historical archives are built
+      # before this step; no production source or player save is changed.
+      - name: Checkout pinned QA recovery patch sources
+        uses: actions/checkout@v4
+        with:
+          ref: f0b0e236acf5e275127213228fa59a417010f5e6
+          path: _qa/patch
+          persist-credentials: false
+          sparse-checkout: |
+            src/ocean/ComputeMips.js
+            src/ocean/OceanFFT.js
+            src/ocean/FoamTexture.js
+            tools/prepare_stable_qa.py
+          sparse-checkout-cone-mode: false
       - name: Build isolated iPhone FFT diagnostic in /qa/fftcore/
         run: |
+          # Reuse the already tested QA patcher and adapter-safe shaders,
+          # while the published root and existing QA save namespace stay fixed.
+          test -s _qa/patch/tools/prepare_stable_qa.py
+          for file in ComputeMips.js OceanFFT.js FoamTexture.js; do
+            test -s "_qa/patch/src/ocean/$file"
+            cp "_qa/patch/src/ocean/$file" "src/ocean/$file"
+          done
+          cp _qa/patch/tools/prepare_stable_qa.py tools/prepare_stable_qa.py
           python3 tools/prepare_stable_qa.py
+          # A new service-worker and asset-cache namespace prevents an iPhone
+          # from inadvertently playing old cached JavaScript after publication.
+          # Save keys are deliberately NOT changed.
+          python3 - <<'PY'
+          from pathlib import Path
+          for relative in ('src/mobile/StartupAssetCache.js', 'public/sw.js'):
+              file = Path('_qa/fftcore') / relative
+              source = file.read_text()
+              assert 'bermuda-qa-fftcore-assets-v1' in source, relative
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v2')
+              if relative.endswith('StartupAssetCache.js'):
+                  assert 'bermuda-qa-fftcore-startup-ready-v1' in source
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v2')
+              file.write_text(source)
+          PY
           cd _qa/fftcore
           npm ci
           node test/gpu-trace.mjs
@@ -314,6 +352,14 @@ jobs:
           cd ../..
           mkdir -p dist/qa/fftcore
           cp -a _qa/fftcore/dist/. dist/qa/fftcore/
+          python3 - <<'PY'
+          from pathlib import Path
+          page = Path('dist/qa/fftcore/index.html')
+          html = page.read_text()
+          assert html.count('<head>') == 1
+          html = html.replace('<head>', '<head>\n<meta name="bermuda-qa-patch" content="f0b0e236acf5e275127213228fa59a417010f5e6">', 1)
+          page.write_text(html)
+          PY
           test -s dist/qa/fftcore/index.html
           test -s dist/qa/fftcore/sw.js
           test -d dist/qa/fftcore/assets
