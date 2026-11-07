@@ -58,8 +58,8 @@ for old, label in (
     ("this.oceanLOD = new CDLOD( { gridSize: Number( qs.get( 'G' ) || 32 ), leafSize: 8, levels: 12, minY: - 25, maxY: 25 } );", "ocean LOD geometry"),
     ("this.surface = new WaterSurface( { fft: this.fft, cdlod: this.oceanLOD, foamTexture: this.foamTexture } );", "water surface module"),
 ):
-    prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " start');\\n"
-    suffix = "\\nif (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " complete');"
+    prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " start');\n"
+    suffix = "\nif (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " complete');"
     replace_once("src/App.js", old, prefix + old + suffix)
 
 # All graphical settings match the playable Crisp FFT-core case.
