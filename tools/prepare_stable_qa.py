@@ -296,6 +296,33 @@ for old, label in (
     replace_once("src/App.js", old, prefix + old + suffix)
 print("QA diagnostic: traced all remaining initialization work before mobile shader precompile")
 
+# Diagnostic A/B: on SwiftShader the page has reached all post-creation
+# checkpoints, but can stall forever awaiting an rAF before shader precompile.
+# Allow a bounded timer fallback only when ?rafTest=bounded. This is NOT a
+# render-quality reduction or a deployment default. Keep normal iPhone flow.
+replace_once("src/App.js",
+    "if ( typeof requestAnimationFrame === 'function' ) await new Promise( ( r ) => requestAnimationFrame( () => setTimeout( r, 0 ) ) );",
+    """if (typeof requestAnimationFrame === 'function') {
+                const bounded = qs.get('rafTest') === 'bounded';
+                await new Promise(resolve => {
+                    let finished = false;
+                    let fallback;
+                    const done = () => {
+                        if (finished) return;
+                        finished = true;
+                        if (fallback !== undefined) clearTimeout(fallback);
+                        resolve();
+                    };
+                    requestAnimationFrame(() => setTimeout(done, 0));
+                    if (bounded) fallback = setTimeout(() => {
+                        if (qs.get('gpuTrace') === '1')
+                            console.info('[Bermuda init] rAF wait exceeded 350ms; using bounded progress fallback');
+                        done();
+                    }, 350);
+                });
+            }""")
+print("QA diagnostic: opt-in bounded rAF transition (rafTest=bounded), no GPU fidelity change")
+
 # Bermuda QA vegetation: retain mixed trees, shrubs and coastal greenery,
 # but stop filling the hills and walking corridors with repeated coconut palms.
 # The same palm meshes and lighting are kept; only placement and far draw
