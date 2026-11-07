@@ -5,6 +5,9 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const port=4187, address='http://127.0.0.1:'+port;
+const siteArg=process.argv.find(a=>a.startsWith('--site-dir='));
+const siteDir=siteArg ? siteArg.slice('--site-dir='.length) : '.';
+console.log('[WebGPU smoke] Testing compiled site from '+siteDir);
 const results={status:'unverified',adapter:null,started:false,frame:null,samples:[],errors:[],console:[],pageErrors:[]};
 const hardStop=setTimeout(()=>{
   results.status='timeout-software-webgpu';
@@ -15,7 +18,7 @@ const hardStop=setTimeout(()=>{
   process.exit(2);
 },150000);
 
-const server=spawn('npm',['run','preview','--','--host','127.0.0.1','--port',String(port)],{stdio:'ignore'});
+const server=spawn('npm',['run','preview','--','--host','127.0.0.1','--port',String(port)],{cwd:siteDir,stdio:'ignore'});
 let browser, failure=null;
 try {
   let ready=false;
