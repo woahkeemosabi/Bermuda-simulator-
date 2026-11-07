@@ -342,7 +342,7 @@ replace_once("src/engine/gpu/GPU.js",
 
 \t\t\t\th.failed = true;
 \t\t\t\tgpuError( 'pipeline '+kind, desc.label+': '+String(e?.message||e) );
-\t\t\t\tconsole.error( \`WebGPU: pipeline "\${ desc.label }" failed: \${ e.message.split( '\\n' ).slice( 0, 6 ).join( '\\n' ) }\` );
+\t\t\t\tconsole.error( `WebGPU: pipeline "${ desc.label }" failed: ${ e.message.split( '\\n' ).slice( 0, 6 ).join( '\\n' ) }` );
 
 \t\t\t} );
 
