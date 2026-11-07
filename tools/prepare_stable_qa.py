@@ -288,8 +288,7 @@ for old, label in (
     ("this.audio = qs.has( 'noAudio' ) ? null : new SoundScape();", "soundscape creation"),
     ("this.game = new Game( this );", "fishing and vendor gameplay creation"),
     ("this.profiler = new Profiler( renderer );", "profiler creation"),
-    ("this.updateSun();", "lighting and sun update"),
-    ("installDebugViews( this );", "debug view installation"),
+    ("\t\tthis.updateSun();\n\t\tinstallDebugViews( this );", "sun and debug view setup"),
     ("await progress( 0.36, 'Compiling shaders…', 0.95 );", "precompile progress animation"),
 ):
     prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " start');\n"
