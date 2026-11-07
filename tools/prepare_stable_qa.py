@@ -11,6 +11,17 @@ from shutil import copyfile
 root = Path("_qa/fftcore")
 assert (root / "src/main.js").is_file(), "Missing pinned QA checkout"
 
+# Keep the original QA source pin and save namespace. Apply only the
+# adapter-safe mip shaders from this tested repository commit, so a successful
+# change can be evaluated at the SAME /qa/fftcore/ URL rather than deploying
+# an untested alternate game or modifying production saves.
+for relative in ("src/ocean/ComputeMips.js", "src/ocean/OceanFFT.js"):
+    current = Path(relative)
+    target = root / relative
+    assert current.is_file() and target.is_file(), f"Missing QA mip source: {relative}"
+    copyfile(current, target)
+print("QA shader compatibility: copied 4-storage-texture mip kernels; FFT size/cascades preserved")
+
 
 def replace_once(path: str, old: str, new: str):
     file = root / path
