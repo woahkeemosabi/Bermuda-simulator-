@@ -62,6 +62,32 @@ for old, label in (
     suffix = "\nif (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " complete');"
     replace_once("src/App.js", old, prefix + old + suffix)
 
+# Trace the subsequent systems after WaterSurface without changing their
+# construction, allocations, scheduling, visual quality or saved-game state.
+for old, label in (
+    ("this.seaDetail = new SeaDetail();", "sea detail"),
+    ("this.shore = new ShoreWaves( this.terrainGPU );", "shore-wave module"),
+    ("installGroundBounce( { terrain: this.terrainGPU, clouds: this.clouds } );", "ground bounce"),
+    ("this.sceneRenderer = new SceneRenderer( engine.meshRenderer, scene, camera );", "scene renderer"),
+    ("this.query = new WaterQuery( renderer, this.surface );", "water query setup"),
+    ("await progress( 0.34, 'Preparing the shaders…' );", "shader preparation progress"),
+    ("await this.precompile();", "pipeline precompilation"),
+):
+    prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " start');\n"
+    suffix = "\nif (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " complete');"
+    replace_once("src/App.js", old, prefix + old + suffix)
+
+for old, label in (
+    ("this.underwaterLighting = installUnderwaterLighting( {", "underwater light install start"),
+    ("this.refraction = new RefractionPass(", "refraction pass setup start"),
+    ("this.waterMaterial = new WaterMaterial( {", "water material setup start"),
+    ("this.waterMaterial.clouds = this.clouds;", "water material setup complete"),
+    ("this.post = mobileLite && !qs.has('fullPost')", "post-processing setup start"),
+    ("G.exposure.value = this.settings.exposure;", "post-processing setup complete"),
+):
+    prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + "');\n"
+    replace_once("src/App.js", old, prefix + old)
+
 # All graphical settings match the playable Crisp FFT-core case.
 replace_once("src/main.js",
     "const gpuTraceActive = mobileFastStart && new URLSearchParams(location.search).get('gpuTrace')==='1';",
