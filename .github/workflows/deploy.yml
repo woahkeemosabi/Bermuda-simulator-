@@ -320,13 +320,16 @@ jobs:
         run: |
           # Reuse the already tested QA patcher and adapter-safe shaders,
           # while the published root and existing QA save namespace stay fixed.
-          test -s _qa/patch/tools/prepare_stable_qa.py
+          # Apply the known-good baseline QA preparation before the isolated
+          # shader patch. The experimental PR patcher contains unrelated
+          # GPU precompile probes not compatible with this pinned QA snapshot.
+          python3 tools/prepare_stable_qa.py
           for file in ComputeMips.js OceanFFT.js FoamTexture.js; do
             test -s "_qa/patch/src/ocean/$file"
-            cp "_qa/patch/src/ocean/$file" "src/ocean/$file"
+            test -s "_qa/fftcore/src/ocean/$file"
+            cp "_qa/patch/src/ocean/$file" "_qa/fftcore/src/ocean/$file"
           done
-          cp _qa/patch/tools/prepare_stable_qa.py tools/prepare_stable_qa.py
-          python3 tools/prepare_stable_qa.py
+          echo 'Patched pinned QA with adapter-safe FFT/mip shaders from f0b0e236'
           # A new service-worker and asset-cache namespace prevents an iPhone
           # from inadvertently playing old cached JavaScript after publication.
           # Save keys are deliberately NOT changed.
