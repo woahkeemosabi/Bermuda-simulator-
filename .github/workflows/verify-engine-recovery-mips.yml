@@ -31,28 +31,42 @@ jobs:
         run: npm run build
 
   chromium-software-webgpu:
-    name: Chromium software-adapter shader smoke (not Safari)
+    name: Chromium software WebGPU on exact patched pinned iPhone QA (not Safari)
     needs: adapter-compatibility
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout existing iPhone QA source revision
+        uses: actions/checkout@v4
+        with:
+          ref: cdc2e9eb800be092901b7772967d177a98ef2c5b
+          path: _qa/fftcore
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - name: Install Chromium test runtime
+      - name: Install Chromium software-WebGPU test runtime
         run: |
           npm install --no-save --package-lock=false playwright
           npx playwright install --with-deps chromium
-      - run: npm run build
-      - name: Run instrumented Chromium WebGPU smoke
-        run: node scripts/qa-mip-webgpu-chromium.mjs
+      - name: Prepare and compile patched original iPhone QA
+        run: |
+          python3 tools/prepare_stable_qa.py
+          cd _qa/fftcore
+          npm ci
+          node --check src/App.js
+          node --check src/ocean/OceanFFT.js
+          node --check src/ocean/FoamTexture.js
+          npm run build
+      - name: Run Chromium on the exact pinned QA asset bundle
+        run: node scripts/qa-mip-webgpu-chromium.mjs --site-dir=_qa/fftcore
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mip-webgpu-chromium-report
+          name: mip-webgpu-chromium-pinned-qa-report
           path: audit-output/mip-webgpu-chromium.json
 
   pinned-iphone-qa:
