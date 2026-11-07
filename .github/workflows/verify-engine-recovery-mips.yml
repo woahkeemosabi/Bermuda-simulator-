@@ -54,3 +54,32 @@ jobs:
         with:
           name: mip-webgpu-chromium-report
           path: audit-output/mip-webgpu-chromium.json
+
+  pinned-iphone-qa:
+    name: Build the existing pinned FFT-core QA with compatibility fix
+    needs: adapter-compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout existing iPhone QA source revision
+        uses: actions/checkout@v4
+        with:
+          ref: cdc2e9eb800be092901b7772967d177a98ef2c5b
+          path: _qa/fftcore
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Apply original QA isolation and adapter-safe mip kernels
+        run: python3 tools/prepare_stable_qa.py
+      - name: Validate QA source and build, without deployment
+        run: |
+          cd _qa/fftcore
+          npm ci
+          node test/gpu-trace.mjs
+          node --check src/main.js
+          node --check src/ocean/ComputeMips.js
+          node --check src/ocean/OceanFFT.js
+          npm run build
