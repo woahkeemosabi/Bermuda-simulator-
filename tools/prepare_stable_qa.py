@@ -88,6 +88,32 @@ for old, label in (
     prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + "');\n"
     replace_once("src/App.js", old, prefix + old)
 
+# Determine whether Chromium's precompile stall occurs in PostFX build,
+# asynchronous shader pipeline drain, synchronous forced-hull render, or
+# queue completion. These are passive console markers in pinned QA only.
+replace_once("src/App.js",
+    "async precompile() {\n\n\t\tconst mr = this.engine.meshRenderer;",
+    "async precompile() {\n\n\t\tconsole.info('[Bermuda precompile] enter');\n\t\tconst mr = this.engine.meshRenderer;")
+replace_once("src/App.js",
+    "this.post._build();",
+    "console.info('[Bermuda precompile] post FX build start');\n\t\t\tthis.post._build();\n\t\t\tconsole.info('[Bermuda precompile] post FX build complete');")
+replace_once("src/App.js",
+    "await GPU.pipelinesReady();\n\t\tmr.precompiling = true;",
+    "console.info('[Bermuda precompile] initial pipelines start pending=' + GPU._pending?.size);\n\t\tawait GPU.pipelinesReady();\n\t\tconsole.info('[Bermuda precompile] initial pipelines complete');\n\t\tmr.precompiling = true;")
+replace_once("src/App.js",
+    "if ( sr.hullMasks.length ) mr.render( sr.hullMaskScene, {",
+    "console.info('[Bermuda precompile] hull mask render start');\n\t\tif ( sr.hullMasks.length ) mr.render( sr.hullMaskScene, {")
+replace_once("src/App.js",
+    "\t\ttry {\n\n\t\t\t// both water variants: with the hull-mask discard",
+    "\t\tconsole.info('[Bermuda precompile] hull mask render complete');\n\t\ttry {\n\n\t\t\t// both water variants: with the hull-mask discard")
+replace_once("src/App.js",
+    "this.waterMaterial.hullOverride = hull;\n\t\t\t\tthis.frame( 1 / 60 );",
+    "this.waterMaterial.hullOverride = hull;\n\t\t\t\tconsole.info('[Bermuda precompile] warm frame ' + hull + ' start');\n\t\t\t\tthis.frame( 1 / 60 );\n\t\t\t\tconsole.info('[Bermuda precompile] warm frame ' + hull + ' complete');")
+replace_once("src/App.js",
+    "\t\tthis.refraction.enabled = refr;\n\t\tawait GPU.pipelinesReady();\n\t\tawait GPU.queue.onSubmittedWorkDone();",
+    "\t\tthis.refraction.enabled = refr;\n\t\tconsole.info('[Bermuda precompile] final pipelines start pending=' + GPU._pending?.size);\n\t\tawait GPU.pipelinesReady();\n\t\tconsole.info('[Bermuda precompile] final pipelines complete; queue fence start');\n\t\tawait GPU.queue.onSubmittedWorkDone();\n\t\tconsole.info('[Bermuda precompile] queue fence complete');")
+print("QA precompile: installed passive checkpoints without changing shader compilation")
+
 # All graphical settings match the playable Crisp FFT-core case.
 replace_once("src/main.js",
     "const gpuTraceActive = mobileFastStart && new URLSearchParams(location.search).get('gpuTrace')==='1';",
