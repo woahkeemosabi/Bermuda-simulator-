@@ -7,6 +7,14 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 const port = 4187;
 const address = 'http://127.0.0.1:' + port;
 const results = { status:'unverified', adapter: null, frame: null, errors:[], console:[], pageErrors:[] };
+const hardStop = setTimeout(() => {
+  results.status = 'timeout-software-webgpu';
+  results.errors.push('Chromium WebGPU smoke exceeded 150s; renderer/adapter did not complete');
+  mkdirSync('audit-output',{recursive:true});
+  writeFileSync('audit-output/mip-webgpu-chromium.json', JSON.stringify(results,null,2));
+  console.error('WebGPU Chromium experiment timed out after 150s; not certified');
+  process.exit(2);
+},150000);
 const server = spawn('npm', ['run','preview','--','--host','127.0.0.1','--port',String(port)], { stdio:'ignore' });
 let browser;
 let failure = null;
@@ -38,7 +46,7 @@ try {
   page.on('pageerror', error => results.pageErrors.push(String(error).slice(0,700)));
   page.on('requestfailed', req => { if (/\.wgsl($|\?)/.test(req.url())) results.errors.push('WGSL fetch '+req.url()); });
   await page.goto(address+'/?gpuTrace=1&traceCase=fftcore&qualityTest=crisp&vendorStream=1', {waitUntil:'domcontentloaded',timeout:30000});
-  results.adapter=await page.evaluate(async()=>{
+  const adapterPromise=page.evaluate(async()=>{
     if(!navigator.gpu)return {available:false,reason:'navigator.gpu unavailable'};
     const adapter=await navigator.gpu.requestAdapter();
     if(!adapter)return {available:false,reason:'requestAdapter returned null'};
@@ -47,6 +55,10 @@ try {
       maxSampledTexturesPerShaderStage:adapter.limits.maxSampledTexturesPerShaderStage
     };
   });
+  results.adapter=await Promise.race([
+    adapterPromise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('WebGPU requestAdapter timed out after 15s')), 15000))
+  ]);
   if(results.adapter.available) {
     await page.waitForTimeout(55000);
     results.frame=await page.evaluate(()=>({
@@ -73,8 +85,9 @@ try {
   results.status='browser-experiment-failed';
   results.errors.push(String(error));
 } finally {
-  try{await browser?.close();}catch(_){}
+  try{await Promise.race([browser?.close() || Promise.resolve(),new Promise(r=>setTimeout(r,10000))]);}catch(_){}
   server.kill('SIGTERM');
+  clearTimeout(hardStop);
   mkdirSync('audit-output',{recursive:true});
   writeFileSync('audit-output/mip-webgpu-chromium.json',JSON.stringify(results,null,2));
   console.log(JSON.stringify(results,null,2));
