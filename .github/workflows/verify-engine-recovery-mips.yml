@@ -1,0 +1,31 @@
+name: WebGPU mip adapter-limit validation (no deploy)
+
+on:
+  push:
+    branches: ['engine-recovery/mip-storage-limit-20261107']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adapter-compatibility:
+    name: Validate 4-storage-texture compatibility and game logic
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Ensure every mip level is generated within standard WebGPU limits
+        run: node test/compute-mips-limits.mjs
+      - name: Preserve Bermuda world and gameplay
+        run: |
+          node test/game-logic.mjs
+          node test/bermuda-layout.mjs
+          node test/mobile-webgpu-isolation.mjs
+      - name: Compile the real game bundle
+        run: npm run build
