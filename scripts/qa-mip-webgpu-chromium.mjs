@@ -8,7 +8,7 @@ const port=4187, address='http://127.0.0.1:'+port;
 const siteArg=process.argv.find(a=>a.startsWith('--site-dir='));
 const siteDir=siteArg ? siteArg.slice('--site-dir='.length) : '.';
 console.log('[WebGPU smoke] Testing compiled site from '+siteDir);
-const results={status:'unverified',adapter:null,started:false,frame:null,samples:[],errors:[],console:[],pageErrors:[]};
+const results={status:'unverified',compileSlots:2,adapter:null,started:false,frame:null,samples:[],errors:[],console:[],pageErrors:[]};
 const hardStop=setTimeout(()=>{
   results.status='timeout-software-webgpu';
   results.errors.push('Browser/adapter experiment exceeded 150s');
@@ -39,7 +39,7 @@ try {
   page.on('console',msg=>{const line=msg.text();if(msg.type()==='error'||/^\[Bermuda (?:init|FFT|Foam|precompile|mobile-precompile|compile|warmup)\]/.test(line)){results.console.push(line.slice(0,1000)); if(/^\[Bermuda (?:init|FFT|Foam|precompile|mobile-precompile|compile|warmup)\]/.test(line))console.log('INIT_CHECKPOINT '+line);}});
   page.on('pageerror',e=>results.pageErrors.push(String(e).slice(0,1000)));
   page.on('requestfailed',req=>{if(/\.wgsl($|\?)/.test(req.url()))results.errors.push('WGSL fetch '+req.url());});
-  await page.goto(address+'/?gpuTrace=1&traceCase=fftcore&qualityTest=crisp&vendorStream=1&rafTest=bounded&pipelineBatch=2',{waitUntil:'domcontentloaded',timeout:30000});
+  await page.goto(address+'/?gpuTrace=1&traceCase=fftcore&qualityTest=crisp&vendorStream=1&rafTest=bounded&pipelineBatch=2&compileSlots=2',{waitUntil:'domcontentloaded',timeout:30000});
   const adapterPromise=page.evaluate(async()=>{
     if(!navigator.gpu)return {available:false,reason:'navigator.gpu unavailable'};
     const adapter=await navigator.gpu.requestAdapter();
