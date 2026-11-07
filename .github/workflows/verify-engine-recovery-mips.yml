@@ -29,3 +29,28 @@ jobs:
           node test/mobile-webgpu-isolation.mjs
       - name: Compile the real game bundle
         run: npm run build
+
+  chromium-software-webgpu:
+    name: Chromium software-adapter shader smoke (not Safari)
+    needs: adapter-compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Run instrumented Chromium WebGPU smoke
+        run: node scripts/qa-mip-webgpu-chromium.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mip-webgpu-chromium-report
+          path: audit-output/mip-webgpu-chromium.json
