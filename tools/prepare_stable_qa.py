@@ -114,6 +114,47 @@ replace_once("src/App.js",
     "\t\tthis.refraction.enabled = refr;\n\t\tconsole.info('[Bermuda precompile] final pipelines start pending=' + GPU._pending?.size);\n\t\tawait GPU.pipelinesReady();\n\t\tconsole.info('[Bermuda precompile] final pipelines complete; queue fence start');\n\t\tawait GPU.queue.onSubmittedWorkDone();\n\t\tconsole.info('[Bermuda precompile] queue fence complete');")
 print("QA precompile: installed passive checkpoints without changing shader compilation")
 
+# Controlled A/B probe on the pinned QA copy ONLY. ?compileSlots=2 caps the
+# number of in-flight asynchronous pipeline compiles. With no query flag the
+# original WebGPU pipeline scheduling is preserved. This tests whether the
+# Chromium software-adapter precompile hang is related to compile pressure,
+# without changing ocean resolution, effects, game saves, or production main.
+replace_once("src/engine/gpu/GPU.js",
+    "\t_pending: new Set(),",
+    """\t_pending: new Set(),
+    _compileActive: 0,
+    _compileWaiting: [],
+    _acquireCompileSlot(limit) {
+        if (this._compileActive < limit) {
+            this._compileActive++;
+            return Promise.resolve();
+        }
+        return new Promise(resolve => this._compileWaiting.push(resolve));
+    },
+    _releaseCompileSlot() {
+        const next = this._compileWaiting.shift();
+        if (next) next();
+        else this._compileActive--;
+    },""")
+replace_once("src/engine/gpu/GPU.js",
+    "const p = Promise.resolve().then( () => {",
+    """const compileSlots = Math.min(4, Math.max(0,
+            Number(new URLSearchParams(location.search).get('compileSlots')) || 0));
+        if (compileSlots && !this._compileCapLogged) {
+            this._compileCapLogged = true;
+            console.info('[Bermuda compile] async pipeline concurrency cap=' + compileSlots);
+        }
+        const gate = compileSlots ? this._acquireCompileSlot(compileSlots) : Promise.resolve();
+        const p = gate.then( () => {""")
+replace_once("src/engine/gpu/GPU.js",
+    "} ).finally( () => this._pending.delete( p ) );",
+    """} ).finally( () => {
+            if (compileSlots) this._releaseCompileSlot();
+            this._pending.delete(p);
+        } );""")
+print("QA compile experiment: optional 2-slot asynchronous pipeline gate installed")
+
+
 # All graphical settings match the playable Crisp FFT-core case.
 replace_once("src/main.js",
     "const gpuTraceActive = mobileFastStart && new URLSearchParams(location.search).get('gpuTrace')==='1';",
