@@ -330,6 +330,11 @@ jobs:
             cp "_qa/patch/src/ocean/$file" "_qa/fftcore/src/ocean/$file"
           done
           echo 'Patched pinned QA with adapter-safe FFT/mip shaders from f0b0e236'
+          # Optional geometry-only lobster trial. The restored default geometry
+          # remains identical; ?assetTrial=lobster-v1 opts into the trial.
+          python3 tools/prepare_lobster_visual_trial.py
+          node --check _qa/fftcore/src/game/Lobsters.js
+          grep -q 'assetTrial.*lobster-v1' _qa/fftcore/src/game/Lobsters.js
           # A new service-worker and asset-cache namespace prevents an iPhone
           # from inadvertently playing old cached JavaScript after publication.
           # Save keys are deliberately NOT changed.
@@ -339,10 +344,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v5')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v6')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v5')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v6')
               file.write_text(source)
           PY
           cd _qa/fftcore
