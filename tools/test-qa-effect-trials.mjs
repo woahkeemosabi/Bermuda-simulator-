@@ -82,6 +82,8 @@ const mainSource = readFileSync(new URL('../_qa/fftcore/src/main.js', import.met
 const appSource = readFileSync(new URL('../_qa/fftcore/src/App.js', import.meta.url), 'utf8');
 const snowSource = readFileSync(new URL('../_qa/fftcore/src/fx/MarineSnow.js', import.meta.url), 'utf8');
 const cloudSource = readFileSync(new URL('../_qa/fftcore/src/sky/SkyProClouds.js', import.meta.url), 'utf8');
+const skySource = readFileSync(new URL('../_qa/fftcore/src/sky/Sky.js', import.meta.url), 'utf8');
+const waterSource = readFileSync(new URL('../_qa/fftcore/src/ocean/WaterMaterial.js', import.meta.url), 'utf8');
 const engineSource = readFileSync(new URL('../_qa/fftcore/src/engine/Engine.js', import.meta.url), 'utf8');
 const reportSource = readFileSync(new URL('../_qa/fftcore/src/mobile/GpuAudit.js', import.meta.url), 'utf8');
 assert.match(appSource, /query: mobileLite && qs\.get\('snowCompat'\) === '1' \? null : this\.query/);
@@ -98,7 +100,20 @@ assert.match(appSource, /mobileAlwaysIncrementalPanorama = true/);
 assert.match(cloudSource, /this\.panoWarm && ! this\.mobileAlwaysIncrementalPanorama/);
 assert.match(cloudSource, /if \( this\.mobileAlwaysIncrementalPanorama \) this\.panoWarm = false/);
 assert.match(reportSource, /QA cloud panorama budget/);
-assert.match(reportSource, /QA source revision coastal-v15/);
+assert.match(reportSource, /QA source revision coastal-v16/);
+assert.match(reportSource, /QA night visual/);
+for (const shader of [cloudSource, skySource, waterSource]) {
+  assert.match(shader, /QA_NIGHT_VISUAL/);
+  assert.match(shader, /get\('nightVisual'\) === '1'/);
+  assert.match(shader, /get\('fx'\) === 'coastal-seven'/);
+}
+assert.match(skySource, /let duskSun = atmosphereParams\.sunDir\.y/);
+assert.match(skySource, /horizon \* \( vec3f/);
+assert.match(cloudSource, /let moonCloud = min\( m\.color/);
+assert.match(cloudSource, /textureStore\( scPano, texel, vec4f\( cloudRadiance/);
+assert.match(cloudSource, /: `textureStore\( scPano, texel, vec4f\( m\.color/);
+assert.match(waterSource, /if \( dbg == 0 && in\.front \)/);
+assert.match(waterSource, /r\.color = vec4f\( res, 1\.0 \)/);
 assert.match(reportSource, /QA resolution budget/);
 assert.match(reportSource, /QA light bake/);
 assert.match(appSource, /qs\.get\('lightBake'\) === 'prime'/);
