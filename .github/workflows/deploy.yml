@@ -335,7 +335,7 @@ jobs:
           python3 tools/prepare_lobster_visual_trial.py
           node --check _qa/fftcore/src/game/Lobsters.js
           grep -q 'assetTrial.*lobster-v1' _qa/fftcore/src/game/Lobsters.js
-          # Exactly one isolated visual feature can be tested per URL.
+          # Isolated trials: one visual effect or the fixed coastal-six stack (clouds off).
           # Default /qa/fftcore/ preserves the restored, working GPU budget.
           python3 tools/prepare_effect_trials_qa.py
           node --check _qa/fftcore/src/main.js
@@ -350,10 +350,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v7')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v8')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v7')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v8')
               file.write_text(source)
           PY
           cd _qa/fftcore
