@@ -106,7 +106,7 @@ assert.match(appSource, /mobileAlwaysIncrementalPanorama = true/);
 assert.match(cloudSource, /this\.panoWarm && ! this\.mobileAlwaysIncrementalPanorama/);
 assert.match(cloudSource, /if \( this\.mobileAlwaysIncrementalPanorama \) this\.panoWarm = false/);
 assert.match(reportSource, /QA cloud panorama budget/);
-assert.match(reportSource, /QA source revision coastal-v18/);
+assert.match(reportSource, /QA source revision coastal-v19/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
