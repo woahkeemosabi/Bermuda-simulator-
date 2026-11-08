@@ -33,7 +33,10 @@ export const BERMUDA_LOOK = {
 	},
 	atmosphere: { rayleighScale: 1.03, mieScale: 0.52, mieG: 0.78, ozoneScale: 1.0, cloudCoverage: 0.22, cloudShadowStrength: 0.46 },
 	wind: { speed: 3.7, direction: [ 0.28, 0.96 ] },
-	terrain: { coastalKeepHeight: 4, midOriginalHeight: 60, midReliefScale: 0.23, highReliefScale: 0.12, maxHeight: 38, highlandRockScale: 0.52 },
+	// The inherited Tidewater volcanic massif reaches over 300 m before remapping.
+	// Keep the coastline/gameplay heightfield but suppress its fictional mountain silhouette.
+	// These are temporary low-relief blockout heights, not surveyed Bermuda elevations.
+	terrain: { coastalKeepHeight: 4, midOriginalHeight: 60, midReliefScale: 0.12, highReliefScale: 0.013, maxHeight: 18, highlandRockScale: 0.35 },
 };
 
 let terrainProfileInstalled = false;
@@ -63,18 +66,8 @@ function installBermudaTerrainProfile() {
 			heights[ i ] = Math.min( T.maxHeight, out );
 			if ( rock ) rock[ i ] *= T.highlandRockScale;
 		}
-		const smooth = t => t*t*(3-2*t);
-		for ( let iz = 0; iz < this.res; iz ++ ) {
-			const z = this.origin + iz * this.texel;
-			if ( z < -189 || z > -101 ) continue;
-			for ( let ix = 0; ix < this.res; ix ++ ) {
-				const x = this.origin + ix * this.texel, r = Math.hypot( x + 80, z + 145 );
-				if ( r >= 44 ) continue;
-				const t = Math.max( 0, Math.min( 1, ( r - 20 ) / 24 ) );
-				const index = iz * this.res + ix;
-				heights[ index ] = Math.max( heights[ index ], 4 + 13 * ( 1 - smooth( t ) ) );
-			}
-		}
+		// Do not add the former 17 m circular mound at (-80, -145): it rose directly
+		// behind the starting waterfront and was mistaken for a Bermuda mountain.
 		return result;
 	};
 }
