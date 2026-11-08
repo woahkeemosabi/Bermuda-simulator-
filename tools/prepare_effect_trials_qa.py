@@ -322,6 +322,45 @@ new_rev = """  'QA source revision coastal-v18',
 assert audit_source.count(old_rev) == 1, "QA vendor report revision anchor changed"
 audit.write_text(audit_source.replace(old_rev, new_rev, 1))
 
+# Remove the artificial continuous waterfront road that crosses the launch
+# beach in the iPhone screenshots. The pinned QA checkout predates this fix in
+# src/world/, so patch the isolated checkout as well as the main source tree.
+# Remove colliders at the same time: never leave an invisible beach barrier.
+blockout_file = root / 'src/world/BermudaBlockout.js'
+blockout_source = blockout_file.read_text()
+road_strip = "box(M.asphalt,-68,1.43,-49.2,34,.18,5,0,true,'bermuda-road',true);"
+assert blockout_source.count(road_strip) == 1, "Harbour central road source anchor changed"
+blockout_source = blockout_source.replace(road_strip,
+    "// Central elevated asphalt road and its collider removed: public beach is open.", 1)
+assert "bermuda-road',true" not in blockout_source, "Central road collider remains"
+assert "bermuda-landing',true" in blockout_source, "Dock approach was inadvertently removed"
+assert "bermuda-shop-apron',true" in blockout_source, "Vendor apron was inadvertently removed"
+blockout_file.write_text(blockout_source)
+
+upgrade_file = root / 'src/world/ReferenceWorldUpgrade.js'
+upgrade_src = upgrade_file.read_text()
+extension_start = "\t// Continue the waterfront road in both directions."
+extension_end = "\t// Keep the waterfront empty. Houses, garden walls, gateposts and shrubs are not spawned here."
+assert upgrade_src.count(extension_start) == 1, "Harbour road extensions start anchor changed"
+assert upgrade_src.count(extension_end) == 1, "Harbour road extensions end anchor changed"
+start_i = upgrade_src.index(extension_start)
+end_i = upgrade_src.index(extension_end, start_i)
+assert end_i > start_i, "Waterfront road patch bounds invalid"
+upgrade_src = (upgrade_src[:start_i] +
+    "\t// Artificial road extensions, walkable colliders and raised footway removed.\n"
+    "\t// Preserve an open beach and the original reference-upgrade runtime API.\n\n" +
+    upgrade_src[end_i:])
+assert "bermuda-road-extension" not in upgrade_src, "Invisible road extension collider remains"
+assert "bermuda-footway" not in upgrade_src, "Invisible footway collider remains"
+upgrade_file.write_text(upgrade_src)
+
+audit_src = audit.read_text()
+old_rev = "  'QA source revision coastal-v18',"
+new_rev = """  'QA source revision coastal-v19',
+  'QA beach road removed central-plus-two-extensions-and-footway',"""
+assert audit_src.count(old_rev) == 1, "Beach visual fix QA report revision anchor changed"
+audit.write_text(audit_src.replace(old_rev, new_rev, 1))
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
