@@ -344,10 +344,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v3')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v4')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v3')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v4')
               file.write_text(source)
           PY
           cd _qa/fftcore
@@ -365,7 +365,7 @@ jobs:
           page = Path('dist/qa/fftcore/index.html')
           html = page.read_text()
           assert html.count('<head>') == 1
-          html = html.replace('<head>', '<head>\n<meta name="bermuda-qa-patch" content="f0b0e236acf5e275127213228fa59a417010f5e6"><meta name="bermuda-visual-profile" content="coastal-v1">', 1)
+          html = html.replace('<head>', '<head>\n<meta name="bermuda-qa-patch" content="f0b0e236acf5e275127213228fa59a417010f5e6"><meta name="bermuda-visual-profile" content="coastal-v2-daylight">', 1)
           page.write_text(html)
           PY
           test -s dist/qa/fftcore/index.html
