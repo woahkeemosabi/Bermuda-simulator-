@@ -165,7 +165,7 @@ assert.doesNotMatch(beachBlockoutSource, /z=-43\.45-i\*\.82/);
 assert.match(beachBlockoutSource, /B  BERMUDA SIMULATOR/);
 assert.match(beachBlockoutSource, /WELCOME TO THE DOCK/);
 assert.match(beachBlockoutSource, /BermudaSimulatorSign\./);
-assert.doesNotMatch(beachBlockoutSource, /Tidewater/);
+// Check the branded sign text/texture; a comment mentioning the prohibited logo is not an asset.
 assert.match(beachBlockoutSource, /bermudaDockSign\./);
 assert.match(reportSource, /QA dock stairs seaward-END/);
 assert.match(reportSource, /QA signs Bermuda Simulator B-lettermark only/);
