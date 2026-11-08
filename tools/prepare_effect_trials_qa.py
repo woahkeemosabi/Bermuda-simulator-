@@ -206,6 +206,70 @@ new_revision = """  'QA source revision coastal-v15',
 assert audit_source.count(old_revision) == 1, "QA revision diagnostic anchor changed"
 audit.write_text(audit_source.replace(old_revision, new_revision, 1))
 
+# QA-only night-scene grading trial. The screenshots show bright cloud tiles
+# on a nearly black sky and overly turquoise water at 19:22. Do not alter
+# FFT simulation, sky LUTs, the weather preset, asset textures or the game clock.
+# All edits are behind ?fx=coastal-seven&nightVisual=1; default WGSL stays intact.
+night_guard = "const QA_NIGHT_VISUAL = typeof location !== 'undefined' && new URLSearchParams(location.search).get('fx') === 'coastal-seven' && new URLSearchParams(location.search).get('nightVisual') === '1';\n\n"
+
+sky_file = root / 'src/sky/Sky.js'
+sky_src = sky_file.read_text()
+sky_class = 'export class Sky {'
+assert sky_src.count(sky_class) == 1, 'Sky QA guard insertion anchor changed'
+sky_src = sky_src.replace(sky_class, night_guard + sky_class, 1)
+sky_base = 'var L = atmosphereSkyLuminance( dir );'
+sky_night = '''var L = atmosphereSkyLuminance( dir );
+${ QA_NIGHT_VISUAL ? `
+    // Low-cost coastal twilight and moonlit horizon, no additional passes.
+    let duskSun = atmosphereParams.sunDir.y;
+    let dusk = smoothstep( -0.24, -0.065, duskSun ) * ( 1.0 - smoothstep( -0.025, 0.06, duskSun ) );
+    let horizon = exp( -max( dir.y, 0.0 ) * 7.0 ) * smoothstep( -0.07, 0.03, dir.y );
+    L += horizon * ( vec3f( 0.011, 0.020, 0.040 ) * dusk + vec3f( 0.0025, 0.0050, 0.0100 ) * frame.night );
+` : '' }'''
+assert sky_src.count(sky_base) == 1, 'Sky night haze anchor changed'
+sky_file.write_text(sky_src.replace(sky_base, sky_night, 1))
+
+clouds_src = clouds_file.read_text()
+clouds_class = 'export class SkyProClouds {'
+assert clouds_src.count(clouds_class) == 1, 'Clouds QA guard anchor changed'
+clouds_src = clouds_src.replace(clouds_class, night_guard + clouds_class, 1)
+clouds_store = 'textureStore( scPano, texel, vec4f( m.color, 1.0 - m.alpha ) );'
+clouds_night = '''${ QA_NIGHT_VISUAL ? `
+    // Tone moonlit radiance down at the source rather than running a fullscreen filter.
+    let nocturnal = smoothstep( 0.27, 0.90, frame.night );
+    let moonCloud = min( m.color * vec3f( 0.12, 0.17, 0.23 ),
+        vec3f( 0.016, 0.022, 0.033 ) * m.alpha );
+    let cloudRadiance = mix( m.color, moonCloud, nocturnal );
+    textureStore( scPano, texel, vec4f( cloudRadiance, 1.0 - m.alpha ) );
+` : `textureStore( scPano, texel, vec4f( m.color, 1.0 - m.alpha ) );` }'''
+assert clouds_src.count(clouds_store) == 1, 'Cloud panorama radiance anchor changed'
+clouds_file.write_text(clouds_src.replace(clouds_store, clouds_night, 1))
+
+water_file = root / 'src/ocean/WaterMaterial.js'
+water_src = water_file.read_text()
+water_class = 'export class WaterMaterial extends Material {'
+assert water_src.count(water_class) == 1, 'Water QA guard anchor changed'
+water_src = water_src.replace(water_class, night_guard + water_class, 1)
+water_output = '\tr.color = vec4f( res, 1.0 );'
+water_night = '''${ QA_NIGHT_VISUAL ? `
+    // The same ocean optics, reduced tropical-water radiance after sunset.
+    // Keep underwater and all material debug modes unchanged.
+    if ( dbg == 0 && in.front ) {
+        let nocturnal = smoothstep( 0.24, 0.90, frame.night );
+        res = mix( res, res * vec3f( 0.28, 0.40, 0.55 ), nocturnal * 0.75 );
+    }
+` : '' }
+\tr.color = vec4f( res, 1.0 );'''
+assert water_src.count(water_output) == 1, 'Water radiance output anchor changed'
+water_file.write_text(water_src.replace(water_output, water_night, 1))
+
+audit_src = audit.read_text()
+old_rev = "  'QA source revision coastal-v15',"
+new_rev = """  'QA source revision coastal-v16',
+  'QA night visual '+(typeof location!=='undefined' && new URLSearchParams(location.search).get('fx')==='coastal-seven' && new URLSearchParams(location.search).get('nightVisual')==='1'?'sky-cloud-water':'off'),"""
+assert audit_src.count(old_rev) == 1, 'Night visual QA report anchor changed'
+audit.write_text(audit_src.replace(old_rev, new_rev, 1))
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
