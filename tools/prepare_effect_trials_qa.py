@@ -477,20 +477,22 @@ qa_main_new = """        // QA-only performance study: preserve Safari's one-in-
                 }
             };
             window.__bermudaQAPerf=qa;
-            if(qaPerfMode==='60') app.engine.mobileGpuTargetIntervalMs=16;
+            if(qaPerfMode==='60') { app.engine.mobileGpuTargetIntervalMs=16; window.__bermudaMobilePaceMs=16; }
             // Optional independent workload trial: keeps all effect textures
             // and FFT simulation; only recalculation cadence changes.
             if(qaPerfMode==='60' && qaPerfQuery.get('simBudget')==='balanced') {
                 window.__bermudaQASimBudget = {
                     label:'caustics15-shore15-cloud10',
-                    last:{}, runs:{}, skips:{},
-                    allow(key,intervalMs){
+                    last:{}, runs:{}, skips:{}, delta:{}, usedDelta:{},
+                    allow(key,intervalMs,dt=0){
+                        this.delta[key]=(this.delta[key]||0)+dt;
                         const now=performance.now();
                         if(now-(this.last[key]??-Infinity)<intervalMs){
                             this.skips[key]=(this.skips[key]||0)+1;
                             return false;
                         }
                         this.last[key]=now;
+                        this.usedDelta[key]=this.delta[key]; this.delta[key]=0;
                         this.runs[key]=(this.runs[key]||0)+1;
                         return true;
                     }
@@ -528,7 +530,7 @@ effect_anchors=[
     ("if ( this.shoreSim ) this.shoreSim.update();",
      "if ( this.shoreSim && (!window.__bermudaQASimBudget || window.__bermudaQASimBudget.allow('shore',67))) this.shoreSim.update();"),
     ("if ( this.clouds ) this.clouds.update( dt, this.camera );",
-     "if ( this.clouds && (!window.__bermudaQASimBudget || window.__bermudaQASimBudget.allow('clouds',100))) this.clouds.update( dt, this.camera );")
+     "if ( this.clouds && (!window.__bermudaQASimBudget || window.__bermudaQASimBudget.allow('clouds',100,dt))) this.clouds.update( window.__bermudaQASimBudget ? window.__bermudaQASimBudget.usedDelta.clouds : dt, this.camera );")
 ]
 for old,new in effect_anchors:
     assert qa_app.count(old)==1, "Visual cadence anchor changed: "+old
