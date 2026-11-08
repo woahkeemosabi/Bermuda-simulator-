@@ -52,8 +52,30 @@ configureQAEffectTrial(forcedCloud);
 assert.equal(forcedCloud.searchParams.get('noClouds'), '1');
 assert.equal(forcedCloud.searchParams.has('cloudtest'), false);
 
+// Coastal-seven preserves all six passes and adds ONLY panorama clouds.
+const withClouds = run('coastal-seven');
+assert.equal(withClouds.selected, 'coastal-seven');
+assert.deepEqual(QA_EFFECT_STACKS['coastal-seven'].disableFlags,
+  ['noCaustics','noShadows','noSim','noBreakers','noSpray','noWake','noClouds']);
+for (const flag of flags) {
+  const expected = QA_EFFECT_STACKS['coastal-seven'].disableFlags.includes(flag) ? null : '1';
+  assert.equal(withClouds.url.searchParams.get(flag), expected, 'coastal-seven: '+flag);
+}
+assert.equal(withClouds.url.searchParams.get('cloudtest'), 'panorama', 'clouds use panorama-only mode');
+assert.equal(withClouds.url.searchParams.get('noHaze'), '1', 'haze still isolated');
+assert.equal(withClouds.url.searchParams.get('envtest'), 'skip', 'reflection bake remains off');
+assert.equal(withClouds.url.searchParams.get('G'), '12', 'FFT workload unchanged');
+assert.equal(withClouds.url.searchParams.get('qualityTest'), 'crisp', 'same render quality');
+assert.equal(withClouds.url.searchParams.get('fx'), 'coastal-seven', 'seven-effect preset selected');
+// A URL requesting full clouds cannot override the conservative panorama mode.
+const forcedFullCloud = new URL('https://localhost/qa/fftcore/?fx=coastal-seven&cloudtest=full');
+configureGpuTraceUrl(forcedFullCloud);
+configureQAEffectTrial(forcedFullCloud);
+assert.equal(forcedFullCloud.searchParams.get('cloudtest'), 'panorama');
+assert.equal(forcedFullCloud.searchParams.has('noClouds'), false);
+
 const unknown = run('all-at-once');
 assert.equal(unknown.selected,'baseline');
 assert.equal(unknown.url.searchParams.has('fx'),false);
 for(const flag of flags) assert.equal(unknown.url.searchParams.get(flag),'1');
-console.log('QA effect tests passed: unchanged default + '+Object.keys(QA_EFFECT_TRIALS).length+' single-effect cases + coastal-six locked stack (clouds off)');
+console.log('QA effect tests passed: unchanged default + '+Object.keys(QA_EFFECT_TRIALS).length+' single-effect cases + coastal-six (clouds off) + coastal-seven (panorama clouds)');
