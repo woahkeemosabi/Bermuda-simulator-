@@ -69,33 +69,10 @@ export function installReferenceWorldUpgrade( app ) {
 		return mesh;
 	};
 
-	// Continue the waterfront road in both directions. The original road only covered the immediate
-	// spawn block, which made the playable world read like a set. These pieces overlap that road by
-	// a metre so there are no visual/collision seams. Nothing is placed across the seaward edge: the
-	// barrier removed from the RELIC area stays gone.
-	const roadY = 1.43;
-	for ( const road of [
-		{ x: - 98.0, z: - 49.2, w: 28, d: 5.0 },
-		{ x: - 38.0, z: - 49.2, w: 28, d: 5.0 },
-	] ) {
-		box( M.asphalt, road.x, roadY, road.z, road.w, 0.18, road.d );
-		colliders.addBox(
-			new Vector3( road.x, roadY, road.z ),
-			new Vector3( road.w * 0.5, 0.09, road.d * 0.5 ),
-			0,
-			{ tag: 'bermuda-road-extension', walkable: true }
-		);
-	}
-
-	// Landward footway gives the road a believable Bermuda residential edge without fencing the car
-	// in. It is low enough to remain driveable at driveway gaps and never forms a seaward barrier.
-	box( M.path, - 68, 1.39, - 53.25, 88, 0.12, 2.15 );
-	colliders.addBox(
-		new Vector3( - 68, 1.39, - 53.25 ),
-		new Vector3( 44, 0.06, 1.075 ),
-		0,
-		{ tag: 'bermuda-footway', walkable: true }
-	);
+	// Keep the launch beach clear: remove the two raised roadway extensions
+	// and their walkable collision boxes, together with the elevated footway.
+	// The broad grey slabs were obscuring both shoreline and water on iPhone.
+	// Preserve the public runtime group and the real dock/landing geometry.
 
 	// Keep the waterfront empty. Houses, garden walls, gateposts and shrubs are not spawned here.
 
