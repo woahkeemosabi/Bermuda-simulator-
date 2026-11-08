@@ -106,7 +106,7 @@ assert.match(appSource, /mobileAlwaysIncrementalPanorama = true/);
 assert.match(cloudSource, /this\.panoWarm && ! this\.mobileAlwaysIncrementalPanorama/);
 assert.match(cloudSource, /if \( this\.mobileAlwaysIncrementalPanorama \) this\.panoWarm = false/);
 assert.match(reportSource, /QA cloud panorama budget/);
-assert.match(reportSource, /QA source revision coastal-v20/);
+assert.match(reportSource, /QA source revision coastal-v21/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -148,7 +148,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v20/);
+assert.match(reportSource, /QA source revision coastal-v21/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
@@ -158,17 +158,19 @@ assert.doesNotMatch(waterfrontUpgradeSource, /const roadY = 1\.43/);
 assert.match(beachBlockoutSource, /bermuda-landing',true/);
 assert.match(beachBlockoutSource, /bermuda-shop-apron',true/);
 assert.doesNotMatch(beachBlockoutSource, /bermuda-approach-ramp',true/);
-assert.match(beachBlockoutSource, /bermuda-outer-step',true/);
-assert.match(beachBlockoutSource, /bermuda-outer-step-landing',true/);
-assert.match(beachBlockoutSource, /const top=outerTops\[i\],z=-17\.45\+i\*\.85/);
-assert.doesNotMatch(beachBlockoutSource, /z=-43\.45-i\*\.82/);
-assert.match(beachBlockoutSource, /B  BERMUDA SIMULATOR/);
-assert.match(beachBlockoutSource, /WELCOME TO THE DOCK/);
-assert.match(beachBlockoutSource, /BermudaSimulatorSign\./);
-// Check the branded sign text/texture; a comment mentioning the prohibited logo is not an asset.
-assert.match(beachBlockoutSource, /bermudaDockSign\./);
-assert.match(reportSource, /QA dock stairs seaward-END/);
-assert.match(reportSource, /QA signs Bermuda Simulator B-lettermark only/);
+assert.match(beachBlockoutSource, /bermuda-beach-pier-step',true/);
+assert.match(beachBlockoutSource, /const stairZ0=-50\.1,stairZ1=-47\.0/);
+assert.match(beachBlockoutSource, /terrain\.heightAt\(-65,-50\.1\)/);
+assert.match(beachBlockoutSource, /Math\.ceil\(Math\.abs\(pierTop-beachTop\)\/\.18\)/);
+assert.match(beachBlockoutSource, /visualKey='beach-pier-stairs'/);
+assert.doesNotMatch(beachBlockoutSource, /bermuda-outer-step/);
+assert.doesNotMatch(beachBlockoutSource, /bermuda-outer-step-landing/);
+assert.doesNotMatch(beachBlockoutSource, /dock-brand-signs/);
+assert.doesNotMatch(beachBlockoutSource, /BermudaSimulatorSign/);
+assert.doesNotMatch(beachBlockoutSource, /bermudaDockSign/);
+assert.doesNotMatch(beachBlockoutSource, /makeSign\(/);
+assert.match(reportSource, /QA dock access landward-beach-to-pier/);
+assert.match(reportSource, /QA added signs NONE/);
 assert.match(waterfrontUpgradeSource, /app\.bermudaReferenceUpgrade = \{ group, materials: M \}/);
 
 const unknown = run('all-at-once');
