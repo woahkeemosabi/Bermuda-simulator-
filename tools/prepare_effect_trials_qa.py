@@ -180,6 +180,32 @@ new_bake_report = """  'QA source revision coastal-v14',
 assert audit_source.count(old_bake_report) == 1, "Light-bake QA report anchor changed"
 audit.write_text(audit_source.replace(old_bake_report, new_bake_report, 1))
 
+# Opt-in output-only render-resolution cap for a controlled same-device A/B.
+# iPhone reports jumped from 462x817 to 524x927 (+28.7% pixels) while
+# gameplay FPS fell from 13.6 to 7.8. The cap reduces ONLY framebuffer
+# pixels, preserving CSS sizing, touch coordinates, aspect, FFT, and effects.
+# Recompute at every resize so Safari viewport changes do not bypass the cap.
+engine_file = root / "src/engine/Engine.js"
+engine_src = engine_file.read_text()
+old_dpr = "\t\tconst dpr = this.renderScale;"
+new_dpr = """        const qaCap = typeof location !== 'undefined'
+            && new URLSearchParams(location.search).get('fx') === 'coastal-seven'
+            && new URLSearchParams(location.search).get('resCap') === '462';
+        const dpr = qaCap
+            ? Math.min(this.renderScale, 462 / Math.max(1, w), 817 / Math.max(1, h))
+            : this.renderScale;
+        if (qaCap && typeof window !== 'undefined')
+            window.__bermudaQAResolutionBudget = 'max-462x817';"""
+assert engine_src.count(old_dpr) == 1, "Engine output DPR resize anchor changed"
+engine_file.write_text(engine_src.replace(old_dpr, new_dpr, 1))
+
+audit_source = audit.read_text()
+old_revision = "  'QA source revision coastal-v14',"
+new_revision = """  'QA source revision coastal-v15',
+  'QA resolution budget '+(typeof window!=='undefined'?(window.__bermudaQAResolutionBudget||'original-output'):'not browser'),"""
+assert audit_source.count(old_revision) == 1, "QA revision diagnostic anchor changed"
+audit.write_text(audit_source.replace(old_revision, new_revision, 1))
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
