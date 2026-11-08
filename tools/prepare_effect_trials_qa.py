@@ -151,6 +151,35 @@ new_cloud_report = """  'QA source revision coastal-v13',
 assert audit_source.count(old_cloud_report) == 1, "Cloud pano budget report anchor changed"
 audit.write_text(audit_source.replace(old_cloud_report, new_cloud_report, 1))
 
+# Opt-in A/B: one-time terrain sun-shadow + ground-bounce GPU bake.
+# GroundBounce wraps TerrainGPU.updateSunShadow, so freeze AFTER installation
+# and AFTER one successful bake. Cascaded object shadows, sky cloud shadows,
+# all coastal effects, the FFT and gameplay remain untouched.
+# A loss shortly after Terrain Sun Shadow + Ground Bounce is a lead, not proof.
+app_source = app_file.read_text()
+old_light_setup = "installGroundBounce( { terrain: this.terrainGPU, clouds: this.clouds } );"
+new_light_setup = """installGroundBounce( { terrain: this.terrainGPU, clouds: this.clouds } );
+        if (mobileLite && qs.get('fx') === 'coastal-seven' && qs.get('lightBake') === 'prime') {
+            const originalUpdateSunShadow = this.terrainGPU.updateSunShadow.bind(this.terrainGPU);
+            let completedBakes = 0;
+            this.terrainGPU.updateSunShadow = (renderer, force = false) => {
+                if (completedBakes > 0) return false;
+                const baked = originalUpdateSunShadow(renderer, force);
+                if (baked) completedBakes++;
+                return baked;
+            };
+            window.__bermudaQALightBake = 'one-time-terrain-plus-bounce';
+        }"""
+assert app_source.count(old_light_setup) == 1, "Terrain + ground-bounce installation anchor changed"
+app_file.write_text(app_source.replace(old_light_setup, new_light_setup, 1))
+
+audit_source = audit.read_text()
+old_bake_report = "  'QA source revision coastal-v13',"
+new_bake_report = """  'QA source revision coastal-v14',
+  'QA light bake '+(typeof window!=='undefined'?(window.__bermudaQALightBake||'normal-rebake'):'not browser'),"""
+assert audit_source.count(old_bake_report) == 1, "Light-bake QA report anchor changed"
+audit.write_text(audit_source.replace(old_bake_report, new_bake_report, 1))
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
