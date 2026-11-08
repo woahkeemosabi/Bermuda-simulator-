@@ -404,7 +404,7 @@ audit.write_text(audit_src.replace(old_marker, new_marker, 1))
 # No change to default QA or production visuals, physics, save or performance.
 qa_engine_file = root / 'src/engine/Engine.js'
 qa_engine = qa_engine_file.read_text()
-old_mobile_gate = "if ( this._gpuInFlight || ( this._mobileLastFrame && t - this._mobileLastFrame < 42 ) ) return;"
+old_mobile_gate = "if ( this._gpuInFlight || ( this._mobileLastFrame && t - this._mobileLastFrame < (window.__bermudaMobilePaceMs || 42) ) ) return;"
 new_mobile_gate = """if ( this._gpuInFlight ) {
                     if ( qaPerf ) qaPerf.skippedInFlight++;
                     return;
