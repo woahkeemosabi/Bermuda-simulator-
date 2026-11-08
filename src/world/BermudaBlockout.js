@@ -10,7 +10,7 @@ function makePierConcrete(name,color){
  mat.surface=`
   let fCell=floor(in.P*12.0);
   var q=fract(fCell*vec3f(0.1031,0.11369,0.13787));
-  q += dot(q,q.yzx+vec3f(33.33));
+  q += vec3f(dot(q,q.yzx+vec3f(33.33)));
   let fleck=fract((q.x+q.y)*q.z);
   let coarseCell=floor(in.P*1.55);
   let coarse=fract(dot(coarseCell,vec3f(0.071,0.137,0.193))*0.6180339);
