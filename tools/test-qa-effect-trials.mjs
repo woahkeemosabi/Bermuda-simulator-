@@ -106,7 +106,7 @@ assert.match(appSource, /mobileAlwaysIncrementalPanorama = true/);
 assert.match(cloudSource, /this\.panoWarm && ! this\.mobileAlwaysIncrementalPanorama/);
 assert.match(cloudSource, /if \( this\.mobileAlwaysIncrementalPanorama \) this\.panoWarm = false/);
 assert.match(reportSource, /QA cloud panorama budget/);
-assert.match(reportSource, /QA source revision coastal-v21/);
+assert.match(reportSource, /QA source revision coastal-v22/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -148,7 +148,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v21/);
+assert.match(reportSource, /QA source revision coastal-v22/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
@@ -171,6 +171,18 @@ assert.doesNotMatch(beachBlockoutSource, /bermudaDockSign/);
 assert.doesNotMatch(beachBlockoutSource, /makeSign\(/);
 assert.match(reportSource, /QA dock access landward-beach-to-pier/);
 assert.match(reportSource, /QA added signs NONE/);
+assert.match(reportSource, /QA pier material pale-weathered-concrete/);
+assert.match(reportSource, /QA pier deck 7 concrete expansion joints/);
+assert.match(beachBlockoutSource, /makePierConcrete\(name,color\)/);
+assert.match(beachBlockoutSource, /s\.albedo \*= \(0\.94\+0\.055\*fleck\+0\.045\*coarse\)/);
+assert.match(beachBlockoutSource, /concrete:makePierConcrete\('weathered-pier-concrete',0xc9ceca\)/);
+assert.match(beachBlockoutSource, /const joints=new InstancedMesh\(GEO.box,M.joint,7\)/);
+assert.match(beachBlockoutSource, /visualKey='pier-coping'/);
+assert.doesNotMatch(beachBlockoutSource, /const planks=/);
+assert.doesNotMatch(beachBlockoutSource, /M\.wood/);
+assert.doesNotMatch(beachBlockoutSource, /dock-wood/);
+assert.match(beachBlockoutSource, /box\(M.concrete,-65,\.55,-30,5\.2,\.9,34/);
+assert.match(beachBlockoutSource, /box\(M.concrete,-64,\.58,-14\.5,5\.4,\.96,4\.8/);
 assert.match(waterfrontUpgradeSource, /app\.bermudaReferenceUpgrade = \{ group, materials: M \}/);
 
 const unknown = run('all-at-once');
