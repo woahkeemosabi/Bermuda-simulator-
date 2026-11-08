@@ -85,6 +85,8 @@ const cloudSource = readFileSync(new URL('../_qa/fftcore/src/sky/SkyProClouds.js
 const skySource = readFileSync(new URL('../_qa/fftcore/src/sky/Sky.js', import.meta.url), 'utf8');
 const waterSource = readFileSync(new URL('../_qa/fftcore/src/ocean/WaterMaterial.js', import.meta.url), 'utf8');
 const engineSource = readFileSync(new URL('../_qa/fftcore/src/engine/Engine.js', import.meta.url), 'utf8');
+const characterSource = readFileSync(new URL('../_qa/fftcore/src/world/ProductionMeshyAssets.js', import.meta.url), 'utf8');
+const skinSource = readFileSync(new URL('../_qa/fftcore/src/engine/render/Skinning.js', import.meta.url), 'utf8');
 const reportSource = readFileSync(new URL('../_qa/fftcore/src/mobile/GpuAudit.js', import.meta.url), 'utf8');
 assert.match(appSource, /query: mobileLite && qs\.get\('snowCompat'\) === '1' \? null : this\.query/);
 assert.match(appSource, /__bermudaQASnowCompatibility = 'fft-sea-level-waterline'/);
@@ -100,7 +102,15 @@ assert.match(appSource, /mobileAlwaysIncrementalPanorama = true/);
 assert.match(cloudSource, /this\.panoWarm && ! this\.mobileAlwaysIncrementalPanorama/);
 assert.match(cloudSource, /if \( this\.mobileAlwaysIncrementalPanorama \) this\.panoWarm = false/);
 assert.match(reportSource, /QA cloud panorama budget/);
-assert.match(reportSource, /QA source revision coastal-v16/);
+assert.match(reportSource, /QA source revision coastal-v17/);
+assert.match(reportSource, /QA NPC texture stream/);
+assert.match(characterSource, /get\('npcLoad'\) === 'near'/);
+assert.match(characterSource, /gltf\.__bermudaTextureRole = prefix/);
+assert.match(characterSource, /QA_NPC_PROXIMITY \? state\.characters\.locomotionPromise : state\.characters\.extrasPromise/);
+assert.match(characterSource, /Math\.hypot\(position\.x \+ 51, position\.z \+ 55\.9\) <= 24/);
+assert.match(characterSource, /loaded-full-resolution/);
+assert.match(characterSource, /resolveLocomotion\(\)/);
+assert.match(skinSource, /g\.__bermudaTextureRole \? 'char\.'/);
 assert.match(reportSource, /QA night visual/);
 for (const shader of [cloudSource, skySource, waterSource]) {
   assert.match(shader, /QA_NIGHT_VISUAL/);
