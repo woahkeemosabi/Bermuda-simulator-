@@ -494,7 +494,9 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		}
 
+		gpuStage( 'Precompile: waiting initial pipelines' );
 		await GPU.pipelinesReady();
+		gpuStage( 'Precompile: mesh variants' );
 		mr.precompiling = true;
 		this.refraction.enabled = true;
 		const sr = this.sceneRenderer, hm = sr.hullMaskRT;
@@ -521,8 +523,11 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.waterMaterial.hullOverride = null;
 		mr.precompiling = false;
 		this.refraction.enabled = refr;
+		gpuStage( 'Precompile: waiting mesh variants' );
 		await GPU.pipelinesReady();
+		gpuStage( 'Precompile: waiting GPU queue' );
 		await GPU.queue.onSubmittedWorkDone();
+		gpuStage( 'Precompile: complete' );
 
 	}
 
@@ -782,6 +787,13 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			this.fft.update( dt );
 			this._fftInitialized = true;
 		}
+		// Optional A/B startup isolation. Keep the exact same FFT, water, shading and
+		// rendering work, but submit the initial FFT compute before other bakes.
+		// Queue ordering preserves texture dependencies between command buffers.
+		if ( this.mobileLite && this.qs.get( 'gpuStartup' ) === 'split' && GPU.frame === 1 ) {
+			gpuStage( 'Startup FFT submission', GPU.frame );
+			GPU.submit();
+		}
 		this.seaDetail.update( dt );
 		this.query.setCamera( this.camera.position.x, this.camera.position.z );
 		this.boatCtl.queueQueries();
@@ -826,6 +838,14 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			( this.atmosphere.mobileInitStage >= 3 && this.atmosphere._svValid &&
 			  !this.atmosphere.mobileSkyViewDispatched );
 		if ( atmosphereReadyForReflections ) this.environment.update( dt );
+
+		// Optional second submission boundary isolates the first-run lighting /
+		// water compute from the scene's shadow and transparency render passes.
+		// No effect or output resource is disabled; this is opt-in until tested.
+		if ( this.mobileLite && this.qs.get( 'gpuStartup' ) === 'split' && GPU.frame === 1 ) {
+			gpuStage( 'Startup lighting submission', GPU.frame );
+			GPU.submit();
+		}
 
 		// ---- world
 		gpuStage('Island world preparation', GPU.frame);

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const source=fs.readFileSync(new URL('../src/ocean/UnderwaterLighting.js',import.meta.url),'utf8');
+assert.match(source,/const kernelWaves = new ComputeKernel/);
+assert.match(source,/const kernelDetails = new ComputeKernel/);
+assert.match(source,/bindings: \{ uwMapParams: \{ uniform: mapParams \}, uwOutA: \{ storageTexture: A/);
+assert.match(source,/bindings: \{ uwMapParams: \{ uniform: mapParams \}, uwOutB: \{ storageTexture: B/);
+assert.match(source,/let lw = underwaterLongWaves/);
+assert.match(source,/let dk = \$\{ caustics && caustics\.module/);
+assert.match(source,/textureStore\( uwOutA/);
+assert.match(source,/textureStore\( uwOutB/);
+assert.match(source,/for \( const lv of levels \) for \( const kernel of lv\.kernels \) kernel\.dispatch/);
+assert.doesNotMatch(source,/label: 'Underwater Light Map '/,'combined overbudget kernel must not remain');
+console.log('Underwater baked waves/detail map split source checks passed');

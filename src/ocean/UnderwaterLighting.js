@@ -127,10 +127,14 @@ ${ T ? '	h *= smoothstep( 0.0, 3.0, frame.seaLevel - terrainHeightAt( xz ) );' :
 
 		const texel = extent / MAP_N;
 		const A = make( 'uwWaves' + l ), B = make( 'uwLevel' + l );
-		const kernel = new ComputeKernel( {
-			label: 'Underwater Light Map ' + l,
-			modules: [ helpers, ...( caustics && caustics.module ? [ caustics.module ] : [] ) ],
-			bindings: { uwMapParams: { uniform: mapParams }, uwOutA: { storageTexture: A, access: 'write' }, uwOutB: { storageTexture: B, access: 'write' } },
+		// Separate the physically different map channels into two compute pipelines:
+		// wave height/slope/foam and mean level/caustic gust factor. Together their
+		// inherited samplers can exceed maxSampledTexturesPerShaderStage=16.
+		// The output textures, resolution and shading calculations are unchanged.
+		const kernelWaves = new ComputeKernel( {
+			label: 'Underwater Waves Map ' + l,
+			modules: [ helpers ],
+			bindings: { uwMapParams: { uniform: mapParams }, uwOutA: { storageTexture: A, access: 'write' } },
 			workgroupSize: [ 8, 8, 1 ],
 			code: /* wgsl */`
 @compute @workgroup_size( WG_X, WG_Y, WG_Z )
@@ -138,12 +142,24 @@ fn main( @builtin( global_invocation_id ) gid: vec3u ) {
 	let xz = ( vec2f( gid.xy ) + 0.5 ) * ${ texel } + uwMapParams.origin${ l };
 	let lw = underwaterLongWaves( xz, ${ texel } );
 	textureStore( uwOutA, vec2u( gid.xy ), vec4f( lw.height - frame.seaLevel, lw.slope, sat( lw.foam ) ) );
+}
+`,
+		} );
+		const kernelDetails = new ComputeKernel( {
+			label: 'Underwater Detail Map ' + l,
+			modules: [ helpers, ...( caustics && caustics.module ? [ caustics.module ] : [] ) ],
+			bindings: { uwMapParams: { uniform: mapParams }, uwOutB: { storageTexture: B, access: 'write' } },
+			workgroupSize: [ 8, 8, 1 ],
+			code: /* wgsl */`
+@compute @workgroup_size( WG_X, WG_Y, WG_Z )
+fn main( @builtin( global_invocation_id ) gid: vec3u ) {
+	let xz = ( vec2f( gid.xy ) + 0.5 ) * ${ texel } + uwMapParams.origin${ l };
 	let dk = ${ caustics && caustics.module ? 'causticsDetailK( xz )' : '1.0' };
 	textureStore( uwOutB, vec2u( gid.xy ), vec4f( underwaterMeanLevel( xz ) - frame.seaLevel, dk, 0.0, 1.0 ) );
 }
 `,
 		} );
-		return { extent, texel, A, B, kernel, origin: origins[ l ] };
+		return { extent, texel, A, B, kernels: [ kernelWaves, kernelDetails ], origin: origins[ l ] };
 
 	} );
 
@@ -210,7 +226,7 @@ fn _uwMapLookup( xz: vec2f, waves: bool ) -> UwMapSample {
 
 		}
 
-		for ( const lv of levels ) lv.kernel.dispatch( [ MAP_N / 8, MAP_N / 8, 1 ] );
+		for ( const lv of levels ) for ( const kernel of lv.kernels ) kernel.dispatch( [ MAP_N / 8, MAP_N / 8, 1 ] );
 		bakedOnce = true;
 
 	};
