@@ -17,9 +17,8 @@ export function installBermudaBlockout(app){
  const cyl=(mat,x,y,z,r,h,collide=false,tag='bermuda')=>{const mesh=addScaled(GEO.cyl,mat,x,y,z,r,h,r);if(collide)colliders.addCylinder(x,z,r,y-h*.5,y+h*.5,{tag});return mesh;};
  const sphere=(mat,x,y,z,r)=>addScaled(GEO.sphere,mat,x,y,z,r,r,r);
 
- // Waterfront: keep the roadway open to the beach/car area. The old continuous limestone seawall
- // read as an artificial barrier and blocked the clean route between the road and waterfront.
- box(M.asphalt,-68,1.43,-49.2,34,.18,5,0,true,'bermuda-road',true);
+ // Open beach: the former raised asphalt strip at z=-49.2 crossed the sand.
+ // Remove its mesh AND walkable collider, retaining the dock approach and shops.
  visualKey='approach'; box(M.wood,-65,.55,-30,5.2,.9,34,0,true,'bermuda-landing',true);
  // Smooth the final dock-to-road rise into five shallow walkable terraces. The old 0.5 m step
  // forced mobile players to use UP just to reach RELIC; normal navigation should not require a jump.
