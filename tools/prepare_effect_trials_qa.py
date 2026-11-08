@@ -361,6 +361,44 @@ new_rev = """  'QA source revision coastal-v19',
 assert audit_src.count(old_rev) == 1, "Beach visual fix QA report revision anchor changed"
 audit.write_text(audit_src.replace(old_rev, new_rev, 1))
 
+# Remove the inappropriate grey roadway across the playable launch beach.
+# These meshes are purely blockout road + two road extensions + raised footway;
+# their associated colliders must also be removed (not merely hidden). Keep
+# Bermuda landing, shop apron, stairs, piles, fish buyer, bait shop and boats.
+# This is a QA visual/world correction, not a collision-visibility toggle.
+blockout_file = root / "src/world/BermudaBlockout.js"
+blockout_source = blockout_file.read_text()
+old_beach_road = "  box(M.asphalt,-68,1.43,-49.2,34,.18,5,0,true,'bermuda-road',true);"
+assert blockout_source.count(old_beach_road) == 1, "Launch beach road anchor changed"
+blockout_source = blockout_source.replace(old_beach_road,
+    "  // Coastal QA: no elevated asphalt block across the sandy launch beach.", 1)
+blockout_file.write_text(blockout_source)
+
+reference_file = root / "src/world/ReferenceWorldUpgrade.js"
+reference_source = reference_file.read_text()
+old_road_start = "\t// Continue the waterfront road in both directions."
+old_road_end = "\t// Keep the waterfront empty. Houses, garden walls, gateposts and shrubs are not spawned here."
+assert reference_source.count(old_road_start) == 1, "Reference road start anchor changed"
+assert reference_source.count(old_road_end) == 1, "Reference road end anchor changed"
+road_start = reference_source.index(old_road_start)
+road_end = reference_source.index(old_road_end)
+assert road_start < road_end, "Reference road removal bounds invalid"
+removed_roads = reference_source[road_start:road_end]
+assert removed_roads.count("'bermuda-road-extension'") == 1
+assert removed_roads.count("'bermuda-footway'") == 1
+assert removed_roads.count("colliders.addBox(") == 2
+reference_source = (reference_source[:road_start]
+    + "\t// Coastal QA: beach is open sand and shallow water; no raised asphalt road, extensions or footway.\n\n"
+    + reference_source[road_end:])
+reference_file.write_text(reference_source)
+
+audit_source = audit.read_text()
+old_revision = "  'QA source revision coastal-v18',"
+new_revision = """  'QA source revision coastal-v19',
+  'QA launch beach road removed '+(app?.bermudaBlockout?'YES (asphalt, extensions, footway and colliders)':'scene-not-ready'),"""
+assert audit_source.count(old_revision) == 1, "Beach QA revision anchor changed"
+audit.write_text(audit_source.replace(old_revision, new_revision, 1))
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
