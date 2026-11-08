@@ -106,7 +106,7 @@ assert.match(appSource, /mobileAlwaysIncrementalPanorama = true/);
 assert.match(cloudSource, /this\.panoWarm && ! this\.mobileAlwaysIncrementalPanorama/);
 assert.match(cloudSource, /if \( this\.mobileAlwaysIncrementalPanorama \) this\.panoWarm = false/);
 assert.match(reportSource, /QA cloud panorama budget/);
-assert.match(reportSource, /QA source revision coastal-v22/);
+assert.match(reportSource, /QA source revision coastal-v23/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -148,7 +148,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v22/);
+assert.match(reportSource, /QA source revision coastal-v23/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
@@ -171,11 +171,11 @@ assert.doesNotMatch(beachBlockoutSource, /bermudaDockSign/);
 assert.doesNotMatch(beachBlockoutSource, /makeSign\(/);
 assert.match(reportSource, /QA dock access landward-beach-to-pier/);
 assert.match(reportSource, /QA added signs NONE/);
-assert.match(reportSource, /QA pier material pale-weathered-concrete/);
+assert.match(reportSource, /QA pier material pale-concrete shader-free/);
 assert.match(reportSource, /QA pier deck 7 concrete expansion joints/);
-assert.match(beachBlockoutSource, /makePierConcrete\(name,color\)/);
-assert.match(beachBlockoutSource, /s\.albedo \*= \(0\.94\+0\.055\*fleck\+0\.045\*coarse\)/);
-assert.match(beachBlockoutSource, /concrete:makePierConcrete\('weathered-pier-concrete',0xc9ceca\)/);
+assert.match(beachBlockoutSource, /concrete:makeMaterial\('weathered-pier-concrete',0xc9ceca,\.98\)/);
+assert.doesNotMatch(beachBlockoutSource, /makePierConcrete/);
+assert.doesNotMatch(beachBlockoutSource, /mat\.surface=/);
 assert.match(beachBlockoutSource, /const joints=new InstancedMesh\(GEO.box,M.joint,7\)/);
 assert.match(beachBlockoutSource, /visualKey='pier-coping'/);
 assert.doesNotMatch(beachBlockoutSource, /const planks=/);
