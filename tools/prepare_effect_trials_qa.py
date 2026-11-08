@@ -40,9 +40,23 @@ replace_once(
             ? ' + '+window.__bermudaQAEffectTrial : '');""",
 )
 
+# Report the actual runtime state so a cached or incorrectly normalized URL
+# cannot masquerade as a seven-effect clouds test. Diagnostic-only: no GPU
+# passes, materials, rendering settings, or player saves are modified.
+audit = root / "src/mobile/GpuAudit.js"
+trace = audit.read_text()
+old_cloud_line = "  'Cloud experiment '+(typeof window!=='undefined'?(window.__bermudaCloudExperiment||'unknown'):'not browser'),"
+assert trace.count(old_cloud_line) == 1, "Cloud diagnostic source anchor changed"
+new_cloud_lines = """  'QA selected FX '+(typeof window!=='undefined'?(window.__bermudaQAEffectTrial||'unknown'):'not browser'),
+  'QA URL FX '+(typeof location!=='undefined'?(new URLSearchParams(location.search).get('fx')||'none'):'not browser'),
+  'QA cloud instance '+(app?.clouds?.constructor?.name||'none')+
+      ' | panoramaOnly '+(app?.clouds?.mobilePanoramaOnly===true?'YES':'NO'),
+  'Cloud experiment '+(typeof window!=='undefined'?(window.__bermudaCloudExperiment||'unknown'):'not browser'),"""
+audit.write_text(trace.replace(old_cloud_line, new_cloud_lines, 1))
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
 assert "getFftCoreVisualProfile('crisp')" in out
 assert "window.__bermudaMobilePaceMs" in out
-print("One-at-a-time QA FX trials installed; default FFT-core renderer unchanged")
+print("QA FX single/six/seven cases installed with runtime cloud-state diagnostics; game settings unchanged")
