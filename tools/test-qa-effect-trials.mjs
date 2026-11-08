@@ -78,6 +78,7 @@ assert.equal(forcedFullCloud.searchParams.has('noClouds'), false);
 // Opt-in MarineSnow shader compatibility A/B: the default still uses the
 // original surface-query shader; ?snowCompat=1 removes only that dependency.
 // The FFT sampler remains used for particle motion and waterline clipping.
+const mainSource = readFileSync(new URL('../_qa/fftcore/src/main.js', import.meta.url), 'utf8');
 const appSource = readFileSync(new URL('../_qa/fftcore/src/App.js', import.meta.url), 'utf8');
 const snowSource = readFileSync(new URL('../_qa/fftcore/src/fx/MarineSnow.js', import.meta.url), 'utf8');
 const reportSource = readFileSync(new URL('../_qa/fftcore/src/mobile/GpuAudit.js', import.meta.url), 'utf8');
@@ -87,6 +88,9 @@ assert.match(snowSource, /if \( query && query\.module \) modules\.push\( query\
 assert.match(snowSource, /frame\.seaLevel \+ sway\.y - p\.y/);
 assert.match(reportSource, /QA MarineSnow profile/);
 assert.match(reportSource, /QA cloud instance/);
+assert.match(mainSource, /__bermudaQAGameplay = \{ startedAt: performance\.now\(\), submissions: 0 \}/);
+assert.match(reportSource, /qaGameplaySubmissions/);
+assert.match(reportSource, /QA gameplay FPS last 15s/);
 
 const unknown = run('all-at-once');
 assert.equal(unknown.selected,'baseline');
