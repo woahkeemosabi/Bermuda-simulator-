@@ -4,13 +4,30 @@ import { WATERFRONT_DECK } from './bermuda/HarbourLayout.js';
 
 const START = { x: - 63.4, z: - 20.0, yaw: Math.PI };
 function makeMaterial(name,color,roughness=.9){return new Material({name:'bermuda-'+name,color,roughness,metalness:0,underwaterLighting:'lite',localLightsCheap:true,receiveShadows:false});}
+function makePierConcrete(name,color){
+ const mat=makeMaterial(name,color,.97);
+ // Salt-weathered cast concrete in world metres: no additional texture bindings.
+ mat.surface=`
+  let fCell=floor(in.P*12.0);
+  var q=fract(fCell*vec3f(0.1031,0.11369,0.13787));
+  q += dot(q,q.yzx+vec3f(33.33));
+  let fleck=fract((q.x+q.y)*q.z);
+  let coarseCell=floor(in.P*1.55);
+  let coarse=fract(dot(coarseCell,vec3f(0.071,0.137,0.193))*0.6180339);
+  let aggregate=select(1.0,0.83,fleck>0.986);
+  let tidal=1.0-0.10*(1.0-smoothstep(0.08,0.74,in.P.y))*(1.0-abs(in.N.y));
+  s.albedo *= (0.94+0.055*fleck+0.045*coarse)*aggregate*tidal;
+  s.roughness=0.98;
+ `;
+ return mat;
+}
 function isMobileProfile(){if(typeof navigator==='undefined')return false;return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&Math.min(screen.width,screen.height)<1024);}
 
 export function installBermudaBlockout(app){
  if(!app||!app.scene||!app.terrainData||!app.colliders||app.bermudaBlockout)return app&&app.bermudaBlockout;
  const scene=app.scene,terrain=app.terrainData,colliders=app.colliders,mobileLite=isMobileProfile(),group=new Group(),visuals={};
  group.name='BermudaWorldBlockout'; let visualKey='quay';
- const M={limestone:makeMaterial('limestone',0xe8e3d6,.96),roof:makeMaterial('white-roof',0xf5f4ed,.92),pink:makeMaterial('pastel-pink',0xe9a7aa,.92),yellow:makeMaterial('pastel-yellow',0xe3cc79,.92),blue:makeMaterial('pastel-blue',0x9fc4d5,.92),mint:makeMaterial('pastel-mint',0xaecdb6,.92),wood:makeMaterial('dock-wood',0x8a7052,.97),asphalt:makeMaterial('road',0x777d80,.98),dark:makeMaterial('harbour-dark',0x234452,.8),green:makeMaterial('palmetto',0x4f7655,.94),trunk:makeMaterial('palm-trunk',0x806b4c,1),red:makeMaterial('channel-red',0xc7473f,.84)};
+ const M={limestone:makeMaterial('limestone',0xe8e3d6,.96),roof:makeMaterial('white-roof',0xf5f4ed,.92),pink:makeMaterial('pastel-pink',0xe9a7aa,.92),yellow:makeMaterial('pastel-yellow',0xe3cc79,.92),blue:makeMaterial('pastel-blue',0x9fc4d5,.92),mint:makeMaterial('pastel-mint',0xaecdb6,.92),concrete:makePierConcrete('weathered-pier-concrete',0xc9ceca),joint:makeMaterial('pier-expansion-joint',0x9ba4a0,.98),edge:makeMaterial('pier-coping',0xdbded8,.97),asphalt:makeMaterial('road',0x777d80,.98),dark:makeMaterial('harbour-dark',0x234452,.8),green:makeMaterial('palmetto',0x4f7655,.94),trunk:makeMaterial('palm-trunk',0x806b4c,1),red:makeMaterial('channel-red',0xc7473f,.84)};
  const GEO={box:new BoxGeometry(1,1,1),cyl:new CylinderGeometry(1,1,1,8),sphere:new SphereGeometry(1,8,6)};
  const addScaled=(geo,mat,x,y,z,sx,sy,sz,ry=0)=>{const mesh=new Mesh(geo,mat);mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.rotation.y=ry;mesh.castShadow=false;mesh.receiveShadow=false;(visuals[visualKey]||=[]).push(mesh);group.add(mesh);return mesh;};
  const box=(mat,x,y,z,w,h,d,ry=0,collide=false,tag='bermuda',walkable=false)=>{const mesh=addScaled(GEO.box,mat,x,y,z,w,h,d,ry);if(collide)colliders.addBox(new Vector3(x,y,z),new Vector3(w*.5,h*.5,d*.5),ry,{tag,walkable});return mesh;};
@@ -19,7 +36,7 @@ export function installBermudaBlockout(app){
 
  // Open beach: the former raised asphalt strip at z=-49.2 crossed the sand.
  // Remove its mesh AND walkable collider, retaining the dock approach and shops.
- visualKey='approach'; box(M.wood,-65,.55,-30,5.2,.9,34,0,true,'bermuda-landing',true);
+ visualKey='approach'; box(M.concrete,-65,.55,-30,5.2,.9,34,0,true,'bermuda-landing',true);
  // Beach-to-pier stairs are at the LANDWARD entrance of the existing dock (z=-47).
  // Begin at the actual sand elevation, then meet the 1.0m timber deck without a gap.
  // Tread height adapts in either direction to avoid an unwalkable lip on mobile.
@@ -30,14 +47,18 @@ export function installBermudaBlockout(app){
  visualKey='beach-pier-stairs';
  for(let i=0;i<stairCount;i++){
   const top=beachTop+(pierTop-beachTop)*(i+1)/stairCount,z=stairZ0+(i+.5)*treadDepth;
-  box(M.wood,-65,stairBase+(top-stairBase)*.5,z,5.2,top-stairBase,treadDepth+.025,0,true,'bermuda-beach-pier-step',true);
+  box(M.concrete,-65,stairBase+(top-stairBase)*.5,z,5.2,top-stairBase,treadDepth+.025,0,true,'bermuda-beach-pier-step',true);
  }
- visualKey='shop-apron'; box(M.wood,WATERFRONT_DECK.x,.55,WATERFRONT_DECK.z,WATERFRONT_DECK.width,.9,WATERFRONT_DECK.depth,0,true,'bermuda-shop-apron',true);
- const planks=new InstancedMesh(GEO.box,M.wood,120),matrix=new Matrix4();
- for(let i=0;i<120;i++){matrix.makeScale(WATERFRONT_DECK.width-.08,.045,.19).setPosition(WATERFRONT_DECK.x,.9775,WATERFRONT_DECK.z-WATERFRONT_DECK.depth*.5+.2+i*.2);planks.setMatrixAt(i,matrix);}planks.instanceMatrix.needsUpdate=true;planks.computeBoundingSphere();group.add(planks);
- const piles=new InstancedMesh(GEO.cyl,M.wood,14),caps=new InstancedMesh(GEO.cyl,M.limestone,14);let n=0;
+ visualKey='shop-apron'; box(M.concrete,WATERFRONT_DECK.x,.55,WATERFRONT_DECK.z,WATERFRONT_DECK.width,.9,WATERFRONT_DECK.depth,0,true,'bermuda-shop-apron',true);
+ // Seven subtle cast-concrete expansion joints replace 120 timber strips.
+ // Non-colliding details preserve the original walkable concrete slab.
+ const joints=new InstancedMesh(GEO.box,M.joint,7),matrix=new Matrix4();
+ for(let i=0;i<7;i++){matrix.makeScale(WATERFRONT_DECK.width-.25,.009,.028).setPosition(WATERFRONT_DECK.x,1.0045,WATERFRONT_DECK.z-WATERFRONT_DECK.depth*.5+2.7+i*3.15);joints.setMatrixAt(i,matrix);}joints.instanceMatrix.needsUpdate=true;joints.computeBoundingSphere();group.add(joints);
+ // Concrete coping along the two outer dock edges.
+ visualKey='pier-coping';for(const x of [WATERFRONT_DECK.x-WATERFRONT_DECK.width*.5+.055,WATERFRONT_DECK.x+WATERFRONT_DECK.width*.5-.055])box(M.edge,x,.993,WATERFRONT_DECK.z,.09,.045,WATERFRONT_DECK.depth);
+ const piles=new InstancedMesh(GEO.cyl,M.concrete,14),caps=new InstancedMesh(GEO.cyl,M.limestone,14);let n=0;
  for(const x of [WATERFRONT_DECK.x-WATERFRONT_DECK.width*.5+.18,WATERFRONT_DECK.x+WATERFRONT_DECK.width*.5-.18])for(let z=-36;z<=-15;z+=3.5){matrix.makeScale(.19,3.5,.19).setPosition(x,.25,z);piles.setMatrixAt(n,matrix);matrix.makeScale(.205,.10,.205).setPosition(x,2.04,z);caps.setMatrixAt(n,matrix);n++;colliders.addCylinder(x,z,.19,-1.5,2.1,{tag:'bermuda-piling'});}for(const mesh of [piles,caps]){mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();group.add(mesh);}
- visualKey='dock';box(M.wood,-64,.58,-14.5,5.4,.96,4.8,0,true,'bermuda-landing-head',true);visualKey='quay';
+ visualKey='dock';box(M.concrete,-64,.58,-14.5,5.4,.96,4.8,0,true,'bermuda-landing-head',true);visualKey='quay';
  for(const [x,z] of [[-68.8,-34],[-61.2,-34],[-68.8,-19],[-61.2,-19]])cyl(M.dark,x,1.34,z,.11,.7);
 
  // No cottages, roofs or residential collision boxes belong at the launch beach.
