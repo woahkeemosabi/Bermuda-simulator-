@@ -113,6 +113,44 @@ new_report_lines = """  'QA gameplay FPS last 15s '+(()=>{
 assert audit_source.count(old_report_line) == 1, "Gameplay FPS report insertion anchor changed"
 audit.write_text(audit_source.replace(old_report_line, new_report_lines, 1))
 
+# Opt-in panorama GPU budget: the previous iPhone device-loss trace ended
+# immediately after repeated full 64x20 cloud panorama dispatches. This is
+# correlation, not a proven root cause. ?cloudBudget=lattice forces the same
+# 512x160 panorama to refresh in 16x5 workgroup tiles across 16 frames.
+# No change to the default clouds path or the working coastal-seven preset.
+clouds_file = root / "src/sky/SkyProClouds.js"
+clouds_src = clouds_file.read_text()
+full_pano_branch = "if ( this.panoWarm ) {\n\n\t\t\tF.pano.value = [ 0, 0, 1, 0 ];"
+incremental_branch = "if ( this.panoWarm && ! this.mobileAlwaysIncrementalPanorama ) {\n\n\t\t\tF.pano.value = [ 0, 0, 1, 0 ];"
+assert clouds_src.count(full_pano_branch) == 1, "Clouds Panorama full-dispatch anchor changed"
+clouds_src = clouds_src.replace(full_pano_branch, incremental_branch, 1)
+old_pano_else = "} else {\n\n\t\t\tconst k = this.frameIndex % ( PANO_LATTICE * PANO_LATTICE );"
+new_pano_else = "} else {\n\n\t\t\tif ( this.mobileAlwaysIncrementalPanorama ) this.panoWarm = false;\n\t\t\tconst k = this.frameIndex % ( PANO_LATTICE * PANO_LATTICE );"
+assert clouds_src.count(old_pano_else) == 1, "Clouds Panorama lattice anchor changed"
+clouds_file.write_text(clouds_src.replace(old_pano_else, new_pano_else, 1))
+
+# Activate only on mobile SkyPro panorama clouds and only with the explicit
+# diagnostic URL. Do not change cloud quality, weather, or cloud coverage.
+app_source = app_file.read_text()
+old_cloud_mode = """this.clouds.mobilePanoramaOnly = true;
+				window.__bermudaCloudExperiment = 'panorama-only';"""
+new_cloud_mode = """this.clouds.mobilePanoramaOnly = true;
+				window.__bermudaCloudExperiment = 'panorama-only';
+                if (qs.get('fx') === 'coastal-seven' && qs.get('cloudBudget') === 'lattice') {
+                    this.clouds.mobileAlwaysIncrementalPanorama = true;
+                    window.__bermudaQACloudBudget = 'lattice-16-frame';
+                }"""
+assert app_source.count(old_cloud_mode) == 1, "App panorama-only setup anchor changed"
+app_file.write_text(app_source.replace(old_cloud_mode, new_cloud_mode, 1))
+
+audit_source = audit.read_text()
+old_cloud_report = "  'QA cloud instance '+(app?.clouds?.constructor?.name||'none')+"
+new_cloud_report = """  'QA source revision coastal-v13',
+  'QA cloud panorama budget '+(typeof window!=='undefined'?(window.__bermudaQACloudBudget||'original-full-warm'):'not browser'),
+  'QA cloud instance '+(app?.clouds?.constructor?.name||'none')+"""
+assert audit_source.count(old_cloud_report) == 1, "Cloud pano budget report anchor changed"
+audit.write_text(audit_source.replace(old_cloud_report, new_cloud_report, 1))
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
