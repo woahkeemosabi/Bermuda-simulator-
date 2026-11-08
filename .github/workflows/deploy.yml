@@ -330,6 +330,11 @@ jobs:
             cp "_qa/patch/src/ocean/$file" "_qa/fftcore/src/ocean/$file"
           done
           echo 'Patched pinned QA with adapter-safe FFT/mip shaders from f0b0e236'
+          # Apply cosmetic look changes only to the pre-existing QA checkout.
+          # ?look=classic retains exactly the prior look and render workload.
+          python3 tools/prepare_coastal_look_qa.py
+          node --check _qa/fftcore/src/world/BermudaIdentity.js
+          node --check _qa/fftcore/src/world/BermudaBlockout.js
           # A new service-worker and asset-cache namespace prevents an iPhone
           # from inadvertently playing old cached JavaScript after publication.
           # Save keys are deliberately NOT changed.
@@ -339,10 +344,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v2')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v3')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v2')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v3')
               file.write_text(source)
           PY
           cd _qa/fftcore
@@ -360,7 +365,7 @@ jobs:
           page = Path('dist/qa/fftcore/index.html')
           html = page.read_text()
           assert html.count('<head>') == 1
-          html = html.replace('<head>', '<head>\n<meta name="bermuda-qa-patch" content="f0b0e236acf5e275127213228fa59a417010f5e6">', 1)
+          html = html.replace('<head>', '<head>\n<meta name="bermuda-qa-patch" content="f0b0e236acf5e275127213228fa59a417010f5e6"><meta name="bermuda-visual-profile" content="coastal-v1">', 1)
           page.write_text(html)
           PY
           test -s dist/qa/fftcore/index.html
