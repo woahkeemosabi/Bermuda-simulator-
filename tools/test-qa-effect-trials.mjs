@@ -97,7 +97,12 @@ assert.match(appSource, /mobileAlwaysIncrementalPanorama = true/);
 assert.match(cloudSource, /this\.panoWarm && ! this\.mobileAlwaysIncrementalPanorama/);
 assert.match(cloudSource, /if \( this\.mobileAlwaysIncrementalPanorama \) this\.panoWarm = false/);
 assert.match(reportSource, /QA cloud panorama budget/);
-assert.match(reportSource, /QA source revision coastal-v13/);
+assert.match(reportSource, /QA source revision coastal-v14/);
+assert.match(reportSource, /QA light bake/);
+assert.match(appSource, /qs\.get\('lightBake'\) === 'prime'/);
+assert.match(appSource, /one-time-terrain-plus-bounce/);
+assert.match(appSource, /if \(completedBakes > 0\) return false/);
+assert.match(appSource, /if \(baked\) completedBakes\+\+/);
 
 
 const unknown = run('all-at-once');
