@@ -77,6 +77,42 @@ new_fallback = r"waterQueryHeightAtXZ( p.xz ) - p.y );\n' : '\tfade *= smoothste
 assert snow_source.count(old_fallback) == 1, "MarineSnow shader fallback anchor changed"
 snow_file.write_text(snow_source.replace(old_fallback, new_fallback, 1))
 
+# Gameplay-only FPS telemetry. Prior reports divided shader-preload time by
+# total frame submissions, understating real play FPS. Reset the clock on
+# Explore and keep a bounded 15-second ring of actual visible GPU submissions.
+# This is passive instrumentation: no pacing, workload or game logic changes.
+replace_once(
+    "gpuStage('Starting simulation (audio prepared)');",
+    """gpuStage('Starting simulation (audio prepared)');
+            window.__bermudaQAGameplay = { startedAt: performance.now(), submissions: 0 };"""
+)
+audit_source = audit.read_text()
+old_submit_line = "  a.lastSubmitAt=Math.round(now()-began);"
+new_submit_lines = """  a.lastSubmitAt=Math.round(now()-began);
+  const qaPlay = typeof window!=='undefined' ? window.__bermudaQAGameplay : null;
+  if (qaPlay && (typeof document==='undefined' || document.visibilityState==='visible')) {
+    qaPlay.submissions++;
+    const t = now();
+    const samples = a.qaGameplaySubmissions || (a.qaGameplaySubmissions = []);
+    samples.push(t);
+    while (samples.length && samples[0] < t-15000) samples.shift();
+  }"""
+assert audit_source.count(old_submit_line) == 1, "GPU submit telemetry anchor changed"
+audit_source = audit_source.replace(old_submit_line, new_submit_lines, 1)
+old_report_line = "  'QA MarineSnow profile '+(typeof window!=='undefined'?(window.__bermudaQASnowCompatibility||'original'):'not browser'),"
+new_report_lines = """  'QA gameplay FPS last 15s '+(()=>{
+    const q = typeof window!=='undefined' ? window.__bermudaQAGameplay : null;
+    if (!q) return 'waiting for Explore tap';
+    const t=now(),start=Math.max(q.startedAt,t-15000);
+    const samples=a.qaGameplaySubmissions||[];
+    const elapsedSeconds=(t-start)/1000;
+    const fps=elapsedSeconds>=1?(samples.length/elapsedSeconds).toFixed(1):'warming';
+    return fps+' | visible gameplay submissions '+q.submissions;
+  })(),
+  'QA MarineSnow profile '+(typeof window!=='undefined'?(window.__bermudaQASnowCompatibility||'original'):'not browser'),"""
+assert audit_source.count(old_report_line) == 1, "Gameplay FPS report insertion anchor changed"
+audit.write_text(audit_source.replace(old_report_line, new_report_lines, 1))
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
