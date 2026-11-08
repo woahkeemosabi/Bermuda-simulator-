@@ -1,0 +1,175 @@
+WebGPU Report  
+
+#1 high-performance  
+=====================  
+
+adapter info:  
+---------------  
+* architecture:     
+apple  
+* description:      
+apple  
+* device:           
+apple  
+* isFallbackAdapter:  
+false  
+* vendor:           
+apple  
+
+limits: 
+-------------------------------  
+* maxBindGroups:                            
+11  
+* maxBindGroupsPlusVertexBuffers:           
+30  
+* maxBindingsPerBindGroup:                  
+65535 (64k)  
+* maxBufferSize:                            
+1073741824 (1gb)  
+* maxColorAttachmentBytesPerSample:         
+64b  
+* maxColorAttachments:                      
+8  
+* maxComputeInvocationsPerWorkgroup:        
+1k  
+* maxComputeWorkgroupSizeX:                 
+1k  
+* maxComputeWorkgroupSizeY:                 
+1k  
+* maxComputeWorkgroupSizeZ:                 
+1k  
+* maxComputeWorkgroupStorageSize:           
+32768 (32k)  
+* maxComputeWorkgroupsPerDimension:         
+65535 (64k)  
+* maxDynamicStorageBuffersPerPipelineLayout:  
+65535 (64k)  
+* maxDynamicUniformBuffersPerPipelineLayout:  
+65535 (64k)  
+* maxInterStageShaderComponents:            
+124  
+* maxInterStageShaderVariables:             
+124  
+* maxSampledTexturesPerShaderStage:         
+44  
+* maxSamplersPerShaderStage:                
+22  
+* maxStorageBufferBindingSize:              
+1073741824 (1gb)  
+* maxStorageBuffersInFragmentStage:         
+**MISSING**  
+* maxStorageBuffersInVertexStage:           
+**MISSING**  
+* maxStorageBuffersPerShaderStage:          
+44  
+* maxStorageTexturesInFragmentStage:        
+**MISSING**  
+* maxStorageTexturesInVertexStage:          
+**MISSING**  
+* maxStorageTexturesPerShaderStage:         
+44  
+* maxTextureArrayLayers:                    
+2048 (2k)  
+* maxTextureDimension1D:                    
+16384 (16k)  
+* maxTextureDimension2D:                    
+16384 (16k)  
+* maxTextureDimension3D:                    
+2048 (2k)  
+* maxUniformBufferBindingSize:              
+1073741824 (1gb)  
+* maxUniformBuffersPerShaderStage:          
+44  
+* maxVertexAttributes:                      
+30  
+* maxVertexBufferArrayStride:               
+65532 (64k)  
+* maxVertexBuffers:                         
+12  
+* minStorageBufferOffsetAlignment:          
+32b  
+* minUniformBufferOffsetAlignment:          
+32b  
+
+features: 
+---------------------------------  
+* bgra8unorm-storage  
+* core-features-and-limits  
+* depth-clip-control  
+* depth32float-stencil8  
+* float16-renderable  
+* float32-blendable  
+* float32-renderable  
+* indirect-first-instance  
+* rg11b10ufloat-renderable  
+* shader-f16  
+* texture-compression-astc  
+* texture-compression-astc-sliced-3d  
+* texture-compression-etc2  
+* texture-formats-tier1  
+* timestamp-query  
+
+WGSL language features:  
+-------------------------  
+* packed_4x8_integer_dot_product  
+* pointer_composite_access  
+* readonly_and_readwrite_storage_textures  
+* unrestricted_pointer_parameters  
+
+warnings:  
+-----------  
+* copyExternalImageToTexture HTMLVideoElement not supported  
+* immediates not supported  
+* transient attachments not supported  
+
+misc:  
+-------  
+* HDR canvas support:      
+supported  
+* WebXR support:           
+not supported  
+* fallback adapter:        
+not supported  
+* getPreferredCanvasFormat:  
+bgra8unorm  
+
+dedicated workers:  
+====================  
+* webgpu API:                
+exists  
+* requestAdapter:            
+successful  
+* requestDevice:             
+successful  
+* getContext("webgpu"):      
+successful  
+* requestAnimationFrame:     
+successful  
+* transferControlToOffscreen:  
+successful  
+* OffscreenCanvas:           
+successful  
+* CanvasRenderingContext2D:  
+successful  
+
+shared workers:  
+=================  
+* webgpu API:                
+n/a  
+* transferControlToOffscreen:  
+successful  
+* OffscreenCanvas:           
+failed  
+* CanvasRenderingContext2D:  
+failed  
+
+service workers:  
+==================  
+* webgpu API:                
+n/a  
+* transferControlToOffscreen:  
+successful  
+* OffscreenCanvas:           
+failed  
+* CanvasRenderingContext2D:  
+failed

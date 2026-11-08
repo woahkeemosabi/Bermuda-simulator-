@@ -1,0 +1,51 @@
+{
+  "sourceRun": "https://github.com/woahkeemosabi/Bermuda-simulator-/actions/runs/40738172751",
+  "commit": "c8ac53d88e34c6a78d5b217b9c14a6342cf94384",
+  "results": [
+    {
+      "scenario": "desktop-boat",
+      "http": 200,
+      "ready": false,
+      "state": {
+        "title": "Bermuda Simulator",
+        "canvasCount": 3,
+        "loaderText": "COMPILING SHADERS…\n78%\n0:59",
+        "gpu": true,
+        "adapterAvailable": true,
+        "maxStorageTexturesPerShaderStage": 4,
+        "adapterError": null
+      },
+      "errors": [],
+      "consoleErrors": [
+        "WebGPU: pipeline \"envSource mips A\" failed: [Invalid PipelineLayout (unlabeled)] is invalid due to a previous error.\n    at ValidateObject (../../third_party/dawn/src/dawn/native/Device.cpp:877)\n",
+        "WebGPU: The number of storage textures (5) in the Compute stage exceeds the maximum per-stage limit (4).\n - While validating binding counts\n - While validating [BindGroupLayoutDescriptor \"\"envSource mips A.g1\"\"]\n - While calling [Device].CreateBindGroupLayout([BindGroupLayoutDescriptor \"\"envSource mips A.g1\"\"]).\n",
+        "WebGPU: [Invalid BindGroupLayout \"envSource mips A.g1\"] is invalid due to a previous error.\n - While calling [Device].CreatePipelineLayout([PipelineLayoutDescriptor]).\n",
+        "WebGPU: The number of storage textures (5) in the Compute stage exceeds the maximum per-stage limit (4).\n - While validating binding counts\n - While validating [BindGroupLayoutDescriptor \"\"Ocean Mips A.g1\"\"]\n - While calling [Device].CreateBindGroupLayout([BindGroupLayoutDescriptor \"\"Ocean Mips A.g1\"\"]).\n",
+        "WebGPU: [Invalid BindGroupLayout \"Ocean Mips A.g1\"] is invalid due to a previous error.\n - While calling [Device].CreatePipelineLayout([PipelineLayoutDescriptor]).\n",
+        "WebGPU: [Invalid BindGroupLayout \"Ocean Mips A.g1\"] is invalid due to a previous error.\n - While calling [Device].CreatePipelineLayout([PipelineLayoutDescriptor]).\n",
+        "WebGPU: [Invalid BindGroupLayout \"envSource mips A.g1\"] is invalid due to a previous error.\n - While calling [Device].CreatePipelineLayout([PipelineLayoutDescriptor]).\n",
+        "WebGPU: pipeline \"Ocean Mips A\" failed: [Invalid PipelineLayout (unlabeled)] is invalid due to a previous error.\n    at ValidateObject (../../third_party/dawn/src/dawn/native/Device.cpp:877)\n",
+        "WebGPU: pipeline \"Ocean Mips A\" failed: [Invalid PipelineLayout (unlabeled)] is invalid due to a previous error.\n    at ValidateObject (../../third_party/dawn/src/dawn/native/Device.cpp:877)\n",
+        "WebGPU: pipeline \"causticsFine mips A\" failed: [Invalid PipelineLayout (unlabeled)] is invalid due to a previous error.\n    at ValidateObject (../../third_party/dawn/src/dawn/native/Device.cpp:877)\n",
+        "WebGPU: pipeline \"causticsBroad mips A\" failed: [Invalid PipelineLayout (unlabeled)] is invalid due to a previous error.\n    at ValidateObject (../../third_party/dawn/src/dawn/native/Device.cpp:877)\n",
+        "WebGPU: pipeline \"Underwater Light Map 0\" failed: [Invalid PipelineLayout (unlabeled)] is invalid due to a previous error.\n    at ValidateObject (../../third_party/dawn/src/dawn/native/Device.cpp:877)\n"
+      ]
+    },
+    {
+      "scenario": "mobile-boat",
+      "http": 200,
+      "ready": false,
+      "state": {
+        "title": "Bermuda Simulator",
+        "canvasCount": 2,
+        "loaderText": "STARTING WEBGPU…\n0%\n0:00",
+        "gpu": true,
+        "adapterAvailable": false,
+        "maxStorageTexturesPerShaderStage": null,
+        "adapterError": null
+      },
+      "errors": [],
+      "consoleErrors": []
+    }
+  ]
+}

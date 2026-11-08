@@ -1,0 +1,26 @@
+{
+  "candidate": "6ce4a01824a64d2c9f7bbcee971a8abddca9fbcb",
+  "rawSha256": "5f0dacdeb70a8211be14888afce3a9b7d0fccf59023b33eff6d060139efbbc87",
+  "startedAt": "2026-10-29T16:02:46.998Z",
+  "losses": [
+    {
+      "reason": "destroyed",
+      "message": "",
+      "at": 20243.000000000004
+    }
+  ],
+  "recordedErrors": 0,
+  "consoleErrors": 139,
+  "pipelineLayouts": 234,
+  "uniformMaxima": {
+    "vertex": 16,
+    "fragment": 15,
+    "compute": 10
+  },
+  "allRecordedLayoutCountsComplete": true,
+  "shaderModules": 218,
+  "sampleCount": 18,
+  "lastSampleMs": 40357,
+  "startupMs": null,
+  "gameplay": "NOT_VERIFIED"
+}

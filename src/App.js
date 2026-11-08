@@ -1,10 +1,13 @@
 import { Vector3, Euler, Color, MathUtils, Mesh } from './engine/index.js';
 import { GPU } from './engine/gpu/GPU.js';
+import { installRenderCompileQueue } from './core/RenderCompileQueue.js';
+import { runStartupStages } from './core/StartupStages.js';
 import { gpuStage, gpuQueueAck } from './mobile/GpuAudit.js';
 import { SunShadows } from './engine/render/Shadows.js';
 import { FrameUniforms } from './engine/render/Frame.js';
 
 import { Engine } from './core/Engine.js';
+import { observeDeviceLoss } from './core/GpuDeviceFailure.js';
 import { Input } from './core/Input.js';
 import { CDLOD } from './core/CDLOD.js';
 import { G } from './core/Globals.js';
@@ -101,6 +104,8 @@ export class App {
 		// report a stage, then let the page paint it before the (synchronous) stage work starts
 		const progress = async ( p, text, until ) => {
 
+			window.__bermudaQAPhase?.( 'progress', { progress: p, text } );
+			this.deviceLifecycle?.throwIfLost();
 			onProgress( p, text, until );
 			if ( typeof requestAnimationFrame === 'function' ) await new Promise( ( r ) => requestAnimationFrame( () => setTimeout( r, 0 ) ) );
 
@@ -110,6 +115,16 @@ export class App {
 		if ( mobileLite ) engine.renderScale = Number( window.__bermudaMobileOutputScale ) || 0.64;
 		// High-end ocean and simulation are preserved. Reduce only frame-buffer pixel count.
 		await engine.init();
+		this.renderCompileQueue = installRenderCompileQueue( GPU.device, 2 );
+		window.__bermudaCompileQueue = this.renderCompileQueue.stats;
+		this.deviceLifecycle = observeDeviceLoss( GPU.device, ( error ) => {
+			GPU.fatalError = error;
+			engine.stop();
+			window.__bermudaOnGPUFailure?.( error.message );
+		} );
+		if ( ! mobileLite && GPU.limits.maxUniformBuffersPerShaderStage < 14 ) {
+			throw new Error( 'Full Tidewater scene requires at least 14 uniform buffers per shader stage; device granted ' + GPU.limits.maxUniformBuffersPerShaderStage );
+		}
 		// systems take `renderer` first as in the three.js version: it is the Engine now (GPU access is global)
 		const renderer = engine;
 		const { scene, camera } = engine;
@@ -461,18 +476,20 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// stage weights: in the browser the pipeline compile below takes far longer than everything before it
 		await progress( 0.36, 'Compiling shaders…', 0.95 );
 		gpuStage('Precompile shaders');
-		await this.precompile();
+		await this.deviceLifecycle.wait( this.precompile() );
+		window.__bermudaQAPhase?.( 'precompile-complete' );
 		gpuStage('Startup GPU warmup');
 		await progress( 0.96, 'Warming up…' );
 		// All simulation effects remain available. Prime on the loading screen, one GPU
 		// submission at a time; never let startup pretend success after a failed device.
 		for ( let i = 0; i < ( mobileLite ? 1 : 2 ); i ++ ) {
+			window.__bermudaQAPhase?.( 'warmup-frame', { index: i } );
 			if ( GPU.fatalError ) throw GPU.fatalError;
-			this.frame( 1 / 60 );
-			await GPU.queue.onSubmittedWorkDone();
+			await this.startupFrame( 1 / 60 );
 			gpuQueueAck(GPU.frame);
 			if ( GPU.fatalError ) throw GPU.fatalError;
 		}
+		window.__bermudaQAPhase?.( 'startup-gpu-ready' );
 
 	}
 
@@ -494,35 +511,43 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		}
 
-		await GPU.pipelinesReady();
+		window.__bermudaQAPhase?.( 'compute-post-pipelines-wait' );
+		await this.deviceLifecycle.wait( GPU.pipelinesReady() );
+		this.renderCompileQueue.throwIfFailed();
+		window.__bermudaQAPhase?.( 'compute-post-pipelines-ready' );
+		// Flush constructor texture/foam bakes separately from the first simulation frame.
+		await this.runStartupStages( [ 'initial-assets' ] );
 		mr.precompiling = true;
 		this.refraction.enabled = true;
 		const sr = this.sceneRenderer, hm = sr.hullMaskRT;
-		if ( sr.hullMasks.length ) mr.render( sr.hullMaskScene, {
-			label: 'hull mask', kind: 'color', camera: this.camera, colorViews: [ hm.texture.view() ], colorFormats: hm.formats,
-			clearColors: [ [ 0, 0, 0, 0 ] ], depthView: hm.depthTexture.view(), depthFormat: DEPTH_FORMAT, clearDepth: 0, cull: false,
-		} );
 		try {
-
+			if ( sr.hullMasks.length ) mr.render( sr.hullMaskScene, {
+				label: 'hull mask', kind: 'color', camera: this.camera, colorViews: [ hm.texture.view() ], colorFormats: hm.formats,
+				clearColors: [ [ 0, 0, 0, 0 ] ], depthView: hm.depthTexture.view(), depthFormat: DEPTH_FORMAT, clearDepth: 0, cull: false,
+			} );
 			// both water variants: with the hull-mask discard (a hull on screen) and without
 			for ( const hull of [ 0, 1 ] ) {
 
+				window.__bermudaQAPhase?.( 'scene-precompile-frame', { hull } );
+				this.deviceLifecycle.throwIfLost();
 				this.waterMaterial.hullOverride = hull;
-				this.frame( 1 / 60 );
+				await this.startupFrame( 1 / 60 );
 
 			}
 
-		} catch ( e ) {
+		} finally {
 
-			console.warn( 'precompile failed', e );
+			this.waterMaterial.hullOverride = null;
+			mr.precompiling = false;
+			this.refraction.enabled = refr;
 
 		}
-
-		this.waterMaterial.hullOverride = null;
-		mr.precompiling = false;
-		this.refraction.enabled = refr;
-		await GPU.pipelinesReady();
-		await GPU.queue.onSubmittedWorkDone();
+		window.__bermudaQAPhase?.( 'scene-pipelines-wait' );
+		await this.deviceLifecycle.wait( GPU.pipelinesReady() );
+		this.renderCompileQueue.throwIfFailed();
+		window.__bermudaQAPhase?.( 'scene-pipelines-ready' );
+		await this.deviceLifecycle.wait( GPU.queue.onSubmittedWorkDone() );
+		window.__bermudaQAPhase?.( 'precompile-queue-complete' );
 
 	}
 
@@ -735,6 +760,25 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 	}
 
 	_frame( dt ) {
+		// Normal play retains one synchronous update and one submission per frame.
+		for ( const stage of this._frameSteps( dt, false ) ) { /* no startup yields */ }
+	}
+
+	runStartupStages( stages ) {
+		return runStartupStages( stages, {
+			ready: () => this.deviceLifecycle.wait( GPU.pipelinesReady() ),
+			submit: () => GPU.submit(),
+			done: () => this.deviceLifecycle.wait( GPU.queue.onSubmittedWorkDone() ),
+			check: () => { this.deviceLifecycle.throwIfLost(); this.renderCompileQueue.throwIfFailed(); },
+			mark: ( name, detail ) => window.__bermudaQAPhase?.( name, detail ),
+		} );
+	}
+
+	startupFrame( dt ) {
+		return this.runStartupStages( this._frameSteps( dt, true ) );
+	}
+
+	*_frameSteps( dt, startup ) {
 
 		gpuStage('Frame begin', GPU.frame + 1);
 		GPU.beginFrame();
@@ -771,9 +815,11 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		else this.player.update( dt );
 		this.game.update( dt );
 		this.updateSun();
+		if ( startup ) yield 'player-and-wake';
 
 		this.atmosphere.update( dt, this.camera.position.y );
 		this.applyAtmosphereReadback();
+		if ( startup ) yield 'atmosphere';
 
 		// ---- water simulation
 		gpuStage('FFT and ocean simulation', GPU.frame);
@@ -783,6 +829,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			this._fftInitialized = true;
 		}
 		this.seaDetail.update( dt );
+		if ( startup ) yield 'fft-and-sea-detail';
 		this.query.setCamera( this.camera.position.x, this.camera.position.z );
 		this.boatCtl.queueQueries();
 		// Avoid submitting SkyView and GPU water-height queries in the same mobile
@@ -803,29 +850,51 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		}
 
+		if ( startup ) yield 'water-queries';
 		if ( this.caustics ) this.caustics.update();
+		if ( startup ) yield 'caustics';
 		// drawn while any part of the view can be under water (the specks above the surface are dropped)
 		this.marineSnow.update( this.camera, this.camera.position.y < ( this.cameraWaterHeight ?? 0 ) + LENS_REACH );
 		this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );
 		if ( this.shoreSim ) this.shoreSim.update();
+		if ( startup ) yield 'shore-and-particles';
 		// Only dispatch the underwater light-map kernels during the first mobile frame.
 		// This gate remains effective even if another system replaces the lighting updater.
 		if ( !this.qs.has('freezeFFT') || !this._underwaterMapPrimed ) {
 			this.underwaterLighting.update( this.camera );
 			this._underwaterMapPrimed = true;
 		}
+		if ( startup ) yield 'underwater-lighting';
 		this.breakers.update( this.camera );
 		// Explicitly bypass spray dispatch in mobile low-GPU mode, even if a later system
 		// reassigns spray.update after initialization.
 		if ( !this.qs.has('noSpray') && !this.qs.has('freezeFFT') ) this.spray.update();
 		if ( this.clouds ) this.clouds.update( dt, this.camera );
+		if ( startup ) yield 'breakers-spray-clouds';
 		// Mobile WebGPU: don't bake reflection faces while the atmosphere LUTs
 		// are still initializing. This keeps the original reflections and ocean,
 		// but avoids pairing Atmosphere MultiScat with Env Face on startup.
 		const atmosphereReadyForReflections = !this.mobileLite ||
 			( this.atmosphere.mobileInitStage >= 3 && this.atmosphere._svValid &&
 			  !this.atmosphere.mobileSkyViewDispatched );
-		if ( atmosphereReadyForReflections ) this.environment.update( dt );
+		if ( atmosphereReadyForReflections ) {
+			if ( startup && ! this.environment.primed && ! this.environment.disablePrime ) {
+				// Execute every original 128px bake step, with a fence between steps.
+				// Finish the entire prime behind the loader; no lower-quality substitute.
+				const progressive = this.environment.progressivePrime;
+				try {
+					this.environment.progressivePrime = true;
+					let index = 0;
+					do {
+						this.environment.update( 0 );
+						yield 'reflection-prime-' + index ++;
+					} while ( this.environment.step >= 0 );
+				} finally { this.environment.progressivePrime = progressive; }
+			} else {
+				this.environment.update( dt );
+				if ( startup ) yield 'reflections';
+			}
+		}
 
 		// ---- world
 		gpuStage('Island world preparation', GPU.frame);
@@ -841,6 +910,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.boat.update( dt );
 		this.wildlife.update( dt, this.camera, this.freeCam ? null : this.player );
 		this.localLights.update( this.camera, dt );
+		if ( startup ) yield 'world-and-vegetation-bakes';
 
 		// ---- render
 		gpuStage('Scene rendering', GPU.frame);
@@ -859,12 +929,15 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.post.beginFrame();
 		this.underwater.updateCamera( this.camera );
 		this.shadows.render( this.scene, this.engine.meshRenderer, this.shadows.update( this.camera, G.sunDir.value ) );
+		if ( startup ) yield 'shadows';
 		this.sceneRenderer.render();
+		if ( startup ) yield 'scene-render';
 		if ( this.post.flare ) this.post.flare.kernel.dispatch( 1 );
 		gpuStage('Post/presentation', GPU.frame);
 		this.post.render();
 		this.post.endFrame();
-		GPU.submit();
+		if ( startup ) yield 'post-presentation';
+		else GPU.submit();
 		this.profiler.update( dt );
 
 		this.updateAudio( dt );

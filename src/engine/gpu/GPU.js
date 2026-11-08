@@ -8,8 +8,6 @@
 // range written twice in one frame keeps only the last value for every pass. Anything that changes
 // between passes of a frame needs its own buffer (or its own offset).
 
-import { gpuStage, gpuCompute, gpuSubmit, gpuError, gpuDeviceDestroyObserved, gpuDestroyHookStatus } from '../../mobile/GpuAudit.js';
-
 export const GPU = {
 
 	device: null,
@@ -22,9 +20,6 @@ export const GPU = {
 	limits: null,
 	hasTimestamp: false,
 	hasFloat32Filterable: false,
-	canvasReadbackEnabled: false,
-	fatalError: null,
-	lostReason: null,
 	encoder: null,
 	frame: 0,
 	samplers: null,
@@ -33,10 +28,7 @@ export const GPU = {
 	async init( { canvas = null, requiredLimits = {}, headless = false } = {} ) {
 
 		if ( ! navigator.gpu ) throw new Error( 'WebGPU is not available in this browser.' );
-		gpuStage('Requesting GPU adapter');
-		// iOS: try the lower-power adapter to avoid high-performance driver pressure.
-		const mobileAdapter = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent );
-		const adapter = await navigator.gpu.requestAdapter( { powerPreference: mobileAdapter ? 'low-power' : 'high-performance' } );
+		const adapter = await navigator.gpu.requestAdapter( { powerPreference: 'high-performance' } );
 		if ( ! adapter ) throw new Error( 'No WebGPU adapter found.' );
 		this.adapter = adapter;
 
@@ -44,6 +36,7 @@ export const GPU = {
 		const want = {
 			maxSampledTexturesPerShaderStage: 32,
 			maxSamplersPerShaderStage: 16,
+			maxUniformBuffersPerShaderStage: L.maxUniformBuffersPerShaderStage,
 			maxStorageBuffersPerShaderStage: 10,
 			maxStorageTexturesPerShaderStage: 8,
 			maxComputeWorkgroupStorageSize: 32768,
@@ -59,67 +52,25 @@ export const GPU = {
 		const limits = {};
 		for ( const k in want ) if ( L[ k ] !== undefined ) limits[ k ] = Math.min( want[ k ], L[ k ] );
 
-		// GPU timestamp profiling is not a visual feature. Avoid its driver overhead on iOS.
-		const onPhone = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent );
-		const optional = [ 'float32-filterable', ...( onPhone ? [] : [ 'timestamp-query' ] ),
-			'rg11b10ufloat-renderable', 'float32-blendable', 'shader-f16', 'clip-distances' ];
+		const optional = [ 'float32-filterable', 'timestamp-query', 'rg11b10ufloat-renderable', 'float32-blendable', 'shader-f16', 'clip-distances' ];
 		const requiredFeatures = optional.filter( ( f ) => adapter.features.has( f ) );
 		this.features = new Set( requiredFeatures );
 		this.hasTimestamp = this.features.has( 'timestamp-query' );
 		this.hasFloat32Filterable = this.features.has( 'float32-filterable' );
 
-		gpuStage('Requesting GPU device');
 		const device = await adapter.requestDevice( { requiredFeatures, requiredLimits: limits } );
-		gpuStage('WebGPU device acquired');
 		this.device = device;
 		this.queue = device.queue;
 		this.limits = device.limits;
-		// WebGPU reports reason "destroyed" for explicit device.destroy() calls.
-		// Record a JS stack if our app or a dependency destroys the live device.
-		// Never change the underlying native destroy behavior.
-		if (typeof device.destroy === 'function') {
-			try {
-				const nativeDestroy = device.destroy.bind(device);
-				Object.defineProperty(device, 'destroy', {
-					configurable: true,
-					value: (...args) => {
-						gpuDeviceDestroyObserved(new Error('GPUDevice.destroy() invoked by JavaScript').stack || 'stack unavailable');
-						return nativeDestroy(...args);
-					}
-				});
-				gpuDestroyHookStatus('installed');
-			} catch (err) {
-				gpuDestroyHookStatus('unavailable: '+String(err?.message || err));
-			}
-		} else {
-			gpuDestroyHookStatus('destroy() method absent');
-		}
-		device.lost.then( ( info ) => {
-			this.lostReason = info.reason || 'unknown';
-			gpuError('lost', info.message || '', this.lostReason);
-			this.fatalError = new Error('WebGPU device lost (' + this.lostReason + '): ' +
-				(info.message || 'Browser provided no device-loss details'));
-			if ( typeof window !== 'undefined' ) {
-				window.__bermudaGpuLost = this.fatalError.message;
-				window.__bermudaOnGPUFailure?.( this.fatalError.message );
-			}
-			console.error( this.fatalError );
-		} );
-		device.addEventListener && device.addEventListener( 'uncapturederror', ( e ) => {
-			gpuError('uncaptured', e.error?.message || 'uncaptured GPU error');
-			console.error('WebGPU:',e.error?.message);
-		} );
+		device.lost.then( ( info ) => console.error( 'WebGPU device lost:', info.message ) );
+		device.addEventListener && device.addEventListener( 'uncapturederror', ( e ) => console.error( 'WebGPU:', e.error.message.split( '\n' ).slice( 0, 6 ).join( '\n' ) ) );
 
 		if ( canvas && ! headless ) {
 
 			this.canvas = canvas;
 			this.context = canvas.getContext( 'webgpu' );
 			this.format = navigator.gpu.getPreferredCanvasFormat();
-			// iOS WebGPU swapchain readbacks caused an additional presentation/copy path.
-			// Startup verification reads the HDR scene target, not the drawable.
-			this.context.configure( { device, format: this.format, alphaMode: 'opaque',
-				usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST } );
-			this.canvasReadbackEnabled = false;
+			this.context.configure( { device, format: this.format, alphaMode: 'opaque', usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST } );
 
 		}
 
@@ -159,17 +110,7 @@ export const GPU = {
 
 	getEncoder() {
 
-		if ( this.fatalError ) throw this.fatalError;
-		if ( ! this.encoder ) {
-			try {
-				this.encoder = this.device.createCommandEncoder();
-			} catch ( error ) {
-				this.fatalError = new Error( 'WebGPU command encoder unavailable: ' + ( error?.message || error ) );
-				if ( typeof window !== 'undefined' )
-					window.__bermudaOnGPUFailure?.( this.fatalError.message );
-				throw this.fatalError;
-			}
-		}
+		if ( ! this.encoder ) this.encoder = this.device.createCommandEncoder();
 		return this.encoder;
 
 	},
@@ -182,7 +123,6 @@ export const GPU = {
 		this._submitHooks = [];
 		for ( const h of hooks ) if ( h.before ) h.before( this.encoder );
 		this.queue.submit( [ this.encoder.finish() ] );
-		gpuSubmit( this.frame );
 		this.encoder = null;
 		for ( const h of hooks ) if ( h.after ) h.after();
 
@@ -261,7 +201,6 @@ export const GPU = {
 	// A compute or render pass on the frame encoder.
 	computePass( label, fn, timestampWrites ) {
 
-		gpuCompute( label );
 		const pass = this.getEncoder().beginComputePass( { label, timestampWrites } );
 		fn( pass );
 		pass.end();

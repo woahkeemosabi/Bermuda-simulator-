@@ -1,0 +1,10 @@
+{
+  "provider": "Dawn webgpu npm",
+  "adapter": null,
+  "backend": null,
+  "driver": null,
+  "limits": null,
+  "features": null,
+  "available": false,
+  "status": "BLOCKED_NO_ADAPTER"
+}

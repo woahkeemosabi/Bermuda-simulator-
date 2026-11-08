@@ -1,0 +1,5270 @@
+{
+  "schema": 1,
+  "build": "original-safari-qa-20261029-v3-native-uniform-capacity",
+  "startedAt": "2026-10-29T16:02:46.998Z",
+  "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
+  "status": "DEVICE_LOST",
+  "devices": [
+    {
+      "requested": {
+        "requiredFeatures": [
+          "timestamp-query",
+          "rg11b10ufloat-renderable",
+          "float32-blendable",
+          "shader-f16"
+        ],
+        "requiredLimits": {
+          "maxSampledTexturesPerShaderStage": 32,
+          "maxSamplersPerShaderStage": 16,
+          "maxUniformBuffersPerShaderStage": 44,
+          "maxStorageBuffersPerShaderStage": 10,
+          "maxStorageTexturesPerShaderStage": 8,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxColorAttachmentBytesPerSample": 64,
+          "maxBindingsPerBindGroup": 1000,
+          "maxBufferSize": 1073741824,
+          "maxStorageBufferBindingSize": 536870912
+        }
+      },
+      "limits": {
+        "maxTextureDimension1D": 8192,
+        "maxTextureDimension2D": 8192,
+        "maxTextureDimension3D": 2048,
+        "maxTextureArrayLayers": 256,
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxDynamicUniformBuffersPerPipelineLayout": 8,
+        "maxDynamicStorageBuffersPerPipelineLayout": 4,
+        "maxSampledTexturesPerShaderStage": 32,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBuffersPerShaderStage": 10,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxUniformBuffersPerShaderStage": 44,
+        "maxUniformBufferBindingSize": 65536,
+        "maxStorageBufferBindingSize": 536870912,
+        "minUniformBufferOffsetAlignment": 256,
+        "minStorageBufferOffsetAlignment": 256,
+        "maxVertexBuffers": 8,
+        "maxBufferSize": 1073741824,
+        "maxVertexAttributes": 16,
+        "maxVertexBufferArrayStride": 2048,
+        "maxInterStageShaderComponents": 64,
+        "maxInterStageShaderVariables": 16,
+        "maxColorAttachments": 8,
+        "maxColorAttachmentBytesPerSample": 64,
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeInvocationsPerWorkgroup": 256,
+        "maxComputeWorkgroupSizeX": 256,
+        "maxComputeWorkgroupSizeY": 256,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupsPerDimension": 65535
+      },
+      "features": [
+        "timestamp-query",
+        "rg11b10ufloat-renderable",
+        "float32-blendable",
+        "shader-f16",
+        "core-features-and-limits"
+      ]
+    }
+  ],
+  "consoleErrors": [
+    {
+      "at": 20212,
+      "message": "WebGPU: pipeline \"harbourCottageGarage depth\" failed: "
+    },
+    {
+      "at": 20213,
+      "message": "WebGPU: pipeline \"harbourJobsBoard main\" failed: "
+    },
+    {
+      "at": 20213,
+      "message": "WebGPU: pipeline \"BoatFuelUpgradeVisual main\" failed: "
+    },
+    {
+      "at": 20213,
+      "message": "WebGPU: pipeline \"Critters main\" failed: "
+    },
+    {
+      "at": 20213,
+      "message": "WebGPU: pipeline \"material53 main\" failed: "
+    },
+    {
+      "at": 20213,
+      "message": "WebGPU: pipeline \"Terrain main\" failed: "
+    },
+    {
+      "at": 20213,
+      "message": "WebGPU: pipeline \"BoatFuelUpgradeVisual depth\" failed: "
+    },
+    {
+      "at": 20214.000000000004,
+      "message": "WebGPU: pipeline \"boatFittings depth\" failed: "
+    },
+    {
+      "at": 20214.000000000004,
+      "message": "WebGPU: pipeline \"miniMissionWaypoint color\" failed: "
+    },
+    {
+      "at": 20214.000000000004,
+      "message": "WebGPU: pipeline \"FishPropsFade main\" failed: "
+    },
+    {
+      "at": 20214.000000000004,
+      "message": "WebGPU: pipeline \"mobile-wake-transom-left main\" failed: "
+    },
+    {
+      "at": 20215,
+      "message": "WebGPU: pipeline \"fishStand main\" failed: "
+    },
+    {
+      "at": 20215,
+      "message": "WebGPU: pipeline \"bermudaSideQuestTarget main\" failed: "
+    },
+    {
+      "at": 20216,
+      "message": "WebGPU: pipeline \"joeStormUmbrella main\" failed: "
+    },
+    {
+      "at": 20216,
+      "message": "WebGPU: pipeline \"boatWood depth\" failed: "
+    },
+    {
+      "at": 20216,
+      "message": "WebGPU: pipeline \"harbourJobsBoard depth\" failed: "
+    },
+    {
+      "at": 20216,
+      "message": "WebGPU: pipeline \"BoatIceChestVisual main\" failed: "
+    },
+    {
+      "at": 20216,
+      "message": "WebGPU: pipeline \"BoatTurboEngineCue depth\" failed: "
+    },
+    {
+      "at": 20216,
+      "message": "WebGPU: pipeline \"harbourCottageDoor depth\" failed: "
+    },
+    {
+      "at": 20217,
+      "message": "WebGPU: pipeline \"BoatLongRangeFuelVisual depth\" failed: "
+    },
+    {
+      "at": 20217,
+      "message": "WebGPU: pipeline \"water main\" failed: "
+    },
+    {
+      "at": 20217,
+      "message": "WebGPU: pipeline \"boatGelcoat color\" failed: "
+    },
+    {
+      "at": 20217,
+      "message": "WebGPU: pipeline \"boatGelcoat main\" failed: "
+    },
+    {
+      "at": 20217,
+      "message": "WebGPU: pipeline \"BoatIceChestVisual depth\" failed: "
+    },
+    {
+      "at": 20217,
+      "message": "WebGPU: pipeline \"ReefFade main\" failed: "
+    },
+    {
+      "at": 20218,
+      "message": "WebGPU: pipeline \"waterfrontHomeInterior depth\" failed: "
+    },
+    {
+      "at": 20218,
+      "message": "WebGPU: pipeline \"BoatFishFinderVisual depth\" failed: "
+    },
+    {
+      "at": 20218,
+      "message": "WebGPU: pipeline \"bobber color\" failed: "
+    },
+    {
+      "at": 20218,
+      "message": "WebGPU: pipeline \"waterfrontHomeSaleSign color\" failed: "
+    },
+    {
+      "at": 20218,
+      "message": "WebGPU: pipeline \"BoatFishHoldVisual depth\" failed: "
+    },
+    {
+      "at": 20219,
+      "message": "WebGPU: pipeline \"mobile-wake-shoulder-right main\" failed: "
+    },
+    {
+      "at": 20219,
+      "message": "WebGPU: pipeline \"miniMissionWaypoint main\" failed: "
+    },
+    {
+      "at": 20219,
+      "message": "WebGPU: pipeline \"waterfrontHomeDoor color\" failed: "
+    },
+    {
+      "at": 20219,
+      "message": "WebGPU: pipeline \"Rocks color\" failed: "
+    },
+    {
+      "at": 20220,
+      "message": "WebGPU: pipeline \"boatTrap main\" failed: "
+    },
+    {
+      "at": 20220,
+      "message": "WebGPU: pipeline \"cottageGarageUpgradeSign main\" failed: "
+    },
+    {
+      "at": 20220,
+      "message": "WebGPU: pipeline \"privateBerthSaleSign main\" failed: "
+    },
+    {
+      "at": 20220,
+      "message": "WebGPU: pipeline \"BoatFishHoldVisual color\" failed: "
+    },
+    {
+      "at": 20220,
+      "message": "WebGPU: pipeline \"hullMask color\" failed: "
+    },
+    {
+      "at": 20220,
+      "message": "WebGPU: pipeline \"harbourCottageSaleSign depth\" failed: "
+    },
+    {
+      "at": 20221,
+      "message": "WebGPU: pipeline \"harbourCottageDoor main\" failed: "
+    },
+    {
+      "at": 20221,
+      "message": "WebGPU: pipeline \"BoatRebuiltEngineCue main\" failed: "
+    },
+    {
+      "at": 20221,
+      "message": "WebGPU: pipeline \"bermudaSideQuestTarget color\" failed: "
+    },
+    {
+      "at": 20221,
+      "message": "WebGPU: pipeline \"fishingLine main\" failed: "
+    },
+    {
+      "at": 20221,
+      "message": "WebGPU: pipeline \"Birds depth\" failed: "
+    },
+    {
+      "at": 20221,
+      "message": "WebGPU: pipeline \"boatWood color\" failed: "
+    },
+    {
+      "at": 20222,
+      "message": "WebGPU: pipeline \"miniMissionWaypoint depth\" failed: "
+    },
+    {
+      "at": 20222,
+      "message": "WebGPU: pipeline \"ReefSoftFade main\" failed: "
+    },
+    {
+      "at": 20222,
+      "message": "WebGPU: pipeline \"FishPropsFade color\" failed: "
+    },
+    {
+      "at": 20222,
+      "message": "WebGPU: pipeline \"FishFade color\" failed: "
+    },
+    {
+      "at": 20223,
+      "message": "WebGPU: pipeline \"spinyLobster main\" failed: "
+    },
+    {
+      "at": 20223,
+      "message": "WebGPU: pipeline \"Birds main\" failed: "
+    },
+    {
+      "at": 20223,
+      "message": "WebGPU: pipeline \"privateBerth main\" failed: "
+    },
+    {
+      "at": 20224,
+      "message": "WebGPU: pipeline \"harbourCottageSaleSign main\" failed: "
+    },
+    {
+      "at": 20224,
+      "message": "WebGPU: pipeline \"veg-canopy main\" failed: "
+    },
+    {
+      "at": 20224,
+      "message": "WebGPU: pipeline \"water main\" failed: "
+    },
+    {
+      "at": 20224,
+      "message": "WebGPU: pipeline \"waterfrontHomeDoor main\" failed: "
+    },
+    {
+      "at": 20224,
+      "message": "WebGPU: pipeline \"waterfrontHomeDoor depth\" failed: "
+    },
+    {
+      "at": 20225,
+      "message": "WebGPU: pipeline \"ReefSoftFade color\" failed: "
+    },
+    {
+      "at": 20225,
+      "message": "WebGPU: pipeline \"boatFittings color\" failed: "
+    },
+    {
+      "at": 20225,
+      "message": "WebGPU: pipeline \"fishingLine color\" failed: "
+    },
+    {
+      "at": 20225,
+      "message": "WebGPU: pipeline \"cottageFreezer main\" failed: "
+    },
+    {
+      "at": 20225,
+      "message": "WebGPU: pipeline \"mobile-wake-shoulder-left main\" failed: "
+    },
+    {
+      "at": 20225,
+      "message": "WebGPU: pipeline \"material53 color\" failed: "
+    },
+    {
+      "at": 20226,
+      "message": "WebGPU: pipeline \"Terrain color\" failed: "
+    },
+    {
+      "at": 20226,
+      "message": "WebGPU: pipeline \"ReefSoft color\" failed: "
+    },
+    {
+      "at": 20226,
+      "message": "WebGPU: pipeline \"fishingRod main\" failed: "
+    },
+    {
+      "at": 20227,
+      "message": "WebGPU: pipeline \"boatWood main\" failed: "
+    },
+    {
+      "at": 20227,
+      "message": "WebGPU: pipeline \"bobber main\" failed: "
+    },
+    {
+      "at": 20227,
+      "message": "WebGPU: pipeline \"BoatLongRangeFuelVisual color\" failed: "
+    },
+    {
+      "at": 20227,
+      "message": "WebGPU: pipeline \"waterfrontHomeSaleSign main\" failed: "
+    },
+    {
+      "at": 20227,
+      "message": "WebGPU: pipeline \"FishProps depth\" failed: "
+    },
+    {
+      "at": 20228,
+      "message": "WebGPU: pipeline \"boatGlow main\" failed: "
+    },
+    {
+      "at": 20228,
+      "message": "WebGPU: pipeline \"veg-impostor main\" failed: "
+    },
+    {
+      "at": 20228,
+      "message": "WebGPU: pipeline \"Terrain depth\" failed: "
+    },
+    {
+      "at": 20228,
+      "message": "WebGPU: pipeline \"starterBoatSaleSign depth\" failed: "
+    },
+    {
+      "at": 20228,
+      "message": "WebGPU: pipeline \"harbourCottageInterior main\" failed: "
+    },
+    {
+      "at": 20229,
+      "message": "WebGPU: pipeline \"spinyLobster color\" failed: "
+    },
+    {
+      "at": 20229,
+      "message": "WebGPU: pipeline \"BoatIceChestVisual color\" failed: "
+    },
+    {
+      "at": 20229,
+      "message": "WebGPU: pipeline \"Reef depth\" failed: "
+    },
+    {
+      "at": 20229,
+      "message": "WebGPU: pipeline \"FishProps color\" failed: "
+    },
+    {
+      "at": 20229,
+      "message": "WebGPU: pipeline \"harbourCottageGarage main\" failed: "
+    },
+    {
+      "at": 20229,
+      "message": "WebGPU: pipeline \"boatHull main\" failed: "
+    },
+    {
+      "at": 20230,
+      "message": "WebGPU: pipeline \"mobile-wake-outer-right main\" failed: "
+    },
+    {
+      "at": 20230,
+      "message": "WebGPU: pipeline \"BoatRebuiltEngineCue depth\" failed: "
+    },
+    {
+      "at": 20230,
+      "message": "WebGPU: pipeline \"boatGelcoat depth\" failed: "
+    },
+    {
+      "at": 20230,
+      "message": "WebGPU: pipeline \"boatHull depth\" failed: "
+    },
+    {
+      "at": 20231,
+      "message": "WebGPU: pipeline \"Reef main\" failed: "
+    },
+    {
+      "at": 20231,
+      "message": "WebGPU: pipeline \"fishStand depth\" failed: "
+    },
+    {
+      "at": 20231,
+      "message": "WebGPU: pipeline \"veg-plant-leaf depth\" failed: "
+    },
+    {
+      "at": 20231,
+      "message": "WebGPU: pipeline \"fishingRod color\" failed: "
+    },
+    {
+      "at": 20232,
+      "message": "WebGPU: pipeline \"boatTrap depth\" failed: "
+    },
+    {
+      "at": 20232,
+      "message": "WebGPU: pipeline \"harbourJobNotices main\" failed: "
+    },
+    {
+      "at": 20232,
+      "message": "WebGPU: pipeline \"Reef color\" failed: "
+    },
+    {
+      "at": 20233,
+      "message": "WebGPU: pipeline \"AirMotes main\" failed: "
+    },
+    {
+      "at": 20233,
+      "message": "WebGPU: pipeline \"mobile-wake-outer-left main\" failed: "
+    },
+    {
+      "at": 20233,
+      "message": "WebGPU: pipeline \"BoatTurboEngineCue main\" failed: "
+    },
+    {
+      "at": 20233,
+      "message": "WebGPU: pipeline \"veg-canopy depth\" failed: "
+    },
+    {
+      "at": 20233,
+      "message": "WebGPU: pipeline \"BoatDeckLightHardware main\" failed: "
+    },
+    {
+      "at": 20234,
+      "message": "WebGPU: pipeline \"FishProps main\" failed: "
+    },
+    {
+      "at": 20234,
+      "message": "WebGPU: pipeline \"BoatFishHoldVisual main\" failed: "
+    },
+    {
+      "at": 20234,
+      "message": "WebGPU: pipeline \"boatFittings main\" failed: "
+    },
+    {
+      "at": 20234,
+      "message": "WebGPU: pipeline \"BoatFishFinderVisual main\" failed: "
+    },
+    {
+      "at": 20235,
+      "message": "WebGPU: pipeline \"speargun color\" failed: "
+    },
+    {
+      "at": 20235,
+      "message": "WebGPU: pipeline \"Fish main\" failed: "
+    },
+    {
+      "at": 20235,
+      "message": "WebGPU: pipeline \"MarineSnow color\" failed: "
+    },
+    {
+      "at": 20236,
+      "message": "WebGPU: pipeline \"Whale color\" failed: "
+    },
+    {
+      "at": 20236,
+      "message": "WebGPU: pipeline \"bermudaSideQuestTarget depth\" failed: "
+    },
+    {
+      "at": 20236,
+      "message": "WebGPU: pipeline \"ReefFade color\" failed: "
+    },
+    {
+      "at": 20236,
+      "message": "WebGPU: pipeline \"ReefSoft main\" failed: "
+    },
+    {
+      "at": 20236,
+      "message": "WebGPU: pipeline \"ContactShadows main\" failed: "
+    },
+    {
+      "at": 20237.000000000004,
+      "message": "WebGPU: pipeline \"Whale main\" failed: "
+    },
+    {
+      "at": 20237.000000000004,
+      "message": "WebGPU: pipeline \"harbourCottageInterior depth\" failed: "
+    },
+    {
+      "at": 20237.000000000004,
+      "message": "WebGPU: pipeline \"Whale depth\" failed: "
+    },
+    {
+      "at": 20237.000000000004,
+      "message": "WebGPU: pipeline \"starterBoatSaleSign main\" failed: "
+    },
+    {
+      "at": 20237.000000000004,
+      "message": "WebGPU: pipeline \"mobile-wake-transom-right main\" failed: "
+    },
+    {
+      "at": 20238,
+      "message": "WebGPU: pipeline \"Spray main\" failed: "
+    },
+    {
+      "at": 20238,
+      "message": "WebGPU: pipeline \"Rocks depth\" failed: "
+    },
+    {
+      "at": 20238,
+      "message": "WebGPU: pipeline \"joeStormUmbrella depth\" failed: "
+    },
+    {
+      "at": 20238,
+      "message": "WebGPU: pipeline \"boatGlow depth\" failed: "
+    },
+    {
+      "at": 20238,
+      "message": "WebGPU: pipeline \"harbourBoardLight main\" failed: "
+    },
+    {
+      "at": 20239,
+      "message": "WebGPU: pipeline \"boatGlass main\" failed: "
+    },
+    {
+      "at": 20240.000000000004,
+      "message": "WebGPU: pipeline \"mobile-wake-prop-wash main\" failed: "
+    },
+    {
+      "at": 20240.000000000004,
+      "message": "WebGPU: pipeline \"BreakerLip main\" failed: "
+    },
+    {
+      "at": 20240.000000000004,
+      "message": "WebGPU: pipeline \"waterfrontHomeInterior main\" failed: "
+    },
+    {
+      "at": 20240.000000000004,
+      "message": "WebGPU: pipeline \"Rocks main\" failed: "
+    },
+    {
+      "at": 20241,
+      "message": "WebGPU: pipeline \"BoatLongRangeFuelVisual main\" failed: "
+    },
+    {
+      "at": 20241,
+      "message": "WebGPU: pipeline \"veg-plant-leaf main\" failed: "
+    },
+    {
+      "at": 20241,
+      "message": "WebGPU: pipeline \"boatHull color\" failed: "
+    },
+    {
+      "at": 20241,
+      "message": "WebGPU: pipeline \"FishFade main\" failed: "
+    },
+    {
+      "at": 20241,
+      "message": "WebGPU: pipeline \"BoatDeckLightHardware depth\" failed: "
+    },
+    {
+      "at": 20241,
+      "message": "WebGPU: pipeline \"speargun main\" failed: "
+    },
+    {
+      "at": 20242,
+      "message": "WebGPU: pipeline \"veg-grass main\" failed: "
+    },
+    {
+      "at": 20242,
+      "message": "WebGPU: pipeline \"privateBerth depth\" failed: "
+    },
+    {
+      "at": 20242,
+      "message": "WebGPU: pipeline \"Fish color\" failed: "
+    },
+    {
+      "at": 20243.000000000004,
+      "message": "WebGPU: pipeline \"MarineSnow main\" failed: "
+    },
+    {
+      "at": 20246,
+      "message": "WebGPU device lost: "
+    },
+    {
+      "at": 20278,
+      "message": "@https://bermuda-simulator-b8em6pvsv-akeemalbouy-1327.vercel.app/assets/main-u6Xid8nV.js:439:16073"
+    },
+    {
+      "at": 23299,
+      "message": "Chandlery: stall assets failed, using the plain table createBindGroup@[native code]\nIr@https://bermuda-simulator-b8em6pvsv-akeemalbouy-1327.vercel.app/assets/main-u6Xid8nV.js:165:652\nLr@https://bermuda-simulator-b8em6pvsv-akeemalbouy-1327.vercel.app/assets/main-u6Xid8nV.js:165:1037\nzb@https://bermuda-simulator-b8em6pvsv-akeemalbouy-1327.vercel.app/assets/main-u6Xid8nV.js:11779:22350\nHb@https://bermuda-simulator-b8em6pvsv-akeemalbouy-1327.vercel.app/assets/main-u6Xid8nV.js:11779:23001"
+    }
+  ],
+  "destroyCalls": [],
+  "pipelineLayouts": [
+    {
+      "at": 2002.0000000000002,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2003,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2003,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2005,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2005,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2006.0000000000002,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2007.0000000000002,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2008,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2008,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2595,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2596,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2596,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2596,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2597,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2597,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2597,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2597,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2598,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2598,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2598,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2598,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2598,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2598,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2598,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2598,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2599,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2599,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2600,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2600,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2601,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 2601,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 6601,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7817,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7817,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7818.000000000001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7818.000000000001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7818.000000000001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7818.000000000001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7818.000000000001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7818.000000000001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7818.000000000001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7818.000000000001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7880,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7880,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7884,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7884,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7886,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7886,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7887,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 7887,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8244,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 4,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8246,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 10,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8246,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 10,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8246,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8246,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 1,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8248,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 8266,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 6,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16593,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16594,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16594,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16609,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16613,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16614,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16614,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16615.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16616,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16617,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16617,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16617,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 3,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16739,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 9,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16742,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 10,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 15,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16742,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16744,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 9,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16745,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16747,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16748,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16749,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16751,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16752,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16753,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 9,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16753,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16754,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16754,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16754,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16754,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16754,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16754,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16755,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16755,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16755,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 2,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 16756,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18902,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18907,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 5,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18909,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 0,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 7,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18915,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18919,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18922,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18939,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 6,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18940,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18940,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18941,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18942,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18942,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18943,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18943,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18944,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18944,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18945,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18945,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18946,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18947,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18947,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18948,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18948,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18948,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18949,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18949,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18950,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18950,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18951,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18951,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18952,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18952,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18953,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18953,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18954,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18954,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18955.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18956,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18956,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18958.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18959,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18964,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18967,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18969,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18971,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18973,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18975,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18977,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18980,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18982,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18984,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18985,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18987.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18988,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18989,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18991,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 16,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18993.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18994,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18996,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18997,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 18999,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19000,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19001,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19006,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19007,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19009,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19010,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19012,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19013,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19015,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19016,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19018,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19019.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19021,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19022.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19023,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19025.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19026,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19028,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19029,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19031,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19032,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19034,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19035,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19037,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19038,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19040,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19042,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19048,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19245,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19247,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19249,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19251,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19253,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19254,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19256,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19258,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19260,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19262,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19266,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19267,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19271,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19274,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19274,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 1,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19298,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 5,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19300,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19302,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19304.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19305,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19307.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19309,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19311,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19312,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19314,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19315,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19317,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 4,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19319,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 16,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19320,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19322,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19323,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19324,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19326,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19328,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 13,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19330.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19331,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19333.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19334,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19336.000000000004,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19337,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19339,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19340,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19341,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19343,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 2,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19344,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19349,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 8,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 15,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19350,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19352,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 3,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19353,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 10,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 14,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19355,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 11,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19356,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 12,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 9,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    },
+    {
+      "at": 19569,
+      "label": "",
+      "stages": {
+        "vertex": {
+          "uniforms": 8,
+          "complete": true
+        },
+        "fragment": {
+          "uniforms": 15,
+          "complete": true
+        },
+        "compute": {
+          "uniforms": 0,
+          "complete": true
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "losses": [
+    {
+      "reason": "destroyed",
+      "message": "",
+      "at": 20243.000000000004
+    }
+  ],
+  "shaders": [],
+  "samples": [
+    {
+      "at": 5050,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nBUILDING THE VILLAGE…\n9%\n0:03\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 7814,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n25%\n0:05\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 9814,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n31%\n0:07\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 11815,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n32%\n0:09\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 13815,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n33%\n0:11\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 15815,
+      "visible": "visible",
+      "frame": null,
+      "loaderHidden": false,
+      "loaderText": "\nSIMULATING THE OCEAN…\n33%\n0:13\n",
+      "quality": {},
+      "position": null,
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 17816,
+      "visible": "visible",
+      "frame": 0,
+      "loaderHidden": false,
+      "loaderText": "\nCOMPILING SHADERS…\n37%\n0:15\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": null
+    },
+    {
+      "at": 20309,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:17\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 18s | Frame 2 | Submits 0\nLast stage Post/presentation @17625ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0.8022462896109106
+    },
+    {
+      "at": 22322,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:17\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 18s | Frame 2 | Submits 0\nLast stage Post/presentation @17625ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 24325,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:17\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 18s | Frame 2 | Submits 0\nLast stage Post/presentation @17625ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 26329,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:17\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 18s | Frame 2 | Submits 0\nLast stage Post/presentation @17625ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 28333.000000000004,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:17\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 18s | Frame 2 | Submits 0\nLast stage Post/presentation @17625ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 30337,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:17\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 18s | Frame 2 | Submits 0\nLast stage Post/presentation @17625ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 32341,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:17\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 18s | Frame 2 | Submits 0\nLast stage Post/presentation @17625ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 34345,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:17\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 18s | Frame 2 | Submits 0\nLast stage Post/presentation @17625ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 36349.00000000001,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:17\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 18s | Frame 2 | Submits 0\nLast stage Post/presentation @17625ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 38353,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:17\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 18s | Frame 2 | Submits 0\nLast stage Post/presentation @17625ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    },
+    {
+      "at": 40357,
+      "visible": "visible",
+      "frame": 2,
+      "loaderHidden": false,
+      "loaderText": "\nSomething went wrong: WebGPU device lost (destroyed): Browser provided no device-loss details\n39%\n0:17\nRetry Loading\nGPU lifecycle trace 5 | retry 0\nElapsed 18s | Frame 2 | Submits 0\nLast stage Post/presentation @17625ms | Last submit 0ms\nCompute in last submit 0 | Last kernels none recorded\nCompute in current frame 0\nRender passes in last submit 0 | Last passes none\nLast queue completion frame 0 @0ms\nGPUDevice.destroy() hook not installed | Called from JS NO\nScene 393x695 | Canvas 393x695\nPost desktop\nCloud experiment full-clouds\nAtmosphere full | Initialization step 0\nWater query diagnostic normal | Held updates 0 | Valid initial sample NO\nSkyView dispatches 2 | Hold after prime NO | Water query overlap skipped 0\nRender isolation full\nReflection experiment live-reflections | Refreshes 1 | Prime one-shot | Step -1 | Cube 128px\nLoss reason not reported\nBrowser device-loss message none provided\nLast reported error none\nRecent \nCopy diagnostics\n",
+      "quality": {
+        "mobileLite": false,
+        "renderScale": 1,
+        "cascades": 4,
+        "causticsFine": 512,
+        "causticsBroad": 256,
+        "wake": 512
+      },
+      "position": {
+        "x": -64,
+        "y": 0.22821634262800217,
+        "z": -47
+      },
+      "jsHeapBytes": null,
+      "submittedFPS": 0
+    }
+  ],
+  "startupMs": null,
+  "gpuMemoryBytes": null,
+  "gameplay": "NOT_VERIFIED",
+  "adapter": {
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
+    "secureContext": true,
+    "apiAvailable": true,
+    "available": true,
+    "info": {
+      "vendor": "apple",
+      "architecture": "apple",
+      "device": "apple",
+      "description": "apple",
+      "isFallbackAdapter": false
+    },
+    "limits": {
+      "maxTextureDimension1D": 16384,
+      "maxTextureDimension2D": 16384,
+      "maxTextureDimension3D": 2048,
+      "maxTextureArrayLayers": 2048,
+      "maxBindGroups": 11,
+      "maxBindGroupsPlusVertexBuffers": 30,
+      "maxBindingsPerBindGroup": 65535,
+      "maxDynamicUniformBuffersPerPipelineLayout": 65535,
+      "maxDynamicStorageBuffersPerPipelineLayout": 65535,
+      "maxSampledTexturesPerShaderStage": 44,
+      "maxSamplersPerShaderStage": 22,
+      "maxStorageBuffersPerShaderStage": 44,
+      "maxStorageTexturesPerShaderStage": 44,
+      "maxUniformBuffersPerShaderStage": 44,
+      "maxUniformBufferBindingSize": 1073741824,
+      "maxStorageBufferBindingSize": 1073741824,
+      "minUniformBufferOffsetAlignment": 32,
+      "minStorageBufferOffsetAlignment": 32,
+      "maxVertexBuffers": 12,
+      "maxBufferSize": 1073741824,
+      "maxVertexAttributes": 30,
+      "maxVertexBufferArrayStride": 65532,
+      "maxInterStageShaderComponents": 124,
+      "maxInterStageShaderVariables": 124,
+      "maxColorAttachments": 8,
+      "maxColorAttachmentBytesPerSample": 64,
+      "maxComputeWorkgroupStorageSize": 32768,
+      "maxComputeInvocationsPerWorkgroup": 1024,
+      "maxComputeWorkgroupSizeX": 1024,
+      "maxComputeWorkgroupSizeY": 1024,
+      "maxComputeWorkgroupSizeZ": 1024,
+      "maxComputeWorkgroupsPerDimension": 65535
+    },
+    "features": [
+      "bgra8unorm-storage",
+      "core-features-and-limits",
+      "depth-clip-control",
+      "depth32float-stencil8",
+      "float16-renderable",
+      "float32-blendable",
+      "float32-renderable",
+      "indirect-first-instance",
+      "rg11b10ufloat-renderable",
+      "shader-f16",
+      "texture-compression-astc",
+      "texture-compression-astc-sliced-3d",
+      "texture-compression-etc2",
+      "texture-formats-tier1",
+      "timestamp-query"
+    ],
+    "backend": null,
+    "driver": null,
+    "wgslLanguageFeatures": [
+      "packed_4x8_integer_dot_product",
+      "pointer_composite_access",
+      "readonly_and_readwrite_storage_textures",
+      "unrestricted_pointer_parameters"
+    ],
+    "isFallbackAdapter": false
+  },
+  "qualification": {
+    "status": "CAPABILITY_GATE_PASSED",
+    "reasons": [],
+    "preferredStorageLimitMet": true,
+    "gameplayValidated": false
+  },
+  "shaderCount": 218,
+  "pendingShaderInfo": 0
+}

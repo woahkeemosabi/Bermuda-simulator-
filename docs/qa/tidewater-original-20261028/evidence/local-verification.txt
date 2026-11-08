@@ -1,0 +1,149 @@
+$ node test/tidewater-original-integrity.mjs
+10 original engine/ocean files match upstream 4811ba48d795197de5621985f404e765c0b7c0ef
+
+exit=0
+
+$ node test/tidewater-gpu-gate.mjs
+Capability classifier passed; synthetic unit inputs only, no GPU execution.
+
+exit=0
+
+$ node test/game-logic.mjs
+     sand: delay ~Infinity s; nothing
+     shallows: delay ~5.6 s; mullet 58%, needlefish 24%, silverside 11%, jack 7%, tarpon 0%
+     pier: delay ~4.0 s; grunt 23%, sergeant 22%, needlefish 10%, mullet 8%, jack 7%
+     reef: delay ~4.0 s; sergeant 13%, grunt 11%, laneSnapper 10%, tang 8%, parrot 8%
+     deep: delay ~5.2 s; redSnapper 28%, mahi 17%, tuna 10%, barracuda 9%, redHind 9%
+ok   nothing bites on dry sand
+ok   no bite delay on sand
+ok   deep water gives offshore species only
+ok   the reef gives mostly reef fish (91.2%)
+ok   tarpon bite at night (241 vs 18 by day)
+ok   bigger fish is worth more
+     grunt 0.8 kg, careful: caught after 16.6 s
+     grunt 0.8 kg, mash: caught after 13.3 s
+     grunt 0.8 kg, idle: escaped after 4.4 s
+     yellowtail 1.2 kg, careful: caught after 18.1 s
+     yellowtail 1.2 kg, mash: caught after 13.7 s
+     yellowtail 1.2 kg, idle: escaped after 8.6 s
+     jack 6 kg, careful: caught after 22.4 s
+     jack 6 kg, mash: snapped after 3.3 s
+     jack 6 kg, idle: escaped after 28.0 s
+     redSnapper 5 kg, careful: caught after 18.2 s
+     redSnapper 5 kg, mash: snapped after 2.8 s
+     redSnapper 5 kg, idle: escaped after 16.0 s
+     tuna 6 kg, careful: caught after 23.3 s
+     tuna 6 kg, mash: snapped after 2.3 s
+     tuna 6 kg, idle: escaped after 24.0 s
+     tuna 13 kg, careful: snapped after 4.2 s
+     tuna 13 kg, mash: snapped after 1.3 s
+     tuna 13 kg, idle: snapped after 3.1 s
+     tarpon 35 kg, careful: snapped after 2.7 s
+     tarpon 35 kg, mash: snapped after 1.1 s
+     tarpon 35 kg, idle: snapped after 2.1 s
+ok   careful reeling lands small fish
+ok   careful reeling lands a 6 kg jack on the starter line
+ok   holding reel on a big fish snaps the line
+ok   a 13 kg tuna needs the 30 lb line
+ok   never reeling loses the fish
+ok   a 35 kg tarpon beats the starter line
+ok   the top line and reel land it
+ok   new player starts dock-first with cash, basic fishing gear and the first-boat goal
+ok   cooler holds 30 kg
+ok   fish go into the cooler
+ok   a fish too big for the hold is logged but not kept
+ok   selling one fish adds its value to the wallet
+ok   missions move from available to active to completed
+ok   relationship reputation is persistent progression state
+ok   save / load round trip
+ok   ids keep counting after a load
+ok   mission director accepts the dock-first boat goal
+ok   mission director exposes current active objective
+ok   mission director completes the first-boat goal
+ok   first-boat completion applies its reputation rewards
+ok   first-boat completion unlocks the post-purchase campaign
+ok   every species has a scientific name and a plausible, increasing length (5–200 cm)
+ok   length-weight: a 10 kg mahi ~108 cm, a 0.84 kg grunt ~36 cm
+ok   first of a species: new species, not a record, length stored
+ok   a smaller one: no record, best unchanged
+ok   a bigger one: new record, previous best reported, log updated
+ok   a fish that does not fit: logged, card says released
+ok   old saves migrate without losing fishing progress or restoring the removed starter bicycle
+ok   blocked storage does not throw
+ok   cannot spend more than you have
+ok   gear stats
+ok   buying the reel upgrade
+ok   cannot buy what you cannot afford
+ok   fuel burns and costs to refill
+ok   refuel stops when the money runs out
+ok   a new tank comes full
+ok   fish finder: one level
+value check 22
+all passed
+
+exit=0
+
+$ node test/bermuda-layout.mjs
+Dock elevation, vendor interaction, walking clearance and quality recovery pass.
+Three eligible world notices stay in sync with job rotation and active job.
+Chandlery: stall assets failed, using the plain table [TypeError: Failed to parse URL from /models/props/props.json] {
+  [cause]: TypeError: Invalid URL
+      at new URL (node:internal/url:895:25)
+      at new Request (node:internal/deps/undici/undici:12164:25)
+      at fetch (node:internal/deps/undici/undici:13088:25)
+      at fetch (node:internal/deps/undici/undici:17998:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:83:12)
+      at bytes (file:///workspace/scratch/8acc7e0639a1/bermuda-gpu-validation/src/game/StallKit.js:49:20)
+      at _load (file:///workspace/scratch/8acc7e0639a1/bermuda-gpu-validation/src/game/StallKit.js:89:59)
+      at loadStallAssets (file:///workspace/scratch/8acc7e0639a1/bermuda-gpu-validation/src/game/StallKit.js:82:32)
+      at new Chandlery (file:///workspace/scratch/8acc7e0639a1/bermuda-gpu-validation/src/game/Chandlery.js:23:16)
+      at file:///workspace/scratch/8acc7e0639a1/bermuda-gpu-validation/test/bermuda-layout.mjs:15:14 {
+    code: 'ERR_INVALID_URL',
+    input: '/models/props/props.json'
+  }
+}
+
+exit=0
+
+$ node test/first-boat-mode.mjs
+First boat only: no lost money, completed missions or saved history; purchase retained.
+
+exit=0
+
+$ node test/first-boat-economy.mjs
+{"scope":"CPU only, no UI gameplay","sales":521,"earned":3201,"price":3200,"remaining":1,"purchasePersisted":true}
+
+exit=0
+
+$ npm run build
+
+> bermuda-simulator@0.1.0 build
+> vite build
+
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 279 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                    2.47 kB │ gzip:   1.13 kB
+dist/assets/index-CVzpflFp.css                    49.88 kB │ gzip:  10.18 kB
+dist/assets/GPU-CRJNW8x0.js                        0.06 kB │ gzip:   0.07 kB
+dist/assets/LocalLights-Cx1sOAfH.js                0.06 kB │ gzip:   0.08 kB
+dist/assets/preload-helper-uBIymjUX.js             1.23 kB │ gzip:   0.68 kB
+dist/assets/MobileVehicleHandling-CS0VTa2P.js      1.78 kB │ gzip:   0.83 kB
+dist/assets/index-B83TFswJ.js                      2.13 kB │ gzip:   1.08 kB
+dist/assets/GpuIdleProbe-CDtJ8KGE.js               2.66 kB │ gzip:   1.44 kB
+dist/assets/Bench-DaT4zKvB.js                      5.32 kB │ gzip:   2.48 kB
+dist/assets/GPU-CxPpnRCf.js                        5.47 kB │ gzip:   1.90 kB
+dist/assets/DebugViews-CspddCuO.js                 9.34 kB │ gzip:   3.61 kB
+dist/assets/BoatController-CnNwRCqB.js            10.69 kB │ gzip:   3.96 kB
+dist/assets/Frame-C32gaK6d.js                     17.26 kB │ gzip:   6.63 kB
+dist/assets/LocalLights-C9IUtCM3.js               36.57 kB │ gzip:  12.40 kB
+dist/assets/engine-DnKcp1A4.js                    39.04 kB │ gzip:  11.07 kB
+dist/assets/math-Bg2HIZpB.js                      49.79 kB │ gzip:  14.05 kB
+dist/assets/main-BdCtUXpY.js                   1,807.37 kB │ gzip: 616.11 kB
+
+✓ built in 562ms
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+exit=0

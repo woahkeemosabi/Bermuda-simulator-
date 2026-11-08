@@ -1,5 +1,4 @@
 import { GPU } from './gpu/GPU.js';
-import { gpuQueueAck, gpuQueueStall } from '../mobile/GpuAudit.js';
 import { PerspectiveCamera } from './scene/Camera.js';
 import { Scene } from './scene/Scene.js';
 import { Timer } from './math/Timer.js';
@@ -12,19 +11,10 @@ export class Engine {
 	constructor( container ) {
 
 		this.container = container;
-		const params = typeof location !== 'undefined' ? new URLSearchParams( location.search ) : null;
-		this.composeMode = !! ( params && params.has( 'compose' ) );
-		this.benchmarkMode = !! ( params && params.has( 'benchmark' ) );
-		// Compose mode is deliberately a low-load development view. The app's mobile post scale still
-		// applies inside this output size, so ?compose=1&gpuSafe=2 lands at roughly 58% effective linear
-		// resolution while keeping the CSS/camera viewport unchanged for layout decisions.
-		this.renderScale = this.composeMode ? 0.8 : 1;
+		this.renderScale = 1;
 		this.clock = new Timer();
 		this.frame = 0;
 		this.onResize = [];
-		this._composeLast = 0;
-		this._benchmarkLast = 0;
-		this._benchmarkSamples = [];
 
 	}
 
@@ -42,17 +32,6 @@ export class Engine {
 		this.scene = new Scene();
 		window.addEventListener( 'resize', () => this.resize() );
 		this.resize();
-
-		if ( this.benchmarkMode && typeof window !== 'undefined' ) {
-
-			window.__bermudaBenchmark = {
-				active: true,
-				samples: this._benchmarkSamples,
-				latest: null,
-				note: 'Renderer totals include every mesh pass accumulated during the sampled frame; use as a relative Tidewater/Bermuda workload baseline.'
-			};
-
-		}
 
 	}
 
@@ -91,29 +70,7 @@ export class Engine {
 
 	}
 
-	// output a low-frequency, read-only workload sample without touching gameplay or render decisions
-	_sampleBenchmark( t ) {
-
-		if ( ! this.benchmarkMode || ! this.meshRenderer || t - this._benchmarkLast < 1000 ) return;
-		this._benchmarkLast = t;
-		const stats = this.meshRenderer.stats || {};
-		const sample = {
-			time: Math.round( t ),
-			frame: this.frame,
-			draws: stats.draws || 0,
-			triangles: stats.triangles || 0,
-			pipelines: stats.pipelines || 0,
-			width: this.width,
-			height: this.height,
-			compose: this.composeMode
-		};
-		this._benchmarkSamples.push( sample );
-		if ( this._benchmarkSamples.length > 120 ) this._benchmarkSamples.shift();
-		window.__bermudaBenchmark.latest = sample;
-
-	}
-
-	// output (canvas) texture of this frame (render target of the final post pass)
+	// the canvas texture of this frame (render target of the final post pass)
 	currentTexture() {
 
 		return GPU.context.getCurrentTexture();
@@ -124,81 +81,12 @@ export class Engine {
 
 		const loop = ( t ) => {
 
-			// Schedule first so one thrown frame cannot kill the animation loop.
+			this.clock.update( t );
+			let dt = this.clock.getDelta();
+			if ( dt > 0.1 ) dt = 0.1;
+			this.frame ++;
+			update( dt, this.clock.getElapsed() );
 			this._raf = requestAnimationFrame( loop );
-			if ( this.mobileGpuFramePacing ) {
-				// Never stack GPU submissions on an iPhone while its previous frame is still
-				// executing. The entire simulation remains active in each rendered frame.
-				if ( this._gpuInFlight || ( this._mobileLastFrame && t - this._mobileLastFrame < 42 ) ) return;
-				this._mobileLastFrame = t;
-			}
-
-			try {
-
-				// World composition does not need 60 fps. Capping the heavy WebGPU frame to ~30 fps cuts
-				// sustained iPhone GPU pressure substantially while touch/DOM events continue at full rate.
-				if ( this.composeMode && this._composeLast && t - this._composeLast < 31 ) return;
-				if ( this.composeMode ) this._composeLast = t;
-
-				this.clock.update( t );
-				let dt = this.clock.getDelta();
-				if ( dt > 0.1 ) dt = 0.1;
-				this.frame ++;
-				update( dt, this.clock.getElapsed() );
-				this.consecutiveFrameErrors = 0;
-				if ( this.mobileGpuFramePacing ) {
-					this._gpuInFlight = true;
-					const flight = this._gpuFlight = ( this._gpuFlight || 0 ) + 1;
-					const submittedFrame = GPU.frame;
-					GPU.queue.onSubmittedWorkDone().then( () => {
-						gpuQueueAck(submittedFrame);
-						if ( flight === this._gpuFlight ) this._gpuInFlight = false;
-					}, ( error ) => {
-						this._gpuInFlight = false;
-						gpuQueueStall(String(error?.message || error));
-						this.stop();
-						this.onFrameFailure?.( error, 1 );
-					} );
-					// A wedged WebKit GPU queue may never resolve or reject.
-					setTimeout( () => {
-						if ( this._gpuInFlight && flight === this._gpuFlight ) {
-							this._gpuInFlight = false;
-							gpuQueueStall('WebGPU frame did not complete after 4500ms');
-							this.stop();
-							this.onFrameFailure?.( new Error( 'WebGPU frame did not complete' ), 1 );
-						}
-					}, 4500 );
-				}
-				this._sampleBenchmark( t );
-
-			} catch ( e ) {
-
-				this.lastFrameError = e;
-				this.consecutiveFrameErrors=(this.consecutiveFrameErrors||0)+1;
-				const fatal = GPU.fatalError || /createCommandEncoder|command encoder|device lost|out of memory/i.test( String(e?.message || e) );
-				if ( fatal || this.consecutiveFrameErrors >= 3 ) {
-					this.stop();
-					this.onFrameFailure?.( e, this.consecutiveFrameErrors );
-				}
-				window.__bermudaFrameError = e;
-				window.__bermudaFrameErrorCount = ( window.__bermudaFrameErrorCount || 0 ) + 1;
-
-				// IMPORTANT: App._frame() creates a WebGPU command encoder at the start of every
-				// frame and normally clears it in GPU.submit(). If anything throws before submit,
-				// leaving that half-recorded encoder around poisons every following frame on Safari.
-				// Drop the incomplete frame and any readback hooks so the next RAF starts clean.
-				GPU.encoder = null;
-				GPU._submitHooks = [];
-
-				const now = performance.now();
-				if ( ! this._lastFrameErrorLog || now - this._lastFrameErrorLog > 1000 ) {
-
-					console.error( 'Bermuda frame recovered after error:', e );
-					this._lastFrameErrorLog = now;
-
-				}
-
-			}
 
 		};
 

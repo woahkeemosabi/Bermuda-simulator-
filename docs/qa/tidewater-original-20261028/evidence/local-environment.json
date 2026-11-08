@@ -1,0 +1,10 @@
+{
+  "kernel": "6.18.55",
+  "gpuPaths": {
+    "/dev/dri": false,
+    "/dev/nvidia0": false,
+    "/sys/class/drm": false,
+    "/usr/share/vulkan/icd.d": false
+  },
+  "verdict": "No exposed hardware GPU devices"
+}
