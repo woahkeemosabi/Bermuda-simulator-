@@ -73,6 +73,25 @@ replace_once(
     "(look === BERMUDA_COASTAL_QA_LOOK ? 0.87 : 0.84) : look.daylight.exposure;",
 )
 
+# The former mobile clock was 0.05 in-game hours/real second: a full day
+# passed in eight minutes, so an early afternoon load turned black in ~2 min.
+# Slow ONLY the coastal QA lighting clock. Preserve a functioning day/night
+# cycle, gameplay saves, shadows, clouds, oceans and all rendering workloads.
+# ?clock=original restores the fast cycle. ?clock=hold fixes the sun during
+# controlled before/after screenshot comparisons. ?look=classic is untouched.
+replace_once(
+    identity,
+    "app.settings.timeOfDay = look.daylight.timeOfDay;",
+    """app.settings.timeOfDay = look.daylight.timeOfDay;
+    if (mobileHardware() && look === BERMUDA_COASTAL_QA_LOOK) {
+        const clock = new URLSearchParams(location.search).get('clock');
+        if (clock === 'hold') app.settings.timeSpeed = 0;
+        else if (clock !== 'original') app.settings.timeSpeed = 0.0025;
+        if (typeof window !== 'undefined')
+            window.__bermudaQADaySpeed = app.settings.timeSpeed;
+    }""",
+)
+
 # Existing mesh/materials only. No new geometry, instances or collisions.
 # Bermuda's pale limestone reads clearer against the weathered wooden pier.
 replace_once(
@@ -97,5 +116,7 @@ assert "'coastal-v1'" in identity_source and "?look=classic" not in identity_sou
 assert "new URLSearchParams(location.search).get('look') === 'classic'" in identity_source
 assert "foamBias: 0.61" in identity_source and "choppiness: 0.56" in identity_source
 assert "coastalQA ? 0xf0ebdf : 0xe8e3d6" in blockout_source
-print("QA coastal-v1 applied: water, atmosphere, exposure and existing waterfront material colors")
+assert "clock !== 'original'" in identity_source
+assert "app.settings.timeSpeed = 0.0025" in identity_source
+print("QA coastal-v1 applied: water, atmosphere, exposure, slower day/night cycle and existing waterfront material colors")
 print("Fallback: ?look=classic restores original profile; no FFT, geometry, shadow or save changes")
