@@ -362,23 +362,24 @@ assert audit_src.count(old_rev) == 1, "Beach visual fix QA report revision ancho
 audit.write_text(audit_src.replace(old_rev, new_rev, 1))
 
 
-# Coastal v22: the playable beach dock is a salt-weathered concrete wharf,
-# not a timber boardwalk. Use this repository's checked-in, lightweight
-# authored harbour geometry: it retains the v19 open beach, v21 landward
-# stairs, matching colliders, original stalls, saved wallet and ocean.
-# We only mirror this one module into the pinned QA checkout; other pinned
-# gameplay and rendering sources remain exactly as before.
-blockout_file = root / "src/world/BermudaBlockout.js"
-canonical_blockout = Path(__file__).resolve().parents[1] / "src/world/BermudaBlockout.js"
+# Coastal v23 emergency iPhone device-loss isolation.
+# v22 added a unique pixel-level noise WGSL material to the pier and the new
+# crash trace reached only 46 submits in 82 seconds / 3.5 FPS before device
+# loss. Single-variable rollback: remove shader, keep the grey concrete colour,
+# seven concrete expansion joints, coping, v21 steps and collision geometry.
+# This is not proof the shader caused the device loss; it tests that hypothesis.
+blockout_file = root / 'src/world/BermudaBlockout.js'
+canonical_blockout = Path(__file__).resolve().parents[1] / 'src/world/BermudaBlockout.js'
 concrete_source = canonical_blockout.read_text()
-assert "weathered-pier-concrete" in concrete_source
-assert "s.albedo *= (0.94+0.055*fleck+0.045*coarse)" in concrete_source
+assert "concrete:makeMaterial('weathered-pier-concrete',0xc9ceca,.98)" in concrete_source
+assert "makePierConcrete" not in concrete_source
+assert "mat.surface=" not in concrete_source
 assert "bermuda-beach-pier-step',true" in concrete_source
 assert "bermuda-shop-apron',true" in concrete_source
 assert "bermuda-landing-head',true" in concrete_source
 assert "const joints=new InstancedMesh(GEO.box,M.joint,7)" in concrete_source
-assert "const planks=" not in concrete_source
-assert "M.wood" not in concrete_source and "dock-wood" not in concrete_source
+assert "visualKey='pier-coping'" in concrete_source
+assert "M.wood" not in concrete_source and "const planks=" not in concrete_source
 assert "bermuda-outer-step" not in concrete_source
 assert "BermudaSimulatorSign" not in concrete_source and "bermudaDockSign" not in concrete_source
 assert "bermuda-road',true" not in concrete_source
@@ -386,12 +387,12 @@ blockout_file.write_text(concrete_source)
 
 audit_src = audit.read_text()
 old_marker = "  'QA source revision coastal-v19',"
-new_marker = """  'QA source revision coastal-v22',
+new_marker = """  'QA source revision coastal-v23',
   'QA dock access landward-beach-to-pier (adaptive treads)',
   'QA added signs NONE',
-  'QA pier material pale-weathered-concrete (world-space grain; no extra texture)',
+  'QA pier material pale-concrete shader-free (no procedural fragment work)',
   'QA pier deck 7 concrete expansion joints (no wooden plank strips)',"""
-assert audit_src.count(old_marker) == 1, "Coastal v22 report anchor changed"
+assert audit_src.count(old_marker) == 1, "Coastal v23 report anchor changed"
 audit.write_text(audit_src.replace(old_marker, new_marker, 1))
 
 out = src.read_text()
