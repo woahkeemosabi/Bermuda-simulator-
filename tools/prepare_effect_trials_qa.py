@@ -395,6 +395,158 @@ new_marker = """  'QA source revision coastal-v23',
 assert audit_src.count(old_marker) == 1, "Coastal v23 report anchor changed"
 audit.write_text(audit_src.replace(old_marker, new_marker, 1))
 
+
+# Coastal v24: opt-in iPhone performance profiling and guarded 60 Hz pacing.
+# ?perf=profile leaves the existing 42ms pacing untouched while capturing data.
+# ?perf=60 raises the *target*, NEVER exceeds one in-flight GPU submission.
+# ?perf=60&simBudget=balanced decouples visual-only caustics, shore sim and
+# panorama clouds from the FFT/physics frame rate. Their textures persist.
+# No change to default QA or production visuals, physics, save or performance.
+qa_engine_file = root / 'src/engine/Engine.js'
+qa_engine = qa_engine_file.read_text()
+old_mobile_gate = "if ( this._gpuInFlight || ( this._mobileLastFrame && t - this._mobileLastFrame < 42 ) ) return;"
+new_mobile_gate = """if ( this._gpuInFlight ) {
+                    if ( qaPerf ) qaPerf.skippedInFlight++;
+                    return;
+                }
+                const minInterval = this.mobileGpuTargetIntervalMs || 42;
+                if ( this._mobileLastFrame && t - this._mobileLastFrame < minInterval ) {
+                    if ( qaPerf ) qaPerf.skippedPacing++;
+                    return;
+                }"""
+assert qa_engine.count(old_mobile_gate)==1, "FPS scheduler gate changed"
+qa_engine=qa_engine.replace(old_mobile_gate,new_mobile_gate,1)
+old_rafs = "this._raf = requestAnimationFrame( loop );\n\t\t\tif ( this.mobileGpuFramePacing ) {"
+new_rafs = """this._raf = requestAnimationFrame( loop );
+            const qaPerf = typeof window !== 'undefined' ? window.__bermudaQAPerf : null;
+            if ( qaPerf ) qaPerf.rafTicks++;
+			if ( this.mobileGpuFramePacing ) {"""
+assert qa_engine.count(old_rafs)==1, "Frame-loop measurement anchor changed"
+qa_engine=qa_engine.replace(old_rafs,new_rafs,1)
+old_update = "update( dt, this.clock.getElapsed() );"
+new_update = """const qaCpuStart = qaPerf ? performance.now() : 0;
+                update( dt, this.clock.getElapsed() );
+                if ( qaPerf ) qaPerf.push('cpuFrame', performance.now()-qaCpuStart);"""
+assert qa_engine.count(old_update)==1, "Frame CPU measurement anchor changed"
+qa_engine=qa_engine.replace(old_update,new_update,1)
+old_submit_callback = "GPU.queue.onSubmittedWorkDone().then( () => {\n\t\t\t\t\t\tgpuQueueAck(submittedFrame);"
+new_submit_callback = """const qaAckStart = qaPerf ? performance.now() : 0;
+                    GPU.queue.onSubmittedWorkDone().then( () => {
+                        if ( qaPerf ) qaPerf.push('submitAckWall', performance.now()-qaAckStart);
+						gpuQueueAck(submittedFrame);"""
+assert qa_engine.count(old_submit_callback)==1, "GPU ack telemetry anchor changed"
+qa_engine_file.write_text(qa_engine.replace(old_submit_callback,new_submit_callback,1))
+
+qa_main_init = """		app.engine.mobileGpuFramePacing = mobileFastStart;"""
+qa_main_new = """        // QA-only performance study: preserve Safari's one-in-flight safety gate.
+        // 'profile' is a 42ms baseline. '60' removes only the pacing ceiling;
+        // actual FPS remains limited by CPU time and GPU completion.
+        const qaPerfQuery = new URLSearchParams(location.search);
+        const qaPerfMode = mobileFastStart && qaPerfQuery.get('fx') === 'coastal-seven'
+            ? qaPerfQuery.get('perf') : null;
+        if (qaPerfMode === 'profile' || qaPerfMode === '60') {
+            const qa = {
+                mode: qaPerfMode, requestedFps: qaPerfMode === '60' ? 60 : 24,
+                rafTicks:0, skippedInFlight:0, skippedPacing:0,
+                samples:{}, lastMark:0, lastStage:null,
+                push(key,ms){
+                    if (!Number.isFinite(ms)) return;
+                    const arr=this.samples[key]||(this.samples[key]=[]);
+                    arr.push(ms);
+                    if(arr.length>120)arr.shift();
+                },
+                pct(key,p){
+                    const arr=this.samples[key]||[];
+                    if(!arr.length)return 'warming';
+                    const sorted=arr.slice().sort((a,b)=>a-b);
+                    return sorted[Math.min(sorted.length-1,Math.floor((sorted.length-1)*p))].toFixed(1)+'ms';
+                },
+                mark(stage){
+                    const t=performance.now();
+                    if(this.lastStage&&this.lastMark) this.push(this.lastStage,t-this.lastMark);
+                    this.lastMark=t;
+                    this.lastStage=stage==='frame-end'?null:stage;
+                },
+                summary(){
+                    return 'mode '+this.mode+' | interval '+(app.engine?.mobileGpuTargetIntervalMs||42)+'ms'
+                        +' | RAF '+this.rafTicks+' | gated GPU '+this.skippedInFlight
+                        +' | gated pace '+this.skippedPacing;
+                },
+                phaseSummary(){
+                    return ['logic','ocean','world','render','post'].map(k=>k+' '+this.pct(k,.95)).join(' | ');
+                }
+            };
+            window.__bermudaQAPerf=qa;
+            if(qaPerfMode==='60') app.engine.mobileGpuTargetIntervalMs=16;
+            // Optional independent workload trial: keeps all effect textures
+            // and FFT simulation; only recalculation cadence changes.
+            if(qaPerfMode==='60' && qaPerfQuery.get('simBudget')==='balanced') {
+                window.__bermudaQASimBudget = {
+                    label:'caustics15-shore15-cloud10',
+                    last:{}, runs:{}, skips:{},
+                    allow(key,intervalMs){
+                        const now=performance.now();
+                        if(now-(this.last[key]??-Infinity)<intervalMs){
+                            this.skips[key]=(this.skips[key]||0)+1;
+                            return false;
+                        }
+                        this.last[key]=now;
+                        this.runs[key]=(this.runs[key]||0)+1;
+                        return true;
+                    }
+                };
+            }
+        }
+		app.engine.mobileGpuFramePacing = mobileFastStart;"""
+# main.js is pinned checkout generated during QA and may have custom prior patches.
+main_source=src.read_text()
+assert main_source.count(qa_main_init)==1, "Mobile init perf anchor changed"
+src.write_text(main_source.replace(qa_main_init,qa_main_new,1))
+
+qa_app = app_file.read_text()
+phase_anchors=[
+    ("gpuStage('Frame begin', GPU.frame + 1);",
+     "gpuStage('Frame begin', GPU.frame + 1);\n        if(window.__bermudaQAPerf) window.__bermudaQAPerf.mark('logic');"),
+    ("gpuStage('FFT and ocean simulation', GPU.frame);",
+     "gpuStage('FFT and ocean simulation', GPU.frame);\n        if(window.__bermudaQAPerf) window.__bermudaQAPerf.mark('ocean');"),
+    ("gpuStage('Island world preparation', GPU.frame);",
+     "gpuStage('Island world preparation', GPU.frame);\n        if(window.__bermudaQAPerf) window.__bermudaQAPerf.mark('world');"),
+    ("gpuStage('Scene rendering', GPU.frame);",
+     "gpuStage('Scene rendering', GPU.frame);\n        if(window.__bermudaQAPerf) window.__bermudaQAPerf.mark('render');"),
+    ("gpuStage('Post/presentation', GPU.frame);",
+     "gpuStage('Post/presentation', GPU.frame);\n        if(window.__bermudaQAPerf) window.__bermudaQAPerf.mark('post');"),
+    ("this.post.endFrame();\n\t\tGPU.submit();",
+     "this.post.endFrame();\n\t\tGPU.submit();\n        if(window.__bermudaQAPerf) window.__bermudaQAPerf.mark('frame-end');")
+]
+for old,new in phase_anchors:
+    assert qa_app.count(old)==1, "Phase CPU anchor changed: "+old[:65]
+    qa_app=qa_app.replace(old,new,1)
+
+effect_anchors=[
+    ("if ( this.caustics ) this.caustics.update();",
+     "if ( this.caustics && (!window.__bermudaQASimBudget || window.__bermudaQASimBudget.allow('caustics',67))) this.caustics.update();"),
+    ("if ( this.shoreSim ) this.shoreSim.update();",
+     "if ( this.shoreSim && (!window.__bermudaQASimBudget || window.__bermudaQASimBudget.allow('shore',67))) this.shoreSim.update();"),
+    ("if ( this.clouds ) this.clouds.update( dt, this.camera );",
+     "if ( this.clouds && (!window.__bermudaQASimBudget || window.__bermudaQASimBudget.allow('clouds',100))) this.clouds.update( dt, this.camera );")
+]
+for old,new in effect_anchors:
+    assert qa_app.count(old)==1, "Visual cadence anchor changed: "+old
+    qa_app=qa_app.replace(old,new,1)
+app_file.write_text(qa_app)
+
+audit_src = audit.read_text()
+old_rev = "  'QA source revision coastal-v23',"
+new_rev = """  'QA source revision coastal-v24',
+  'QA performance '+(typeof window!=='undefined'&&window.__bermudaQAPerf?window.__bermudaQAPerf.summary():'off (use perf=profile or perf=60)'),
+  'QA CPU frame p50/p95 '+(typeof window!=='undefined'&&window.__bermudaQAPerf?window.__bermudaQAPerf.pct('cpuFrame',.5)+' / '+window.__bermudaQAPerf.pct('cpuFrame',.95):'off'),
+  'QA submit-to-queue-ack wall p50/p95 '+(typeof window!=='undefined'&&window.__bermudaQAPerf?window.__bermudaQAPerf.pct('submitAckWall',.5)+' / '+window.__bermudaQAPerf.pct('submitAckWall',.95):'off')+' (NOT GPU timestamp)',
+  'QA CPU stages p95 '+(typeof window!=='undefined'&&window.__bermudaQAPerf?window.__bermudaQAPerf.phaseSummary():'off'),
+  'QA independent simulation budget '+(typeof window!=='undefined'&&window.__bermudaQASimBudget?window.__bermudaQASimBudget.label+' | runs '+JSON.stringify(window.__bermudaQASimBudget.runs)+' | skips '+JSON.stringify(window.__bermudaQASimBudget.skips):'all visual effects each frame'),"""
+assert audit_src.count(old_rev)==1, "Performance QA revision anchor changed"
+audit.write_text(audit_src.replace(old_rev,new_rev,1))
+
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
