@@ -106,7 +106,7 @@ assert.match(appSource, /mobileAlwaysIncrementalPanorama = true/);
 assert.match(cloudSource, /this\.panoWarm && ! this\.mobileAlwaysIncrementalPanorama/);
 assert.match(cloudSource, /if \( this\.mobileAlwaysIncrementalPanorama \) this\.panoWarm = false/);
 assert.match(reportSource, /QA cloud panorama budget/);
-assert.match(reportSource, /QA source revision coastal-v19/);
+assert.match(reportSource, /QA source revision coastal-v20/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -148,7 +148,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v19/);
+assert.match(reportSource, /QA source revision coastal-v20/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
@@ -157,7 +157,18 @@ assert.doesNotMatch(waterfrontUpgradeSource, /bermuda-footway/);
 assert.doesNotMatch(waterfrontUpgradeSource, /const roadY = 1\.43/);
 assert.match(beachBlockoutSource, /bermuda-landing',true/);
 assert.match(beachBlockoutSource, /bermuda-shop-apron',true/);
-assert.match(beachBlockoutSource, /bermuda-approach-ramp',true/);
+assert.doesNotMatch(beachBlockoutSource, /bermuda-approach-ramp',true/);
+assert.match(beachBlockoutSource, /bermuda-outer-step',true/);
+assert.match(beachBlockoutSource, /bermuda-outer-step-landing',true/);
+assert.match(beachBlockoutSource, /const top=outerTops\[i\],z=-17\.45\+i\*\.85/);
+assert.doesNotMatch(beachBlockoutSource, /z=-43\.45-i\*\.82/);
+assert.match(beachBlockoutSource, /B  BERMUDA SIMULATOR/);
+assert.match(beachBlockoutSource, /WELCOME TO THE DOCK/);
+assert.match(beachBlockoutSource, /BermudaSimulatorSign\./);
+assert.doesNotMatch(beachBlockoutSource, /Tidewater/);
+assert.match(beachBlockoutSource, /bermudaDockSign\./);
+assert.match(reportSource, /QA dock stairs seaward-END/);
+assert.match(reportSource, /QA signs Bermuda Simulator B-lettermark only/);
 assert.match(waterfrontUpgradeSource, /app\.bermudaReferenceUpgrade = \{ group, materials: M \}/);
 
 const unknown = run('all-at-once');
