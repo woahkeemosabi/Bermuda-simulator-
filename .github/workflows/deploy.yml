@@ -347,6 +347,8 @@ jobs:
           node --check _qa/fftcore/src/ocean/WaterMaterial.js
           node --check _qa/fftcore/src/world/ProductionMeshyAssets.js
           node --check _qa/fftcore/src/game/Vendor.js
+          node --check _qa/fftcore/src/world/BermudaBlockout.js
+          node --check _qa/fftcore/src/world/ReferenceWorldUpgrade.js
           node --check _qa/fftcore/src/engine/render/Skinning.js
           node --check _qa/fftcore/src/engine/Engine.js
           node --check _qa/fftcore/src/App.js
@@ -359,6 +361,7 @@ jobs:
           grep -q 'QA night visual' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA vendor texture load' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA vendor GLBs' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'QA beach road removed' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA_VENDOR_FOCUS' _qa/fftcore/src/game/Vendor.js
           grep -q '__bermudaTextureRole' _qa/fftcore/src/engine/render/Skinning.js
           grep -q 'QA_NIGHT_VISUAL' _qa/fftcore/src/sky/SkyProClouds.js
@@ -377,10 +380,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v18')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v19')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v18')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v19')
               file.write_text(source)
           PY
           cd _qa/fftcore
