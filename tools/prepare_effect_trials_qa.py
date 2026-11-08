@@ -361,6 +361,103 @@ new_rev = """  'QA source revision coastal-v19',
 assert audit_src.count(old_rev) == 1, "Beach visual fix QA report revision anchor changed"
 audit.write_text(audit_src.replace(old_rev, new_rev, 1))
 
+
+# Coastal v20: actual dock scene fix, not a rendered mockup.
+# Remove the five landward steps and create stepped access at the ocean-facing
+# far end of the pier. Preserve original dock/vendor/boat scene and colliders.
+# Sign panels use ONLY a B lettermark + "BERMUDA SIMULATOR" typography;
+# no Tidewater art, icon or logo is loaded, sampled, or drawn.
+blockout_file = root / "src/world/BermudaBlockout.js"
+bsrc = blockout_file.read_text()
+old_steps = """ // Smooth the final dock-to-road rise into five shallow walkable terraces. The old 0.5 m step
+ // forced mobile players to use UP just to reach RELIC; normal navigation should not require a jump.
+ const approachTops=[1.10,1.20,1.30,1.40,1.50];
+ for(let i=0;i<approachTops.length;i++){
+  const top=approachTops[i],z=-43.45-i*.82,h=top-.90;
+  box(M.wood,-65,.90+h*.5,z,5.2,h,.90,0,true,'bermuda-approach-ramp',true);
+ }"""
+new_steps = """ // Bermuda dock: stairs belong at the SEAWARD end, not across the beach approach.
+ // Five real, collidable treads lead onto a raised outer landing; the land side is clear.
+ const outerTops=[1.10,1.20,1.30,1.40,1.50];
+ visualKey='outer-steps';
+ for(let i=0;i<outerTops.length;i++){
+  const top=outerTops[i],z=-17.45+i*.85,h=top-.90;
+  box(M.wood,-65,.90+h*.5,z,4.5,h,.90,0,true,'bermuda-outer-step',true);
+ }
+ box(M.wood,-65,1.20,-11.25,4.5,.60,4.9,0,true,'bermuda-outer-step-landing',true);
+ visualKey='approach';"""
+assert bsrc.count(old_steps) == 1, "Pinned dock stairs anchor changed"
+bsrc = bsrc.replace(old_steps, new_steps, 1)
+
+old_import = "import { Material } from '../engine/render/Material.js';"
+new_import = """import { Material } from '../engine/render/Material.js';
+import { PlaneGeometry } from '../engine/index.js';
+import { Texture } from '../engine/gpu/Texture.js';
+import { generateMipmaps } from '../engine/gpu/Mipmaps.js';
+import { standard } from '../materials/Materials.js';"""
+assert bsrc.count(old_import) == 1, "Dock branding import anchor changed"
+bsrc = bsrc.replace(old_import, new_import, 1)
+
+old_boot = " scene.add(group);"
+new_boot = """ // One shared design language; original B typographic mark, never the Tidewater icon.
+ // Both boards stand outside the 5.2m central path, with no collision barrier.
+ if(typeof document!=='undefined'){
+  const makeSign=(x,z,kind)=>{
+   const ground=Math.max(.65,terrain.heightAt(x,z));
+   const canvas=document.createElement('canvas');
+   canvas.width=512; canvas.height=256;
+   const c=canvas.getContext('2d');
+   c.fillStyle='#061d2b';c.fillRect(0,0,512,256);
+   c.strokeStyle='#3dd2c5';c.lineWidth=9;c.strokeRect(7,7,498,242);
+   c.fillStyle='#ef9979';c.fillRect(22,18,6,222);
+   c.textAlign='left';
+   if(kind==='brand'){
+    c.fillStyle='#f1b18a';c.font='900 118px sans-serif';c.fillText('B',44,146);
+    c.fillStyle='#f0faf9';c.font='bold 45px sans-serif';c.fillText('BERMUDA',180,88);
+    c.fillText('SIMULATOR',180,135);
+    c.fillStyle='#58d8ce';c.font='bold 22px sans-serif';
+    c.fillText('FISH  /  EXPLORE  /  UPGRADE',45,214);
+   }else{
+    c.fillStyle='#f1b18a';c.font='bold 39px sans-serif';c.fillText('B  BERMUDA SIMULATOR',36,68);
+    c.fillStyle='#54dcd0';c.font='bold 31px sans-serif';c.fillText('WELCOME TO THE DOCK',36,122);
+    c.fillStyle='#f8faf7';c.font='bold 27px sans-serif';
+    c.fillText('JOE  -  FISH MARKET',36,173);
+    c.fillText('MARTHA  -  BAIT & TACKLE',36,217);
+   }
+   const texture=new Texture({label:'bermudaDockSign.'+kind,width:512,height:256,format:'rgba8unorm-srgb',mips:true,usage:['sample','render','copyDst']});
+   texture.upload(c.getImageData(0,0,512,256).data);
+   generateMipmaps(texture);
+   const material=standard({name:'bermudaDockSign.'+kind,roughness:.82,side:'front',
+     textures:{bermudaSignInk:texture},
+     surface:"let ink = textureSample( bermudaSignInk, smpLinearClamp, vec2f( in.uv.x, 1.0-in.uv.y ) ).rgb; s.albedo = ink; s.emissive = ink * 0.12 * smoothstep( 0.15, 0.8, frame.night );"});
+   visualKey='dock-brand-signs';
+   // Dark backer and twin poles. No collision to block beach navigation.
+   box(M.dark,x,ground+2.0,z,2.85,1.55,.11);
+   for(const dx of [-1.02,1.02])box(M.wood,x+dx,ground+1.15,z,.11,2.25,.11);
+   for(const face of [-1,1]){
+    const board=new Mesh(new PlaneGeometry(2.7,1.36),material);
+    board.name='BermudaSimulatorSign.'+kind;
+    board.position.set(x,ground+2,z+face*.07);
+    board.rotation.y=face<0?Math.PI:0;
+    board.castShadow=false;board.receiveShadow=false;group.add(board);
+   }
+  };
+  makeSign(-72.7,-52.5,'brand');
+  makeSign(-57.2,-52.5,'wayfinding');
+ }
+ scene.add(group);"""
+assert bsrc.count(old_boot)==1, "Dock scene boot insertion anchor changed"
+bsrc=bsrc.replace(old_boot,new_boot,1)
+blockout_file.write_text(bsrc)
+
+audit_src=audit.read_text()
+old_marker="  'QA source revision coastal-v19',"
+new_marker="""  'QA source revision coastal-v20',
+  'QA dock stairs seaward-END (five physical treads plus outer landing)',
+  'QA signs Bermuda Simulator B-lettermark only (no Tidewater brand)',"""
+assert audit_src.count(old_marker)==1,"Dock QA revision anchor changed"
+audit.write_text(audit_src.replace(old_marker,new_marker,1))
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
