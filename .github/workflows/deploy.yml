@@ -348,6 +348,8 @@ jobs:
           grep -q 'QA MarineSnow profile' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA gameplay FPS last 15s' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA cloud panorama budget' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'QA light bake' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'one-time-terrain-plus-bounce' _qa/fftcore/src/App.js
           grep -q 'mobileAlwaysIncrementalPanorama' _qa/fftcore/src/sky/SkyProClouds.js
           grep -q '__bermudaQAGameplay' _qa/fftcore/src/main.js
           node tools/test-qa-effect-trials.mjs
@@ -360,10 +362,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v13')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v14')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v13')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v14')
               file.write_text(source)
           PY
           cd _qa/fftcore
