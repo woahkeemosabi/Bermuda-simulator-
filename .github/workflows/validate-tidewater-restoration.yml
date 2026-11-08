@@ -1,0 +1,31 @@
+name: Tidewater restoration validation
+on:
+  push:
+    branches: [restore/tidewater-renderer-baseline-20261028]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node test/game-logic.mjs
+      - run: node test/bermuda-layout.mjs
+      - name: Verify mipmap binding limits
+        run: node test/compute-mips-limits.mjs
+      - run: npm run build
+
+      - name: Install browser test runner
+        run: npm install --no-save playwright && npx playwright install --with-deps chromium
+      - name: Check WebGPU startup on desktop and emulated mobile
+        run: node scripts/validate-tidewater-browser.mjs
+      - name: Upload browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tidewater-browser-baseline
+          path: audit-output/tidewater-baseline-browser.json

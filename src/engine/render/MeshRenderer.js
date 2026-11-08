@@ -1,5 +1,4 @@
 import { GPU } from '../gpu/GPU.js';
-import { gpuRender } from '../../mobile/GpuAudit.js';
 import { composeShader, createShaderModule, getBindGroupLayout, group0ForBlock } from '../gpu/Shader.js';
 import { buildMeshShader } from './MeshShader.js';
 import { blendState } from './Material.js';
@@ -51,9 +50,6 @@ export class MeshRenderer {
 		// scene renderer sets false: pipelines compile in the background and a draw is skipped until
 		// its pipeline is ready (no first-use stalls)
 		this.syncPipelines = true;
-		// WebKit/iOS 26 may lose its WebGPU device when instanced draws reorder every frame.
-		// Keep opaque draws in stable node order without changing materials or geometry.
-		this.iosStableDrawOrder = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test( navigator.userAgent );
 
 	}
 
@@ -424,9 +420,7 @@ export class MeshRenderer {
 
 		scene.updateMatrixWorld();
 		visit( scene );
-		opaque.sort( this.iosStableDrawOrder
-			? ( a, b ) => a.renderOrder - b.renderOrder || a.pipeKey - b.pipeKey || a.object.id - b.object.id
-			: ( a, b ) => a.renderOrder - b.renderOrder || a.pipeKey - b.pipeKey || a.z - b.z );
+		opaque.sort( ( a, b ) => a.renderOrder - b.renderOrder || a.pipeKey - b.pipeKey || a.z - b.z );
 		transparent.sort( ( a, b ) => a.renderOrder - b.renderOrder || b.z - a.z );
 		return { opaque, transparent };
 
@@ -511,7 +505,6 @@ export class MeshRenderer {
 			depthClearValue: pass.clearDepth ?? 0,
 		};
 		if ( pass.timestampWrites ) desc.timestampWrites = pass.timestampWrites;
-		gpuRender(desc.label);
 		const rp = enc.beginRenderPass( desc );
 		if ( pass.viewport ) rp.setViewport( ...pass.viewport );
 		rp.setBindGroup( 0, group0ForBlock( pass.frameBlock, 'render' ).getBindGroup() );
