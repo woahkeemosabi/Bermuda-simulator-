@@ -86,6 +86,10 @@ export class OceanFFT {
 		this.cascades = options.cascades ?? 4;
 		this.sizes = ( options.sizes ?? DEFAULT_CASCADE_SIZES ).slice( 0, this.cascades );
 		this.depth = options.depth ?? 500;
+		// Mobile's single FFT cascade can be computed once and translated at sampling
+		// time. This creates visible swell motion without any per-frame FFT compute,
+		// storage textures, or new GPU binding. Full FFT remains unchanged.
+		this.frozenAdvection = Math.max( 0, Number( options.frozenAdvection ) || 0 );
 
 		this.local = new WaveSystem( options.local ?? { windSpeed: 7, windDirection: 25, fetch: 120, spreadBlend: 0.85, swell: 0.05 } );
 		this.swell = new WaveSystem( options.swell ?? { scale: 0.48, windSpeed: 6, windDirection: 5, fetch: 1200, spreadBlend: 1.0, swell: 0.9, shortWavesFade: 0.1 } );
@@ -154,11 +158,17 @@ export class OceanFFT {
 const OCEAN_CASCADES: i32 = ${ C };
 const OCEAN_FFT_SIZE: f32 = ${ N }.0;
 
+// A constant world-space translation of the cached spectral field, applied to
+// displacement and slopes alike. It does not claim to simulate dispersion.
+fn oceanAdvectedXZ( xz: vec2f ) -> vec2f {
+	return xz - vec2f( -0.1191, -0.9929 ) * frame.time * ${ this.frozenAdvection.toFixed( 4 ) };
+}
+
 // Sample all cascades' displacement at world xz (explicit mip level).
 fn oceanSampleDisplacement( xz: vec2f, level: f32 ) -> vec3f {
 	var sum = vec3f( 0.0 );
 	for ( var c = 0; c < OCEAN_CASCADES; c++ ) {
-		sum += textureSampleLevel( oceanDisplacement, smpLinearRepeat, xz / ocean.sizes[ c ].x, c, level ).xyz;
+		sum += textureSampleLevel( oceanDisplacement, smpLinearRepeat, oceanAdvectedXZ( xz ) / ocean.sizes[ c ].x, c, level ).xyz;
 	}
 	return sum;
 }
@@ -167,7 +177,7 @@ fn oceanSampleDisplacement( xz: vec2f, level: f32 ) -> vec3f {
 fn oceanSampleDisplacementWeighted( xz: vec2f, level: f32, w: vec4f ) -> vec3f {
 	var sum = vec3f( 0.0 );
 	for ( var c = 0; c < OCEAN_CASCADES; c++ ) {
-		sum += textureSampleLevel( oceanDisplacement, smpLinearRepeat, xz / ocean.sizes[ c ].x, c, level ).xyz * w[ c ];
+		sum += textureSampleLevel( oceanDisplacement, smpLinearRepeat, oceanAdvectedXZ( xz ) / ocean.sizes[ c ].x, c, level ).xyz * w[ c ];
 	}
 	return sum;
 }
@@ -643,7 +653,7 @@ ${ reduce( 's7', null, 1, 8, t ) }
 		const terms = [];
 		for ( let c = 0; c < this.cascades; c ++ ) {
 
-			let s = `textureSampleLevel( oceanDisplacement, smpLinearRepeat, ( ${ worldXZ } ) / ocean.sizes[ ${ c } ].x, ${ c }, ${ level ?? '0.0' } ).xyz`;
+			let s = `textureSampleLevel( oceanDisplacement, smpLinearRepeat, oceanAdvectedXZ( ${ worldXZ } ) / ocean.sizes[ ${ c } ].x, ${ c }, ${ level ?? '0.0' } ).xyz`;
 			if ( weights ) s += ` * ( ${ weights[ c ] } )`;
 			terms.push( s );
 
