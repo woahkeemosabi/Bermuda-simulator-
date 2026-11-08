@@ -1,4 +1,4 @@
-// Optional isolated iPhone FFT-core QA: individual effect trials plus one locked six-effect coastal stack.
+// Optional isolated iPhone FFT-core QA: individual effects and locked six/seven-effect coastal stacks.
 // Runs AFTER configureGpuTraceUrl(), which installs all isolation flags.
 // Never changes the default URL or production code. No persistent game state.
 export const QA_EFFECT_TRIALS = Object.freeze({
@@ -12,13 +12,19 @@ export const QA_EFFECT_TRIALS = Object.freeze({
   reflections: Object.freeze({ disableFlag: null, label: '64px reflection bake (freeze)' }),
 });
 
-// Explicitly supported combination: the six individually validated effects together.
-// This is a fixed preset, NOT a general-purpose comma-separated switch parser.
-// Clouds, haze and environment reflection bakes stay isolated for the next test.
+// Locked coastal stacks: one proven six-effect comparison and the same six
+// plus panorama-only clouds. No arbitrary multi-flag combinations are accepted.
+// Haze and reflection bake remain isolated from this experiment.
 export const QA_EFFECT_STACKS = Object.freeze({
   'coastal-six': Object.freeze({
     disableFlags: Object.freeze(['noCaustics', 'noShadows', 'noSim', 'noBreakers', 'noSpray', 'noWake']),
     label: 'Caustics + shadows + shore + breakers + spray + wake (clouds off)',
+    panoramaClouds: false,
+  }),
+  'coastal-seven': Object.freeze({
+    disableFlags: Object.freeze(['noCaustics', 'noShadows', 'noSim', 'noBreakers', 'noSpray', 'noWake', 'noClouds']),
+    label: 'Caustics + shadows + shore + breakers + spray + wake + panorama clouds',
+    panoramaClouds: true,
   }),
 });
 
@@ -31,9 +37,15 @@ export function configureQAEffectTrial(url) {
   if (Object.prototype.hasOwnProperty.call(QA_EFFECT_STACKS, raw)) {
     const trial = QA_EFFECT_STACKS[raw];
     for (const flag of trial.disableFlags) url.searchParams.delete(flag);
-    // The next step is a separately controlled clouds experiment.
-    url.searchParams.set('noClouds', '1');
-    url.searchParams.delete('cloudtest');
+    // Coastal-seven adds ONLY panorama clouds to the successful six-effect QA.
+    // Full volumetric clouds remain excluded to avoid unrelated GPU load.
+    if (trial.panoramaClouds) {
+      url.searchParams.delete('noClouds');
+      url.searchParams.set('cloudtest', 'panorama');
+    } else {
+      url.searchParams.set('noClouds', '1');
+      url.searchParams.delete('cloudtest');
+    }
     url.searchParams.set('fx', raw);
     return raw;
   }
