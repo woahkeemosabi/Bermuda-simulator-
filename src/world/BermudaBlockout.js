@@ -20,12 +20,17 @@ export function installBermudaBlockout(app){
  // Open beach: the former raised asphalt strip at z=-49.2 crossed the sand.
  // Remove its mesh AND walkable collider, retaining the dock approach and shops.
  visualKey='approach'; box(M.wood,-65,.55,-30,5.2,.9,34,0,true,'bermuda-landing',true);
- // Smooth the final dock-to-road rise into five shallow walkable terraces. The old 0.5 m step
- // forced mobile players to use UP just to reach RELIC; normal navigation should not require a jump.
- const approachTops=[1.10,1.20,1.30,1.40,1.50];
- for(let i=0;i<approachTops.length;i++){
-  const top=approachTops[i],z=-43.45-i*.82,h=top-.90;
-  box(M.wood,-65,.90+h*.5,z,5.2,h,.90,0,true,'bermuda-approach-ramp',true);
+ // Beach-to-pier stairs are at the LANDWARD entrance of the existing dock (z=-47).
+ // Begin at the actual sand elevation, then meet the 1.0m timber deck without a gap.
+ // Tread height adapts in either direction to avoid an unwalkable lip on mobile.
+ const pierTop=1.0,beachTop=Math.max(.05,Math.min(2.4,terrain.heightAt(-65,-50.1)));
+ const stairCount=Math.max(4,Math.min(8,Math.ceil(Math.abs(pierTop-beachTop)/.18)));
+ const stairZ0=-50.1,stairZ1=-47.0,treadDepth=(stairZ1-stairZ0)/stairCount;
+ const stairBase=Math.min(pierTop,beachTop)-.18;
+ visualKey='beach-pier-stairs';
+ for(let i=0;i<stairCount;i++){
+  const top=beachTop+(pierTop-beachTop)*(i+1)/stairCount,z=stairZ0+(i+.5)*treadDepth;
+  box(M.wood,-65,stairBase+(top-stairBase)*.5,z,5.2,top-stairBase,treadDepth+.025,0,true,'bermuda-beach-pier-step',true);
  }
  visualKey='shop-apron'; box(M.wood,WATERFRONT_DECK.x,.55,WATERFRONT_DECK.z,WATERFRONT_DECK.width,.9,WATERFRONT_DECK.depth,0,true,'bermuda-shop-apron',true);
  const planks=new InstancedMesh(GEO.box,M.wood,120),matrix=new Matrix4();
