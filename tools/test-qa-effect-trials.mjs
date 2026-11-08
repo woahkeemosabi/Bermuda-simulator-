@@ -81,6 +81,7 @@ assert.equal(forcedFullCloud.searchParams.has('noClouds'), false);
 const mainSource = readFileSync(new URL('../_qa/fftcore/src/main.js', import.meta.url), 'utf8');
 const appSource = readFileSync(new URL('../_qa/fftcore/src/App.js', import.meta.url), 'utf8');
 const snowSource = readFileSync(new URL('../_qa/fftcore/src/fx/MarineSnow.js', import.meta.url), 'utf8');
+const cloudSource = readFileSync(new URL('../_qa/fftcore/src/sky/SkyProClouds.js', import.meta.url), 'utf8');
 const reportSource = readFileSync(new URL('../_qa/fftcore/src/mobile/GpuAudit.js', import.meta.url), 'utf8');
 assert.match(appSource, /query: mobileLite && qs\.get\('snowCompat'\) === '1' \? null : this\.query/);
 assert.match(appSource, /__bermudaQASnowCompatibility = 'fft-sea-level-waterline'/);
@@ -91,6 +92,13 @@ assert.match(reportSource, /QA cloud instance/);
 assert.match(mainSource, /__bermudaQAGameplay = \{ startedAt: performance\.now\(\), submissions: 0 \}/);
 assert.match(reportSource, /qaGameplaySubmissions/);
 assert.match(reportSource, /QA gameplay FPS last 15s/);
+assert.match(appSource, /qs\.get\('fx'\) === 'coastal-seven' && qs\.get\('cloudBudget'\) === 'lattice'/);
+assert.match(appSource, /mobileAlwaysIncrementalPanorama = true/);
+assert.match(cloudSource, /this\.panoWarm && ! this\.mobileAlwaysIncrementalPanorama/);
+assert.match(cloudSource, /if \( this\.mobileAlwaysIncrementalPanorama \) this\.panoWarm = false/);
+assert.match(reportSource, /QA cloud panorama budget/);
+assert.match(reportSource, /QA source revision coastal-v13/);
+
 
 const unknown = run('all-at-once');
 assert.equal(unknown.selected,'baseline');
