@@ -362,44 +362,36 @@ assert audit_src.count(old_rev) == 1, "Beach visual fix QA report revision ancho
 audit.write_text(audit_src.replace(old_rev, new_rev, 1))
 
 
-# Coastal v21: revert unwanted v20 signboards and misplaced seaward steps.
-# Place the only stairs at the landward entrance, where sand joins the pier.
-# Keep the original waterfront shops, dock, sea and player save unchanged.
+# Coastal v22: the playable beach dock is a salt-weathered concrete wharf,
+# not a timber boardwalk. Use this repository's checked-in, lightweight
+# authored harbour geometry: it retains the v19 open beach, v21 landward
+# stairs, matching colliders, original stalls, saved wallet and ocean.
+# We only mirror this one module into the pinned QA checkout; other pinned
+# gameplay and rendering sources remain exactly as before.
 blockout_file = root / "src/world/BermudaBlockout.js"
-bsrc = blockout_file.read_text()
-old_steps = """ // Smooth the final dock-to-road rise into five shallow walkable terraces. The old 0.5 m step
- // forced mobile players to use UP just to reach RELIC; normal navigation should not require a jump.
- const approachTops=[1.10,1.20,1.30,1.40,1.50];
- for(let i=0;i<approachTops.length;i++){
-  const top=approachTops[i],z=-43.45-i*.82,h=top-.90;
-  box(M.wood,-65,.90+h*.5,z,5.2,h,.90,0,true,'bermuda-approach-ramp',true);
- }"""
-new_steps = """ // Beach-to-pier stairs are at the LANDWARD entrance of the existing dock (z=-47).
- // Begin at the actual sand elevation, then meet the 1.0m timber deck without a gap.
- // Tread height adapts in either direction to avoid an unwalkable lip on mobile.
- const pierTop=1.0,beachTop=Math.max(.05,Math.min(2.4,terrain.heightAt(-65,-50.1)));
- const stairCount=Math.max(4,Math.min(8,Math.ceil(Math.abs(pierTop-beachTop)/.18)));
- const stairZ0=-50.1,stairZ1=-47.0,treadDepth=(stairZ1-stairZ0)/stairCount;
- const stairBase=Math.min(pierTop,beachTop)-.18;
- visualKey='beach-pier-stairs';
- for(let i=0;i<stairCount;i++){
-  const top=beachTop+(pierTop-beachTop)*(i+1)/stairCount,z=stairZ0+(i+.5)*treadDepth;
-  box(M.wood,-65,stairBase+(top-stairBase)*.5,z,5.2,top-stairBase,treadDepth+.025,0,true,'bermuda-beach-pier-step',true);
- }"""
-assert bsrc.count(old_steps) == 1, "Pinned dock beach access steps anchor changed"
-bsrc = bsrc.replace(old_steps, new_steps, 1)
-assert "bermuda-beach-pier-step',true" in bsrc
-assert "bermuda-outer-step" not in bsrc, "Incorrect seaward steps remain"
-assert "BermudaSimulatorSign" not in bsrc, "Unwanted signboards remain"
-assert "bermudaDockSign" not in bsrc, "Unwanted sign textures remain"
-blockout_file.write_text(bsrc)
+canonical_blockout = Path(__file__).resolve().parents[1] / "src/world/BermudaBlockout.js"
+concrete_source = canonical_blockout.read_text()
+assert "weathered-pier-concrete" in concrete_source
+assert "s.albedo *= (0.94+0.055*fleck+0.045*coarse)" in concrete_source
+assert "bermuda-beach-pier-step',true" in concrete_source
+assert "bermuda-shop-apron',true" in concrete_source
+assert "bermuda-landing-head',true" in concrete_source
+assert "const joints=new InstancedMesh(GEO.box,M.joint,7)" in concrete_source
+assert "const planks=" not in concrete_source
+assert "M.wood" not in concrete_source and "dock-wood" not in concrete_source
+assert "bermuda-outer-step" not in concrete_source
+assert "BermudaSimulatorSign" not in concrete_source and "bermudaDockSign" not in concrete_source
+assert "bermuda-road',true" not in concrete_source
+blockout_file.write_text(concrete_source)
 
 audit_src = audit.read_text()
 old_marker = "  'QA source revision coastal-v19',"
-new_marker = """  'QA source revision coastal-v21',
+new_marker = """  'QA source revision coastal-v22',
   'QA dock access landward-beach-to-pier (adaptive treads)',
-  'QA added signs NONE (v20 boards removed)',"""
-assert audit_src.count(old_marker) == 1, "Dock v21 QA report anchor changed"
+  'QA added signs NONE',
+  'QA pier material pale-weathered-concrete (world-space grain; no extra texture)',
+  'QA pier deck 7 concrete expansion joints (no wooden plank strips)',"""
+assert audit_src.count(old_marker) == 1, "Coastal v22 report anchor changed"
 audit.write_text(audit_src.replace(old_marker, new_marker, 1))
 
 out = src.read_text()
