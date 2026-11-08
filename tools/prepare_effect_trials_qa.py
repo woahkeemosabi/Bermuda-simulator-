@@ -270,81 +270,56 @@ new_rev = """  'QA source revision coastal-v16',
 assert audit_src.count(old_rev) == 1, 'Night visual QA report anchor changed'
 audit.write_text(audit_src.replace(old_rev, new_rev, 1))
 
-# Opt-in mobile character texture streaming A/B. Two independently textured
-# production characters share generic GPU labels ("char0"..), which made
-# a legitimate NPC allocation look like duplicate leaked player textures.
-# QA labels explicitly identify the owner. ?npcLoad=near defers ONLY the
-# female NPC's GLB/texture upload until within 24m, retaining full-resolution
-# textures and keeping the user's player and all other world assets unchanged.
-character_file = root / "src/world/ProductionMeshyAssets.js"
-character_source = character_file.read_text()
-base_marker = "const BASE = ((import.meta.env && import.meta.env.BASE_URL) || '/') + 'models/bermuda/';"
-qa_npc_mode = """const QA_NPC_PROXIMITY = typeof location !== 'undefined'
+# Actual QA game vendor characters are Joe and Martha in src/game/Vendor.js.
+# v17 inadvertently targeted ProductionMeshyAssets.js, which is not imported
+# by the pinned /qa/fftcore/ startup. Remove that inert patch. Both 'char0..5'
+# allocations are vendor GLBs: label each by owner for unambiguous GPU reports.
+# Opt-in ?vendorLoad=focus loads each unchanged, full-res GLB only within 3m
+# instead of 6m. Existing vendor UI/fallbacks, saves and graphics are intact.
+vendor_file = root / "src/game/Vendor.js"
+vendor_src = vendor_file.read_text()
+old_vendor_import = "import { createPropMaterial, PAT } from './GameMaterials.js';"
+new_vendor_import = """import { createPropMaterial, PAT } from './GameMaterials.js';
+
+const QA_VENDOR_FOCUS = typeof location !== 'undefined'
     && new URLSearchParams(location.search).get('fx') === 'coastal-seven'
-    && new URLSearchParams(location.search).get('npcLoad') === 'near';
-"""
-assert character_source.count(base_marker) == 1, "NPC QA module setup anchor changed"
-character_source = character_source.replace(base_marker, qa_npc_mode + base_marker, 1)
+    && new URLSearchParams(location.search).get('vendorLoad') === 'focus';"""
+assert vendor_src.count(old_vendor_import) == 1, "QA Vendor import anchor changed"
+vendor_src = vendor_src.replace(old_vendor_import, new_vendor_import, 1)
 
-base_gltf = "const gltf = await loadGLB( CHARACTERS + prefix + '-rigged.glb' );"
-assert character_source.count(base_gltf) == 1, "NPC character base loader anchor changed"
-character_source = character_source.replace(base_gltf, base_gltf + """
-    gltf.__bermudaTextureRole = prefix; // diagnostics only; no shared-model assumption
-""", 1)
+old_vendor_load = "const model = await SkinnedModel.create( await loadGLB( url ) );"
+new_vendor_load = """const gltf = await loadGLB( url );
+        if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('fx') === 'coastal-seven')
+            gltf.__bermudaTextureRole = this.kind === 'buyer' ? 'joe' : 'martha';
+        const model = await SkinnedModel.create( gltf );"""
+assert vendor_src.count(old_vendor_load) == 1, "QA Vendor GLB creation anchor changed"
+vendor_src = vendor_src.replace(old_vendor_load, new_vendor_load, 1)
 
-before_extras = "state.extrasPromise = ( async () => {"
-assert character_source.count(before_extras) == 1, "NPC deferred promise anchor changed"
-character_source = character_source.replace(before_extras, """let resolveLocomotion;
-    state.locomotionPromise = new Promise((resolve) => { resolveLocomotion = resolve; });
-    """ + before_extras, 1)
+old_range = "if ( dx * dx + dz * dz < 6 * 6 ) {"
+new_range = """const radius = QA_VENDOR_FOCUS ? Math.min(this.radius, 3.0) : 6;
+            if (dx * dx + dz * dz < radius * radius) {"""
+assert vendor_src.count(old_range) == 1, "QA Vendor proximity anchor changed"
+vendor_file.write_text(vendor_src.replace(old_range, new_range, 1))
 
-npc_delay = """			await breathe( 750 );
-			const femaleSource = await loadCharacterBase( 'bermuda-npc-female' );"""
-npc_near = """			resolveLocomotion(); // run + swim clips complete, unrelated world assets can continue
-			await breathe( 750 );
-            if (QA_NPC_PROXIMITY) {
-                window.__bermudaQANPCState = 'waiting-within-24m';
-                while (true) {
-                    await waitUntilVisible();
-                    const position = app.player?.position;
-                    if (position && Math.hypot(position.x + 51, position.z + 55.9) <= 24) break;
-                    await breathe(450);
-                }
-                window.__bermudaQANPCState = 'loading';
-            }
-			const femaleSource = await loadCharacterBase( 'bermuda-npc-female' );"""
-assert character_source.count(npc_delay) == 1, "NPC delayed load marker changed"
-character_source = character_source.replace(npc_delay, npc_near, 1)
-state_ready = "state.extrasReady = true;"
-assert character_source.count(state_ready) == 1, "NPC ready anchor changed"
-character_source = character_source.replace(state_ready, """state.extrasReady = true;
-            if (QA_NPC_PROXIMITY) window.__bermudaQANPCState = 'loaded-full-resolution';""", 1)
-extras_error = "state.extrasError = String( error?.message || error );"
-assert character_source.count(extras_error) == 1, "NPC deferred error anchor changed"
-character_source = character_source.replace(extras_error, """resolveLocomotion();
-            if (QA_NPC_PROXIMITY) window.__bermudaQANPCState = 'error';
-			""" + extras_error, 1)
-
-block_wait = "if ( hardwareMobile && state.characters?.extrasPromise ) await state.characters.extrasPromise;"
-new_wait = """if ( hardwareMobile && state.characters?.extrasPromise ) {
-            // Proximity-gated NPC must not block unrelated lobster/hero assets.
-            await (QA_NPC_PROXIMITY ? state.characters.locomotionPromise : state.characters.extrasPromise);
-        }"""
-assert character_source.count(block_wait) == 1, "NPC blocking asset pipeline anchor changed"
-character_file.write_text(character_source.replace(block_wait, new_wait, 1))
-
+# Character GPU resource labels retain their original format outside the QA.
 skin_file = root / "src/engine/render/Skinning.js"
 skin_source = skin_file.read_text()
 old_label = "label: 'char' + src"
 new_label = "label: g.__bermudaTextureRole ? 'char.' + g.__bermudaTextureRole + '.' + src : 'char' + src"
-assert skin_source.count(old_label) == 1, "Skinned GPU texture label anchor changed"
+assert skin_source.count(old_label) == 1, "Skinned texture label anchor changed"
 skin_file.write_text(skin_source.replace(old_label, new_label, 1))
 
 audit_source = audit.read_text()
 old_rev = "  'QA source revision coastal-v16',"
-new_rev = """  'QA source revision coastal-v17',
-  'QA NPC texture stream '+(typeof location!=='undefined' && new URLSearchParams(location.search).get('fx')==='coastal-seven' && new URLSearchParams(location.search).get('npcLoad')==='near' ? (window.__bermudaQANPCState||'initializing') : 'original-immediate'),"""
-assert audit_source.count(old_rev) == 1, "NPC report revision anchor changed"
+new_rev = """  'QA source revision coastal-v18',
+  'QA vendor texture load '+(typeof location!=='undefined' && new URLSearchParams(location.search).get('fx')==='coastal-seven' && new URLSearchParams(location.search).get('vendorLoad')==='focus'?'focus-3m':'legacy-6m'),
+  'QA vendor GLBs '+((app?.game?.vendors||[]).map(v=>{
+    const p=app?.player?.position;
+    const distance=p?Math.hypot(p.x-v.position.x,p.z-v.position.z).toFixed(1):'unknown';
+    const state=v.character?'loaded':(v._pendingCharacter?'deferred':'loading');
+    return (v.kind==='buyer'?'Joe':'Martha')+':'+state+'@'+distance+'m';
+  }).join(' | ')||'not-ready'),"""
+assert audit_source.count(old_rev) == 1, "QA vendor report revision anchor changed"
 audit.write_text(audit_source.replace(old_rev, new_rev, 1))
 
 out = src.read_text()
