@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { configureGpuTraceUrl } from '../_qa/fftcore/src/mobile/GpuTraceCases.js';
 import { configureQAEffectTrial, QA_EFFECT_TRIALS, QA_EFFECT_STACKS } from '../_qa/fftcore/src/mobile/QAEffectTrial.js';
 
@@ -74,8 +75,21 @@ configureQAEffectTrial(forcedFullCloud);
 assert.equal(forcedFullCloud.searchParams.get('cloudtest'), 'panorama');
 assert.equal(forcedFullCloud.searchParams.has('noClouds'), false);
 
+// Opt-in MarineSnow shader compatibility A/B: the default still uses the
+// original surface-query shader; ?snowCompat=1 removes only that dependency.
+// The FFT sampler remains used for particle motion and waterline clipping.
+const appSource = readFileSync(new URL('../_qa/fftcore/src/App.js', import.meta.url), 'utf8');
+const snowSource = readFileSync(new URL('../_qa/fftcore/src/fx/MarineSnow.js', import.meta.url), 'utf8');
+const reportSource = readFileSync(new URL('../_qa/fftcore/src/mobile/GpuAudit.js', import.meta.url), 'utf8');
+assert.match(appSource, /query: mobileLite && qs\.get\('snowCompat'\) === '1' \? null : this\.query/);
+assert.match(appSource, /__bermudaQASnowCompatibility = 'fft-sea-level-waterline'/);
+assert.match(snowSource, /if \( query && query\.module \) modules\.push\( query\.module \);/);
+assert.match(snowSource, /frame\.seaLevel \+ sway\.y - p\.y/);
+assert.match(reportSource, /QA MarineSnow profile/);
+assert.match(reportSource, /QA cloud instance/);
+
 const unknown = run('all-at-once');
 assert.equal(unknown.selected,'baseline');
 assert.equal(unknown.url.searchParams.has('fx'),false);
 for(const flag of flags) assert.equal(unknown.url.searchParams.get(flag),'1');
-console.log('QA effect tests passed: unchanged default + '+Object.keys(QA_EFFECT_TRIALS).length+' single-effect cases + coastal-six (clouds off) + coastal-seven (panorama clouds)');
+console.log('QA effects: default + singles + coastal-six + coastal-seven; opt-in MarineSnow source regression passed');
