@@ -343,6 +343,8 @@ jobs:
           node --check _qa/fftcore/src/mobile/GpuAudit.js
           node --check _qa/fftcore/src/fx/MarineSnow.js
           node --check _qa/fftcore/src/sky/SkyProClouds.js
+          node --check _qa/fftcore/src/sky/Sky.js
+          node --check _qa/fftcore/src/ocean/WaterMaterial.js
           node --check _qa/fftcore/src/engine/Engine.js
           node --check _qa/fftcore/src/App.js
           grep -q 'QA cloud instance' _qa/fftcore/src/mobile/GpuAudit.js
@@ -351,6 +353,10 @@ jobs:
           grep -q 'QA cloud panorama budget' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA light bake' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA resolution budget' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'QA night visual' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'QA_NIGHT_VISUAL' _qa/fftcore/src/sky/SkyProClouds.js
+          grep -q 'QA_NIGHT_VISUAL' _qa/fftcore/src/sky/Sky.js
+          grep -q 'QA_NIGHT_VISUAL' _qa/fftcore/src/ocean/WaterMaterial.js
           grep -q 'one-time-terrain-plus-bounce' _qa/fftcore/src/App.js
           grep -q 'mobileAlwaysIncrementalPanorama' _qa/fftcore/src/sky/SkyProClouds.js
           grep -q '__bermudaQAGameplay' _qa/fftcore/src/main.js
@@ -364,10 +370,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v15')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v16')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v15')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v16')
               file.write_text(source)
           PY
           cd _qa/fftcore
