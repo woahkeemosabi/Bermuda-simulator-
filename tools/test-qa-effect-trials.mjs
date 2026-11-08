@@ -82,6 +82,7 @@ const mainSource = readFileSync(new URL('../_qa/fftcore/src/main.js', import.met
 const appSource = readFileSync(new URL('../_qa/fftcore/src/App.js', import.meta.url), 'utf8');
 const snowSource = readFileSync(new URL('../_qa/fftcore/src/fx/MarineSnow.js', import.meta.url), 'utf8');
 const cloudSource = readFileSync(new URL('../_qa/fftcore/src/sky/SkyProClouds.js', import.meta.url), 'utf8');
+const engineSource = readFileSync(new URL('../_qa/fftcore/src/engine/Engine.js', import.meta.url), 'utf8');
 const reportSource = readFileSync(new URL('../_qa/fftcore/src/mobile/GpuAudit.js', import.meta.url), 'utf8');
 assert.match(appSource, /query: mobileLite && qs\.get\('snowCompat'\) === '1' \? null : this\.query/);
 assert.match(appSource, /__bermudaQASnowCompatibility = 'fft-sea-level-waterline'/);
@@ -97,12 +98,19 @@ assert.match(appSource, /mobileAlwaysIncrementalPanorama = true/);
 assert.match(cloudSource, /this\.panoWarm && ! this\.mobileAlwaysIncrementalPanorama/);
 assert.match(cloudSource, /if \( this\.mobileAlwaysIncrementalPanorama \) this\.panoWarm = false/);
 assert.match(reportSource, /QA cloud panorama budget/);
-assert.match(reportSource, /QA source revision coastal-v14/);
+assert.match(reportSource, /QA source revision coastal-v15/);
+assert.match(reportSource, /QA resolution budget/);
 assert.match(reportSource, /QA light bake/);
 assert.match(appSource, /qs\.get\('lightBake'\) === 'prime'/);
 assert.match(appSource, /one-time-terrain-plus-bounce/);
 assert.match(appSource, /if \(completedBakes > 0\) return false/);
 assert.match(appSource, /if \(baked\) completedBakes\+\+/);
+assert.match(engineSource, /get\('resCap'\) === '462'/);
+assert.match(engineSource, /get\('fx'\) === 'coastal-seven'/);
+assert.match(engineSource, /462 \/ Math\.max\(1, w\), 817 \/ Math\.max\(1, h\)/);
+assert.match(engineSource, /window\.__bermudaQAResolutionBudget = 'max-462x817'/);
+assert.match(engineSource, /this\.canvas\.style\.width = w \+ 'px'/);
+assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 
 
 const unknown = run('all-at-once');
