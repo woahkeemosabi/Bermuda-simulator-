@@ -4,30 +4,13 @@ import { WATERFRONT_DECK } from './bermuda/HarbourLayout.js';
 
 const START = { x: - 63.4, z: - 20.0, yaw: Math.PI };
 function makeMaterial(name,color,roughness=.9){return new Material({name:'bermuda-'+name,color,roughness,metalness:0,underwaterLighting:'lite',localLightsCheap:true,receiveShadows:false});}
-function makePierConcrete(name,color){
- const mat=makeMaterial(name,color,.97);
- // Salt-weathered cast concrete in world metres: no additional texture bindings.
- mat.surface=`
-  let fCell=floor(in.P*12.0);
-  var q=fract(fCell*vec3f(0.1031,0.11369,0.13787));
-  q += vec3f(dot(q,q.yzx+vec3f(33.33)));
-  let fleck=fract((q.x+q.y)*q.z);
-  let coarseCell=floor(in.P*1.55);
-  let coarse=fract(dot(coarseCell,vec3f(0.071,0.137,0.193))*0.6180339);
-  let aggregate=select(1.0,0.83,fleck>0.986);
-  let tidal=1.0-0.10*(1.0-smoothstep(0.08,0.74,in.P.y))*(1.0-abs(in.N.y));
-  s.albedo *= (0.94+0.055*fleck+0.045*coarse)*aggregate*tidal;
-  s.roughness=0.98;
- `;
- return mat;
-}
 function isMobileProfile(){if(typeof navigator==='undefined')return false;return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&Math.min(screen.width,screen.height)<1024);}
 
 export function installBermudaBlockout(app){
  if(!app||!app.scene||!app.terrainData||!app.colliders||app.bermudaBlockout)return app&&app.bermudaBlockout;
  const scene=app.scene,terrain=app.terrainData,colliders=app.colliders,mobileLite=isMobileProfile(),group=new Group(),visuals={};
  group.name='BermudaWorldBlockout'; let visualKey='quay';
- const M={limestone:makeMaterial('limestone',0xe8e3d6,.96),roof:makeMaterial('white-roof',0xf5f4ed,.92),pink:makeMaterial('pastel-pink',0xe9a7aa,.92),yellow:makeMaterial('pastel-yellow',0xe3cc79,.92),blue:makeMaterial('pastel-blue',0x9fc4d5,.92),mint:makeMaterial('pastel-mint',0xaecdb6,.92),concrete:makePierConcrete('weathered-pier-concrete',0xc9ceca),joint:makeMaterial('pier-expansion-joint',0x9ba4a0,.98),edge:makeMaterial('pier-coping',0xdbded8,.97),asphalt:makeMaterial('road',0x777d80,.98),dark:makeMaterial('harbour-dark',0x234452,.8),green:makeMaterial('palmetto',0x4f7655,.94),trunk:makeMaterial('palm-trunk',0x806b4c,1),red:makeMaterial('channel-red',0xc7473f,.84)};
+ const M={limestone:makeMaterial('limestone',0xe8e3d6,.96),roof:makeMaterial('white-roof',0xf5f4ed,.92),pink:makeMaterial('pastel-pink',0xe9a7aa,.92),yellow:makeMaterial('pastel-yellow',0xe3cc79,.92),blue:makeMaterial('pastel-blue',0x9fc4d5,.92),mint:makeMaterial('pastel-mint',0xaecdb6,.92),concrete:makeMaterial('weathered-pier-concrete',0xc9ceca,.98),joint:makeMaterial('pier-expansion-joint',0x9ba4a0,.98),edge:makeMaterial('pier-coping',0xdbded8,.97),asphalt:makeMaterial('road',0x777d80,.98),dark:makeMaterial('harbour-dark',0x234452,.8),green:makeMaterial('palmetto',0x4f7655,.94),trunk:makeMaterial('palm-trunk',0x806b4c,1),red:makeMaterial('channel-red',0xc7473f,.84)};
  const GEO={box:new BoxGeometry(1,1,1),cyl:new CylinderGeometry(1,1,1,8),sphere:new SphereGeometry(1,8,6)};
  const addScaled=(geo,mat,x,y,z,sx,sy,sz,ry=0)=>{const mesh=new Mesh(geo,mat);mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.rotation.y=ry;mesh.castShadow=false;mesh.receiveShadow=false;(visuals[visualKey]||=[]).push(mesh);group.add(mesh);return mesh;};
  const box=(mat,x,y,z,w,h,d,ry=0,collide=false,tag='bermuda',walkable=false)=>{const mesh=addScaled(GEO.box,mat,x,y,z,w,h,d,ry);if(collide)colliders.addBox(new Vector3(x,y,z),new Vector3(w*.5,h*.5,d*.5),ry,{tag,walkable});return mesh;};
