@@ -86,6 +86,8 @@ const skySource = readFileSync(new URL('../_qa/fftcore/src/sky/Sky.js', import.m
 const waterSource = readFileSync(new URL('../_qa/fftcore/src/ocean/WaterMaterial.js', import.meta.url), 'utf8');
 const engineSource = readFileSync(new URL('../_qa/fftcore/src/engine/Engine.js', import.meta.url), 'utf8');
 const vendorSource = readFileSync(new URL('../_qa/fftcore/src/game/Vendor.js', import.meta.url), 'utf8');
+const beachBlockoutSource = readFileSync(new URL('../_qa/fftcore/src/world/BermudaBlockout.js', import.meta.url), 'utf8');
+const waterfrontUpgradeSource = readFileSync(new URL('../_qa/fftcore/src/world/ReferenceWorldUpgrade.js', import.meta.url), 'utf8');
 const gameSource = readFileSync(new URL('../_qa/fftcore/src/game/Game.js', import.meta.url), 'utf8');
 const productionSource = readFileSync(new URL('../_qa/fftcore/src/world/ProductionMeshyAssets.js', import.meta.url), 'utf8');
 const skinSource = readFileSync(new URL('../_qa/fftcore/src/engine/render/Skinning.js', import.meta.url), 'utf8');
@@ -142,6 +144,21 @@ assert.match(engineSource, /window\.__bermudaQAResolutionBudget = 'max-462x817'/
 assert.match(engineSource, /this\.canvas\.style\.width = w \+ 'px'/);
 assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 
+
+// Beach screenshot regression: keep the landing and shop colliders but do
+// not recreate the three massive grey asphalt slabs or their invisible
+// collisions on either side of the public waterfront.
+assert.match(reportSource, /QA source revision coastal-v19/);
+assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
+assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
+assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
+assert.doesNotMatch(waterfrontUpgradeSource, /bermuda-road-extension/);
+assert.doesNotMatch(waterfrontUpgradeSource, /bermuda-footway/);
+assert.doesNotMatch(waterfrontUpgradeSource, /const roadY = 1\.43/);
+assert.match(beachBlockoutSource, /bermuda-landing',true/);
+assert.match(beachBlockoutSource, /bermuda-shop-apron',true/);
+assert.match(beachBlockoutSource, /bermuda-approach-ramp',true/);
+assert.match(waterfrontUpgradeSource, /app\.bermudaReferenceUpgrade = \{ group, materials: M \}/);
 
 const unknown = run('all-at-once');
 assert.equal(unknown.selected,'baseline');
