@@ -87,8 +87,8 @@ replace_once(
             window.__bermudaQAGameplay = { startedAt: performance.now(), submissions: 0 };"""
 )
 audit_source = audit.read_text()
-old_submit_line = "  a.lastSubmitAt=Math.round(now()-began);"
-new_submit_lines = """  a.lastSubmitAt=Math.round(now()-began);
+old_submit_line = " a.lastSubmitAt=Math.round(now()-began);"
+new_submit_lines = """ a.lastSubmitAt=Math.round(now()-began);
   const qaPlay = typeof window!=='undefined' ? window.__bermudaQAGameplay : null;
   if (qaPlay && (typeof document==='undefined' || document.visibilityState==='visible')) {
     qaPlay.submissions++;
