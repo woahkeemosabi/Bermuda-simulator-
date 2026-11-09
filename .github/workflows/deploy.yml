@@ -361,7 +361,7 @@ jobs:
           grep -q 'QA cloud instance' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA MarineSnow profile' _qa/fftcore/src/mobile/GpuAudit.js
           # Fail the Pages build if coastal-v30's snow/mote removal is absent.
-          grep -q 'coastal-v37-water-visual-ab' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'coastal-v38-storm-sky-isolated' _qa/fftcore/src/mobile/GpuAudit.js
           grep -Fq "const raw = url.searchParams.get('fx') || 'coastal-seven';" _qa/fftcore/src/mobile/QAEffectTrial.js
           grep -Fq "perf: '60'" _qa/fftcore/src/mobile/QAEffectTrial.js
           grep -Fq "simBudget: 'balanced'" _qa/fftcore/src/mobile/QAEffectTrial.js
@@ -416,6 +416,11 @@ jobs:
           grep -Fq 'qaAudioPrefetchEnabled && app.audio' _qa/fftcore/src/main.js
           grep -q 'QA startup audio' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA black-water guard' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'QA storm sky' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'QA oceanFix shared sun/sky light untouched' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -Fq "get('stormSky') === '1'" _qa/fftcore/src/sky/Sky.js
+          grep -Fq 'stormOverlay' _qa/fftcore/src/sky/Sky.js
+          ! grep -Fq 'G.sunColor.value.multiplyScalar(0.52)' _qa/fftcore/src/App.js
           grep -Fq "get('waterFix') === '1'" _qa/fftcore/src/post/MobilePostFX.js
           grep -q 'vDepth < 26.0' _qa/fftcore/src/ocean/WaterMaterial.js
           grep -q 'QA sky overcast mobile cloud black-tile fallback' _qa/fftcore/src/mobile/GpuAudit.js
@@ -444,10 +449,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v37')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v38')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v37')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v38')
               file.write_text(source)
           PY
           cd _qa/fftcore
@@ -458,6 +463,7 @@ jobs:
           node --check src/main.js
           node --check src/post/MobilePostFX.js
           node --check src/ocean/WaterMaterial.js
+          node --check src/sky/Sky.js
           npm run build
           cd ../..
           mkdir -p dist/qa/fftcore
@@ -539,7 +545,7 @@ jobs:
           print(f'Published model library: {canonical} (all secondary builds load it)')
           PY
 
-      - name: Promote Coastal v37 opt-in waterline fix to main GitHub Pages
+      - name: Promote Coastal v38 sky-only storm QA to main GitHub Pages
         if: github.ref == 'refs/heads/main'
         run: |
           python3 - <<'PY'
@@ -581,7 +587,7 @@ jobs:
           (root / 'coastal-release.json').write_text(json.dumps({
               'channel': 'main',
               'source': 'pinned fftcore QA + main-branch patches',
-              'version': 'coastal-v37-water-visual-ab',
+              'version': 'coastal-v38-storm-sky-isolated',
               'commit': os.environ.get('GITHUB_SHA'),
           }, indent=2) + '\n')
           assert (root / 'index.html').is_file()
@@ -589,7 +595,7 @@ jobs:
           assert (root / 'qa' / 'fftcore' / 'index.html').is_file()
           assert (root / 'archive' / 'oct14' / 'index.html').is_file()
           assert (root / 'archive' / 'sep30' / 'index.html').is_file()
-          print('Coastal v37 waterFix A/B published; unchanged seven coast FX default; QA, archives and GLBs retained')
+          print('Coastal v38 sky-only storm test published; seven coast FX preserved; QA, archives and GLBs retained')
           PY
 
       - name: Configure GitHub Pages
