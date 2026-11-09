@@ -161,6 +161,11 @@ assert.match(appSource, /this\.sky\.sunDiskIntensity\.value = storm \? 0\.30 : 1
 assert.match(appSource, /this\.clouds\.S\.cloudLight\.value\[2\] = storm \? 0\.42 : 0\.70/);
 assert.match(appSource, /this\.qs\.get\('oceanFix'\) === '1' \? 0\.97 : 0\.88/);
 assert.match(reportSource, /QA ocean visual tune/);
+assert.match(mainSource, /get\('startupAudio'\) === 'eager'/);
+assert.match(mainSource, /qaAudioPrefetchEnabled && app\.audio/);
+assert.match(mainSource, /soundOnExplore: true/);
+assert.match(mainSource, /app\.audio\.resume\(\)/);
+assert.match(reportSource, /QA startup audio/);
 assert.match(mainSource, /__bermudaQAWarmup\.queueAcks\+\+/);
 assert.match(mainSource, /__bermudaQAWarmup\.complete = true/);
 assert.match(reportSource, /GPU-confirmed frames/);
@@ -233,7 +238,7 @@ assert.match(appSource, /__bermudaQASimBudget\.allow\('clouds',100,dt\)/);
 assert.match(appSource, /__bermudaQASimBudget\.usedDelta\.clouds : dt/);
 assert.match(appSource, /this\.fft\.update\( dt \)/);
 
-assert.match(reportSource, /QA source revision coastal-v35-ocean-experiment/);
+assert.match(reportSource, /QA source revision coastal-v36-startup-audio-isolation/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -275,7 +280,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v35-ocean-experiment/);
+assert.match(reportSource, /QA source revision coastal-v36-startup-audio-isolation/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
