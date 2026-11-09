@@ -736,6 +736,80 @@ assert audit_src.count(old_rev)==1, "v27 report revision anchor changed"
 audit.write_text(audit_src.replace(old_rev,new_rev,1))
 
 
+
+# Coastal v28: actual iPhone screenshot fixes. Do NOT add new image assets,
+# extra render passes, a forked site, or new save namespaces.
+# 1) Mobile night air/spray is hidden; FFT, wakes, surface foam and water physics
+#    remain unchanged. MarineSnow is allowed only when the camera is underwater.
+# 2) SkyPro's 16-frame incremental panorama contains zero-filled texels until
+#    all phases have run. Treat those as clear atmosphere instead of opaque
+#    black and give dense overcast clouds a low blue-grey dawn radiance floor.
+#    Do not add costly cloud samples or new GPU texture allocations.
+# 3) QA mobile startup patch now primes 4 frames with no fixed time hold and
+#    continues audio download asynchronously.
+qa_app=app_file.read_text()
+old_air_update="this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );"
+new_air_update="""this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );
+        // Atmospheric/underwater flakes must never resemble snow drifting through
+        // the night air. Only hide the airborne particle geometry, not water foam,
+        // FFT waves, physical boat wake or spray simulation resources.
+        if (this.mobileLite && this.qs.get('fx') === 'coastal-seven') {
+            const nightNoAirborne = G.night.value > 0.32;
+            if (this.spray?.mesh && !this.qs.has('noSpray') && !this.qs.has('freezeFFT'))
+                this.spray.mesh.visible = !nightNoAirborne;
+            if (nightNoAirborne && this.airMotes?.mesh)
+                this.airMotes.mesh.visible = false;
+            // The existing near-waterline test can still draw some undersea
+            // particles above water at the surface. Restrict them to submerged
+            // cameras while retaining their underwater visibility.
+            if (this.marineSnow?.mesh && G.cameraUnderwater.value < 0.5)
+                this.marineSnow.mesh.visible = false;
+            window.__bermudaQANightSpray = nightNoAirborne
+                ? 'airborne spray/motes hidden; surface foam + FFT preserved'
+                : 'daytime spray normal; underwater snow only';
+        }"""
+assert qa_app.count(old_air_update)==1, "v28 air mote frame anchor changed"
+app_file.write_text(qa_app.replace(old_air_update,new_air_update,1))
+
+clouds_src=clouds_file.read_text()
+old_cloud_color="let cloudRadiance = mix( m.color, moonCloud, nocturnal );"
+new_cloud_color="""let cloudRadiance = mix( m.color, moonCloud, nocturnal );
+    // Dawn/overcast: the cloud lattice must not produce crushed-black masses.
+    // Preserve storm coverage and silhouettes, but never use unlit black as
+    // visible cloud radiance against a blue-grey twilight sky.
+    let dawnSun = atmosphereParams.sunDir.y;
+    let dawn = smoothstep( -0.23, -0.05, dawnSun ) *
+        ( 1.0 - smoothstep( 0.08, 0.23, dawnSun ) );
+    let skyAmbient = atmosphereSkyLuminance( dir );
+    let coverage = clamp( m.alpha, 0.0, 1.0 );
+    let ambientCloudFloor = ( skyAmbient * 0.22 +
+        vec3f( 0.003, 0.006, 0.011 ) +
+        vec3f( 0.022, 0.030, 0.043 ) * dawn ) * coverage;
+    cloudRadiance = max( cloudRadiance, ambientCloudFloor );"""
+assert clouds_src.count(old_cloud_color)==1, "v28 overcast cloud tone anchor changed"
+clouds_src=clouds_src.replace(old_cloud_color,new_cloud_color,1)
+old_panorama_sample="let s = textureSampleLevel( cloudsPanorama, smpLinearRepeat, vec2f( u, sqrt( t ) ), 0.0 );"
+new_panorama_sample="""let raw = textureSampleLevel( cloudsPanorama, smpLinearRepeat, vec2f( u, sqrt( t ) ), 0.0 );
+    // 16-phase mobile panorama: unwritten cells start transparent black. Using
+    // them directly creates the black rectangular cloud holes in Safari.
+    // Treat empty cells as clear sky until this section receives real cloud data.
+    let empty = raw.a <= 0.0001 && all( raw.rgb <= vec3f( 0.0001 ) );
+    let s = select( raw, vec4f( 0.0, 0.0, 0.0, 1.0 ), empty );"""
+assert clouds_src.count(old_panorama_sample)==1, "v28 cloud sample anchor changed"
+clouds_file.write_text(clouds_src.replace(old_panorama_sample,new_panorama_sample,1))
+
+audit_src=audit.read_text()
+old_rev="  'QA source revision coastal-v27',"
+new_rev="""  'QA source revision coastal-v28',
+  'QA startup instant-prime 4 frames / 0ms spacing / no forced 60s',
+  'QA sky overcast mobile cloud black-tile fallback + dawn radiance floor',
+  'QA night airborne spray '+(typeof window!=='undefined'
+    ?window.__bermudaQANightSpray||'waiting for first frame'
+    :'not browser'),"""
+assert audit_src.count(old_rev)==1, "v28 QA revision anchor changed"
+audit.write_text(audit_src.replace(old_rev,new_rev,1))
+
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
