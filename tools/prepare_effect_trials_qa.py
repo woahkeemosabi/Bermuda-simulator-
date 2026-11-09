@@ -1110,7 +1110,7 @@ new_flag = """  const qaWaterFix = typeof window !== 'undefined' &&
    new URLSearchParams(window.location.search).get('waterFix') === '1';
   if (typeof window !== 'undefined')
    window.__bermudaQAWaterVisual = qaWaterFix ? 'on: mobile sky-gap and shore face guards' : 'off';
-  const waterGapShader = qaWaterFix ? \`
+  const waterGapShader = qaWaterFix ? `
  // A ray with no geometry hit is the sky, which the full Underwater composite
  // normally scatters through the water column. Mobile's one-pass post lacks it.
  let depthSize=vec2i(textureDimensions(mobileDepth));
@@ -1121,7 +1121,7 @@ new_flag = """  const qaWaterFix = typeof window !== 'undefined' &&
    let scatter=max(vec3f(0.05,0.16,0.19),frame.skyIrradiance*0.22);
    c=mix(c,max(c,scatter),submerge);
  }
-\` : '';
+` : '';
   const filmSharp75=typeof window!=='undefined' &&"""
 assert mobile.count(old_flag) == 1, 'v37 mobile water toggle anchor moved'
 mobile = mobile.replace(old_flag, new_flag, 1)
@@ -1140,13 +1140,13 @@ water_file = root / 'src/ocean/WaterMaterial.js'
 water = water_file.read_text()
 old_water = "var res = min( outCol, vec3f( 16000.0 ) );"
 new_water = """var res = min( outCol, vec3f( 16000.0 ) );
-\${typeof window !== 'undefined' && new URLSearchParams(location.search).get('waterFix') === '1'
-  ? \`// Storm waves are dark but not solid-black masks. Preserve high dynamic
+${typeof window !== 'undefined' && new URLSearchParams(location.search).get('waterFix') === '1'
+  ? `// Storm waves are dark but not solid-black masks. Preserve high dynamic
   // range, moving crests and foam, and add only a shallow-water radiance floor.
   if (mat.debugMode == 0 && vDepth < 26.0) {
       let seaFloor = vec3f(0.028, 0.067, 0.081) + frame.skyIrradiance * 0.06;
       res = max(res, seaFloor);
-  }\` : '' }"""
+  }` : '' }"""
 assert water.count(old_water) == 1, 'v37 water shader color anchor moved'
 water_file.write_text(water.replace(old_water, new_water, 1))
 
