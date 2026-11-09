@@ -966,3 +966,92 @@ assert "const raw = url.searchParams.get('fx') || 'coastal-seven'" in (
 src.write_text(warm_main)
 assert "QA startup warmup '+(" in audit.read_text()
 print("Coastal v34 startup: 30 paced, queue-confirmed GPU frames at 700ms, telemetry active")
+
+
+# Coastal v35: opt-in corrected ocean visuals (oceanFix=1).
+# Leave user-facing seven-effect default untouched until on-device evidence.
+# Two issues: underwater caustics sample a frozen one-shot long-wave light map
+# on mobile; storm cloud coverage is 0.88 but the panorama sky stays bright.
+# No new shaders, textures, particles, rain geometry or GPU passes at startup.
+fix_app = app_file.read_text()
+old_storm = "storm: { coverage: 0.88, wind: 14, chop: 1.08, surf: 0.62 },"
+new_storm = "storm: { coverage: this.qs.get('oceanFix') === '1' ? 0.97 : 0.88, wind: 14, chop: 1.08, surf: 0.62 },"
+assert fix_app.count(old_storm) == 1, "v35 storm coverage anchor changed"
+fix_app = fix_app.replace(old_storm, new_storm, 1)
+
+old_atmo = "\t\tthis.applyAtmosphereReadback();"
+new_atmo = """        this.applyAtmosphereReadback();
+        if (this.mobileLite && this.qs.get('fx') === 'coastal-seven' &&
+            this.qs.get('oceanFix') === '1') {
+            const storm = this.settings.weatherMode === 'storm';
+            // Reuse existing sky/cloud uniforms; no extra materials or passes.
+            this.sky.sunDiskIntensity.value = storm ? 0.30 : 1.0;
+            if (this.clouds?.S?.cloudLight?.value)
+                this.clouds.S.cloudLight.value[2] = storm ? 0.42 : 0.70;
+            if (storm) {
+                G.sunColor.value.multiplyScalar(0.52);
+                G.skyIrradiance.value.multiplyScalar(0.65);
+                G.horizonColor.value.multiplyScalar(0.72);
+            }
+            window.__bermudaQAOceanVisual = window.__bermudaQAOceanVisual || {
+                underwaterMapRuns:0, underwaterMapSkips:0,
+                stormFrames:0, normalFrames:0
+            };
+            if (storm) window.__bermudaQAOceanVisual.stormFrames++;
+            else window.__bermudaQAOceanVisual.normalFrames++;
+        }"""
+assert fix_app.count(old_atmo) == 1, "v35 atmosphere lighting anchor changed"
+fix_app = fix_app.replace(old_atmo, new_atmo, 1)
+
+old_map = "\t\t\tthis.underwaterLighting.update( this.camera );"
+new_map = """            if (this.mobileLite && this.qs.get('fx') === 'coastal-seven' &&
+                this.qs.get('oceanFix') === '1' &&
+                window.__bermudaQAGameplay) {
+                // Only after Explore: no extra 512px map kernels in startup.
+                // Refresh the wave/foam/light map at <= 8 Hz near the sea,
+                // keeping the existing 15 Hz caustic texture generation.
+                const now = performance.now();
+                const nearSurface = this.camera.position.y <
+                    (this.cameraWaterHeight ?? 0) + 3.0;
+                if (nearSurface && now - (this._qaOceanMapLast || 0) >= 125) {
+                    window.__bermudaFreezeUnderwaterLight = false;
+                    this.underwaterLighting.update(this.camera);
+                    this._qaOceanMapLast = now;
+                    window.__bermudaQAOceanVisual.underwaterMapRuns++;
+                } else {
+                    window.__bermudaQAOceanVisual.underwaterMapSkips++;
+                }
+            } else {
+                this.underwaterLighting.update(this.camera);
+            }"""
+assert fix_app.count(old_map) == 1, "v35 underwater lighting dispatch anchor changed"
+fix_app = fix_app.replace(old_map, new_map, 1)
+app_file.write_text(fix_app)
+
+# Compare 30 x 700ms (v34 default) against 30 x 1200ms without changing
+# number of GPU-confirmed startup frames, visuals or memory allocations.
+warm_main = src.read_text()
+old_spacing = "frameWaitMs: 700,"
+new_spacing = "frameWaitMs: new URLSearchParams(location.search).get('bootSpacing') === '1200' ? 1200 : 700,"
+assert warm_main.count(old_spacing) == 1, "v35 preload spacing anchor changed"
+warm_main = warm_main.replace(old_spacing, new_spacing, 1)
+old_stat = "targetFrames: 30, spacingMs: 700,"
+new_stat = "targetFrames: 30, spacingMs: new URLSearchParams(location.search).get('bootSpacing') === '1200' ? 1200 : 700,"
+assert warm_main.count(old_stat) == 1, "v35 warmup report spacing anchor changed"
+src.write_text(warm_main.replace(old_stat, new_stat, 1))
+
+audit_src = audit.read_text()
+old_revision = "  'QA source revision coastal-v34-paced-startup',"
+new_revision = """  'QA source revision coastal-v35-ocean-experiment',
+  'QA ocean visual tune '+(typeof window!=='undefined' && window.__bermudaQAOceanVisual
+    ? 'storm frames '+window.__bermudaQAOceanVisual.stormFrames+
+      ' | normal frames '+window.__bermudaQAOceanVisual.normalFrames+
+      ' | underwater map refreshes '+window.__bermudaQAOceanVisual.underwaterMapRuns+
+      ' | skipped '+window.__bermudaQAOceanVisual.underwaterMapSkips
+    : 'off (use oceanFix=1)'),"""
+assert audit_src.count(old_revision) == 1, "v35 diagnostic revision anchor changed"
+audit.write_text(audit_src.replace(old_revision, new_revision, 1))
+assert "underwaterMapRuns++" in app_file.read_text()
+assert "bootSpacing') === '1200'" in src.read_text()
+assert "coastal-v35-ocean-experiment" in audit.read_text()
+print("Coastal v35 opt-in: 8Hz underwater wave-map refresh, darker storm uniforms, 1200ms startup A/B")
