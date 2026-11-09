@@ -102,6 +102,15 @@ assert.match(appSource, /if \(!mobileLite\) scene\.add\( this\.airMotes\.mesh \)
 assert.match(appSource, /__bermudaQASnowCompatibility = 'disabled-qa'/);
 assert.match(appSource, /__bermudaQAAirMotesProfile = 'disabled-qa'/);
 assert.match(reportSource, /QA AirMotes profile/);
+const noticesSource = readFileSync(new URL('../_qa/fftcore/src/game/HarbourNotices.js', import.meta.url), 'utf8');
+assert.match(vendorSource, /QA_VENDOR_FOCUS \? Math\.min\(this\.radius, 3\.0\) : 14/);
+assert.match(vendorSource, /__bermudaQAVendorLoadBusy = true/);
+assert.match(vendorSource, /__bermudaQAVendorLoadBusy = false/);
+assert.match(noticesSource, /s\.emissive = ink \* 0\.78/);
+assert.match(noticesSource, /side: 'double'/);
+assert.match(noticesSource, /#e2d5b8/);
+assert.match(reportSource, /QA vendor load strategy original GLBs early 14m serialized/);
+assert.match(reportSource, /QA harbour notices contrast emissive-0\.78 two-face/);
 assert.match(reportSource, /QA cloud instance/);
 assert.match(mainSource, /__bermudaQAGameplay = \{ startedAt: performance\.now\(\), submissions: 0 \}/);
 assert.match(reportSource, /qaGameplaySubmissions/);
@@ -201,7 +210,7 @@ assert.match(appSource, /__bermudaQASimBudget\.allow\('clouds',100,dt\)/);
 assert.match(appSource, /__bermudaQASimBudget\.usedDelta\.clouds : dt/);
 assert.match(appSource, /this\.fft\.update\( dt \)/);
 
-assert.match(reportSource, /QA source revision coastal-v30-particles-off/);
+assert.match(reportSource, /QA source revision coastal-v32-vendors-board/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -243,7 +252,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v30-particles-off/);
+assert.match(reportSource, /QA source revision coastal-v32-vendors-board/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
