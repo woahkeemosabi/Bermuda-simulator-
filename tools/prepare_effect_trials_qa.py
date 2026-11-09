@@ -1164,3 +1164,93 @@ assert "mobileDepth" in mobile_file.read_text()
 assert "vDepth < 26.0" in water_file.read_text()
 assert "coastal-v37-water-visual-ab" in audit.read_text()
 print("Coastal v37: opt-in waterFix=1 protects black sky gaps underwater and shore-wave faces; GPU effects unchanged")
+
+
+# Coastal v38: decouple storm sky from water. The v35 global sunlight and
+# skylight multipliers made v37's turquoise breaking crests dark when
+# oceanFix=1, yet did NOT darken the sky background shader. Keep v37 waterFix,
+# preserve seven coastal FX and use an opt-in sky-only canopy (?stormSky=1).
+app_v38 = app_file.read_text()
+old_world_dim = """            if (storm) {
+                G.sunColor.value.multiplyScalar(0.52);
+                G.skyIrradiance.value.multiplyScalar(0.65);
+                G.horizonColor.value.multiplyScalar(0.72);
+            }
+"""
+assert app_v38.count(old_world_dim) == 1, "v38 old global lighting anchor changed"
+app_v38 = app_v38.replace(old_world_dim, "", 1)
+
+sky_v38_file = root / "src/sky/Sky.js"
+sky_v38 = sky_v38_file.read_text()
+old_uniform = "\t\t\tstarIntensity: [ 'f32', 0 ],"
+new_uniform = """\t\t\tstarIntensity: [ 'f32', 0 ],
+            stormOverlay: [ 'f32', 0 ],"""
+assert sky_v38.count(old_uniform) == 1, "v38 SkyParams uniform anchor changed"
+sky_v38 = sky_v38.replace(old_uniform, new_uniform, 1)
+old_handle = "\t\tthis.starIntensity = this.params.fields.starIntensity;"
+new_handle = """\t\tthis.starIntensity = this.params.fields.starIntensity;
+        this.stormOverlay = this.params.fields.stormOverlay;"""
+assert sky_v38.count(old_handle) == 1, "v38 sky handle anchor changed"
+sky_v38 = sky_v38.replace(old_handle, new_handle, 1)
+
+# Modify camera sky only; skyReflectionRadiance used by the water is unchanged.
+old_view = """\t${ clouds ? `let c = cloudsSampleView( dir );
+\treturn base * c.a + sun * cloudsSunTransmittance( c.a ) + c.rgb;` : 'return base + sun;' }"""
+new_view = """\t${ clouds ? `let c = cloudsSampleView( dir );
+    let cloudComposed = base * c.a + sun * cloudsSunTransmittance( c.a ) + c.rgb;
+    ${ typeof window !== 'undefined' &&
+        new URLSearchParams(location.search).get('stormSky') === '1' ? `
+    // Sky-only mobile storm deck. No new GPU textures, passes or particles.
+    // Source panorama cloud radiance still contributes beneath this canopy.
+    let storm = clamp( skyParams.stormOverlay, 0.0, 1.0 );
+    let aboveHorizon = smoothstep( -0.055, 0.105, dir.y );
+    let drift = frame.time * 0.014;
+    let banks = sin( dir.x * 16.0 + dir.z * 12.0 + drift ) *
+                sin( dir.x * 28.0 - dir.z * 19.0 + drift * 0.7 );
+    let details = sin( dir.x * 46.0 + dir.z * 31.0 - drift * 1.5 );
+    let bank = clamp( 0.56 + 0.25 * banks + 0.10 * details, 0.16, 0.90 );
+    let overcastAlpha = storm * aboveHorizon * ( 0.78 + 0.17 * bank );
+    let cloudGray = mix( vec3f( 0.071, 0.087, 0.105 ),
+                         vec3f( 0.15, 0.167, 0.187 ), bank );
+    return mix( cloudComposed, cloudGray, overcastAlpha );`
+        : 'return cloudComposed;' }
+    ` : 'return base + sun;' }"""
+assert sky_v38.count(old_view) == 1, "v38 camera sky radiance anchor changed"
+sky_v38_file.write_text(sky_v38.replace(old_view, new_view, 1))
+
+# Smoothed per-frame weather state only for the camera-sky shader.
+old_frame = """        this.applyAtmosphereReadback();
+        if (this.mobileLite && this.qs.get('fx') === 'coastal-seven' &&"""
+new_frame = """        this.applyAtmosphereReadback();
+        if (this.mobileLite && this.qs.get('stormSky') === '1' &&
+            this.qs.get('fx') === 'coastal-seven') {
+            const target = this.settings.weatherMode === 'storm' ? 1 : 0;
+            const prev = this.sky.stormOverlay.value;
+            this.sky.stormOverlay.value = prev + (target - prev) *
+                Math.min(1, Math.max(0, dt) * 1.15);
+            window.__bermudaQAStormSky = {
+                mode: this.settings.weatherMode,
+                overlay: Math.round(this.sky.stormOverlay.value * 100) / 100,
+                sceneLighting: 'original-water-unchanged'
+            };
+        }
+        if (this.mobileLite && this.qs.get('fx') === 'coastal-seven' &&"""
+assert app_v38.count(old_frame) == 1, "v38 atmosphere insert anchor changed"
+app_file.write_text(app_v38.replace(old_frame, new_frame, 1))
+
+diag_v38 = audit.read_text()
+old_diag = "  'QA source revision coastal-v37-water-visual-ab',"
+new_diag = """  'QA source revision coastal-v38-storm-sky-isolated',
+  'QA storm sky '+(typeof window!=='undefined' && window.__bermudaQAStormSky
+    ? window.__bermudaQAStormSky.mode+' | canopy '+window.__bermudaQAStormSky.overlay+
+      ' | world light '+window.__bermudaQAStormSky.sceneLighting
+    : 'off (use stormSky=1)'),
+  'QA oceanFix shared sun/sky light untouched',"""
+assert diag_v38.count(old_diag) == 1, "v38 diagnostic version anchor changed"
+audit.write_text(diag_v38.replace(old_diag, new_diag, 1))
+
+assert "skyParams.stormOverlay" in sky_v38_file.read_text()
+assert "window.__bermudaQAStormSky" in app_file.read_text()
+assert "G.sunColor.value.multiplyScalar(0.52)" not in app_file.read_text()
+assert "coastal-v38-storm-sky-isolated" in audit.read_text()
+print("Coastal v38 sky-only storm QA; removed oceanFix global lighting regression; original full ocean FX")
