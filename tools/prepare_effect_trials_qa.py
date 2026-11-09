@@ -1180,6 +1180,19 @@ old_world_dim = """            if (storm) {
 assert app_v38.count(old_world_dim) == 1, "v38 old global lighting anchor changed"
 app_v38 = app_v38.replace(old_world_dim, "", 1)
 
+# v35 also raised coverage and lowered cloud ambient under oceanFix=1.
+# Both impact water reflections/cloud shadows. Restore exact v37 weather.
+old_coverage = "storm: { coverage: this.qs.get('oceanFix') === '1' ? 0.97 : 0.88, wind: 14, chop: 1.08, surf: 0.62 },"
+new_coverage = "storm: { coverage: 0.88, wind: 14, chop: 1.08, surf: 0.62 },"
+assert app_v38.count(old_coverage) == 1, "v38 old 0.97 coverage anchor changed"
+app_v38 = app_v38.replace(old_coverage, new_coverage, 1)
+old_ocean_sky = """            this.sky.sunDiskIntensity.value = storm ? 0.30 : 1.0;
+            if (this.clouds?.S?.cloudLight?.value)
+                this.clouds.S.cloudLight.value[2] = storm ? 0.42 : 0.70;
+"""
+assert app_v38.count(old_ocean_sky) == 1, "v38 old oceanFix cloud ambient anchor changed"
+app_v38 = app_v38.replace(old_ocean_sky, "", 1)
+
 sky_v38_file = root / "src/sky/Sky.js"
 sky_v38 = sky_v38_file.read_text()
 old_uniform = "\t\t\tstarIntensity: [ 'f32', 0 ],"
@@ -1225,6 +1238,7 @@ new_frame = """        this.applyAtmosphereReadback();
         if (this.mobileLite && this.qs.get('stormSky') === '1' &&
             this.qs.get('fx') === 'coastal-seven') {
             const target = this.settings.weatherMode === 'storm' ? 1 : 0;
+            this.sky.sunDiskIntensity.value = target ? 0.30 : 1.0;
             const prev = this.sky.stormOverlay.value;
             this.sky.stormOverlay.value = prev + (target - prev) *
                 Math.min(1, Math.max(0, dt) * 1.15);
@@ -1252,5 +1266,7 @@ audit.write_text(diag_v38.replace(old_diag, new_diag, 1))
 assert "skyParams.stormOverlay" in sky_v38_file.read_text()
 assert "window.__bermudaQAStormSky" in app_file.read_text()
 assert "G.sunColor.value.multiplyScalar(0.52)" not in app_file.read_text()
+assert "cloudLight.value[2] = storm" not in app_file.read_text()
+assert "storm: { coverage: 0.88, wind: 14" in app_file.read_text()
 assert "coastal-v38-storm-sky-isolated" in audit.read_text()
 print("Coastal v38 sky-only storm QA; removed oceanFix global lighting regression; original full ocean FX")
