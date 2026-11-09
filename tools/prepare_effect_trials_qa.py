@@ -773,7 +773,7 @@ app_file.write_text(qa_app.replace(old_air_update,new_air_update,1))
 
 clouds_src=clouds_file.read_text()
 old_cloud_color="let cloudRadiance = mix( m.color, moonCloud, nocturnal );"
-new_cloud_color="""let cloudRadiance = mix( m.color, moonCloud, nocturnal );
+new_cloud_color="""var cloudRadiance = mix( m.color, moonCloud, nocturnal );
     // Dawn/overcast: the cloud lattice must not produce crushed-black masses.
     // Preserve storm coverage and silhouettes, but never use unlit black as
     // visible cloud radiance against a blue-grey twilight sky.
@@ -786,7 +786,9 @@ new_cloud_color="""let cloudRadiance = mix( m.color, moonCloud, nocturnal );
         vec3f( 0.003, 0.006, 0.011 ) +
         vec3f( 0.022, 0.030, 0.043 ) * dawn ) * coverage;
     cloudRadiance = max( cloudRadiance, ambientCloudFloor );"""
-assert clouds_src.count(old_cloud_color)==1, "v28 overcast cloud tone anchor changed"
+assert clouds_src.count(old_cloud_color)==1, "v29 overcast cloud tone anchor changed"
+assert "var cloudRadiance = mix(" in new_cloud_color, "WGSL clouds uses mutable var for later assignment"
+assert "let cloudRadiance = mix(" not in new_cloud_color, "WGSL let cannot be reassigned"
 clouds_src=clouds_src.replace(old_cloud_color,new_cloud_color,1)
 old_panorama_sample="let s = textureSampleLevel( cloudsPanorama, smpLinearRepeat, vec2f( u, sqrt( t ) ), 0.0 );"
 new_panorama_sample="""let raw = textureSampleLevel( cloudsPanorama, smpLinearRepeat, vec2f( u, sqrt( t ) ), 0.0 );
@@ -800,7 +802,8 @@ clouds_file.write_text(clouds_src.replace(old_panorama_sample,new_panorama_sampl
 
 audit_src=audit.read_text()
 old_rev="  'QA source revision coastal-v27',"
-new_rev="""  'QA source revision coastal-v28',
+new_rev="""  'QA source revision coastal-v29',
+  'QA shader repair Clouds Panorama mutable radiance (WGSL var)',
   'QA startup instant-prime 4 frames / 0ms spacing / no forced 60s',
   'QA sky overcast mobile cloud black-tile fallback + dawn radiance floor',
   'QA night airborne spray '+(typeof window!=='undefined'
