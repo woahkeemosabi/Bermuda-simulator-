@@ -420,7 +420,7 @@ jobs:
           grep -q 'let empty = raw.a <= 0.0001' _qa/fftcore/src/sky/SkyProClouds.js
           grep -q 'this.spray.mesh.visible = !nightNoAirborne' _qa/fftcore/src/App.js
           grep -q 'frameCount: 30' _qa/fftcore/src/main.js
-          grep -q 'frameWaitMs: 700' _qa/fftcore/src/main.js
+          grep -Fq "frameWaitMs: new URLSearchParams(location.search).get('bootSpacing') === '1200' ? 1200 : 700" _qa/fftcore/src/main.js
           grep -q '__bermudaQAWarmup.queueAcks++' _qa/fftcore/src/main.js
           ! grep -q 'minimumMs: 60000' _qa/fftcore/src/main.js
           grep -q '__bermudaQAWakeAudit' _qa/fftcore/src/App.js
