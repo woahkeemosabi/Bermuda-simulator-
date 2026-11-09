@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Instrument ONLY the existing pinned /qa/fftcore/ checkout with opt-in FX trials.
+"""Instrument pinned FFT-core source with restored default Coastal seven FX.
 
-Run after tools/prepare_stable_qa.py, before Vite. All effects remain disabled
-by default. Each ?fx=<name> removes exactly one fftcore isolation flag.
+Run after tools/prepare_stable_qa.py, before Vite. Unparameterized main and QA
+URLs now activate user-tested seven-effect coastal settings. ?fx=baseline
+remains an explicitly selected isolation test. MarineSnow/AirMotes stay off.
 """
 from pathlib import Path
 from shutil import copyfile
@@ -28,8 +29,8 @@ replace_once(
 replace_once(
     "configureGpuTraceUrl(url); // FFT on, auxiliary passes off, G=12",
     """configureGpuTraceUrl(url); // FFT on, auxiliary passes off, G=12
-        // Re-enable only the explicitly selected subsystem AFTER fftcore
-        // isolation. Default is unchanged. App() reads normalized URL next.
+        // Restore user-tested seven-effect coastal preset AFTER the FFT isolation.
+        // Only explicit ?fx=baseline keeps the GPU isolation profile.
         window.__bermudaQAEffectTrial = configureQAEffectTrial(url);""",
 )
 
@@ -915,7 +916,7 @@ notices_file.write_text(notices)
 
 audit_src = audit.read_text()
 old_rev = "  'QA source revision coastal-v30-particles-off',"
-new_rev = """  'QA source revision coastal-v32-vendors-board',
+new_rev = """  'QA source revision coastal-v33-full-coastal-default',
   'QA vendor load strategy original GLBs early 14m serialized (mobile)',
   'QA harbour notices contrast emissive-0.78 two-face',"""
 assert audit_src.count(old_rev) == 1, 'v32 audit revision anchor changed'
@@ -925,5 +926,5 @@ assert "const radius = QA_VENDOR_FOCUS ? Math.min(this.radius, 3.0) : 14;" in ve
 assert "window.__bermudaQAVendorLoadBusy = true" in vendor_file.read_text()
 assert "s.emissive = ink * 0.78;" in notices_file.read_text()
 assert "side: 'double'" in notices_file.read_text()
-assert "coastal-v32-vendors-board" in audit.read_text()
-print("Coastal v32 QA: serialized original vendor GLB loads and bright two-sided harbour notices")
+assert "coastal-v33-full-coastal-default" in audit.read_text()
+print("Coastal v33: original vendors, bright harbour notices and seven FX restored by default")

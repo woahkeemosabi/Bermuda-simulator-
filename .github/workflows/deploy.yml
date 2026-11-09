@@ -361,7 +361,12 @@ jobs:
           grep -q 'QA cloud instance' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA MarineSnow profile' _qa/fftcore/src/mobile/GpuAudit.js
           # Fail the Pages build if coastal-v30's snow/mote removal is absent.
-          grep -q 'coastal-v32-vendors-board' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'coastal-v33-full-coastal-default' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -Fq "const raw = url.searchParams.get('fx') || 'coastal-seven';" _qa/fftcore/src/mobile/QAEffectTrial.js
+          grep -Fq "perf: '60'" _qa/fftcore/src/mobile/QAEffectTrial.js
+          grep -Fq "simBudget: 'balanced'" _qa/fftcore/src/mobile/QAEffectTrial.js
+          grep -Fq "cloudBudget: 'lattice'" _qa/fftcore/src/mobile/QAEffectTrial.js
+          grep -Fq "resCap: '462'" _qa/fftcore/src/mobile/QAEffectTrial.js
           grep -Fq 'if (!mobileLite) scene.add( this.marineSnow.mesh );' _qa/fftcore/src/App.js
           grep -Fq 'if (!mobileLite) scene.add( this.airMotes.mesh );' _qa/fftcore/src/App.js
           grep -Fq "window.__bermudaQASnowCompatibility = 'disabled-qa'" _qa/fftcore/src/App.js
@@ -427,10 +432,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v32')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v33')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v32')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v33')
               file.write_text(source)
           PY
           cd _qa/fftcore
@@ -520,7 +525,7 @@ jobs:
           print(f'Published model library: {canonical} (all secondary builds load it)')
           PY
 
-      - name: Promote verified Coastal v32 QA output to main GitHub Pages URL
+      - name: Promote verified Coastal v33 QA output to main GitHub Pages URL
         if: github.ref == 'refs/heads/main'
         run: |
           python3 - <<'PY'
@@ -562,7 +567,7 @@ jobs:
           (root / 'coastal-release.json').write_text(json.dumps({
               'channel': 'main',
               'source': 'pinned fftcore QA + main-branch patches',
-              'version': 'coastal-v32-vendors-board',
+              'version': 'coastal-v33-full-coastal-default',
               'commit': os.environ.get('GITHUB_SHA'),
           }, indent=2) + '\n')
           assert (root / 'index.html').is_file()
@@ -570,7 +575,7 @@ jobs:
           assert (root / 'qa' / 'fftcore' / 'index.html').is_file()
           assert (root / 'archive' / 'oct14' / 'index.html').is_file()
           assert (root / 'archive' / 'sep30' / 'index.html').is_file()
-          print('Coastal v32 promoted to GitHub Pages root; QA, archives and GLBs retained')
+          print('Coastal v33 promoted to GitHub Pages root; QA, archives and GLBs retained')
           PY
 
       - name: Configure GitHub Pages

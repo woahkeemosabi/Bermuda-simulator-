@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { configureGpuTraceUrl } from '../_qa/fftcore/src/mobile/GpuTraceCases.js';
-import { configureQAEffectTrial, QA_EFFECT_TRIALS, QA_EFFECT_STACKS } from '../_qa/fftcore/src/mobile/QAEffectTrial.js';
+import { configureQAEffectTrial, QA_EFFECT_TRIALS, QA_EFFECT_STACKS, COASTAL_DEFAULT_PARAMS } from '../_qa/fftcore/src/mobile/QAEffectTrial.js';
 
 // Isolated test: normalization first, then one-effect switch, exactly as src/main.js.
 const flags = ['noClouds','noSim','noSpray','noCaustics','noHaze','noWake','noBreakers','noShadows'];
@@ -12,12 +12,24 @@ function run(fx) {
   const selected = configureQAEffectTrial(url);
   return { url, selected };
 }
-const baseline=run('');
+const defaultCoastal=run('');
+assert.equal(defaultCoastal.selected,'coastal-seven', 'unparameterized game must launch full coastal FX');
+assert.equal(defaultCoastal.url.searchParams.get('fx'),'coastal-seven');
+for (const name of ['noClouds','noSim','noSpray','noCaustics','noWake','noBreakers','noShadows']) {
+  assert.equal(defaultCoastal.url.searchParams.has(name),false,'user-facing main must enable '+name);
+}
+assert.equal(defaultCoastal.url.searchParams.get('noHaze'),'1','one-pass haze remains separate');
+assert.equal(defaultCoastal.url.searchParams.get('cloudtest'),'panorama');
+for (const [name,value] of Object.entries(COASTAL_DEFAULT_PARAMS)) {
+  assert.equal(defaultCoastal.url.searchParams.get(name),value,'restore tested v29 '+name);
+}
+const baseline=run('baseline');
 assert.equal(baseline.selected,'baseline');
 for(const flag of flags) assert.equal(baseline.url.searchParams.get(flag),'1','baseline '+flag);
 assert.equal(baseline.url.searchParams.get('envtest'),'skip');
 assert.equal(baseline.url.searchParams.get('G'),'12');
 assert.equal(baseline.url.searchParams.get('traceCase'),'fftcore');
+assert.equal(baseline.url.searchParams.get('fx'),'baseline','only explicit QA baseline disables ocean effects');
 for (const [fx, opts] of Object.entries(QA_EFFECT_TRIALS)) {
   const {url, selected} = run(fx);
   assert.equal(selected,fx);
@@ -210,7 +222,7 @@ assert.match(appSource, /__bermudaQASimBudget\.allow\('clouds',100,dt\)/);
 assert.match(appSource, /__bermudaQASimBudget\.usedDelta\.clouds : dt/);
 assert.match(appSource, /this\.fft\.update\( dt \)/);
 
-assert.match(reportSource, /QA source revision coastal-v32-vendors-board/);
+assert.match(reportSource, /QA source revision coastal-v33-full-coastal-default/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -252,7 +264,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v32-vendors-board/);
+assert.match(reportSource, /QA source revision coastal-v33-full-coastal-default/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);

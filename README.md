@@ -4,7 +4,7 @@
 
 **Coastal QA / iPhone diagnostics:** https://woahkeemosabi.github.io/Bermuda-simulator-/qa/fftcore/
 
-**Current main release target:** Coastal v32 — iPhone marine snow and airborne specks disabled, original Joe/Martha GLB characters prefetched at 14 m one at a time, and high-contrast two-sided Harbour Jobs notices. The fishing → sell to Joe → save $3,200 for the starter lobster boat progression is retained.
+**Current main release target:** Coastal v33 — restores the earlier tested seven coastal effects by default (caustics, shadows, shoreline foam simulation, breakers, localized spray, boat wake and panorama clouds) with the 41.5-FPS test settings `perf=60`, `resCap=462`, `simBudget=balanced`, `cloudBudget=lattice`. The prior 41.5 FPS was an observed result, not a guaranteed frame rate. MarineSnow/AirMotes remain disabled. Original Joe/Martha GLB characters prefetch at 14 m one at a time, and Harbour Jobs notices remain bright. Explicit `?fx=baseline` is retained for GPU isolation. The fishing → sell to Joe → save $3,200 for the starter lobster boat progression is retained.
 
 The GitHub Pages workflow builds the pinned FFT-core coastal source and applies the main-branch QA patches, then promotes **that same compiled coastal version to the main URL**. Historical builds remain at `/archive/oct14/` and `/archive/sep30/`. Player saves retain their existing storage keys; the QA game's save slot is not reset or migrated.
 

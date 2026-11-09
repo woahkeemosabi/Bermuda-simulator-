@@ -1,6 +1,7 @@
-// Optional isolated iPhone FFT-core QA: individual effects and locked six/seven-effect coastal stacks.
-// Runs AFTER configureGpuTraceUrl(), which installs all isolation flags.
-// Never changes the default URL or production code. No persistent game state.
+// Coastal v33: restore the user-tested seven-effect iPhone profile as the default.
+// Configure AFTER FFT-core normalization; keep ?fx=baseline for explicit GPU isolation.
+// Only the two unwanted particle systems (MarineSnow/AirMotes) stay disabled.
+// This module does not change game progression or stored player data.
 export const QA_EFFECT_TRIALS = Object.freeze({
   caustics: Object.freeze({ disableFlag: 'noCaustics', label: 'Underwater caustics' }),
   shadows: Object.freeze({ disableFlag: 'noShadows', label: 'Sun shadow cascades (512)' }),
@@ -31,9 +32,20 @@ export const QA_EFFECT_STACKS = Object.freeze({
 // Aerial haze is intentionally omitted: MobilePostFX does not render its
 // separate AirHaze pass. Removing noHaze would allocate effects but not add
 // the visual effect to this iPhone one-pass renderer.
+export const COASTAL_DEFAULT_PARAMS = Object.freeze({
+  perf: '60',
+  resCap: '462',
+  simBudget: 'balanced',
+  cloudBudget: 'lattice',
+});
+
 export function configureQAEffectTrial(url) {
-  const raw = url.searchParams.get('fx');
-  if (!raw) return 'baseline';
+  const raw = url.searchParams.get('fx') || 'coastal-seven';
+  // The tested full ocean/sky is the main and QA default. Isolation is opt-in.
+  if (raw === 'baseline') {
+    url.searchParams.set('fx', 'baseline');
+    return 'baseline';
+  }
   if (Object.prototype.hasOwnProperty.call(QA_EFFECT_STACKS, raw)) {
     const trial = QA_EFFECT_STACKS[raw];
     for (const flag of trial.disableFlags) url.searchParams.delete(flag);
@@ -45,6 +57,13 @@ export function configureQAEffectTrial(url) {
     } else {
       url.searchParams.set('noClouds', '1');
       url.searchParams.delete('cloudtest');
+    }
+    if (raw === 'coastal-seven') {
+      // Match the measured 41.5 FPS Coastal v29 test configuration.
+      // Defaults are overridable for diagnostic A/B runs.
+      for (const [name, value] of Object.entries(COASTAL_DEFAULT_PARAMS)) {
+        if (!url.searchParams.has(name)) url.searchParams.set(name, value);
+      }
     }
     url.searchParams.set('fx', raw);
     return raw;
