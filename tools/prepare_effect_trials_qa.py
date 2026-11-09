@@ -1055,3 +1055,41 @@ assert "underwaterMapRuns++" in app_file.read_text()
 assert "bootSpacing') === '1200'" in src.read_text()
 assert "coastal-v35-ocean-experiment" in audit.read_text()
 print("Coastal v35 opt-in: 8Hz underwater wave-map refresh, darker storm uniforms, 1200ms startup A/B")
+
+
+# Coastal v36: isolate audio prefetch/decode memory pressure during GPU startup.
+# Prior traces lost the device ~1.3s AFTER 30/30 acknowledged warm frames
+# and BEFORE Explore, with no GPU submissions waiting. The previous startup
+# decoded 19 recordings concurrently using OfflineAudioContext. On iPhone
+# avoid those parallel downloads/decodes; SoundScape.resume() still creates
+# its AudioContext and loads CORE sounds normally on the Explore gesture.
+# Explicit startupAudio=eager reenables the old prefetch for A/B testing.
+mobile_main = src.read_text()
+old_audio = """        const qaAudioReady = app.audio
+            ? preloadQAStartupAudio(app.audio)
+            : Promise.resolve({decoded:0,downloaded:0,total:0});"""
+new_audio = """        const qaAudioPrefetchEnabled =
+            new URLSearchParams(location.search).get('startupAudio') === 'eager';
+        window.__bermudaQAStartupAudio = {
+            mode: qaAudioPrefetchEnabled ? 'eager-19-offline-decodes' : 'deferred-until-explore',
+            prefetchStarted: qaAudioPrefetchEnabled,
+            soundOnExplore: true
+        };
+        const qaAudioReady = qaAudioPrefetchEnabled && app.audio
+            ? preloadQAStartupAudio(app.audio)
+            : Promise.resolve({decoded:0,downloaded:0,total:0});"""
+assert mobile_main.count(old_audio) == 1, 'v36 audio preload hook changed'
+src.write_text(mobile_main.replace(old_audio, new_audio, 1))
+
+diag = audit.read_text()
+old_rev = "  'QA source revision coastal-v35-ocean-experiment',"
+new_rev = """  'QA source revision coastal-v36-startup-audio-isolation',
+  'QA startup audio '+(typeof window!=='undefined'
+    ?window.__bermudaQAStartupAudio?.mode||'not initialized'
+    :'not browser')+' | SoundScape loads on Explore',"""
+assert diag.count(old_rev) == 1, 'v36 diagnostic version hook changed'
+audit.write_text(diag.replace(old_rev, new_rev, 1))
+assert "get('startupAudio') === 'eager'" in src.read_text()
+assert "preloadQAStartupAudio(app.audio)" in src.read_text()
+assert "coastal-v36-startup-audio-isolation" in audit.read_text()
+print("Coastal v36: parallel 19-recording audio preload deferred until Explore; seven ocean FX unchanged")
