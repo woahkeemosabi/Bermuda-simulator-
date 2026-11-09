@@ -92,21 +92,21 @@ replace_once("src/main.js",
             : Promise.resolve({decoded:0,downloaded:0,total:0});
         ui.setLoading(.97, 'Preparing Bermuda world and sound…', .995);""")
 
-# Warm only a few real GPU frames. The previous 30 frames x 2000 ms
-# intentionally held the player for 60 seconds; gameplay now starts after
-# world verification and a small GPU safety prime, without an artificial delay.
+# Coastal v34: restore the original 30 GPU-confirmed warm-up frames while
+# reducing their spacing from 2000ms to 700ms (21s nominal paced preparation).
+# Each frame still waits for GPU queue completion and periodically pipelinesReady().
 replace_once("src/main.js",
     "frameCount: mobileFullEffects ? MOBILE_FULL_PRELOAD_FRAMES : undefined,",
-    "frameCount: 4,")
+    "frameCount: 30,")
 replace_once("src/main.js",
     "frameWaitMs: mobileFullEffects ? MOBILE_FULL_PRELOAD_WAIT_MS : undefined,",
-    "frameWaitMs: 0,")
+    "frameWaitMs: 700,")
 replace_once("src/main.js",
     "ui.setLoading( 0.983 + 0.012 * ( step - 1 ) / total, status, .995 );",
     "ui.setLoading(0.983 + 0.012 * (step - 1) / total, status.replace('full-quality Bermuda', 'stable Bermuda'), .995);")
 
-# Do not enforce a 60-second hold or wait for all audio downloads before play.
-# Core world verification and the four warm-up frames still execute above;
+# No fixed 60-second timer and no block on optional audio downloads.
+# Verify world and complete the 30 paced, GPU-confirmed warm-up frames first;
 # sound continues to download/decode without blocking the Explore button.
 replace_once("src/main.js",
     "\t\tui.setLoading( 1, 'World ready' );",
@@ -264,10 +264,10 @@ replace_once("src/mobile/GpuAudit.js",
 main = (root / "src/main.js").read_text()
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in main
 assert "getFftCoreVisualProfile('crisp')" in main
-assert "frameCount: 4" in main
+assert "frameCount: 30" in main
 assert "minimumMs: 60000" not in main
-assert "frameWaitMs: 0" in main
+assert "frameWaitMs: 700" in main
 assert "Core scene primed; optional audio loading continues" in main
 assert "preloadQAStartupAudio(app.audio)" in main
 assert "Bermuda audio start" in main
-print("iPhone QA: original FFT + Crisp; 4 immediate warm frames, no forced wait; audio continues asynchronously")
+print("iPhone QA Coastal v34: 30 queue-confirmed warm frames at 700ms intervals; no forced 60s hold; audio async")
