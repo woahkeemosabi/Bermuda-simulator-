@@ -549,7 +549,9 @@ jobs:
               else:
                   item.unlink()
           for item in qa.iterdir():
-              if item.name in ('models', 'index.html'):
+              if item.name in ('models', 'index.html', 'archive', 'qa'):
+                  # Already present as shared canonical data or independent recovery builds.
+                  # Never copy over archive/ or QA/ (copytree would fail on existing directories).
                   continue
               target = root / item.name
               if item.is_dir():
