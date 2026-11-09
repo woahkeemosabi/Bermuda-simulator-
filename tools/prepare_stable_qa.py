@@ -92,41 +92,30 @@ replace_once("src/main.js",
             : Promise.resolve({decoded:0,downloaded:0,total:0});
         ui.setLoading(.97, 'Preparing Bermuda world and sound…', .995);""")
 
-# Warm real GPU frames sequentially at low load for a full minute.
+# Warm only a few real GPU frames. The previous 30 frames x 2000 ms
+# intentionally held the player for 60 seconds; gameplay now starts after
+# world verification and a small GPU safety prime, without an artificial delay.
 replace_once("src/main.js",
     "frameCount: mobileFullEffects ? MOBILE_FULL_PRELOAD_FRAMES : undefined,",
-    "frameCount: MOBILE_FULL_PRELOAD_FRAMES,")
+    "frameCount: 4,")
 replace_once("src/main.js",
     "frameWaitMs: mobileFullEffects ? MOBILE_FULL_PRELOAD_WAIT_MS : undefined,",
-    "frameWaitMs: MOBILE_FULL_PRELOAD_WAIT_MS,")
+    "frameWaitMs: 0,")
 replace_once("src/main.js",
     "ui.setLoading( 0.983 + 0.012 * ( step - 1 ) / total, status, .995 );",
     "ui.setLoading(0.983 + 0.012 * (step - 1) / total, status.replace('full-quality Bermuda', 'stable Bermuda'), .995);")
 
-# Do not show Explore just because a loader animation has reached 100%.
-# Await the real frame warm-up AND downloaded/decoded audio, then enforce
-# 60 seconds measured FROM scene preparation, not page navigation.
+# Do not enforce a 60-second hold or wait for all audio downloads before play.
+# Core world verification and the four warm-up frames still execute above;
+# sound continues to download/decode without blocking the Explore button.
 replace_once("src/main.js",
     "\t\tui.setLoading( 1, 'World ready' );",
     """        if (gpuTraceActive && gpuTraceCase.id === 'fftcore') {
-            gpuStage('Finishing 60-second FFT and audio preload');
-            ui.setLoading(.996, 'Finishing Bermuda sound…', .999);
-            await Promise.race([
-                qaAudioReady,
-                new Promise(resolve => setTimeout(resolve, 20000)),
-            ]);
-            await holdUntilMobileReady({
-                startedAt: qaWarmStart,
-                minimumMs: 60000,
-                checkDevice: () => {
-                    if (GPU.fatalError || window.__bermudaGpuLost)
-                        throw GPU.fatalError || new Error(window.__bermudaGpuLost);
-                },
-                onProgress: seconds => ui.setLoading(
-                    .998, 'Preparing Bermuda · ' + seconds + 's remaining', .999),
-            });
+            gpuStage('Core scene primed; optional audio loading continues');
+            void qaAudioReady.catch(error =>
+                console.warn('Optional Bermuda audio preload:', error));
         }
-        ui.setLoading(1, 'World and audio ready');""")
+        ui.setLoading(1, 'World ready · tap to explore');""")
 
 # Unlock sound INSIDE the Explore pointer event. Safari requires a gesture.
 replace_once("src/main.js",
@@ -275,8 +264,10 @@ replace_once("src/mobile/GpuAudit.js",
 main = (root / "src/main.js").read_text()
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in main
 assert "getFftCoreVisualProfile('crisp')" in main
-assert "frameCount: MOBILE_FULL_PRELOAD_FRAMES" in main
-assert "minimumMs: 60000" in main
+assert "frameCount: 4" in main
+assert "minimumMs: 60000" not in main
+assert "frameWaitMs: 0" in main
+assert "Core scene primed; optional audio loading continues" in main
 assert "preloadQAStartupAudio(app.audio)" in main
 assert "Bermuda audio start" in main
-print("iPhone QA: original FFT + Crisp; 30 warm frames, 60s minimum, audio pre-decoded")
+print("iPhone QA: original FFT + Crisp; 4 immediate warm frames, no forced wait; audio continues asynchronously")
