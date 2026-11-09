@@ -805,7 +805,11 @@ audit_src=audit.read_text()
 old_rev="  'QA source revision coastal-v27',"
 new_rev="""  'QA source revision coastal-v29',
   'QA shader repair Clouds Panorama mutable radiance (WGSL var)',
-  'QA startup instant-prime 4 frames / 0ms spacing / no forced 60s',
+  'QA startup warmup '+(typeof window!=='undefined' && window.__bermudaQAWarmup
+     ? (window.__bermudaQAWarmup.queueAcks+'/'+window.__bermudaQAWarmup.targetFrames+
+        ' GPU-confirmed frames | spacing '+window.__bermudaQAWarmup.spacingMs+'ms | elapsed '+
+        (window.__bermudaQAWarmup.elapsedMs??'in progress')+'ms | complete '+window.__bermudaQAWarmup.complete)
+     : 'not started'),
   'QA sky overcast mobile cloud black-tile fallback + dawn radiance floor',
   'QA night airborne spray '+(typeof window!=='undefined'
     ?window.__bermudaQANightSpray||'waiting for first frame'
@@ -916,7 +920,7 @@ notices_file.write_text(notices)
 
 audit_src = audit.read_text()
 old_rev = "  'QA source revision coastal-v30-particles-off',"
-new_rev = """  'QA source revision coastal-v33-full-coastal-default',
+new_rev = """  'QA source revision coastal-v34-paced-startup',
   'QA vendor load strategy original GLBs early 14m serialized (mobile)',
   'QA harbour notices contrast emissive-0.78 two-face',"""
 assert audit_src.count(old_rev) == 1, 'v32 audit revision anchor changed'
@@ -926,5 +930,39 @@ assert "const radius = QA_VENDOR_FOCUS ? Math.min(this.radius, 3.0) : 14;" in ve
 assert "window.__bermudaQAVendorLoadBusy = true" in vendor_file.read_text()
 assert "s.emissive = ink * 0.78;" in notices_file.read_text()
 assert "side: 'double'" in notices_file.read_text()
-assert "coastal-v33-full-coastal-default" in audit.read_text()
-print("Coastal v33: original vendors, bright harbour notices and seven FX restored by default")
+assert "coastal-v34-paced-startup" in audit.read_text()
+print("Coastal v34: seven FX preserved, particle-free, original vendors + readable board")
+
+
+# Coastal v34: telemetry for actual pre-Explore GPU priming, not a wall-clock hold.
+# The earlier four-frame instant-prime was too brief to compare meaningfully
+# with the historical 30x2000ms sequence; use 30x700ms with real queue ACKs.
+warm_main = src.read_text()
+old_prelude = "\t\t\tawait preloadMobileStartup( {"
+new_prelude = """            window.__bermudaQAWarmup = {
+                targetFrames: 30, spacingMs: 700,
+                queueAcks: 0, startMs: performance.now(),
+                elapsedMs: null, complete: false
+            };
+            await preloadMobileStartup( {"""
+assert warm_main.count(old_prelude) == 1, 'v34 startup call anchor changed'
+warm_main = warm_main.replace(old_prelude, new_prelude, 1)
+old_tail = "\t\t\t\tonQueueAck: () => gpuQueueAck( GPU.frame ),\n\t\t\t} );"
+new_tail = """                onQueueAck: () => {
+                    gpuQueueAck(GPU.frame);
+                    if (window.__bermudaQAWarmup) window.__bermudaQAWarmup.queueAcks++;
+                },
+            } );
+            window.__bermudaQAWarmup.complete = true;
+            window.__bermudaQAWarmup.elapsedMs =
+                Math.round(performance.now() - window.__bermudaQAWarmup.startMs);"""
+assert warm_main.count(old_tail) == 1, 'v34 queue ack and warm-up completion anchor changed'
+warm_main = warm_main.replace(old_tail, new_tail, 1)
+assert "frameCount: 30" in warm_main, 'v34 expected 30 confirmed frames'
+assert "frameWaitMs: 700" in warm_main, 'v34 expected 700 ms interval'
+assert "const raw = url.searchParams.get('fx') || 'coastal-seven'" in (
+    root / 'src/mobile/QAEffectTrial.js'
+).read_text(), 'v34 seven-effects default regression'
+src.write_text(warm_main)
+assert "QA startup warmup '+(" in audit.read_text()
+print("Coastal v34 startup: 30 paced, queue-confirmed GPU frames at 700ms, telemetry active")
