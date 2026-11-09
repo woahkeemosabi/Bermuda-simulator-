@@ -361,7 +361,7 @@ jobs:
           grep -q 'QA cloud instance' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA MarineSnow profile' _qa/fftcore/src/mobile/GpuAudit.js
           # Fail the Pages build if coastal-v30's snow/mote removal is absent.
-          grep -q 'coastal-v34-paced-startup' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'coastal-v35-ocean-experiment' _qa/fftcore/src/mobile/GpuAudit.js
           grep -Fq "const raw = url.searchParams.get('fx') || 'coastal-seven';" _qa/fftcore/src/mobile/QAEffectTrial.js
           grep -Fq "perf: '60'" _qa/fftcore/src/mobile/QAEffectTrial.js
           grep -Fq "simBudget: 'balanced'" _qa/fftcore/src/mobile/QAEffectTrial.js
@@ -408,6 +408,10 @@ jobs:
           grep -q 'QA Kelvin wake A/B' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA boat wake state' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA startup warmup' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -Fq "this.qs.get('oceanFix') === '1'" _qa/fftcore/src/App.js
+          grep -Fq 'underwaterMapRuns++' _qa/fftcore/src/App.js
+          grep -Fq "bootSpacing') === '1200' ? 1200 : 700" _qa/fftcore/src/main.js
+          grep -q 'QA ocean visual tune' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA sky overcast mobile cloud black-tile fallback' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA shader repair Clouds Panorama mutable radiance' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'var cloudRadiance = mix' _qa/fftcore/src/sky/SkyProClouds.js
@@ -434,10 +438,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v34')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v35')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v34')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v35')
               file.write_text(source)
           PY
           cd _qa/fftcore
@@ -527,7 +531,7 @@ jobs:
           print(f'Published model library: {canonical} (all secondary builds load it)')
           PY
 
-      - name: Promote verified Coastal v34 QA output to main GitHub Pages URL
+      - name: Promote Coastal v35 opt-in ocean QA (unchanged default) to GitHub Pages
         if: github.ref == 'refs/heads/main'
         run: |
           python3 - <<'PY'
@@ -569,7 +573,7 @@ jobs:
           (root / 'coastal-release.json').write_text(json.dumps({
               'channel': 'main',
               'source': 'pinned fftcore QA + main-branch patches',
-              'version': 'coastal-v34-paced-startup',
+              'version': 'coastal-v35-ocean-experiment',
               'commit': os.environ.get('GITHUB_SHA'),
           }, indent=2) + '\n')
           assert (root / 'index.html').is_file()
@@ -577,7 +581,7 @@ jobs:
           assert (root / 'qa' / 'fftcore' / 'index.html').is_file()
           assert (root / 'archive' / 'oct14' / 'index.html').is_file()
           assert (root / 'archive' / 'sep30' / 'index.html').is_file()
-          print('Coastal v34 promoted to GitHub Pages root; QA, archives and GLBs retained')
+          print('Coastal v35 opt-in ocean QA published with unchanged v34 baseline visuals; QA, archives and GLBs retained')
           PY
 
       - name: Configure GitHub Pages
