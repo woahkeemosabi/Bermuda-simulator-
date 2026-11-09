@@ -142,6 +142,9 @@ assert.match(appSource, /__bermudaQANightSpray/);
 assert.match(appSource, /this\.fft\.update\( dt \)/);
 assert.match(cloudSource, /let ambientCloudFloor = \( skyAmbient \* 0\.22/);
 assert.match(cloudSource, /cloudRadiance = max\( cloudRadiance, ambientCloudFloor \)/);
+assert.match(cloudSource, /var cloudRadiance = mix\( m\.color, moonCloud, nocturnal \)/);
+assert.doesNotMatch(cloudSource, /let cloudRadiance = mix\( m\.color, moonCloud, nocturnal \);\s*[\s\S]*?cloudRadiance = max/);
+assert.match(reportSource, /QA shader repair Clouds Panorama mutable radiance/);
 assert.match(cloudSource, /let empty = raw\.a <= 0\.0001/);
 assert.match(cloudSource, /let s = select\( raw, vec4f\( 0\.0, 0\.0, 0\.0, 1\.0 \), empty \)/);
 
@@ -193,7 +196,7 @@ assert.match(appSource, /__bermudaQASimBudget\.allow\('clouds',100,dt\)/);
 assert.match(appSource, /__bermudaQASimBudget\.usedDelta\.clouds : dt/);
 assert.match(appSource, /this\.fft\.update\( dt \)/);
 
-assert.match(reportSource, /QA source revision coastal-v28/);
+assert.match(reportSource, /QA source revision coastal-v29/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -235,7 +238,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v28/);
+assert.match(reportSource, /QA source revision coastal-v29/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
