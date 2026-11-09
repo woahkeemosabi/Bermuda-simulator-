@@ -123,6 +123,28 @@ assert.match(reportSource, /QA actual frame interval p50\/p95/);
 assert.match(reportSource, /QA surf crest cadence/);
 assert.match(reportSource, /QA Kelvin wake A\/B/);
 assert.match(reportSource, /QA boat wake state/);
+assert.match(reportSource, /QA startup instant-prime 4 frames \/ 0ms spacing \/ no forced 60s/);
+assert.match(reportSource, /QA sky overcast mobile cloud black-tile fallback/);
+assert.match(reportSource, /QA night airborne spray/);
+assert.match(mainSource, /frameCount: 4/);
+assert.match(mainSource, /frameWaitMs: 0/);
+assert.doesNotMatch(mainSource, /minimumMs: 60000/);
+assert.doesNotMatch(mainSource, /Finishing 60-second FFT/);
+assert.match(mainSource, /Core scene primed; optional audio loading continues/);
+assert.match(mainSource, /void qaAudioReady\.catch/);
+assert.match(mainSource, /await verifyMobileWorld\(/);
+assert.match(mainSource, /await preloadMobileStartup\(/);
+assert.match(appSource, /const nightNoAirborne = G\.night\.value > 0\.32/);
+assert.match(appSource, /this\.spray\.mesh\.visible = !nightNoAirborne/);
+assert.match(appSource, /this\.airMotes\.mesh\.visible = false/);
+assert.match(appSource, /G\.cameraUnderwater\.value < 0\.5/);
+assert.match(appSource, /__bermudaQANightSpray/);
+assert.match(appSource, /this\.fft\.update\( dt \)/);
+assert.match(cloudSource, /let ambientCloudFloor = \( skyAmbient \* 0\.22/);
+assert.match(cloudSource, /cloudRadiance = max\( cloudRadiance, ambientCloudFloor \)/);
+assert.match(cloudSource, /let empty = raw\.a <= 0\.0001/);
+assert.match(cloudSource, /let s = select\( raw, vec4f\( 0\.0, 0\.0, 0\.0, 1\.0 \), empty \)/);
+
 assert.match(appSource, /qs\.get\('wakeBudget'\) === 'off'/);
 assert.match(appSource, /window\.__bermudaQAWakeAudit =/);
 assert.match(appSource, /this\.surface\.wake = null/);
@@ -171,7 +193,7 @@ assert.match(appSource, /__bermudaQASimBudget\.allow\('clouds',100,dt\)/);
 assert.match(appSource, /__bermudaQASimBudget\.usedDelta\.clouds : dt/);
 assert.match(appSource, /this\.fft\.update\( dt \)/);
 
-assert.match(reportSource, /QA source revision coastal-v27/);
+assert.match(reportSource, /QA source revision coastal-v28/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -213,7 +235,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v27/);
+assert.match(reportSource, /QA source revision coastal-v28/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
