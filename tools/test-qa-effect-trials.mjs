@@ -97,6 +97,11 @@ assert.match(appSource, /__bermudaQASnowCompatibility = 'fft-sea-level-waterline
 assert.match(snowSource, /if \( query && query\.module \) modules\.push\( query\.module \);/);
 assert.match(snowSource, /frame\.seaLevel \+ sway\.y - p\.y/);
 assert.match(reportSource, /QA MarineSnow profile/);
+assert.match(appSource, /if \(!mobileLite\) scene\.add\( this\.marineSnow\.mesh \);/);
+assert.match(appSource, /if \(!mobileLite\) scene\.add\( this\.airMotes\.mesh \);/);
+assert.match(appSource, /__bermudaQASnowCompatibility = 'disabled-qa'/);
+assert.match(appSource, /__bermudaQAAirMotesProfile = 'disabled-qa'/);
+assert.match(reportSource, /QA AirMotes profile/);
 assert.match(reportSource, /QA cloud instance/);
 assert.match(mainSource, /__bermudaQAGameplay = \{ startedAt: performance\.now\(\), submissions: 0 \}/);
 assert.match(reportSource, /qaGameplaySubmissions/);
@@ -196,7 +201,7 @@ assert.match(appSource, /__bermudaQASimBudget\.allow\('clouds',100,dt\)/);
 assert.match(appSource, /__bermudaQASimBudget\.usedDelta\.clouds : dt/);
 assert.match(appSource, /this\.fft\.update\( dt \)/);
 
-assert.match(reportSource, /QA source revision coastal-v29/);
+assert.match(reportSource, /QA source revision coastal-v30-particles-off/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -238,7 +243,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v29/);
+assert.match(reportSource, /QA source revision coastal-v30-particles-off/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
