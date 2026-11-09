@@ -664,6 +664,78 @@ assert audit_src.count(old_rev)==1, "v26 QA revision anchor changed"
 audit.write_text(audit_src.replace(old_rev,new_rev,1))
 
 
+
+# Coastal v27: isolate the Kelvin wake independently from FFT, boat spray,
+# the CPU wake mesh, player swimming and save data. The v26 iPhone test at
+# 461x817 showed only +0.5fps in the surf A/B, so surf is unchanged by default.
+# Opt in with wakeBudget=off for a controlled baseline-vs-no-Kelvin comparison.
+qa_app=app_file.read_text()
+old_wake_isolation="if (qs.has('noBreakers')) {"
+new_wake_isolation="""if (mobileLite && qs.get('fx') === 'coastal-seven' &&
+            (qs.get('perf') === '60' || qs.get('perf') === 'profile')) {
+            const noKelvin = qs.get('wakeBudget') === 'off';
+            window.__bermudaQAWakeAudit = {
+                mode: noKelvin ? 'Kelvin OFF only' : 'Kelvin original',
+                calls:0, simFrames:0, asleepFrames:0, peakSpeed:0,
+                lastSpeed:0, lastThrottle:0, lastDriven:false,
+                lastIdleSeconds:0, lastSleeping:true, lastPlayerMode:'',
+                lastDistance:0
+            };
+            if (noKelvin) {
+                // Test one factor only: switch off the GPU Kelvin wake, not
+                // boat spray, surface FFT, physics, the mobile wake mesh, or FX.
+                this.wake.update = () => {};
+                this.surface.wake = null;
+            }
+        }
+        if (qs.has('noBreakers')) {"""
+assert qa_app.count(old_wake_isolation)==1, "v27 wake isolation setup changed"
+qa_app=qa_app.replace(old_wake_isolation,new_wake_isolation,1)
+old_wake_step="this.wake.update( dt );"
+new_wake_step="""const wakeAudit = window.__bermudaQAWakeAudit;
+            if (wakeAudit) {
+                const b = this.boatCtl;
+                const wakeSpeed = Math.hypot(b.velocity.x,b.velocity.z);
+                const wakeBefore = this.wake.stepCount;
+                this.wake.update( dt );
+                wakeAudit.calls++;
+                if (this.wake.stepCount > wakeBefore) wakeAudit.simFrames++;
+                else wakeAudit.asleepFrames++;
+                wakeAudit.peakSpeed = Math.max(wakeAudit.peakSpeed,wakeSpeed);
+                wakeAudit.lastSpeed = wakeSpeed;
+                wakeAudit.lastThrottle = b.throttle;
+                wakeAudit.lastDriven = !!b.driven;
+                wakeAudit.lastIdleSeconds = this.wake.idleTime;
+                wakeAudit.lastSleeping = !!this.wake.sleeping;
+                wakeAudit.lastPlayerMode = this.player.mode;
+                wakeAudit.lastDistance = Math.hypot(
+                    this.player.position.x-b.position.x,
+                    this.player.position.z-b.position.z);
+            } else this.wake.update( dt );"""
+assert qa_app.count(old_wake_step)==1, "v27 wake frame stepping anchor changed"
+qa_app=qa_app.replace(old_wake_step,new_wake_step,1)
+app_file.write_text(qa_app)
+
+audit_src=audit.read_text()
+old_rev="  'QA source revision coastal-v26',"
+new_rev="""  'QA source revision coastal-v27',
+  'QA Kelvin wake A/B '+(typeof window!=='undefined'&&window.__bermudaQAWakeAudit
+    ?window.__bermudaQAWakeAudit.mode+' | frames '+window.__bermudaQAWakeAudit.simFrames+
+      '/'+window.__bermudaQAWakeAudit.calls+' | sleep '+window.__bermudaQAWakeAudit.lastSleeping+
+      ' | calm '+window.__bermudaQAWakeAudit.lastIdleSeconds.toFixed(1)+'s'
+    :'off'),
+  'QA boat wake state '+(typeof window!=='undefined'&&window.__bermudaQAWakeAudit
+    ?'speed '+window.__bermudaQAWakeAudit.lastSpeed.toFixed(2)+'m/s'+
+      ' | peak '+window.__bermudaQAWakeAudit.peakSpeed.toFixed(2)+'m/s'+
+      ' | throttle '+Number(window.__bermudaQAWakeAudit.lastThrottle||0).toFixed(2)+
+      ' | driven '+window.__bermudaQAWakeAudit.lastDriven+
+      ' | player '+window.__bermudaQAWakeAudit.lastPlayerMode+
+      ' | distance '+window.__bermudaQAWakeAudit.lastDistance.toFixed(1)+'m'
+    :'off'),"""
+assert audit_src.count(old_rev)==1, "v27 report revision anchor changed"
+audit.write_text(audit_src.replace(old_rev,new_rev,1))
+
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
