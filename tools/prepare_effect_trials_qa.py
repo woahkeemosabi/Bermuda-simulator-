@@ -859,3 +859,70 @@ assert "window.__bermudaQASnowCompatibility = 'disabled-qa'" in qa_app
 assert "window.__bermudaQAAirMotesProfile = 'disabled-qa'" in qa_app
 assert "coastal-v30-particles-off" in audit.read_text()
 print("Coastal v30 iPhone QA: MarineSnow and AirMotes meshes absent from scene; updates disabled")
+
+
+# Coastal v32: mobile vendor prefetch + high-contrast harbour notices.
+# Preserve the v30 particle-free baseline and all game/save mechanics.
+# Schedule full original Joe/Martha GLBs at 14m rather than 6m, but serialize
+# the GPU-heavy character decodes so both do not upload in the same frame.
+# Do not change GLB content or texture resolution; keep textures resident.
+vendor_file = root / 'src/game/Vendor.js'
+vendor_src = vendor_file.read_text()
+old_radius = "const radius = QA_VENDOR_FOCUS ? Math.min(this.radius, 3.0) : 6;"
+new_radius = "const radius = QA_VENDOR_FOCUS ? Math.min(this.radius, 3.0) : 14;"
+assert vendor_src.count(old_radius) == 1, 'v32 vendor prefetch anchor changed'
+vendor_src = vendor_src.replace(old_radius, new_radius, 1)
+old_request = """if (dx * dx + dz * dz < radius * radius) {
+                const character = this._pendingCharacter;
+                this._pendingCharacter = null;
+                this.loadCharacter( character.url, character ).catch( ( e ) => console.warn( 'Vendor: character failed to load', e ) );
+            }"""
+new_request = """if (dx * dx + dz * dz < radius * radius &&
+                (QA_VENDOR_FOCUS || !window.__bermudaQAVendorLoadBusy)) {
+                const character = this._pendingCharacter;
+                this._pendingCharacter = null;
+                if (!QA_VENDOR_FOCUS) window.__bermudaQAVendorLoadBusy = true;
+                this.loadCharacter(character.url, character).catch((e) => {
+                    this._qaCharacterError = String(e?.message || e);
+                    console.warn('Vendor: original full-resolution GLB failed', this.name, e);
+                }).finally(() => {
+                    if (!QA_VENDOR_FOCUS) window.__bermudaQAVendorLoadBusy = false;
+                });
+            }"""
+assert vendor_src.count(old_request) == 1, 'v32 serialized vendor request anchor changed'
+vendor_file.write_text(vendor_src.replace(old_request, new_request, 1))
+
+# Two real-facing canvas-texture notice planes already exist; keep them,
+# lighting and 1024x640 atlas unchanged. Make the textured paper readable
+# under overcast/dawn/night without extra lights, GPU passes or materials.
+notices_file = root / 'src/game/HarbourNotices.js'
+notices = notices_file.read_text()
+old_surface = """\ts.albedo = ink;
+\t// A restrained readability floor complements the warm board light after dusk.
+\ts.emissive = ink * 0.14 * smoothstep( 0.15, 0.75, frame.night );"""
+new_surface = """\ts.albedo = ink * 0.72;
+\t// Printed harbour notices must read in shade and at night on mobile.
+\t// Single existing material, no additional light or GPU render pass.
+\ts.emissive = ink * 0.78;"""
+assert notices.count(old_surface) == 1, 'v32 board material anchor changed'
+notices = notices.replace(old_surface, new_surface, 1)
+assert notices.count("side: 'front',") == 1, 'v32 board face sidedness anchor changed'
+notices = notices.replace("side: 'front',", "side: 'double',", 1)
+assert notices.count("c.fillStyle = '#927650';") == 1, 'v32 board background anchor changed'
+notices = notices.replace("c.fillStyle = '#927650';", "c.fillStyle = '#e2d5b8';", 1)
+notices_file.write_text(notices)
+
+audit_src = audit.read_text()
+old_rev = "  'QA source revision coastal-v30-particles-off',"
+new_rev = """  'QA source revision coastal-v32-vendors-board',
+  'QA vendor load strategy original GLBs early 14m serialized (mobile)',
+  'QA harbour notices contrast emissive-0.78 two-face',"""
+assert audit_src.count(old_rev) == 1, 'v32 audit revision anchor changed'
+audit.write_text(audit_src.replace(old_rev, new_rev, 1))
+
+assert "const radius = QA_VENDOR_FOCUS ? Math.min(this.radius, 3.0) : 14;" in vendor_file.read_text()
+assert "window.__bermudaQAVendorLoadBusy = true" in vendor_file.read_text()
+assert "s.emissive = ink * 0.78;" in notices_file.read_text()
+assert "side: 'double'" in notices_file.read_text()
+assert "coastal-v32-vendors-board" in audit.read_text()
+print("Coastal v32 QA: serialized original vendor GLB loads and bright two-sided harbour notices")
