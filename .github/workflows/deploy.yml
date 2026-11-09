@@ -383,6 +383,9 @@ jobs:
           grep -q 'QA performance' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA CPU stages p95' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA submit-to-queue-ack wall' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'QA shadow cadence' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'QA vendor GPU residency' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'qaShadowIndices' _qa/fftcore/src/App.js
           grep -q 'mobileGpuTargetIntervalMs' _qa/fftcore/src/engine/Engine.js
           grep -q '__bermudaQASimBudget' _qa/fftcore/src/App.js
           node tools/test-qa-effect-trials.mjs
@@ -395,10 +398,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v24')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v25')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v24')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v25')
               file.write_text(source)
           PY
           cd _qa/fftcore
