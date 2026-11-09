@@ -388,6 +388,9 @@ jobs:
           grep -q 'QA visible RAF interval p50/p95' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA actual frame interval p50/p95' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA surf crest cadence' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'QA Kelvin wake A/B' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'QA boat wake state' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q '__bermudaQAWakeAudit' _qa/fftcore/src/App.js
           grep -q '__bermudaQASurfBudget' _qa/fftcore/src/App.js
           grep -q 'qaShadowIndices' _qa/fftcore/src/App.js
           grep -q 'mobileGpuTargetIntervalMs' _qa/fftcore/src/engine/Engine.js
@@ -402,10 +405,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v26')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v27')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v26')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v27')
               file.write_text(source)
           PY
           cd _qa/fftcore
