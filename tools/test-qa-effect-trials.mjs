@@ -91,6 +91,7 @@ const waterfrontUpgradeSource = readFileSync(new URL('../_qa/fftcore/src/world/R
 const gameSource = readFileSync(new URL('../_qa/fftcore/src/game/Game.js', import.meta.url), 'utf8');
 const productionSource = readFileSync(new URL('../_qa/fftcore/src/world/ProductionMeshyAssets.js', import.meta.url), 'utf8');
 const skinSource = readFileSync(new URL('../_qa/fftcore/src/engine/render/Skinning.js', import.meta.url), 'utf8');
+const fishPropsSource = readFileSync(new URL('../_qa/fftcore/src/world/fish/FishProps.js', import.meta.url), 'utf8');
 const reportSource = readFileSync(new URL('../_qa/fftcore/src/mobile/GpuAudit.js', import.meta.url), 'utf8');
 assert.match(appSource, /query: mobileLite && qs\.get\('snowCompat'\) === '1' \? null : this\.query/);
 assert.match(appSource, /__bermudaQASnowCompatibility = 'fft-sea-level-waterline'/);
@@ -127,6 +128,19 @@ assert.match(reportSource, /QA startup instant-prime 4 frames \/ 0ms spacing \/ 
 assert.match(reportSource, /QA sky overcast mobile cloud black-tile fallback/);
 assert.match(reportSource, /QA night airborne spray/);
 assert.match(reportSource, /QA night spray GPU dispatch/);
+assert.match(reportSource, /QA fish market prop LOD/);
+assert.match(fishPropsSource, /qaHardLOD = typeof navigator !== 'undefined'/);
+assert.match(fishPropsSource, /\/iPhone\|iPad\|iPod\/\.test\(navigator\.userAgent\)/);
+assert.match(fishPropsSource, /get\('fishFade'\) !== 'on'/);
+assert.match(fishPropsSource, /if \(!this\.qaHardLOD\) \{/);
+assert.match(fishPropsSource, /mesh\.add\( batch\.createFadeMesh\( this\.fadeMaterial \) \)/);
+assert.match(fishPropsSource, /if \(this\.qaHardLOD\) \{/);
+assert.match(fishPropsSource, /batch\.add\(k \+ \(d < s \? 0 : 1\), i\)/);
+assert.match(fishPropsSource, /__bermudaQAFishPropsLOD/);
+assert.match(fishPropsSource, /const batch = new ReefBatch\( 'FishProps', kinds, \{ maxInstances: Math\.max\( 1, n \), fade: true \} \)/);
+assert.match(fishPropsSource, /mesh\.name = 'village_fish'/);
+assert.match(fishPropsSource, /if \( d < SHADOW_RANGE \) batch\.add\( k \+ 2, i \)/);
+
 assert.match(appSource, /this\.qs\.get\('sprayBudget'\) === 'nightOff'/);
 assert.match(appSource, /G\.night\.value > 0\.32/);
 assert.match(appSource, /qaSprayStats\.skipped\+\+/);
@@ -207,7 +221,7 @@ assert.match(appSource, /__bermudaQASimBudget\.allow\('clouds',100,dt\)/);
 assert.match(appSource, /__bermudaQASimBudget\.usedDelta\.clouds : dt/);
 assert.match(appSource, /this\.fft\.update\( dt \)/);
 
-assert.match(reportSource, /QA source revision coastal-v30/);
+assert.match(reportSource, /QA source revision coastal-v31/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -249,7 +263,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v30/);
+assert.match(reportSource, /QA source revision coastal-v31/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
