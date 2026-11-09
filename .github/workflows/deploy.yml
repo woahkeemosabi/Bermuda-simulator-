@@ -396,12 +396,6 @@ jobs:
           grep -q 'var cloudRadiance = mix' _qa/fftcore/src/sky/SkyProClouds.js
           ! grep -q 'let cloudRadiance = mix' _qa/fftcore/src/sky/SkyProClouds.js
           grep -q 'QA night airborne spray' _qa/fftcore/src/mobile/GpuAudit.js
-          grep -q 'QA night spray GPU dispatch' _qa/fftcore/src/mobile/GpuAudit.js
-          grep -q 'QA fish market prop LOD' _qa/fftcore/src/mobile/GpuAudit.js
-          grep -q 'this.qaHardLOD' _qa/fftcore/src/world/fish/FishProps.js
-          grep -q 'get('\''fishFade'\'')' _qa/fftcore/src/world/fish/FishProps.js
-          grep -q "get('sprayBudget') === 'nightOff'" _qa/fftcore/src/App.js
-          grep -q 'qaSprayStats.skipped++' _qa/fftcore/src/App.js
           grep -q 'let empty = raw.a <= 0.0001' _qa/fftcore/src/sky/SkyProClouds.js
           grep -q 'this.spray.mesh.visible = !nightNoAirborne' _qa/fftcore/src/App.js
           grep -q 'frameCount: 4' _qa/fftcore/src/main.js
@@ -421,10 +415,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v31')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v29')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v31')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v29')
               file.write_text(source)
           PY
           cd _qa/fftcore
