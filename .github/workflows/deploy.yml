@@ -562,7 +562,7 @@ jobs:
               'source': 'pinned fftcore QA + main-branch patches',
               'version': 'coastal-v32-vendors-board',
               'commit': os.environ.get('GITHUB_SHA'),
-          }, indent=2) + '\\n')
+          }, indent=2) + '\n')
           assert (root / 'index.html').is_file()
           assert (root / 'assets').is_dir()
           assert (root / 'qa' / 'fftcore' / 'index.html').is_file()
