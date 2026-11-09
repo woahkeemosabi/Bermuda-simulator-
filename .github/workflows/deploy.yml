@@ -347,6 +347,12 @@ jobs:
           node --check _qa/fftcore/src/ocean/WaterMaterial.js
           node --check _qa/fftcore/src/world/ProductionMeshyAssets.js
           node --check _qa/fftcore/src/game/Vendor.js
+          node --check _qa/fftcore/src/game/HarbourNotices.js
+          grep -q 'QA vendor load strategy original GLBs early 14m serialized' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'QA harbour notices contrast emissive-0.78 two-face' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -Fq "s.emissive = ink * 0.78;" _qa/fftcore/src/game/HarbourNotices.js
+          grep -Fq "side: 'double'" _qa/fftcore/src/game/HarbourNotices.js
+          grep -Fq 'window.__bermudaQAVendorLoadBusy = true' _qa/fftcore/src/game/Vendor.js
           node --check _qa/fftcore/src/world/BermudaBlockout.js
           node --check _qa/fftcore/src/world/ReferenceWorldUpgrade.js
           node --check _qa/fftcore/src/engine/render/Skinning.js
@@ -355,7 +361,7 @@ jobs:
           grep -q 'QA cloud instance' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA MarineSnow profile' _qa/fftcore/src/mobile/GpuAudit.js
           # Fail the Pages build if coastal-v30's snow/mote removal is absent.
-          grep -q 'coastal-v30-particles-off' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -q 'coastal-v32-vendors-board' _qa/fftcore/src/mobile/GpuAudit.js
           grep -Fq 'if (!mobileLite) scene.add( this.marineSnow.mesh );' _qa/fftcore/src/App.js
           grep -Fq 'if (!mobileLite) scene.add( this.airMotes.mesh );' _qa/fftcore/src/App.js
           grep -Fq "window.__bermudaQASnowCompatibility = 'disabled-qa'" _qa/fftcore/src/App.js
@@ -421,10 +427,10 @@ jobs:
               file = Path('_qa/fftcore') / relative
               source = file.read_text()
               assert 'bermuda-qa-fftcore-assets-v1' in source, relative
-              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v30')
+              source = source.replace('bermuda-qa-fftcore-assets-v1', 'bermuda-qa-fftcore-assets-v32')
               if relative.endswith('StartupAssetCache.js'):
                   assert 'bermuda-qa-fftcore-startup-ready-v1' in source
-                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v30')
+                  source = source.replace('bermuda-qa-fftcore-startup-ready-v1', 'bermuda-qa-fftcore-startup-ready-v32')
               file.write_text(source)
           PY
           cd _qa/fftcore
@@ -437,6 +443,10 @@ jobs:
           cd ../..
           mkdir -p dist/qa/fftcore
           cp -a _qa/fftcore/dist/. dist/qa/fftcore/
+          # The QA index uses relative paths and is suitable for the site root.
+          # Save a clean original before the GLB deduplication adds a QA-only
+          # ../../models fetch shim, which would be incorrect at the main URL.
+          cp dist/qa/fftcore/index.html dist/.qa-main-index.html
           python3 - <<'PY'
           from pathlib import Path
           page = Path('dist/qa/fftcore/index.html')
@@ -508,6 +518,57 @@ jobs:
             source.unlink()
           print(f'Shared {len(duplicates)} byte-identical GLBs; full fidelity maintained')
           print(f'Published model library: {canonical} (all secondary builds load it)')
+          PY
+
+      - name: Promote verified Coastal v32 QA output to main GitHub Pages URL
+        if: github.ref == 'refs/heads/main'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from shutil import copy2, copytree, rmtree
+          import json, os
+
+          root = Path('dist')
+          qa = root / 'qa' / 'fftcore'
+          clean_index = (root / '.qa-main-index.html').read_bytes()
+          assert b'./assets/' in clean_index, 'QA HTML must use relative Vite paths'
+          assert (qa / 'sw.js').is_file()
+          assert (qa / 'assets').is_dir()
+          assert (root / 'models' / 'characters' / 'marta.glb').is_file()
+          assert (root / 'models' / 'characters' / 'joe.glb').is_file()
+
+          # Keep the same public repository, archives and tested /qa/fftcore/.
+          # The prior root source build is superseded by this same QA build.
+          # Canonical GLBs remain shared, so no giant duplicate model directory.
+          protected = {'qa', 'archive', 'models'}
+          for item in tuple(root.iterdir()):
+              if item.name in protected:
+                  continue
+              if item.is_dir():
+                  rmtree(item)
+              else:
+                  item.unlink()
+          for item in qa.iterdir():
+              if item.name in ('models', 'index.html'):
+                  continue
+              target = root / item.name
+              if item.is_dir():
+                  copytree(item, target)
+              else:
+                  copy2(item, target)
+          (root / 'index.html').write_bytes(clean_index)
+          (root / 'coastal-release.json').write_text(json.dumps({
+              'channel': 'main',
+              'source': 'pinned fftcore QA + main-branch patches',
+              'version': 'coastal-v32-vendors-board',
+              'commit': os.environ.get('GITHUB_SHA'),
+          }, indent=2) + '\\n')
+          assert (root / 'index.html').is_file()
+          assert (root / 'assets').is_dir()
+          assert (root / 'qa' / 'fftcore' / 'index.html').is_file()
+          assert (root / 'archive' / 'oct14' / 'index.html').is_file()
+          assert (root / 'archive' / 'sep30' / 'index.html').is_file()
+          print('Coastal v32 promoted to GitHub Pages root; QA, archives and GLBs retained')
           PY
 
       - name: Configure GitHub Pages
