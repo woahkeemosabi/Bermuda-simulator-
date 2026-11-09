@@ -1,3 +1,17 @@
+# Bermuda Simulator 🇧🇲
+
+**Main playable version (GitHub Pages):** https://woahkeemosabi.github.io/Bermuda-simulator-/
+
+**Coastal QA / iPhone diagnostics:** https://woahkeemosabi.github.io/Bermuda-simulator-/qa/fftcore/
+
+**Current main release target:** Coastal v32 — iPhone marine snow and airborne specks disabled, original Joe/Martha GLB characters prefetched at 14 m one at a time, and high-contrast two-sided Harbour Jobs notices. The fishing → sell to Joe → save $3,200 for the starter lobster boat progression is retained.
+
+The GitHub Pages workflow builds the pinned FFT-core coastal source and applies the main-branch QA patches, then promotes **that same compiled coastal version to the main URL**. Historical builds remain at `/archive/oct14/` and `/archive/sep30/`. Player saves retain their existing storage keys; the QA game's save slot is not reset or migrated.
+
+The original Tidewater engine and game documentation follows for historical technical context. Release availability is determined by the **Deploy to GitHub Pages** Actions workflow; merging or pushing code alone does not prove publication.
+
+---
+
 # Tidewater
 
 An island fishing game for the browser. Cast from the pier, the beach or your own boat, fight the fish,
