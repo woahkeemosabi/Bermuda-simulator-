@@ -867,6 +867,54 @@ assert audit_src.count(old_rev)==1, "v30 QA diagnostic revision anchor changed"
 audit.write_text(audit_src.replace(old_rev,new_rev,1))
 
 
+
+# Coastal v31: FishPropsFade render-pipeline isolation after v30 crash.
+# The browser specifically reported failures compiling "FishPropsFade color"
+# and "FishPropsFade main", immediately before the GPU device was destroyed.
+# This dithered LOD transition is purely cosmetic for static fish-market props.
+# On iPhone coastal-seven QA, avoid compiling the risky fade render shader;
+# keep the full main FishProps material/geometry, market displays, near/far LOD,
+# shadow proxies, fishing, NPCs, wallet and FFT. Allow ?fishFade=on to A/B the
+# original rendering path without a second website or saved-state namespace.
+fish_file=root/'src/world/fish/FishProps.js'
+fish_src=fish_file.read_text()
+old_fish_fade="""\t\tthis.fadeMaterial = createPropMaterial( batch, { fade: true } );
+\t\tmesh.add( batch.createFadeMesh( this.fadeMaterial ) );"""
+new_fish_fade="""        // Safari QA can render the same fish/ice/lobster props without the
+        // second dithered LOD shader implicated in the GPUPipelineError trace.
+        this.qaHardLOD = typeof navigator !== 'undefined'
+            && /iPhone|iPad|iPod/.test(navigator.userAgent)
+            && typeof location !== 'undefined'
+            && new URLSearchParams(location.search).get('fx') === 'coastal-seven'
+            && new URLSearchParams(location.search).get('fishFade') !== 'on';
+        if (!this.qaHardLOD) {
+            this.fadeMaterial = createPropMaterial( batch, { fade: true } );
+            mesh.add( batch.createFadeMesh( this.fadeMaterial ) );
+        }
+        if (typeof window !== 'undefined')
+            window.__bermudaQAFishPropsLOD = this.qaHardLOD
+                ? 'hard LOD (no FishPropsFade pipeline)' : 'original dithered fade';"""
+assert fish_src.count(old_fish_fade)==1, "v31 FishPropsFade construction anchor drift"
+fish_src=fish_src.replace(old_fish_fade,new_fish_fade,1)
+old_fish_branch="if ( d > far ) batch.addFade( k + ( d < s ? 0 : 1 ), i, 1 - bandFade( d, far, DRAW_RANGE ), false );"
+new_fish_branch="""if (this.qaHardLOD) {
+                // Draw within the original range, with the original near/far
+                // geometry; never route instances to an invisible fade channel.
+                batch.add(k + (d < s ? 0 : 1), i);
+            } else if ( d > far ) batch.addFade( k + ( d < s ? 0 : 1 ), i, 1 - bandFade( d, far, DRAW_RANGE ), false );"""
+assert fish_src.count(old_fish_branch)==1, "v31 FishPropsFade culling anchor drift"
+fish_file.write_text(fish_src.replace(old_fish_branch,new_fish_branch,1))
+
+audit_src=audit.read_text()
+old_rev="  'QA source revision coastal-v30',"
+new_rev="""  'QA source revision coastal-v31',
+  'QA fish market prop LOD '+(typeof window !== 'undefined'
+    ?window.__bermudaQAFishPropsLOD||'not yet constructed'
+    :'not browser')+' | main fish materials and catches preserved',"""
+assert audit_src.count(old_rev)==1, "v31 report anchor drift"
+audit.write_text(audit_src.replace(old_rev,new_rev,1))
+
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
