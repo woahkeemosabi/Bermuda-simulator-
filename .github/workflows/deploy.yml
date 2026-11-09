@@ -354,6 +354,12 @@ jobs:
           node --check _qa/fftcore/src/App.js
           grep -q 'QA cloud instance' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA MarineSnow profile' _qa/fftcore/src/mobile/GpuAudit.js
+          # Fail the Pages build if coastal-v30's snow/mote removal is absent.
+          grep -q 'coastal-v30-particles-off' _qa/fftcore/src/mobile/GpuAudit.js
+          grep -Fq 'if (!mobileLite) scene.add( this.marineSnow.mesh );' _qa/fftcore/src/App.js
+          grep -Fq 'if (!mobileLite) scene.add( this.airMotes.mesh );' _qa/fftcore/src/App.js
+          grep -Fq "window.__bermudaQASnowCompatibility = 'disabled-qa'" _qa/fftcore/src/App.js
+          grep -Fq "window.__bermudaQAAirMotesProfile = 'disabled-qa'" _qa/fftcore/src/App.js
           grep -q 'QA gameplay FPS last 15s' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA cloud panorama budget' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'QA light bake' _qa/fftcore/src/mobile/GpuAudit.js
