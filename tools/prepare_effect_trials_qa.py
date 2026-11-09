@@ -813,6 +813,60 @@ assert audit_src.count(old_rev)==1, "v28 QA revision anchor changed"
 audit.write_text(audit_src.replace(old_rev,new_rev,1))
 
 
+
+# Coastal v30: opt-in elimination of invisible nighttime Spray Update dispatch.
+# v29 achieved 41.5 FPS with both vendors loaded; keep that baseline unchanged.
+# With ?sprayBudget=nightOff, the spray geometry already hides in darkness,
+# so the GPU spray integration is also skipped. No change to FFT, surf foam,
+# wave wake, caustics, cloud scheduling, boat physics, daylight rendering or saves.
+# Reset CPU particle requests while disabled to avoid an accidental dawn burst.
+# On return to daylight, warm the ring buffer for 150 rendered frames while
+# hidden, ensuring age-stale nighttime particles do not suddenly become visible.
+qa_app=app_file.read_text()
+old_spray_update="if ( !this.qs.has('noSpray') && !this.qs.has('freezeFFT') ) this.spray.update();"
+new_spray_update="""const qaNightSprayMode = this.mobileLite &&
+            this.qs.get('fx') === 'coastal-seven' &&
+            this.qs.get('sprayBudget') === 'nightOff';
+        const qaSprayStats = qaNightSprayMode
+            ? (window.__bermudaQANightSprayStats ||= {
+                label:'night shader dispatch OFF',skipped:0,updated:0,
+                nightSeen:false,dayWarmup:0,dayWarmupRequired:150
+            }) : null;
+        if (qaSprayStats && G.night.value > 0.32) {
+            qaSprayStats.skipped++;
+            qaSprayStats.nightSeen = true;
+            qaSprayStats.dayWarmup = 0;
+            // CPU-generated boat/fish splashes must not pile up for sunrise.
+            this.spray.nReq = 0;
+            this.spray.nReqParticles = 0;
+        } else if (!this.qs.has('noSpray') && !this.qs.has('freezeFFT')) {
+            this.spray.update();
+            if (qaSprayStats) {
+                qaSprayStats.updated++;
+                if (qaSprayStats.nightSeen &&
+                    qaSprayStats.dayWarmup < qaSprayStats.dayWarmupRequired) {
+                    qaSprayStats.dayWarmup++;
+                    if (this.spray.mesh) this.spray.mesh.visible = false;
+                }
+            }
+        }"""
+assert qa_app.count(old_spray_update)==1, "v30 spray dispatch guard anchor changed"
+app_file.write_text(qa_app.replace(old_spray_update,new_spray_update,1))
+
+audit_src=audit.read_text()
+old_rev="  'QA source revision coastal-v29',"
+new_rev="""  'QA source revision coastal-v30',
+  'QA night spray GPU dispatch '+(typeof window!=='undefined'&&window.__bermudaQANightSprayStats
+    ?window.__bermudaQANightSprayStats.label+
+      ' | skipped '+window.__bermudaQANightSprayStats.skipped+
+      ' | updated '+window.__bermudaQANightSprayStats.updated+
+      ' | dawn warmup '+window.__bermudaQANightSprayStats.dayWarmup+
+      '/'+window.__bermudaQANightSprayStats.dayWarmupRequired
+    :'original dispatch (test with sprayBudget=nightOff)'),"""
+assert audit_src.count(old_rev)==1, "v30 QA diagnostic revision anchor changed"
+audit.write_text(audit_src.replace(old_rev,new_rev,1))
+
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
