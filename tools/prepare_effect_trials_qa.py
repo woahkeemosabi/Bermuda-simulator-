@@ -590,6 +590,80 @@ assert audit_src.count(old_rev) == 1, "v25 audit revision anchor changed"
 audit.write_text(audit_src.replace(old_rev,new_rev,1))
 
 
+
+# Coastal v26: make the next FPS investigation about pass cost, not cosmetic changes.
+# A/B-mode surfBudget=half updates the existing breaker crest/spray-emitter
+# buffer every >=67ms (roughly 15 Hz), while keeping spray particle integration,
+# four-cascade FFT, water queries, rendering, physics and save unchanged.
+# It is a diagnostic and may visibly reduce splash-generation smoothness.
+# Default remains the v25 full-rate crest generation, with corrected profiler
+# stage accounting for the portrait-modal early-return path.
+qa_engine_file = root / 'src/engine/Engine.js'
+qa_engine = qa_engine_file.read_text()
+old_raf_marker = "if ( qaPerf ) qaPerf.rafTicks++;"
+new_raf_marker = """if ( qaPerf ) {
+                qaPerf.rafTicks++;
+                if (document.visibilityState === 'visible') {
+                    if(qaPerf.lastVisibleRAF && t - qaPerf.lastVisibleRAF < 300)
+                        qaPerf.push('visibleRafInterval', t - qaPerf.lastVisibleRAF);
+                    qaPerf.lastVisibleRAF = t;
+                } else qaPerf.lastVisibleRAF = 0;
+            }"""
+assert qa_engine.count(old_raf_marker)==1, "v26 RAF telemetry anchor changed"
+qa_engine=qa_engine.replace(old_raf_marker,new_raf_marker,1)
+old_frame_marker = "this._mobileLastFrame = t;"
+new_frame_marker = """if (qaPerf && this._mobileLastFrame && t - this._mobileLastFrame < 300)
+                    qaPerf.push('renderInterval',t-this._mobileLastFrame);
+                this._mobileLastFrame = t;"""
+assert qa_engine.count(old_frame_marker)==1, "v26 frame interval anchor changed"
+qa_engine_file.write_text(qa_engine.replace(old_frame_marker,new_frame_marker,1))
+
+qa_app=app_file.read_text()
+old_crest = "this.breakers.update( this.camera );"
+new_crest = """if (!window.__bermudaQASurfBudget ||
+            window.__bermudaQASurfBudget.allow()) this.breakers.update( this.camera );"""
+assert qa_app.count(old_crest)==1, "v26 breaker update anchor changed"
+qa_app=qa_app.replace(old_crest,new_crest,1)
+old_portrait_marker = "gpuStage( 'Fish portrait isolated (world paused)', GPU.frame );"
+new_portrait_marker = """gpuStage( 'Fish portrait isolated (world paused)', GPU.frame );
+            // Finalize per-frame stage timer on the early-return path as well.
+            if(window.__bermudaQAPerf) window.__bermudaQAPerf.mark('frame-end');"""
+assert qa_app.count(old_portrait_marker)==1, "v26 portrait timing anchor changed"
+app_file.write_text(qa_app.replace(old_portrait_marker,new_portrait_marker,1))
+
+main_source=src.read_text()
+old_perf_attach = "window.__bermudaQAPerf=qa;"
+new_perf_attach = """window.__bermudaQAPerf=qa;
+            if(qaPerfQuery.get('surfBudget')==='half') {
+                window.__bermudaQASurfBudget={
+                    mode:'breakers >=67ms (A/B only)',last:-Infinity,runs:0,skips:0,
+                    allow(){
+                        const now=performance.now();
+                        if(now-this.last<67){this.skips++;return false;}
+                        this.last=now;this.runs++;return true;
+                    }
+                };
+            }"""
+assert main_source.count(old_perf_attach)==1, "v26 surf mode setup anchor changed"
+src.write_text(main_source.replace(old_perf_attach,new_perf_attach,1))
+
+audit_src = audit.read_text()
+old_rev = "  'QA source revision coastal-v25',"
+new_rev = """  'QA source revision coastal-v26',
+  'QA visible RAF interval p50/p95 '+(typeof window!=='undefined'&&window.__bermudaQAPerf
+    ?window.__bermudaQAPerf.pct('visibleRafInterval',.5)+' / '+window.__bermudaQAPerf.pct('visibleRafInterval',.95)
+    :'off'),
+  'QA actual frame interval p50/p95 '+(typeof window!=='undefined'&&window.__bermudaQAPerf
+    ?window.__bermudaQAPerf.pct('renderInterval',.5)+' / '+window.__bermudaQAPerf.pct('renderInterval',.95)
+    :'off'),
+  'QA surf crest cadence '+(typeof window!=='undefined'&&window.__bermudaQASurfBudget
+    ?window.__bermudaQASurfBudget.mode+' | runs '+window.__bermudaQASurfBudget.runs+
+      ' | skips '+window.__bermudaQASurfBudget.skips
+    :'full every frame')+' | spray integration remains every frame',"""
+assert audit_src.count(old_rev)==1, "v26 QA revision anchor changed"
+audit.write_text(audit_src.replace(old_rev,new_rev,1))
+
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
