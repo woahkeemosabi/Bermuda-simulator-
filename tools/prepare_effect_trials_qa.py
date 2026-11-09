@@ -1093,3 +1093,74 @@ assert "get('startupAudio') === 'eager'" in src.read_text()
 assert "preloadQAStartupAudio(app.audio)" in src.read_text()
 assert "coastal-v36-startup-audio-isolation" in audit.read_text()
 print("Coastal v36: parallel 19-recording audio preload deferred until Explore; seven ocean FX unchanged")
+
+
+# Coastal v37: black waterline protection, opt-in ONLY (?waterFix=1).
+# Root issue: simplified MobilePostFX bypasses the desktop underwater composite.
+# A no-depth sky pixel below sea level can remain physically black when the
+# underwater water surface clips out near the horizon. Guard the mobile final
+# pass with a minimal water-colour-scattering fallback for those pixels.
+# Separately prevent *pitch-black* shoreline wave faces in the water shader.
+# Both guards use existing colour/depth buffers. They add no new draw passes,
+# FFT kernels, weather particles, textures, or scene assets.
+mobile_file = root / 'src/post/MobilePostFX.js'
+mobile = mobile_file.read_text()
+old_flag = """  const filmSharp75=typeof window!=='undefined' &&"""
+new_flag = """  const qaWaterFix = typeof window !== 'undefined' &&
+   new URLSearchParams(window.location.search).get('waterFix') === '1';
+  if (typeof window !== 'undefined')
+   window.__bermudaQAWaterVisual = qaWaterFix ? 'on: mobile sky-gap and shore face guards' : 'off';
+  const waterGapShader = qaWaterFix ? \`
+ // A ray with no geometry hit is the sky, which the full Underwater composite
+ // normally scatters through the water column. Mobile's one-pass post lacks it.
+ let depthSize=vec2i(textureDimensions(mobileDepth));
+ let depthPx=clamp(vec2i(uv*vec2f(depthSize)),vec2i(0),depthSize-1);
+ let sceneDepth=textureLoad(mobileDepth,depthPx,0).x;
+ let submerge=smoothstep(0.15,0.65,frame.seaLevel-frame.cameraPos.y);
+ if (submerge>0.0 && sceneDepth<0.0000001) {
+   let scatter=max(vec3f(0.05,0.16,0.19),frame.skyIrradiance*0.22);
+   c=mix(c,max(c,scatter),submerge);
+ }
+\` : '';
+  const filmSharp75=typeof window!=='undefined' &&"""
+assert mobile.count(old_flag) == 1, 'v37 mobile water toggle anchor moved'
+mobile = mobile.replace(old_flag, new_flag, 1)
+old_bind = "bindings:{mobileHDR:{texture:()=>this.sceneRenderer.sceneRT.texture}},"
+new_bind = """bindings:{mobileHDR:{texture:()=>this.sceneRenderer.sceneRT.texture},
+    ...(qaWaterFix?{mobileDepth:{texture:()=>this.sceneRenderer.sceneRT.depthTexture,
+        sampleType:'unfilterable-float'}}:{})},"""
+assert mobile.count(old_bind) == 1, 'v37 mobile depth binding anchor moved'
+mobile = mobile.replace(old_bind, new_bind, 1)
+old_hdr = """var c=textureSampleLevel(mobileHDR,smpLinearClamp,uv,0.0).rgb;\\n let neighbor="""
+new_hdr = """var c=textureSampleLevel(mobileHDR,smpLinearClamp,uv,0.0).rgb;\\n"+waterGapShader+"\\n let neighbor="""
+assert mobile.count(old_hdr) == 1, 'v37 mobile shader insert anchor moved'
+mobile_file.write_text(mobile.replace(old_hdr, new_hdr, 1))
+
+water_file = root / 'src/ocean/WaterMaterial.js'
+water = water_file.read_text()
+old_water = "var res = min( outCol, vec3f( 16000.0 ) );"
+new_water = """var res = min( outCol, vec3f( 16000.0 ) );
+\${typeof window !== 'undefined' && new URLSearchParams(location.search).get('waterFix') === '1'
+  ? \`// Storm waves are dark but not solid-black masks. Preserve high dynamic
+  // range, moving crests and foam, and add only a shallow-water radiance floor.
+  if (mat.debugMode == 0 && vDepth < 26.0) {
+      let seaFloor = vec3f(0.028, 0.067, 0.081) + frame.skyIrradiance * 0.06;
+      res = max(res, seaFloor);
+  }\` : '' }"""
+assert water.count(old_water) == 1, 'v37 water shader color anchor moved'
+water_file.write_text(water.replace(old_water, new_water, 1))
+
+diag = audit.read_text()
+oldrev = "  'QA source revision coastal-v36-startup-audio-isolation',"
+newrev = """  'QA source revision coastal-v37-water-visual-ab',
+  'QA black-water guard '+(typeof window!=='undefined'
+    ?window.__bermudaQAWaterVisual||'not initialized'
+    :'not browser')+' | desktop underwater composite NOT yet mobile',"""
+assert diag.count(oldrev) == 1, 'v37 diagnostic revision changed'
+audit.write_text(diag.replace(oldrev,newrev,1))
+
+assert "waterGapShader" in mobile_file.read_text()
+assert "mobileDepth" in mobile_file.read_text()
+assert "vDepth < 26.0" in water_file.read_text()
+assert "coastal-v37-water-visual-ab" in audit.read_text()
+print("Coastal v37: opt-in waterFix=1 protects black sky gaps underwater and shore-wave faces; GPU effects unchanged")
