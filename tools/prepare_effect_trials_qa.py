@@ -819,3 +819,43 @@ assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
 assert "getFftCoreVisualProfile('crisp')" in out
 assert "window.__bermudaMobilePaceMs" in out
 print("QA effects and runtime cloud diagnostics installed; opt-in MarineSnow compatibility path available")
+
+
+# Coastal v30: remove camera-following white particulate meshes from the
+# existing iPhone QA build, including when the player uses the bare QA URL
+# (fx=baseline). v28 only hid airborne specks in coastal-seven at night and
+# MarineSnow close to the surface, so the white flake meshes were still active.
+# These are decorative particle systems, NOT the sea's foam/FFT/surf/boats.
+# Do not add the meshes to the QA scene at all; also suppress their per-frame
+# updates so they cannot be re-enabled by a later visibility calculation.
+qa_app = app_file.read_text()
+for attr, audit_flag in (
+    ('marineSnow', '__bermudaQASnowCompatibility'),
+    ('airMotes', '__bermudaQAAirMotesProfile'),
+):
+    old = f"scene.add( this.{attr}.mesh );"
+    new = f"""if (!mobileLite) scene.add( this.{attr}.mesh );
+        else {{
+            this.{attr}.mesh.visible = false;
+            this.{attr}.update = () => {{}};
+            window.{audit_flag} = 'disabled-qa';
+        }}"""
+    assert qa_app.count(old) == 1, f"v30 {attr} scene attachment changed"
+    qa_app = qa_app.replace(old, new, 1)
+app_file.write_text(qa_app)
+
+audit_src = audit.read_text()
+old_rev = "  'QA source revision coastal-v29',"
+new_rev = """  'QA source revision coastal-v30-particles-off',
+  'QA AirMotes profile '+(typeof window!=='undefined'
+    ?window.__bermudaQAAirMotesProfile||'original'
+    :'not browser'),"""
+assert audit_src.count(old_rev) == 1, 'v30 QA revision anchor changed'
+audit.write_text(audit_src.replace(old_rev, new_rev, 1))
+
+assert "if (!mobileLite) scene.add( this.marineSnow.mesh );" in qa_app
+assert "if (!mobileLite) scene.add( this.airMotes.mesh );" in qa_app
+assert "window.__bermudaQASnowCompatibility = 'disabled-qa'" in qa_app
+assert "window.__bermudaQAAirMotesProfile = 'disabled-qa'" in qa_app
+assert "coastal-v30-particles-off" in audit.read_text()
+print("Coastal v30 iPhone QA: MarineSnow and AirMotes meshes absent from scene; updates disabled")
