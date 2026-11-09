@@ -549,6 +549,47 @@ assert audit_src.count(old_rev)==1, "Performance QA revision anchor changed"
 audit.write_text(audit_src.replace(old_rev,new_rev,1))
 
 
+
+# Coastal v25: optional shadow-cascade cadence and resource-lifetime telemetry.
+# The v24 iPhone trace measured 10 FPS despite a 16ms target, with CPU p95 13ms
+# and ~88ms submission-to-ack wall latency. Reduce redundant GPU pass frequency,
+# without altering CSM texture resolution or daytime visual shaders.
+# Existing production/root build and default QA are unchanged.
+qa_app = app_file.read_text()
+old_shadow_mask = "this.shadows.layerMask = ( 1 << LAYERS.OPAQUE ) | ( 1 << LAYERS.TRANSPARENT );"
+new_shadow_mask = """this.shadows.layerMask = ( 1 << LAYERS.OPAQUE ) | ( 1 << LAYERS.TRANSPARENT );
+        if (mobileLite && qs.get('fx') === 'coastal-seven' && qs.get('shadowBudget') === 'half') {
+            this.shadows.periods = [2,4,8];
+            window.__bermudaQAShadowBudget = { periods:'2/4/8', frames:0, passes:0 };
+        }"""
+assert qa_app.count(old_shadow_mask) == 1, "Shadow cascade setup anchor changed"
+qa_app=qa_app.replace(old_shadow_mask,new_shadow_mask,1)
+
+old_shadow_render = "this.shadows.render( this.scene, this.engine.meshRenderer, this.shadows.update( this.camera, G.sunDir.value ) );"
+new_shadow_render = """const qaShadowIndices = this.shadows.update( this.camera, G.sunDir.value );
+        if (window.__bermudaQAShadowBudget) {
+            window.__bermudaQAShadowBudget.frames++;
+            window.__bermudaQAShadowBudget.passes += qaShadowIndices.length;
+        }
+        this.shadows.render( this.scene, this.engine.meshRenderer, qaShadowIndices );"""
+assert qa_app.count(old_shadow_render) == 1, "Scene shadow update/render anchor changed"
+app_file.write_text(qa_app.replace(old_shadow_render,new_shadow_render,1))
+
+audit_src = audit.read_text()
+old_rev = "  'QA source revision coastal-v24',"
+new_rev = """  'QA source revision coastal-v25',
+  'QA shadow cadence '+(typeof window!=='undefined' && window.__bermudaQAShadowBudget
+    ? window.__bermudaQAShadowBudget.periods+' | rendered '+window.__bermudaQAShadowBudget.passes+
+      ' passes in '+window.__bermudaQAShadowBudget.frames+' frames'
+    : 'default cascade periods 1/2/4'),
+  'QA vendor GPU residency '+(typeof location!=='undefined' && new URLSearchParams(location.search).get('vendorStream')==='1'
+    ? 'distance-based release ENABLED' : 'retained after loading')+
+    ' | loads '+(typeof window!=='undefined'?(window.__bermudaVendorStreamStats?.loads??0):0)+
+    ' | releases '+(typeof window!=='undefined'?(window.__bermudaVendorStreamStats?.releases??0):0),"""
+assert audit_src.count(old_rev) == 1, "v25 audit revision anchor changed"
+audit.write_text(audit_src.replace(old_rev,new_rev,1))
+
+
 out = src.read_text()
 assert out.count("configureQAEffectTrial(url)") == 1
 assert "const gpuTraceCase = getGpuTraceCase('fftcore')" in out
