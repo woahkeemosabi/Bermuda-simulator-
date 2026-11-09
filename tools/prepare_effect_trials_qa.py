@@ -872,25 +872,26 @@ old_radius = "const radius = QA_VENDOR_FOCUS ? Math.min(this.radius, 3.0) : 6;"
 new_radius = "const radius = QA_VENDOR_FOCUS ? Math.min(this.radius, 3.0) : 14;"
 assert vendor_src.count(old_radius) == 1, 'v32 vendor prefetch anchor changed'
 vendor_src = vendor_src.replace(old_radius, new_radius, 1)
-old_request = """if (dx * dx + dz * dz < radius * radius) {
-                const character = this._pendingCharacter;
-                this._pendingCharacter = null;
-                this.loadCharacter( character.url, character ).catch( ( e ) => console.warn( 'Vendor: character failed to load', e ) );
-            }"""
-new_request = """if (dx * dx + dz * dz < radius * radius &&
-                (QA_VENDOR_FOCUS || !window.__bermudaQAVendorLoadBusy)) {
-                const character = this._pendingCharacter;
-                this._pendingCharacter = null;
-                if (!QA_VENDOR_FOCUS) window.__bermudaQAVendorLoadBusy = true;
+old_gate = "if (dx * dx + dz * dz < radius * radius) {"
+new_gate = """if (dx * dx + dz * dz < radius * radius &&
+                (QA_VENDOR_FOCUS || !window.__bermudaQAVendorLoadBusy)) {"""
+assert vendor_src.count(old_gate) == 1, 'v32 mobile load gate changed'
+vendor_src = vendor_src.replace(old_gate, new_gate, 1)
+# Distinguish the update() loader from the constructor's eager desktop loader.
+load_anchor = new_gate
+old_load = "this.loadCharacter( character.url, character ).catch( ( e ) => console.warn( 'Vendor: character failed to load', e ) );"
+assert vendor_src.count(load_anchor) == 1, 'v32 vendor update marker missing'
+prefix, suffix = vendor_src.split(load_anchor, 1)
+assert suffix.count(old_load) == 1, 'v32 vendor update loader anchor changed'
+new_load = """if (!QA_VENDOR_FOCUS) window.__bermudaQAVendorLoadBusy = true;
                 this.loadCharacter(character.url, character).catch((e) => {
                     this._qaCharacterError = String(e?.message || e);
                     console.warn('Vendor: original full-resolution GLB failed', this.name, e);
                 }).finally(() => {
                     if (!QA_VENDOR_FOCUS) window.__bermudaQAVendorLoadBusy = false;
-                });
-            }"""
-assert vendor_src.count(old_request) == 1, 'v32 serialized vendor request anchor changed'
-vendor_file.write_text(vendor_src.replace(old_request, new_request, 1))
+                });"""
+vendor_src = prefix + load_anchor + suffix.replace(old_load, new_load, 1)
+vendor_file.write_text(vendor_src)
 
 # Two real-facing canvas-texture notice planes already exist; keep them,
 # lighting and 1024x640 atlas unchanged. Make the textured paper readable
