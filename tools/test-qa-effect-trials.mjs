@@ -126,6 +126,17 @@ assert.match(reportSource, /QA boat wake state/);
 assert.match(reportSource, /QA startup instant-prime 4 frames \/ 0ms spacing \/ no forced 60s/);
 assert.match(reportSource, /QA sky overcast mobile cloud black-tile fallback/);
 assert.match(reportSource, /QA night airborne spray/);
+assert.match(reportSource, /QA night spray GPU dispatch/);
+assert.match(appSource, /this\.qs\.get\('sprayBudget'\) === 'nightOff'/);
+assert.match(appSource, /G\.night\.value > 0\.32/);
+assert.match(appSource, /qaSprayStats\.skipped\+\+/);
+assert.match(appSource, /this\.spray\.nReq = 0/);
+assert.match(appSource, /this\.spray\.nReqParticles = 0/);
+assert.match(appSource, /qaSprayStats\.dayWarmupRequired/);
+assert.match(appSource, /this\.spray\.update\(\)/);
+assert.match(appSource, /this\.fft\.update\( dt \)/);
+assert.match(appSource, /this\.mobileWake\.update\( dt \)/);
+
 assert.match(mainSource, /frameCount: 4/);
 assert.match(mainSource, /frameWaitMs: 0/);
 assert.doesNotMatch(mainSource, /minimumMs: 60000/);
@@ -196,7 +207,7 @@ assert.match(appSource, /__bermudaQASimBudget\.allow\('clouds',100,dt\)/);
 assert.match(appSource, /__bermudaQASimBudget\.usedDelta\.clouds : dt/);
 assert.match(appSource, /this\.fft\.update\( dt \)/);
 
-assert.match(reportSource, /QA source revision coastal-v29/);
+assert.match(reportSource, /QA source revision coastal-v30/);
 assert.match(reportSource, /QA vendor texture load/);
 assert.match(reportSource, /QA vendor GLBs/);
 assert.match(vendorSource, /get\('vendorLoad'\) === 'focus'/);
@@ -238,7 +249,7 @@ assert.match(engineSource, /this\.camera\.aspect = w \/ h/);
 // Beach screenshot regression: keep the landing and shop colliders but do
 // not recreate the three massive grey asphalt slabs or their invisible
 // collisions on either side of the public waterfront.
-assert.match(reportSource, /QA source revision coastal-v29/);
+assert.match(reportSource, /QA source revision coastal-v30/);
 assert.match(reportSource, /QA beach road removed central-plus-two-extensions-and-footway/);
 assert.doesNotMatch(beachBlockoutSource, /box\(M\.asphalt,-68,1\.43,-49\.2,34,\.18,5/);
 assert.doesNotMatch(beachBlockoutSource, /'bermuda-road',true/);
