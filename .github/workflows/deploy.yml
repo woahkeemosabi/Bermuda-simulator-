@@ -556,7 +556,56 @@ jobs:
           test -d dist/qa/fish-landing/assets
           echo 'Built /qa/fish-landing/ independently; existing game and QA preserved'
 
-      # Keep the full-resolution models once. All four secondary builds use
+      # A native race mini-game using exactly the FFT world already in Bermuda
+      # Simulator. Fishing v4 is built and copied BEFORE these source changes,
+      # so fishing and production URLs are unchanged.
+      - name: Build Race the Sound pier-activity QA under /qa/race-the-sound/
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cp src/game/RaceSoundRules.js _qa/fftcore/src/game/RaceSoundRules.js
+          cp src/game/RaceTheSoundMinigame.js _qa/fftcore/src/game/RaceTheSoundMinigame.js
+          cp src/game/RaceTheSoundMinigame.css _qa/fftcore/src/game/RaceTheSoundMinigame.css
+          cp test/race-sound-qa.mjs _qa/fftcore/test/race-sound-qa.mjs
+          python3 tools/prepare_race_sound_qa.py
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('_qa/fftcore')
+          def replace_once(path, old, new):
+              p = root / path
+              s = p.read_text()
+              assert s.count(old)==1, f'{path}: expected one cache/save key {old}'
+              p.write_text(s.replace(old,new,1))
+          # Independent test save (same economy IN this world), no reset of
+          # fishing v4 or stable FFT test progress.
+          replace_once('src/game/GameState.js',
+              "'bermuda.qa.fish-landing.save.v1'", "'bermuda.qa.race-the-sound.save.v1'")
+          replace_once('src/mobile/StartupAssetCache.js',
+              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v1'")
+          replace_once('src/mobile/StartupAssetCache.js',
+              "'bermuda-qa-fish-landing-startup-ready-v4'", "'bermuda-qa-race-the-sound-startup-ready-v1'")
+          replace_once('public/sw.js',
+              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v1'")
+          replace_once('public/sw.js',
+              "'bermuda-qa-fish-landing-assets-'", "'bermuda-qa-race-the-sound-assets-'")
+          PY
+          cd _qa/fftcore
+          node --check src/game/RaceSoundRules.js
+          node --check src/game/RaceTheSoundMinigame.js
+          node --check src/game/Game.js
+          node --check src/App.js
+          node test/game-logic.mjs
+          node test/fish-bermuda-qa.mjs
+          node test/race-sound-qa.mjs
+          npm run build
+          cd ../..
+          mkdir -p dist/qa/race-the-sound
+          cp -a _qa/fftcore/dist/. dist/qa/race-the-sound/
+          test -s dist/qa/race-the-sound/index.html
+          test -s dist/qa/race-the-sound/sw.js
+          test -d dist/qa/race-the-sound/assets
+          echo 'Native Race the Sound published as a separate GitHub Pages QA path'
+
+      # Keep the full-resolution models once. All five secondary builds use
       # exactly the same GLBs as production; verify byte equality before dedup.
       # Their other assets, JS, saves and URLs remain isolated.
       - name: Share identical 3D models without reducing visual quality
@@ -567,7 +616,7 @@ jobs:
           import filecmp
           root = Path('dist')
           canonical = root / 'models'
-          variants = [root / 'qa/fftcore', root / 'qa/fish-landing', root / 'archive/oct14', root / 'archive/sep30']
+          variants = [root / 'qa/fftcore', root / 'qa/fish-landing', root / 'qa/race-the-sound', root / 'archive/oct14', root / 'archive/sep30']
           duplicates = []
           for site in variants:
             assert (site / 'index.html').is_file(), f'Missing published site {site}'

@@ -1,0 +1,22 @@
+#rts-root{position:fixed;inset:0;z-index:93;pointer-events:none;font-family:system-ui,-apple-system,sans-serif;color:#f4fcff}
+#rts-root button{font:750 13px system-ui;letter-spacing:.045em;background:#d8f7f2;color:#062631;border:0;border-radius:13px;padding:12px 18px;touch-action:none;cursor:pointer}
+#rts-root button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+#rts-root .rts-ghost{color:#d9f8fc;background:rgba(255,255,255,.15);border:1px solid rgba(216,247,247,.4)}
+#rts-dialog{display:none;position:absolute;left:50%;top:50%;width:min(88vw,380px);transform:translate(-50%,-50%);background:rgba(5,21,35,.95);border:1px solid #4d8694;border-radius:20px;box-shadow:0 10px 45px #0009;padding:21px;box-sizing:border-box;pointer-events:auto}
+#rts-dialog.is-on{display:block}
+#rts-dialog h3{font-size:22px;margin:4px 0 8px;line-height:1.2}
+#rts-dialog p{font-size:14px;line-height:1.5;color:#bdd3da;margin:0 0 19px}
+#rts-dialog .rts-actions{display:flex;flex-wrap:wrap;gap:10px}
+#rts-top{display:none;position:absolute;left:10px;right:10px;top:max(14px,env(safe-area-inset-top));justify-content:space-between;align-items:center;gap:8px;max-width:580px;margin:auto;background:rgba(1,18,31,.83);border:1px solid rgba(126,216,235,.35);border-radius:13px;padding:9px 12px;box-sizing:border-box;font-size:12px;line-height:1.5;pointer-events:none}
+#rts-top .rts-name{font-size:10px;color:#a0dfe6;letter-spacing:.15em;font-weight:850}
+#rts-top .rts-stat{font-weight:820;font-variant-numeric:tabular-nums;font-size:15px}
+#rts-top .rts-hint{color:#c0d4de;white-space:normal}
+#rts-controls{display:none;position:absolute;left:0;right:0;bottom:max(17px,env(safe-area-inset-bottom));padding:0 12px;gap:9px;align-items:flex-end;justify-content:space-between;pointer-events:auto}
+#rts-controls button{width:66px;height:62px;border-radius:17px;padding:5px;background:rgba(5,27,41,.8);color:#effcff;border:1px solid rgba(139,243,234,.48);font-size:12px;touch-action:none}
+#rts-controls button:active{background:rgba(58,225,206,.8);color:#04232b}
+#rts-controls [data-touch="throttle"]{width:100px;height:75px;background:rgba(25,117,121,.84)}
+#rts-controls .rts-small{width:48px;height:46px;font-size:10px}
+body.rts-racing #bm-touch-stable .bm-actions,body.rts-racing #bm-touch-stable .bm-stick,body.rts-racing #bm-touch .bm-actions,body.rts-racing #bm-touch .bm-stick{display:none!important}
+body.rts-racing .gm-purse,body.rts-racing .gm-map,body.rts-racing .gm-guide,body.rts-racing .gm-coach{display:none!important}
+body.rts-racing #rts-top{display:flex}
+body.rts-racing #rts-controls{display:flex}
