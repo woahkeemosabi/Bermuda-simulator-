@@ -2,6 +2,7 @@ import { Group, Mesh, Vector3 } from '../engine/index.js';
 import { box, roundedBox, cylinder, prepare, mergePrepared, mat4 } from '../world/boat/GeoKit.js';
 import { Vendor } from './Vendor.js';
 import { loadOriginalRaceSoundAsset, placeOriginalRaceSoundBoat } from './RaceSoundOriginalModel.js';
+import { installMeshyRaceMarshal, installMeshyMarinaKit, upgradeHarbourPatrols } from './HarbourMeshyEnhancement.js';
 import {
  SOUND_START, SOUND_MARKS, SOUND_MARK_RADIUS, METERS_TO_KNOTS,
  raceState, sailStep, aiHelm, advanceMark, distanceToMark, distanceProgress, headingTo, angleDelta,
@@ -10,7 +11,7 @@ import './RaceTheSoundMinigame.css';
 
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const MARSHAL={x:-65.9,y:1.13,z:-13.55};
-const TEAMS=[{name:'BDA',color:0x00bdd3},{name:'GBR',color:0xd93542},{name:'AUS',color:0xf7b51e}];
+const TEAMS=[{name:'BDA',color:0xe5545c},{name:'GBR',color:0x2767bd},{name:'AUS',color:0xeac431}];
 const PARKED=[{x:-79,z:6,h:.34,color:0xf5f4eb},{x:-85,z:19,h:-.25,color:0xe8ad48}];
 const PATROLS=[{x:-95,z:44,r:20,phase:0,color:0xcdd9e1},{x:-100,z:27,r:12,phase:Math.PI,color:0x3a87b4}];
 
@@ -82,6 +83,7 @@ export class RaceTheSoundMinigame{
    this.app=app;this.game=game;this.active=false;this.complete=false;this.offered=false;
    this.t=0;this.countdown=3.2;this.cameraMode=0;this.cameraSet=false;
    this.originalReady=false;this._originalLoad=null;this._raceWake=null;this._priorWakeBoat=null;
+   this._harbourMeshyStarted=false;this._harbourMeshyPromise=null;this._realMarshal=null;this._realMarina=null;
    this.touch={left:false,right:false,throttle:false,brake:false};
    this.material=game.stand.material;
    this.marshal=new Vendor({
@@ -105,6 +107,7 @@ export class RaceTheSoundMinigame{
    this.opponents=TEAMS.slice(1).map(v=>({...v,...createCatamaran(this.material,v.color,v.name),state:raceState()}));
    this.harbourBoats=PARKED.map((v,i)=>({...v,...createMotorboat(this.material,v.color,'MOORED'+i)}));
    this.patrolBoats=PATROLS.map((v,i)=>({...v,...createMotorboat(this.material,v.color,'PATROL'+i,true)}));
+   upgradeHarbourPatrols(app,this.patrolBoats);
    for(const b of [this.playerBoat,...this.opponents,...this.harbourBoats,...this.patrolBoats])app.scene.add(b.root);
    for(const b of this.opponents)b.root.visible=false;
    this.gates=SOUND_MARKS.map((mark,i)=>{const g=makeGate(this.material,i===0?SOUND_START:SOUND_MARKS[i-1],mark,i);app.scene.add(g);return g;});
@@ -156,10 +159,30 @@ export class RaceTheSoundMinigame{
      this.ui.querySelector('#rts-dialog-text').textContent='The hydrofoil catamaran could not load: '+error.message+'. Retry, or return to the pier. Your other activities are unaffected.';
    });
  }
+ // Staged after FFT warmup: only existing Meshy files, no generation charges.
+ maybeLoadHarbourMeshy(){
+   if(this._harbourMeshyStarted||typeof document==='undefined'||document.hidden)return;
+   const frames=window.__bermudaQAGameplay?.submissions ?? 0;
+   if(frames<100 && this.t<35)return;
+   this._harbourMeshyStarted=true;
+   this._harbourMeshyPromise=(async()=>{
+     try{
+       this._realMarshal=await installMeshyRaceMarshal(this.marshal);
+       console.info('Bermuda Simulator: Meshy pier NPC installed');
+     }catch(error){console.warn('Meshy NPC unavailable; marshal interaction preserved',error);}
+     try{
+       this._realMarina=await installMeshyMarinaKit(this.app,this.harbourBoats);
+       console.info('Bermuda Simulator: Meshy moored yacht and sailboats installed');
+     }catch(error){console.warn('Meshy marina unavailable; moored fallback preserved',error);}
+   })();
+ }
  async prepareOriginalBoats(){
    if(this.originalReady)return;
    if(!this._originalLoad){
-     this._originalLoad=loadOriginalRaceSoundAsset().then(model=>{
+     this._originalLoad=(async()=>{
+        if(this._harbourMeshyPromise)await this._harbourMeshyPromise;
+        return loadOriginalRaceSoundAsset();
+      })().then(model=>{
        const fleet=[this.playerBoat,...this.opponents];
        fleet.forEach((boat,i)=>{
          const original=placeOriginalRaceSoundBoat(model,TEAMS[i],this.material);
@@ -242,14 +265,18 @@ export class RaceTheSoundMinigame{
    boat.root.rotation.y=heading;boat.root.rotation.z=bank;
    if(boat.originalRig){
      const r=boat.originalRig,st=boat.state||this.own;
-     r.wing.rotation.y=Math.sin(this.t*.33+heading)*.16;
-     r.flap.rotation.y=.04+Math.sin(this.t*.53+heading)*.10;
+     // Rotate the articulated Meshy sail to expose its broad coloured face.
+     const sailSide=boat===this.playerBoat?1:-1;
+     r.wing.rotation.y=sailSide*(.74+.10*Math.sin(this.t*.23+heading*.15))-(st.steering||0)*.07;
+     r.flap.rotation.y=.16+Math.sin(this.t*.42+heading)*.08;
      for(const foil of r.foils)foil.rotation.x=-(st.foil||0)*.13;
      for(const rudder of r.rudders)rudder.rotation.y=-(st.steering||0)*.23;
    }else if(boat.sail)boat.sail.rotation.y=Math.sin(this.t*.7+heading)*.12;
  }
  updateHarbour(dt){
    this.t+=clamp(dt,0,.05);
+   this.maybeLoadHarbourMeshy();
+   if(this._realMarina)this._realMarina.visual.position.y=Math.sin(this.t*.8)*.025;
    this.harbourBoats.forEach((b,i)=>this.placeAtWater(b,b.x,b.z,b.h,0,.008,3+i));
    this.patrolBoats.forEach((b,i)=>{
      const a=this.t*.075+b.phase,x=b.x+Math.cos(a)*b.r,z=b.z+Math.sin(a)*b.r;
@@ -302,12 +329,12 @@ export class RaceTheSoundMinigame{
  updateCamera(dt){
    const b=this.own,cam=this.app.camera,fx=Math.sin(b.heading),fz=Math.cos(b.heading);
    const mode=this.cameraMode,target=new Vector3();
-   if(mode===0)target.set(b.x-fx*24,12.4,b.z-fz*24);
-   else if(mode===1)target.set(b.x+fx*.5,4.15,b.z+fz*.5);
-   else target.set(b.x-fx*34,43,b.z-fz*34);
+   if(mode===0)target.set(b.x-fx*20,11.2,b.z-fz*20);
+   else if(mode===1)target.set(b.x+fx*.5,5.6,b.z+fz*.5);
+   else target.set(b.x-fx*32,40,b.z-fz*32);
    if(!this.cameraSet){cam.position.copy(target);this.cameraSet=true;}
    else cam.position.lerp(target,1-Math.exp(-clamp(dt,0,.08)*4));
-   cam.lookAt(new Vector3(b.x+fx*(mode===1?25:9),mode===2?2.8:5.0,b.z+fz*(mode===1?25:9)));
+   cam.lookAt(new Vector3(b.x+fx*(mode===1?25:10),mode===2?2.8:mode===0?8.2:7.2,b.z+fz*(mode===1?25:10)));
  }
  standings(){
    const me=this.own;

@@ -3,7 +3,7 @@
 // 15,720 GLB triangles, six original PBR materials, three embedded images.
 // Imported into the EXISTING Bermuda Simulator renderer and FFT ocean. No iframe,
 // second WebGL/WebGPU context, asset generator or substitute primitive boat.
-import { Group, Mesh } from '../engine/index.js';
+import { BufferGeometry, Float32BufferAttribute, Group, Mesh } from '../engine/index.js';
 import { mergeGeometries } from '../engine/geometry/BufferGeometryUtils.js';
 import { loadStaticAsset } from '../world/bermuda/StaticAsset.js';
 import { box, prepare, mergePrepared, mat4 } from '../world/boat/GeoKit.js';
@@ -55,6 +55,48 @@ export async function loadOriginalRaceSoundAsset() {
   return {asset,compiled};
 }
 
+// The recovered October 20 Meshy wing is a narrow navy YZ-plane: viewed from
+// straight astern it looks like a black pole on an iPhone. Overlay a tiny,
+// tapered, two-sided team-colour shell on that ORIGINAL articulated wing,
+// preserving its physical spars/ribs, flap, UV textures and rotating pivot.
+// All patch triangles are merged into one existing-prop-material draw per boat.
+function wingPanel(y0,y1,zFront0,zFront1,zAft0,zAft1,x,colour){
+  const g=new BufferGeometry();
+  g.setAttribute('position',new Float32BufferAttribute([
+    x,y0-Y_OFFSET,zFront0,
+    x,y0-Y_OFFSET,zAft0,
+    x,y1-Y_OFFSET,zFront1,
+    x,y1-Y_OFFSET,zAft1,
+  ],3));
+  g.setIndex(x>0?[0,1,2,2,1,3]:[0,2,1,2,3,1]);
+  return prepare(g,{color:colour,rough:.32,metal:.06});
+}
+function wingProfile(y){
+  const t=Math.max(0,Math.min(1,(y-.15)/22.9));
+  return {front:.50-.35*t,aft:-2.95+1.08*t};
+}
+function overlayWing(wing,team,material){
+  const primary=team.color,accent=team.name==='AUS'?0x152942:0xf6f2e7;
+  const strips=[];
+  for(const side of [-1,1]){
+    const x=side*.19;
+    const a=wingProfile(.4),b=wingProfile(22.6);
+    strips.push(wingPanel(.4,22.6,a.front,b.front,a.aft,b.aft,x,primary));
+    // Diagonal off-white band like the later Race the Sound sails. Use
+    // the same vertex colours on both sides; no new image/texture upload.
+    const low=wingProfile(6.7),high=wingProfile(11.5);
+    strips.push(wingPanel(6.7,11.5,low.front,high.front,low.aft,high.aft,x+side*.014,accent));
+    // Dark navy / black carbon tip that visually terminates the full wing.
+    const tip0=wingProfile(17.7),tip1=wingProfile(22.6);
+    strips.push(wingPanel(17.7,22.6,tip0.front,tip1.front,tip0.aft,tip1.aft,x+side*.020,0x162438));
+  }
+  const coloured=new Mesh(mergePrepared(strips),material);
+  coloured.name='BermudaSimulator:race-event-coloured-wing';
+  coloured.castShadow=false;coloured.receiveShadow=false;
+  wing.add(coloured);
+  return coloured;
+}
+
 function pivotGroup(parent,x=0,y=0,z=0){
   const group=new Group();group.position.set(x,y,z);parent.add(group);return group;
 }
@@ -91,8 +133,9 @@ export function placeOriginalRaceSoundBoat(model,team,gameMaterial) {
     }
     group.add(mesh);
   }
-  // Independent team-color accents preserve the source's original 1024px
-  // Meshy textures instead of recoloring/destroying those source materials.
+  const sailColour=overlayWing(wing,team,gameMaterial);
+  // Colour and wing silhouette are dynamic components of the restored Meshy
+  // rig; the three embedded original textures and 19 geometry parts remain.
   const accents=[
     prepare(box(.13,.10,10),{color:team.color,rough:.32,metal:.16,matrix:mat4(-2.54,Y_OFFSET+.23,0)}),
     prepare(box(.13,.10,10),{color:team.color,rough:.32,metal:.16,matrix:mat4(2.54,Y_OFFSET+.23,0)}),
@@ -101,7 +144,7 @@ export function placeOriginalRaceSoundBoat(model,team,gameMaterial) {
   trim.castShadow=false;trim.receiveShadow=false;hull.add(trim);
 
   return {
-    root:rig,wing,flap,
+    root:rig,wing,flap,sailColour,
     foils:[portFoil,starboardFoil],
     rudders:[portRudder,starboardRudder],
   };
