@@ -117,9 +117,9 @@ replace_once("src/engine/loaders/GLTF.js",
 """)
 
 replace_once("src/game/Vendor.js",
-    "const model = await SkinnedModel.create( await loadGLB( url ) );",
+    "const model = await SkinnedModel.create( gltf );",
     """const compactTextures = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test( navigator.userAgent ) ? 512 : null;
-\t\tconst model = await SkinnedModel.create( await loadGLB( url ), { textureSize: compactTextures } );""")
+        const model = await SkinnedModel.create( gltf, { textureSize: compactTextures } );""")
 
 game = (ROOT / "src/game/Game.js").read_text()
 hud = (ROOT / "src/game/GameHUD.js").read_text()
