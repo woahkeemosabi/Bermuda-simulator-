@@ -1,6 +1,7 @@
 import { Group, Mesh, Vector3 } from '../engine/index.js';
 import { box, roundedBox, cylinder, prepare, mergePrepared, mat4 } from '../world/boat/GeoKit.js';
 import { Vendor } from './Vendor.js';
+import { loadOriginalRaceSoundAsset, placeOriginalRaceSoundBoat } from './RaceSoundOriginalModel.js';
 import {
  SOUND_START, SOUND_MARKS, SOUND_MARK_RADIUS, METERS_TO_KNOTS,
  raceState, sailStep, aiHelm, advanceMark, distanceToMark, distanceProgress, headingTo, angleDelta,
@@ -80,6 +81,7 @@ export class RaceTheSoundMinigame{
  constructor(app,game){
    this.app=app;this.game=game;this.active=false;this.complete=false;this.offered=false;
    this.t=0;this.countdown=3.2;this.cameraMode=0;this.cameraSet=false;
+   this.originalReady=false;this._originalLoad=null;this._raceWake=null;this._priorWakeBoat=null;
    this.touch={left:false,right:false,throttle:false,brake:false};
    this.material=game.stand.material;
    this.marshal=new Vendor({
@@ -98,6 +100,8 @@ export class RaceTheSoundMinigame{
    marker.castShadow=false;marker.receiveShadow=false;marker.position.set(MARSHAL.x-.95,MARSHAL.y,MARSHAL.z);
    app.scene.add(marker);
    this.playerBoat=createCatamaran(this.material,TEAMS[0].color,'BDA');
+   // Old procedural placeholder remains hidden; the recovered original loads on demand.
+   this.playerBoat.root.visible=false;
    this.opponents=TEAMS.slice(1).map(v=>({...v,...createCatamaran(this.material,v.color,v.name),state:raceState()}));
    this.harbourBoats=PARKED.map((v,i)=>({...v,...createMotorboat(this.material,v.color,'MOORED'+i)}));
    this.patrolBoats=PATROLS.map((v,i)=>({...v,...createMotorboat(this.material,v.color,'PATROL'+i,true)}));
@@ -132,16 +136,51 @@ export class RaceTheSoundMinigame{
  offer(){
    if(this.active||!this.ui)return;
    this.offered=true;
+   const d=this.ui.querySelector('#rts-dialog'),p=this.ui.querySelector('#rts-primary');
    this.ui.querySelector('#rts-dialog-head').textContent='RACE THE SOUND';
-   this.ui.querySelector('#rts-dialog-text').textContent='A hydrofoil catamaran is waiting by the pier. Race GBR and AUS through six buoy gates, riding Bermuda Simulator’s existing FFT ocean. No boat purchase needed.';
-   this.ui.querySelector('#rts-primary').textContent='START RACE';
    this.ui.querySelector('#rts-dismiss').textContent='NOT NOW';
-   this.ui.querySelector('#rts-dialog').classList.add('is-on');
+   p.disabled=!this.originalReady;
+   p.textContent=this.originalReady?'START RACE':'PREPARING ORIGINAL BOATS';
+   this.ui.querySelector('#rts-dialog-text').textContent=this.originalReady
+     ? 'Race the original articulated catamarans: BDA versus GBR and AUS. The Bermuda FFT ocean and fishing progress are preserved.'
+     : 'Preparing the original Race the Sound models and textures inside Bermuda Simulator. No separate game or graphics device.';
+   d.classList.add('is-on');
+   if(!this.originalReady)this.prepareOriginalBoats().then(()=>{
+     if(!this.offered||this.active)return;
+     p.disabled=false;p.textContent='START RACE';
+     this.ui.querySelector('#rts-dialog-text').textContent='Original wing, hulls, foils and rudders loaded. BDA, GBR and AUS are ready on the shared FFT ocean.';
+   }).catch(error=>{
+     console.warn('Original Race the Sound asset load failed',error);
+     if(!this.offered)return;
+     p.disabled=false;p.textContent='RETRY ORIGINAL MODEL';
+     this.ui.querySelector('#rts-dialog-text').textContent='Original race boat did not load: '+error.message+'. Retry. The regular fishing game is unaffected.';
+   });
+ }
+ async prepareOriginalBoats(){
+   if(this.originalReady)return;
+   if(!this._originalLoad){
+     this._originalLoad=loadOriginalRaceSoundAsset().then(model=>{
+       const fleet=[this.playerBoat,...this.opponents];
+       fleet.forEach((boat,i)=>{
+         const original=placeOriginalRaceSoundBoat(model,TEAMS[i],this.material);
+         for(const child of boat.root.children)child.visible=false;
+         boat.root.add(original.root);
+         boat.originalRig=original;
+         boat.sail=original.wing;
+       });
+       this.playerBoat.root.visible=true;
+       this.originalReady=true;
+       this.originalModel=model;
+       console.info('Original Race the Sound rig loaded: 15,720 triangles, six PBR materials, three textures');
+     }).catch(error=>{this._originalLoad=null;throw error;});
+   }
+   return this._originalLoad;
  }
  closeOffer(){this.offered=false;this.ui?.querySelector('#rts-dialog')?.classList.remove('is-on');}
- _onPrimary(){if(!this.active||this.complete)this.start();}
+ _onPrimary(){if(!this.originalReady){this.offer();return;}if(!this.active||this.complete)this.start();}
  _onDismiss(){if(this.active)this.leave();else this.closeOffer();}
  start(){
+   if(!this.originalReady)return;
    const p=this.app.player;
    if(!this.active)this.returnPose={position:p.position.clone(),yaw:p.yaw,pitch:p.pitch};
    this.closeOffer();this.releaseTouch();
@@ -153,12 +192,32 @@ export class RaceTheSoundMinigame{
    p.mode='race';p.busy=true;p.prompt=null;p.camInit=false;
    this.app.input.pressed.delete('KeyE');
    document.body.classList.add('rts-racing');
+   // Reuse the ocean's existing Kelvin wake simulation for the foil-cat's
+   // position/velocity only while racing. No second FFT or GPU compute pass.
+   const wake=this.app.wake;
+   if(wake){
+     this._priorWakeBoat=wake.boat;
+     if(!this._raceWake){
+       const race=this;
+       this._raceWake={position:new Vector3(),velocity:new Vector3(),driven:true,throttle:0,rpm:0,
+         forward(out){return out.set(Math.sin(race.own.heading),0,Math.cos(race.own.heading));}};
+     }
+     wake.boat=this._raceWake;
+     wake.hasWindow=false;
+     if(wake.uReset)wake.uReset.value=1;
+   }
    this.syncRaceBoats();
    this.updateCamera(.016);this.updateHUD();
  }
  leave(){
    this.active=false;this.complete=false;this.releaseTouch();this.closeOffer();
    document.body.classList.remove('rts-racing');
+   if(this.app.wake&&this._priorWakeBoat){
+     this.app.wake.boat=this._priorWakeBoat;
+     this.app.wake.hasWindow=false;
+     if(this.app.wake.uReset)this.app.wake.uReset.value=1;
+   }
+   this._priorWakeBoat=null;
    for(const b of this.opponents)b.root.visible=false;
    for(const g of this.gates)g.visible=false;
    this.playerBoat.root.position.set(SOUND_START.x,0,SOUND_START.z);
@@ -181,7 +240,13 @@ export class RaceTheSoundMinigame{
    boat.root.position.x=x;boat.root.position.z=z;
    boat.root.position.y+=(y+lift-boat.root.position.y)*.16;
    boat.root.rotation.y=heading;boat.root.rotation.z=bank;
-   if(boat.sail)boat.sail.rotation.y=Math.sin(this.t*.7+heading)*.12;
+   if(boat.originalRig){
+     const r=boat.originalRig,st=boat.state||this.own;
+     r.wing.rotation.y=Math.sin(this.t*.33+heading)*.16;
+     r.flap.rotation.y=.04+Math.sin(this.t*.53+heading)*.10;
+     for(const foil of r.foils)foil.rotation.x=-(st.foil||0)*.13;
+     for(const rudder of r.rudders)rudder.rotation.y=-(st.steering||0)*.23;
+   }else if(boat.sail)boat.sail.rotation.y=Math.sin(this.t*.7+heading)*.12;
  }
  updateHarbour(dt){
    this.t+=clamp(dt,0,.05);
@@ -205,7 +270,9 @@ export class RaceTheSoundMinigame{
    if(this.countdown>0)this.countdown-=h;
    else if(!this.complete){
      const throttle=this.touch.throttle||inp.down('KeyW')||inp.down('ArrowUp')?1:0;
-     const steer=(this.touch.right||inp.down('KeyD')||inp.down('ArrowRight')?1:0)-(this.touch.left||inp.down('KeyA')||inp.down('ArrowLeft')?1:0);
+     // View direction is +Z; screen-right is world -X. Invert the
+     // player's helm mapping, not the AI's world-space race guidance.
+     const steer=(this.touch.left||inp.down('KeyA')||inp.down('ArrowLeft')?1:0)-(this.touch.right||inp.down('KeyD')||inp.down('ArrowRight')?1:0);
      const brake=this.touch.brake||inp.down('KeyS')||inp.down('ArrowDown');
      sailStep(this.own,{throttle,steer,brake},h);
      const advanced=advanceMark(this.own);
@@ -219,6 +286,13 @@ export class RaceTheSoundMinigame{
      });
    }
    this.syncRaceBoats();
+   if(this._raceWake){
+     const w=this._raceWake;
+     w.position.set(this.own.x,0,this.own.z);
+     w.velocity.set(Math.sin(this.own.heading)*this.own.speed,0,Math.cos(this.own.heading)*this.own.speed);
+     w.throttle=Math.min(1,this.own.speed/20.2);
+     w.rpm=w.throttle*.5;
+   }
    p.position.set(this.own.x,this.playerBoat.root.position.y+1.1,this.own.z);
    p.prompt=null;p.busy=true;
    this.app.query.setPoint(p.slot,this.own.x,this.own.z);
@@ -228,12 +302,12 @@ export class RaceTheSoundMinigame{
  updateCamera(dt){
    const b=this.own,cam=this.app.camera,fx=Math.sin(b.heading),fz=Math.cos(b.heading);
    const mode=this.cameraMode,target=new Vector3();
-   if(mode===0)target.set(b.x-fx*13,7.2,b.z-fz*13);
-   else if(mode===1)target.set(b.x+fx*.5,3.65,b.z+fz*.5);
-   else target.set(b.x-fx*22,35,b.z-fz*22);
+   if(mode===0)target.set(b.x-fx*24,12.4,b.z-fz*24);
+   else if(mode===1)target.set(b.x+fx*.5,4.15,b.z+fz*.5);
+   else target.set(b.x-fx*34,43,b.z-fz*34);
    if(!this.cameraSet){cam.position.copy(target);this.cameraSet=true;}
    else cam.position.lerp(target,1-Math.exp(-clamp(dt,0,.08)*4));
-   cam.lookAt(new Vector3(b.x+fx*(mode===1?25:9),mode===2?.5:2.4,b.z+fz*(mode===1?25:9)));
+   cam.lookAt(new Vector3(b.x+fx*(mode===1?25:9),mode===2?2.8:5.0,b.z+fz*(mode===1?25:9)));
  }
  standings(){
    const me=this.own;
@@ -266,7 +340,7 @@ export class RaceTheSoundMinigame{
  updateHUD(){
    if(!this.ui||!this.active)return;
    const next=SOUND_MARKS[this.own.gate],turn=next?angleDelta(headingTo(this.own,next),this.own.heading):0;
-   const cue=turn>.18?'TURN RIGHT':turn<-.18?'TURN LEFT':'STRAIGHT';
+   const cue=turn>.18?'TURN LEFT':turn<-.18?'TURN RIGHT':'STRAIGHT';
    this.ui.querySelector('#rts-stage').textContent=this.complete?'RACE FINISHED':this.countdown>0?'START IN '+Math.max(1,Math.ceil(this.countdown)):'NEXT · '+(next?.name||'FINISH')+' · '+Math.round(distanceToMark(this.own,next))+'m · '+cue;
    this.ui.querySelector('#rts-mark').textContent=this.complete?'FINISHED':'MARK '+Math.min(this.own.gate+1,SOUND_MARKS.length)+' / '+SOUND_MARKS.length;
    this.ui.querySelector('#rts-time').textContent=this.formatTime(this.own.time);

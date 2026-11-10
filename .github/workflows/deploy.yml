@@ -565,7 +565,10 @@ jobs:
           cp src/game/RaceSoundRules.js _qa/fftcore/src/game/RaceSoundRules.js
           cp src/game/RaceTheSoundMinigame.js _qa/fftcore/src/game/RaceTheSoundMinigame.js
           cp src/game/RaceTheSoundMinigame.css _qa/fftcore/src/game/RaceTheSoundMinigame.css
+          cp src/game/RaceSoundOriginalAsset.js _qa/fftcore/src/game/RaceSoundOriginalAsset.js
+          cp src/game/RaceSoundOriginalModel.js _qa/fftcore/src/game/RaceSoundOriginalModel.js
           cp test/race-sound-qa.mjs _qa/fftcore/test/race-sound-qa.mjs
+          cp test/race-sound-original-model.mjs _qa/fftcore/test/race-sound-original-model.mjs
           python3 tools/prepare_race_sound_qa.py
           python3 - <<'PY'
           from pathlib import Path
@@ -580,22 +583,26 @@ jobs:
           replace_once('src/game/GameState.js',
               "'bermuda.qa.fish-landing.save.v1'", "'bermuda.qa.race-the-sound.save.v1'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v2'")
+              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v3'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fish-landing-startup-ready-v4'", "'bermuda-qa-race-the-sound-startup-ready-v2'")
+              "'bermuda-qa-fish-landing-startup-ready-v4'", "'bermuda-qa-race-the-sound-startup-ready-v3'")
           replace_once('public/sw.js',
-              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v2'")
+              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v3'")
           replace_once('public/sw.js',
               "'bermuda-qa-fish-landing-assets-'", "'bermuda-qa-race-the-sound-assets-'")
           PY
           cd _qa/fftcore
           node --check src/game/RaceSoundRules.js
           node --check src/game/RaceTheSoundMinigame.js
+          node --check src/game/RaceSoundOriginalAsset.js
+          node --check src/game/RaceSoundOriginalModel.js
+          node --check src/world/bermuda/StaticAsset.js
           node --check src/game/Game.js
           node --check src/App.js
           node test/game-logic.mjs
           node test/fish-bermuda-qa.mjs
           node test/race-sound-qa.mjs
+          node test/race-sound-original-model.mjs
           npm run build
           cd ../..
           mkdir -p dist/qa/race-the-sound
