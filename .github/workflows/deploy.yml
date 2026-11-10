@@ -496,6 +496,12 @@ jobs:
           cd ../..
           python3 tools/prepare_fish_landing_v2.py
           python3 tools/prepare_fish_startup_v3.py
+          # Add live fish motion without changing the original stable QA files.
+          cp src/game/FishLandingMotion.js _qa/fftcore/src/game/FishLandingMotion.js
+          cp test/fish-bermuda-qa.mjs _qa/fftcore/test/fish-bermuda-qa.mjs
+          python3 tools/prepare_bermuda_roster_v4.py
+          python3 tools/prepare_bermuda_render_v4.py
+          python3 tools/prepare_fish_animation_v4.py
           python3 - <<'PY'
           from pathlib import Path
           root=Path('_qa/fftcore')
@@ -509,11 +515,11 @@ jobs:
           replace_once('src/game/GameState.js',
               "'bermuda.qa.fftcore.save.v1'", "'bermuda.qa.fish-landing.save.v1'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fftcore-assets-v38'", "'bermuda-qa-fish-landing-assets-v3'")
+              "'bermuda-qa-fftcore-assets-v38'", "'bermuda-qa-fish-landing-assets-v4'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fftcore-startup-ready-v38'", "'bermuda-qa-fish-landing-startup-ready-v3'")
+              "'bermuda-qa-fftcore-startup-ready-v38'", "'bermuda-qa-fish-landing-startup-ready-v4'")
           replace_once('public/sw.js',
-              "'bermuda-qa-fftcore-assets-v38'", "'bermuda-qa-fish-landing-assets-v3'")
+              "'bermuda-qa-fftcore-assets-v38'", "'bermuda-qa-fish-landing-assets-v4'")
           replace_once('public/sw.js',
               "'bermuda-qa-fftcore-assets-'", "'bermuda-qa-fish-landing-assets-'")
           game=(root/'src/game/Game.js').read_text()
@@ -526,6 +532,12 @@ jobs:
           PY
           cd _qa/fftcore
           node --check src/game/Game.js
+          node --check src/game/FishTable.js
+          node --check src/game/FishLandingMotion.js
+          node --check src/game/CatchDisplay.js
+          node --check src/world/fish/FishSpecies.js
+          node --check src/world/fish/FishMaterial.js
+          node --check src/game/GameState.js
           node --check src/game/GameHUD.js
           node --check src/game/Vendor.js
           node --check src/mobile/GpuAudit.js
@@ -534,6 +546,7 @@ jobs:
           node --check src/engine/render/Skinning.js
           node --check src/engine/loaders/GLTF.js
           node test/game-logic.mjs
+          node test/fish-bermuda-qa.mjs
           npm run build
           cd ../..
           mkdir -p dist/qa/fish-landing
