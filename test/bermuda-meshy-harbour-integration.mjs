@@ -4,7 +4,6 @@ const read=(p)=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const race=read('src/game/RaceTheSoundMinigame.js');
 const harbour=read('src/game/HarbourMeshyEnhancement.js');
 const rig=read('src/game/RaceSoundOriginalModel.js');
-const workflow=read('.github/workflows/deploy.yml').toString();
 assert.ok(race.includes('installMeshyRaceMarshal(this.marshal)'), 'Replace race organiser with owned Meshy NPC');
 assert.ok(race.includes('installMeshyMarinaKit(this.app,this.harbourBoats)'), 'Use owned marina boat GLB');
 assert.ok(race.includes('upgradeHarbourPatrols(app,this.patrolBoats)'), 'Moving patrols reuse detailed existing Bermuda boat');
@@ -16,7 +15,7 @@ assert.ok(rig.includes('const sailColour=overlayWing'), 'Original GLB keeps 19 a
 assert.ok(harbour.includes('bermuda-marina-kit.glb') && harbour.includes('bermuda-npc-male.glb'));
 assert.ok(harbour.includes('original.clone(false)'), 'Patrol geometry must be shared with the real Bermuda boat');
 assert.ok(harbour.includes('marshal.setModel(visual)'), 'Keep NPC dialogue and E/ACT within existing Vendor');
-assert.ok(workflow.includes('bermuda-simulator'), 'Bermuda Simulator remains sole game brand');
+assert.ok(race.includes('BERMUDA SIMULATOR'), 'Bermuda Simulator remains the game brand');
 for(const path of ['public/models/bermuda/mobile-v3/bermuda-marina-kit.glb',
                   'public/models/bermuda/street-life/mobile/bermuda-npc-male.glb']){
   const b=readFileSync(new URL('../'+path,import.meta.url));
