@@ -85,10 +85,10 @@ export class RaceTheSoundMinigame{
    this.touch={left:false,right:false,throttle:false,brake:false};
    this.material=game.stand.material;
    this.marshal=new Vendor({
-     name:'Skipper · Race the Sound',kind:'race',position:new Vector3(MARSHAL.x,MARSHAL.y,MARSHAL.z),
+     name:'Skipper · Race Organiser',kind:'race',position:new Vector3(MARSHAL.x,MARSHAL.y,MARSHAL.z),
      yaw:Math.PI,radius:2.8,material:this.material,
-     greeting:'Race the Sound. Three foiling cats, one finish line.',
-     idle:'Talk to me whenever you are ready for the race.',
+     greeting:'I run hydrofoil races here on the pier. Fancy a challenge?',
+     idle:'Come back when you want another race.',
      look:{shirt:0x0d8d9f,trousers:0x172b3a,hat:0xe3e5db,skin:0x9d7456},
    });
    app.scene.add(this.marshal.group);
@@ -117,8 +117,8 @@ export class RaceTheSoundMinigame{
  buildUI(){
    if(typeof document==='undefined')return;
    const root=document.createElement('div');root.id='rts-root';
-   root.innerHTML='<section id="rts-dialog" role="dialog" aria-label="Race the Sound"><h3 id="rts-dialog-head">RACE THE SOUND</h3><p id="rts-dialog-text"></p><div class="rts-actions"><button id="rts-primary">Enter Race</button><button class="rts-ghost" id="rts-dismiss">Not now</button></div></section>'+
-   '<div id="rts-top"><div><div class="rts-name">RACE THE SOUND · BDA</div><div id="rts-stage" class="rts-hint">HARBOUR QUALIFIER</div></div><div style="text-align:center"><div id="rts-time" class="rts-stat">00:00</div><div id="rts-mark" class="rts-hint">START</div></div><div style="text-align:right"><div id="rts-speed" class="rts-stat">0 KTS</div><div id="rts-place" class="rts-hint">1 / 3</div></div></div>'+
+   root.innerHTML='<section id="rts-dialog" role="dialog" aria-label="Bermuda Simulator pier racing activity"><div class="rts-dialog-brand">BERMUDA SIMULATOR <span>· PIER ACTIVITY</span></div><h3 id="rts-dialog-head">HYDROFOIL RACE</h3><p id="rts-dialog-text"></p><div class="rts-actions"><button id="rts-primary">Enter Race</button><button class="rts-ghost" id="rts-dismiss">Not now</button></div></section>'+
+   '<div id="rts-top"><div class="rts-brand"><strong>BERMUDA SIMULATOR</strong><span>PIER ACTIVITY · HYDROFOIL RACING</span></div><div class="rts-telemetry"><div class="rts-waypoint"><div id="rts-stage" class="rts-hint">HARBOUR QUALIFIER</div><div id="rts-mark" class="rts-hint">START</div></div><div class="rts-metrics"><div id="rts-speed" class="rts-stat">0 KTS</div><div id="rts-time" class="rts-stat">00:00</div><div id="rts-place" class="rts-hint">1 / 3</div></div></div><div class="rts-balance">WALLET · BMD $<span id="rts-wallet">75</span></div></div>'+
    '<div id="rts-controls"><div style="display:flex;gap:8px;align-items:flex-end"><button data-touch="left">◀ LEFT</button><button data-touch="right">RIGHT ▶</button></div><div style="display:flex;gap:8px;align-items:flex-end"><button class="rts-small" id="rts-exit">EXIT</button><button class="rts-small" id="rts-camera">CAM</button><button class="rts-small" data-touch="brake">SLOW</button><button data-touch="throttle">ACCEL</button></div></div>';
    document.body.appendChild(root);this.ui=root;
    root.querySelector('#rts-primary').addEventListener('click',()=>this._onPrimary());
@@ -137,23 +137,23 @@ export class RaceTheSoundMinigame{
    if(this.active||!this.ui)return;
    this.offered=true;
    const d=this.ui.querySelector('#rts-dialog'),p=this.ui.querySelector('#rts-primary');
-   this.ui.querySelector('#rts-dialog-head').textContent='RACE THE SOUND';
+   this.ui.querySelector('#rts-dialog-head').textContent='HYDROFOIL RACE';
    this.ui.querySelector('#rts-dismiss').textContent='NOT NOW';
    p.disabled=!this.originalReady;
-   p.textContent=this.originalReady?'START RACE':'PREPARING ORIGINAL BOATS';
+   p.textContent=this.originalReady?'START RACE':'PREPARING CATAMARANS';
    this.ui.querySelector('#rts-dialog-text').textContent=this.originalReady
-     ? 'Race the original articulated catamarans: BDA versus GBR and AUS. The Bermuda FFT ocean and fishing progress are preserved.'
-     : 'Preparing the original Race the Sound models and textures inside Bermuda Simulator. No separate game or graphics device.';
+     ? 'Skipper invites you to Race the Sound. Take a supplied catamaran and race GBR and AUS through six harbour marks. Your Bermuda Simulator wallet and fishing progress stay with you.'
+     : 'Skipper is preparing a hydrofoil catamaran for the pier racing activity. You will return to this same pier afterward.';
    d.classList.add('is-on');
    if(!this.originalReady)this.prepareOriginalBoats().then(()=>{
      if(!this.offered||this.active)return;
      p.disabled=false;p.textContent='START RACE';
-     this.ui.querySelector('#rts-dialog-text').textContent='Original wing, hulls, foils and rudders loaded. BDA, GBR and AUS are ready on the shared FFT ocean.';
+     this.ui.querySelector('#rts-dialog-text').textContent='Your catamaran is ready. Race GBR and AUS, then return to the pier to continue exploring Bermuda.';
    }).catch(error=>{
      console.warn('Original Race the Sound asset load failed',error);
      if(!this.offered)return;
-     p.disabled=false;p.textContent='RETRY ORIGINAL MODEL';
-     this.ui.querySelector('#rts-dialog-text').textContent='Original race boat did not load: '+error.message+'. Retry. The regular fishing game is unaffected.';
+     p.disabled=false;p.textContent='RETRY BOAT LOADING';
+     this.ui.querySelector('#rts-dialog-text').textContent='The hydrofoil catamaran could not load: '+error.message+'. Retry, or return to the pier. Your other activities are unaffected.';
    });
  }
  async prepareOriginalBoats(){
@@ -326,8 +326,8 @@ export class RaceTheSoundMinigame{
    const rank=this.standings(),reward=rank===1?150:rank===2?85:45;
    this.game.state.addMoney(reward);
    if(this.ui){
-     this.ui.querySelector('#rts-dialog-head').textContent=rank===1?'YOU WON THE SOUND!':'RACE COMPLETE';
-     this.ui.querySelector('#rts-dialog-text').textContent='BDA finished '+rank+' / 3 in '+this.formatTime(this.own.finishTime)+'. Race reward: BMD $'+reward+'. The supplied race boat and your fishing boat are separate.';
+     this.ui.querySelector('#rts-dialog-head').textContent=rank===1?'RACE WON!':'RACE COMPLETE';
+     this.ui.querySelector('#rts-dialog-text').textContent='BDA finished '+rank+' / 3 in '+this.formatTime(this.own.finishTime)+'. BMD $'+reward+' added to your Bermuda Simulator wallet. Your boat and catch are unchanged.';
      this.ui.querySelector('#rts-primary').textContent='RACE AGAIN';
      this.ui.querySelector('#rts-dismiss').textContent='BACK TO PIER';
      this.ui.querySelector('#rts-dialog').classList.add('is-on');
@@ -346,5 +346,6 @@ export class RaceTheSoundMinigame{
    this.ui.querySelector('#rts-time').textContent=this.formatTime(this.own.time);
    this.ui.querySelector('#rts-speed').textContent=Math.round(this.own.speed*METERS_TO_KNOTS)+' KTS';
    this.ui.querySelector('#rts-place').textContent=this.standings()+' / 3';
+   this.ui.querySelector('#rts-wallet').textContent=this.game.state.money.toLocaleString();
  }
 }
