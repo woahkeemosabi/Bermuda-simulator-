@@ -485,7 +485,55 @@ jobs:
           test -d dist/qa/fftcore/assets
           echo 'GitHub Pages QA built at /qa/fftcore/; production root unchanged'
 
-      # Keep the full-resolution models once. All three secondary builds use
+      # Build a separate fishing landing preview from the same pinned iPhone QA.
+      # The verified existing /qa/fftcore/ and live site are not modified.
+      - name: Build in-world fishing preview under /qa/fish-landing/
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd _qa/fftcore
+          git apply --check ../../tools/patches/fish-landing.patch
+          git apply ../../tools/patches/fish-landing.patch
+          cd ../..
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('_qa/fftcore')
+          def replace_once(path, old, new):
+              p=root/path
+              content=p.read_text()
+              assert content.count(old)==1, f'{path}: expected exactly one match for {old}'
+              p.write_text(content.replace(old,new,1))
+          # Separate state and downloaded asset caches so a fishing preview
+          # cannot overwrite progress or offline files in the stable QA game.
+          replace_once('src/game/GameState.js',
+              "'bermuda.qa.fftcore.save.v1'", "'bermuda.qa.fish-landing.save.v1'")
+          replace_once('src/mobile/StartupAssetCache.js',
+              "'bermuda-qa-fftcore-assets-v38'", "'bermuda-qa-fish-landing-assets-v1'")
+          replace_once('src/mobile/StartupAssetCache.js',
+              "'bermuda-qa-fftcore-startup-ready-v38'", "'bermuda-qa-fish-landing-startup-ready-v1'")
+          replace_once('public/sw.js',
+              "'bermuda-qa-fftcore-assets-v38'", "'bermuda-qa-fish-landing-assets-v1'")
+          replace_once('public/sw.js',
+              "'bermuda-qa-fftcore-assets-'", "'bermuda-qa-fish-landing-assets-'")
+          game=(root/'src/game/Game.js').read_text()
+          assert 'const LANDING_SECONDS = 3.3' in game
+          assert "this.hud.showDiveCatch( L.info, 'LANDED' )" in game
+          assert 'this.hud.showCatch( L.card' not in game
+          assert 'gpuPlayerMovement( p, inp, this.vendors );' in game
+          assert 'v.streamTexturesWhenFar( p.position, dt );' in game
+          print('Fish landing patch applied without dropping pinned iPhone QA optimizations')
+          PY
+          cd _qa/fftcore
+          node --check src/game/Game.js
+          npm run build
+          cd ../..
+          mkdir -p dist/qa/fish-landing
+          cp -a _qa/fftcore/dist/. dist/qa/fish-landing/
+          test -s dist/qa/fish-landing/index.html
+          test -s dist/qa/fish-landing/sw.js
+          test -d dist/qa/fish-landing/assets
+          echo 'Built /qa/fish-landing/ independently; existing game and QA preserved'
+
+      # Keep the full-resolution models once. All four secondary builds use
       # exactly the same GLBs as production; verify byte equality before dedup.
       # Their other assets, JS, saves and URLs remain isolated.
       - name: Share identical 3D models without reducing visual quality
@@ -496,7 +544,7 @@ jobs:
           import filecmp
           root = Path('dist')
           canonical = root / 'models'
-          variants = [root / 'qa/fftcore', root / 'archive/oct14', root / 'archive/sep30']
+          variants = [root / 'qa/fftcore', root / 'qa/fish-landing', root / 'archive/oct14', root / 'archive/sep30']
           duplicates = []
           for site in variants:
             assert (site / 'index.html').is_file(), f'Missing published site {site}'
