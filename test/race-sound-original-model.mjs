@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { loadGLB } from '../src/engine/loaders/GLTF.js';
 import { staticGeometry } from '../src/world/bermuda/StaticAsset.js';
 import { ORIGINAL_RTS_GLB_URL } from '../src/game/RaceSoundOriginalAsset.js';
-import { raceState, sailStep, headingTo, aiHelm, advanceMark, SOUND_MARKS } from '../src/game/RaceSoundRules.js';
+import { raceState, sailStep, headingTo, aiHelm, advanceMark, SOUND_START, SOUND_MARKS } from '../src/game/RaceSoundRules.js';
 
 const gltf=await loadGLB(ORIGINAL_RTS_GLB_URL);
 assert.equal(gltf.meshes.length,19,'Original 19-section articulated catamaran');
@@ -25,10 +25,10 @@ assert.equal(staticAsset.parts.length,19,'Original sections must remain inspecta
 // projects LEFT on the display, so user RIGHT must supply negative helm input.
 const right=raceState();
 for(let i=0;i<150;i++)sailStep(right,{steer:-1,throttle:1},.016);
-assert.ok(right.x< -1,'RIGHT must turn toward screen right (-X)');
+assert.ok(right.x<SOUND_START.x-1,'RIGHT must turn toward screen right (-X) relative to its original -51m position');
 const left=raceState();
 for(let i=0;i<150;i++)sailStep(left,{steer:1,throttle:1},.016);
-assert.ok(left.x>1,'LEFT must turn toward screen left (+X)');
+assert.ok(left.x>SOUND_START.x+1,'LEFT must turn toward screen left (+X) relative to its original -51m position');
 let ai=raceState(-60,-1,0);
 for(let i=0;i<20000&&ai.gate<SOUND_MARKS.length;i++){
   sailStep(ai,aiHelm(ai,SOUND_MARKS[ai.gate],16),.016);
