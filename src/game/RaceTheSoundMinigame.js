@@ -1,6 +1,7 @@
 import { Group, Mesh, Vector3 } from '../engine/index.js';
 import { box, roundedBox, cylinder, prepare, mergePrepared, mat4 } from '../world/boat/GeoKit.js';
 import { Vendor } from './Vendor.js';
+import { loadOriginalRaceSoundAsset, placeOriginalRaceSoundBoat } from './RaceSoundOriginalModel.js';
 import {
  SOUND_START, SOUND_MARKS, SOUND_MARK_RADIUS, METERS_TO_KNOTS,
  raceState, sailStep, aiHelm, advanceMark, distanceToMark, distanceProgress, headingTo, angleDelta,
@@ -80,6 +81,7 @@ export class RaceTheSoundMinigame{
  constructor(app,game){
    this.app=app;this.game=game;this.active=false;this.complete=false;this.offered=false;
    this.t=0;this.countdown=3.2;this.cameraMode=0;this.cameraSet=false;
+   this.originalReady=false;this._originalLoad=null;this._raceWake=null;this._priorWakeBoat=null;
    this.touch={left:false,right:false,throttle:false,brake:false};
    this.material=game.stand.material;
    this.marshal=new Vendor({
@@ -98,6 +100,8 @@ export class RaceTheSoundMinigame{
    marker.castShadow=false;marker.receiveShadow=false;marker.position.set(MARSHAL.x-.95,MARSHAL.y,MARSHAL.z);
    app.scene.add(marker);
    this.playerBoat=createCatamaran(this.material,TEAMS[0].color,'BDA');
+   // Old procedural placeholder remains hidden; the recovered original loads on demand.
+   this.playerBoat.root.visible=false;
    this.opponents=TEAMS.slice(1).map(v=>({...v,...createCatamaran(this.material,v.color,v.name),state:raceState()}));
    this.harbourBoats=PARKED.map((v,i)=>({...v,...createMotorboat(this.material,v.color,'MOORED'+i)}));
    this.patrolBoats=PATROLS.map((v,i)=>({...v,...createMotorboat(this.material,v.color,'PATROL'+i,true)}));
@@ -205,7 +209,9 @@ export class RaceTheSoundMinigame{
    if(this.countdown>0)this.countdown-=h;
    else if(!this.complete){
      const throttle=this.touch.throttle||inp.down('KeyW')||inp.down('ArrowUp')?1:0;
-     const steer=(this.touch.right||inp.down('KeyD')||inp.down('ArrowRight')?1:0)-(this.touch.left||inp.down('KeyA')||inp.down('ArrowLeft')?1:0);
+     // View direction is +Z; screen-right is world -X. Invert the
+     // player's helm mapping, not the AI's world-space race guidance.
+     const steer=(this.touch.left||inp.down('KeyA')||inp.down('ArrowLeft')?1:0)-(this.touch.right||inp.down('KeyD')||inp.down('ArrowRight')?1:0);
      const brake=this.touch.brake||inp.down('KeyS')||inp.down('ArrowDown');
      sailStep(this.own,{throttle,steer,brake},h);
      const advanced=advanceMark(this.own);
@@ -228,12 +234,12 @@ export class RaceTheSoundMinigame{
  updateCamera(dt){
    const b=this.own,cam=this.app.camera,fx=Math.sin(b.heading),fz=Math.cos(b.heading);
    const mode=this.cameraMode,target=new Vector3();
-   if(mode===0)target.set(b.x-fx*13,7.2,b.z-fz*13);
-   else if(mode===1)target.set(b.x+fx*.5,3.65,b.z+fz*.5);
-   else target.set(b.x-fx*22,35,b.z-fz*22);
+   if(mode===0)target.set(b.x-fx*24,12.4,b.z-fz*24);
+   else if(mode===1)target.set(b.x+fx*.5,4.15,b.z+fz*.5);
+   else target.set(b.x-fx*34,43,b.z-fz*34);
    if(!this.cameraSet){cam.position.copy(target);this.cameraSet=true;}
    else cam.position.lerp(target,1-Math.exp(-clamp(dt,0,.08)*4));
-   cam.lookAt(new Vector3(b.x+fx*(mode===1?25:9),mode===2?.5:2.4,b.z+fz*(mode===1?25:9)));
+   cam.lookAt(new Vector3(b.x+fx*(mode===1?25:9),mode===2?2.8:5.0,b.z+fz*(mode===1?25:9)));
  }
  standings(){
    const me=this.own;
@@ -266,7 +272,7 @@ export class RaceTheSoundMinigame{
  updateHUD(){
    if(!this.ui||!this.active)return;
    const next=SOUND_MARKS[this.own.gate],turn=next?angleDelta(headingTo(this.own,next),this.own.heading):0;
-   const cue=turn>.18?'TURN RIGHT':turn<-.18?'TURN LEFT':'STRAIGHT';
+   const cue=turn>.18?'TURN LEFT':turn<-.18?'TURN RIGHT':'STRAIGHT';
    this.ui.querySelector('#rts-stage').textContent=this.complete?'RACE FINISHED':this.countdown>0?'START IN '+Math.max(1,Math.ceil(this.countdown)):'NEXT · '+(next?.name||'FINISH')+' · '+Math.round(distanceToMark(this.own,next))+'m · '+cue;
    this.ui.querySelector('#rts-mark').textContent=this.complete?'FINISHED':'MARK '+Math.min(this.own.gate+1,SOUND_MARKS.length)+' / '+SOUND_MARKS.length;
    this.ui.querySelector('#rts-time').textContent=this.formatTime(this.own.time);
