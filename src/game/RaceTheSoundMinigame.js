@@ -327,7 +327,7 @@ export class RaceTheSoundMinigame{
    this.game.state.addMoney(reward);
    if(this.ui){
      this.ui.querySelector('#rts-dialog-head').textContent=rank===1?'RACE WON!':'RACE COMPLETE';
-     this.ui.querySelector('#rts-dialog-text').textContent='BDA finished '+rank+' / 3 in '+this.formatTime(this.own.finishTime)+'. BMD ';
+     this.ui.querySelector('#rts-dialog-text').textContent='BDA finished '+rank+' / 3 in '+this.formatTime(this.own.finishTime)+'. BMD $'+reward+' added to your Bermuda Simulator wallet. Your boat and catch are unchanged.';
      this.ui.querySelector('#rts-primary').textContent='RACE AGAIN';
      this.ui.querySelector('#rts-dismiss').textContent='BACK TO PIER';
      this.ui.querySelector('#rts-dialog').classList.add('is-on');
@@ -347,26 +347,5 @@ export class RaceTheSoundMinigame{
    this.ui.querySelector('#rts-speed').textContent=Math.round(this.own.speed*METERS_TO_KNOTS)+' KTS';
    this.ui.querySelector('#rts-place').textContent=this.standings()+' / 3';
    this.ui.querySelector('#rts-wallet').textContent=this.game.state.money.toLocaleString();
- }
-}
-+reward+' added to your Bermuda Simulator wallet. Your boat and catch are unchanged.';
-     this.ui.querySelector('#rts-primary').textContent='RACE AGAIN';
-     this.ui.querySelector('#rts-dismiss').textContent='BACK TO PIER';
-     this.ui.querySelector('#rts-dialog').classList.add('is-on');
-   }
- }
- formatTime(t){
-   const v=Math.max(0,t||0),m=Math.floor(v/60),s=Math.floor(v%60);
-   return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
- }
- updateHUD(){
-   if(!this.ui||!this.active)return;
-   const next=SOUND_MARKS[this.own.gate],turn=next?angleDelta(headingTo(this.own,next),this.own.heading):0;
-   const cue=turn>.18?'TURN LEFT':turn<-.18?'TURN RIGHT':'STRAIGHT';
-   this.ui.querySelector('#rts-stage').textContent=this.complete?'RACE FINISHED':this.countdown>0?'START IN '+Math.max(1,Math.ceil(this.countdown)):'NEXT · '+(next?.name||'FINISH')+' · '+Math.round(distanceToMark(this.own,next))+'m · '+cue;
-   this.ui.querySelector('#rts-mark').textContent=this.complete?'FINISHED':'MARK '+Math.min(this.own.gate+1,SOUND_MARKS.length)+' / '+SOUND_MARKS.length;
-   this.ui.querySelector('#rts-time').textContent=this.formatTime(this.own.time);
-   this.ui.querySelector('#rts-speed').textContent=Math.round(this.own.speed*METERS_TO_KNOTS)+' KTS';
-   this.ui.querySelector('#rts-place').textContent=this.standings()+' / 3';
  }
 }
