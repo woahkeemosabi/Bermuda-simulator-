@@ -136,16 +136,51 @@ export class RaceTheSoundMinigame{
  offer(){
    if(this.active||!this.ui)return;
    this.offered=true;
+   const d=this.ui.querySelector('#rts-dialog'),p=this.ui.querySelector('#rts-primary');
    this.ui.querySelector('#rts-dialog-head').textContent='RACE THE SOUND';
-   this.ui.querySelector('#rts-dialog-text').textContent='A hydrofoil catamaran is waiting by the pier. Race GBR and AUS through six buoy gates, riding Bermuda Simulator’s existing FFT ocean. No boat purchase needed.';
-   this.ui.querySelector('#rts-primary').textContent='START RACE';
    this.ui.querySelector('#rts-dismiss').textContent='NOT NOW';
-   this.ui.querySelector('#rts-dialog').classList.add('is-on');
+   p.disabled=!this.originalReady;
+   p.textContent=this.originalReady?'START RACE':'PREPARING ORIGINAL BOATS';
+   this.ui.querySelector('#rts-dialog-text').textContent=this.originalReady
+     ? 'Race the original articulated catamarans: BDA versus GBR and AUS. The Bermuda FFT ocean and fishing progress are preserved.'
+     : 'Preparing the original Race the Sound models and textures inside Bermuda Simulator. No separate game or graphics device.';
+   d.classList.add('is-on');
+   if(!this.originalReady)this.prepareOriginalBoats().then(()=>{
+     if(!this.offered||this.active)return;
+     p.disabled=false;p.textContent='START RACE';
+     this.ui.querySelector('#rts-dialog-text').textContent='Original wing, hulls, foils and rudders loaded. BDA, GBR and AUS are ready on the shared FFT ocean.';
+   }).catch(error=>{
+     console.warn('Original Race the Sound asset load failed',error);
+     if(!this.offered)return;
+     p.disabled=false;p.textContent='RETRY ORIGINAL MODEL';
+     this.ui.querySelector('#rts-dialog-text').textContent='Original race boat did not load: '+error.message+'. Retry. The regular fishing game is unaffected.';
+   });
+ }
+ async prepareOriginalBoats(){
+   if(this.originalReady)return;
+   if(!this._originalLoad){
+     this._originalLoad=loadOriginalRaceSoundAsset().then(model=>{
+       const fleet=[this.playerBoat,...this.opponents];
+       fleet.forEach((boat,i)=>{
+         const original=placeOriginalRaceSoundBoat(model,TEAMS[i],this.material);
+         for(const child of boat.root.children)child.visible=false;
+         boat.root.add(original.root);
+         boat.originalRig=original;
+         boat.sail=original.wing;
+       });
+       this.playerBoat.root.visible=true;
+       this.originalReady=true;
+       this.originalModel=model;
+       console.info('Original Race the Sound rig loaded: 15,720 triangles, six PBR materials, three textures');
+     }).catch(error=>{this._originalLoad=null;throw error;});
+   }
+   return this._originalLoad;
  }
  closeOffer(){this.offered=false;this.ui?.querySelector('#rts-dialog')?.classList.remove('is-on');}
- _onPrimary(){if(!this.active||this.complete)this.start();}
+ _onPrimary(){if(!this.originalReady){this.offer();return;}if(!this.active||this.complete)this.start();}
  _onDismiss(){if(this.active)this.leave();else this.closeOffer();}
  start(){
+   if(!this.originalReady)return;
    const p=this.app.player;
    if(!this.active)this.returnPose={position:p.position.clone(),yaw:p.yaw,pitch:p.pitch};
    this.closeOffer();this.releaseTouch();
@@ -185,7 +220,13 @@ export class RaceTheSoundMinigame{
    boat.root.position.x=x;boat.root.position.z=z;
    boat.root.position.y+=(y+lift-boat.root.position.y)*.16;
    boat.root.rotation.y=heading;boat.root.rotation.z=bank;
-   if(boat.sail)boat.sail.rotation.y=Math.sin(this.t*.7+heading)*.12;
+   if(boat.originalRig){
+     const r=boat.originalRig,st=boat.state||this.own;
+     r.wing.rotation.y=Math.sin(this.t*.33+heading)*.16;
+     r.flap.rotation.y=.04+Math.sin(this.t*.53+heading)*.10;
+     for(const foil of r.foils)foil.rotation.x=-(st.foil||0)*.13;
+     for(const rudder of r.rudders)rudder.rotation.y=-(st.steering||0)*.23;
+   }else if(boat.sail)boat.sail.rotation.y=Math.sin(this.t*.7+heading)*.12;
  }
  updateHarbour(dt){
    this.t+=clamp(dt,0,.05);
