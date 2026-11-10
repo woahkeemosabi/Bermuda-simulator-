@@ -50,6 +50,11 @@ once("src/App.js",
             if ( this.game?.raceSound?.active ) this.game.raceSound.step( dt );
 \t\t\telse if ( this.freeCam ) this.fly.update( dt );
 \t\t\telse this.player.update( dt );""")
+# Only the isolated race build is allowed to load six source PBR materials.
+# All other QA builds keep the default four-material static asset budget.
+once("src/world/bermuda/StaticAsset.js",
+     "if ( materials.size >= 4 ) throw new Error( id + ': material budget exceeded.' );",
+     "if ( materials.size >= 6 ) throw new Error( id + ': material budget exceeded.' );")
 game=(R/"src/game/Game.js").read_text()
 app=(R/"src/App.js").read_text()
 rules=(R/"src/game/RaceSoundRules.js").read_text()
