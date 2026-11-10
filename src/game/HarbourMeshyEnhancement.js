@@ -10,7 +10,7 @@ export const MESHY_MARINA_KIT = BASE + 'mobile-v3/bermuda-marina-kit.glb';
 
 export async function installMeshyRaceMarshal(marshal){
   const asset=await loadStaticAsset(MESHY_RACE_MARSHAL, {
-    id:'bermuda-pier-race-marshal',maxTriangles:25000,maxTextureSize:1024,
+    id:'bermuda-pier-race-marshal',maxTriangles:25000,maxTextureSize:1024,maxGpuTextureSize:512,generateGpuMipmaps:false,
   });
   const height=Number(asset.size.y)||1.75;
   const scale=Math.max(.45,Math.min(3,1.77/height));
@@ -24,7 +24,7 @@ export async function installMeshyRaceMarshal(marshal){
 
 export async function installMeshyMarinaKit(app,legacyBoats){
   const asset=await loadStaticAsset(MESHY_MARINA_KIT, {
-    id:'bermuda-marina-meshy-moored-fleet',maxTriangles:26000,maxTextureSize:1024,
+    id:'bermuda-marina-meshy-moored-fleet',maxTriangles:26000,maxTextureSize:1024,maxGpuTextureSize:512,generateGpuMipmaps:false,
   });
   // The existing asset is a grouped harbour set: *two sailboats, one motor
   // yacht, mooring buoys and fenders*. Do not animate the whole group as a
