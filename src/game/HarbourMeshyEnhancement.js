@@ -1,6 +1,7 @@
 // Reuse the real, already-owned Meshy Bermuda harbour GLBs. No Meshy credits,
 // second renderer, image generation or new ocean GPU simulation required.
 // Assets are installed only after the existing iPhone FFT warmup completes.
+import { Group } from '../engine/index.js';
 import { loadStaticAsset, placeStaticAsset } from '../world/bermuda/StaticAsset.js';
 
 const BASE = ((import.meta.env && import.meta.env.BASE_URL) || './') + 'models/bermuda/';
@@ -35,4 +36,31 @@ export async function installMeshyMarinaKit(app,legacyBoats){
   app.scene.add(visual);
   for(const boat of legacyBoats)boat.root.visible=false;
   return {asset,visual,scale};
+}
+
+// Patrols cannot use the combined marina-kit GLB (it contains three boats and
+// buoys as a single arrangement). Instead instance the already loaded, detailed
+// Bermuda lobster-boat geometry for moving work/patrol vessels. These meshes
+// SHARE the player's boat GPU geometry/material; no new GLB, bitmap, shader or
+// expensive duplicated vertex buffers on iPhone.
+export function upgradeHarbourPatrols(app,patrols){
+  const source=app.boat?.meshes;
+  if(!source)return 0;
+  const pieces=['hull','gelcoat','wood','fittings','glass']
+    .map(name=>source[name]).filter(Boolean);
+  if(pieces.length<3)return 0;
+  for(const boat of patrols){
+    const cabin=new Group();
+    cabin.name='BermudaExistingDetailedPatrol';
+    cabin.scale.setScalar(.66);
+    cabin.position.y=-.11;
+    for(const original of pieces){
+      const mesh=original.clone(false);
+      mesh.castShadow=false;mesh.receiveShadow=false;
+      cabin.add(mesh);
+    }
+    boat.root.add(cabin);
+    for(const child of boat.root.children)if(child!==cabin)child.visible=false;
+  }
+  return patrols.length;
 }
