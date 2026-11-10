@@ -556,10 +556,10 @@ jobs:
           test -d dist/qa/fish-landing/assets
           echo 'Built /qa/fish-landing/ independently; existing game and QA preserved'
 
-      # A native race mini-game using exactly the FFT world already in Bermuda
-      # Simulator. Fishing v4 is built and copied BEFORE these source changes,
-      # so fishing and production URLs are unchanged.
-      - name: Build Race the Sound pier-activity QA under /qa/race-the-sound/
+      # An in-world pier racing activity inside the full Bermuda Simulator test.
+      # Fishing v4 is built and copied BEFORE these source changes; production,
+      # fishing-only QA and stable iPhone FFT QA remain unchanged.
+      - name: Build Bermuda Simulator with pier racing under /qa/bermuda-simulator/
         if: github.ref == 'refs/heads/main'
         run: |
           cp src/game/RaceSoundRules.js _qa/fftcore/src/game/RaceSoundRules.js
@@ -569,6 +569,7 @@ jobs:
           cp src/game/RaceSoundOriginalModel.js _qa/fftcore/src/game/RaceSoundOriginalModel.js
           cp test/race-sound-qa.mjs _qa/fftcore/test/race-sound-qa.mjs
           cp test/race-sound-original-model.mjs _qa/fftcore/test/race-sound-original-model.mjs
+          cp test/bermuda-activities-integration.mjs _qa/fftcore/test/bermuda-activities-integration.mjs
           python3 tools/prepare_race_sound_qa.py
           python3 - <<'PY'
           from pathlib import Path
@@ -583,13 +584,13 @@ jobs:
           replace_once('src/game/GameState.js',
               "'bermuda.qa.fish-landing.save.v1'", "'bermuda.qa.race-the-sound.save.v1'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v3'")
+              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-simulator-activities-assets-v1'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fish-landing-startup-ready-v4'", "'bermuda-qa-race-the-sound-startup-ready-v3'")
+              "'bermuda-qa-fish-landing-startup-ready-v4'", "'bermuda-qa-simulator-activities-startup-ready-v1'")
           replace_once('public/sw.js',
-              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v3'")
+              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-simulator-activities-assets-v1'")
           replace_once('public/sw.js',
-              "'bermuda-qa-fish-landing-assets-'", "'bermuda-qa-race-the-sound-assets-'")
+              "'bermuda-qa-fish-landing-assets-'", "'bermuda-qa-simulator-activities-assets-'")
           PY
           cd _qa/fftcore
           node --check src/game/RaceSoundRules.js
@@ -603,14 +604,33 @@ jobs:
           node test/fish-bermuda-qa.mjs
           node test/race-sound-qa.mjs
           node test/race-sound-original-model.mjs
+          node test/bermuda-activities-integration.mjs
           npm run build
           cd ../..
+          mkdir -p dist/qa/bermuda-simulator
+          cp -a _qa/fftcore/dist/. dist/qa/bermuda-simulator/
+          test -s dist/qa/bermuda-simulator/index.html
+          test -s dist/qa/bermuda-simulator/sw.js
+          test -d dist/qa/bermuda-simulator/assets
+          # Previous QA links remain navigable, but the destination is the
+          # integrated Bermuda Simulator activity build, not a separate game.
           mkdir -p dist/qa/race-the-sound
-          cp -a _qa/fftcore/dist/. dist/qa/race-the-sound/
-          test -s dist/qa/race-the-sound/index.html
-          test -s dist/qa/race-the-sound/sw.js
-          test -d dist/qa/race-the-sound/assets
-          echo 'Native Race the Sound published as a separate GitHub Pages QA path'
+          python3 - <<'PY'
+          from pathlib import Path
+          target = Path('dist/qa/race-the-sound/index.html')
+          target.write_text("""<!doctype html><html lang="en"><head><meta charset="utf-8">
+          <title>Bermuda Simulator · Pier Activities</title>
+          <meta http-equiv="refresh" content="0;url=../bermuda-simulator/">
+          <script>
+          const url = new URL('../bermuda-simulator/', location.href);
+          url.search = location.search;
+          url.hash = location.hash;
+          location.replace(url.href);
+          </script></head><body>
+          <a href="../bermuda-simulator/">Continue to Bermuda Simulator</a>
+          </body></html>""", encoding='utf-8')
+          PY
+          echo 'Bermuda Simulator with native hydrofoil racing published at /qa/bermuda-simulator/'
 
       # Keep the full-resolution models once. All five secondary builds use
       # exactly the same GLBs as production; verify byte equality before dedup.
@@ -623,7 +643,7 @@ jobs:
           import filecmp
           root = Path('dist')
           canonical = root / 'models'
-          variants = [root / 'qa/fftcore', root / 'qa/fish-landing', root / 'qa/race-the-sound', root / 'archive/oct14', root / 'archive/sep30']
+          variants = [root / 'qa/fftcore', root / 'qa/fish-landing', root / 'qa/bermuda-simulator', root / 'archive/oct14', root / 'archive/sep30']
           duplicates = []
           for site in variants:
             assert (site / 'index.html').is_file(), f'Missing published site {site}'
