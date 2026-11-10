@@ -38,6 +38,29 @@ function createCatamaran(material,color,label){
  root.add(sail);
  return {root,sail};
 }
+// Distinct Bermuda-style harbour workboats/patrols, not duplicate racing cats.
+// Reuse the single existing fishing material and low-poly geometric hull.
+function createMotorboat(material,color,label,patrol=false){
+ const root=new Group();root.name='BermudaHarbour:'+label;
+ const p=[],add=(g,c,m)=>p.push(prepare(g,{color:c,rough:.46,metal:.12,matrix:m}));
+ add(roundedBox(patrol?2.5:2.75,.76,patrol?6.4:6.1,.34,2),color,mat4(0,0,0));
+ add(box(2.24,.10,4.6),0xe1e8e7,mat4(0,.45,-.25));
+ add(roundedBox(1.65,1.25,2.3,.16,2),patrol?0xdfeaf2:0xf7efe3,mat4(0,1.06,-.65));
+ add(box(1.47,.38,.06),0x294657,mat4(0,1.29,.55));
+ add(box(1.4,.13,.3),0x293742,mat4(0,.55,2.75));
+ add(cylinder(.035,.035,1.4,6),0x9caeb2,mat4(.5,2.30,-.82));
+ if(patrol){
+   add(box(.45,.12,.18),0x1557b7,mat4(-.32,1.76,-.3));
+   add(box(.45,.12,.18),0xd13537,mat4(.32,1.76,-.3));
+ }else{
+   add(box(.5,.3,.7),0x635c4b,mat4(.85,.63,-2.1));
+   add(box(.5,.3,.7),0x635c4b,mat4(-.85,.63,-2.1));
+ }
+ const hull=new Mesh(mergePrepared(p),material);
+ hull.castShadow=false;hull.receiveShadow=false;
+ root.add(hull);
+ return {root,sail:null};
+}
 function makeGate(material,prev,mark,i){
  const group=new Group();group.name='RaceTheSound:gate'+(i+1);
  const dx=mark.x-prev.x,dz=mark.z-prev.z,d=Math.max(1,Math.hypot(dx,dz));
@@ -76,8 +99,8 @@ export class RaceTheSoundMinigame{
    app.scene.add(marker);
    this.playerBoat=createCatamaran(this.material,TEAMS[0].color,'BDA');
    this.opponents=TEAMS.slice(1).map(v=>({...v,...createCatamaran(this.material,v.color,v.name),state:raceState()}));
-   this.harbourBoats=PARKED.map((v,i)=>({...v,...createCatamaran(this.material,v.color,'MOORED'+i)}));
-   this.patrolBoats=PATROLS.map((v,i)=>({...v,...createCatamaran(this.material,v.color,'PATROL'+i)}));
+   this.harbourBoats=PARKED.map((v,i)=>({...v,...createMotorboat(this.material,v.color,'MOORED'+i)}));
+   this.patrolBoats=PATROLS.map((v,i)=>({...v,...createMotorboat(this.material,v.color,'PATROL'+i,true)}));
    for(const b of [this.playerBoat,...this.opponents,...this.harbourBoats,...this.patrolBoats])app.scene.add(b.root);
    for(const b of this.opponents)b.root.visible=false;
    this.gates=SOUND_MARKS.map((mark,i)=>{const g=makeGate(this.material,i===0?SOUND_START:SOUND_MARKS[i-1],mark,i);app.scene.add(g);return g;});
@@ -92,11 +115,12 @@ export class RaceTheSoundMinigame{
    const root=document.createElement('div');root.id='rts-root';
    root.innerHTML='<section id="rts-dialog" role="dialog" aria-label="Race the Sound"><h3 id="rts-dialog-head">RACE THE SOUND</h3><p id="rts-dialog-text"></p><div class="rts-actions"><button id="rts-primary">Enter Race</button><button class="rts-ghost" id="rts-dismiss">Not now</button></div></section>'+
    '<div id="rts-top"><div><div class="rts-name">RACE THE SOUND · BDA</div><div id="rts-stage" class="rts-hint">HARBOUR QUALIFIER</div></div><div style="text-align:center"><div id="rts-time" class="rts-stat">00:00</div><div id="rts-mark" class="rts-hint">START</div></div><div style="text-align:right"><div id="rts-speed" class="rts-stat">0 KTS</div><div id="rts-place" class="rts-hint">1 / 3</div></div></div>'+
-   '<div id="rts-controls"><div style="display:flex;gap:8px;align-items:flex-end"><button data-touch="left">◀ LEFT</button><button data-touch="right">RIGHT ▶</button></div><div style="display:flex;gap:8px;align-items:flex-end"><button class="rts-small" id="rts-camera">CAM</button><button class="rts-small" data-touch="brake">SLOW</button><button data-touch="throttle">ACCEL</button></div></div>';
+   '<div id="rts-controls"><div style="display:flex;gap:8px;align-items:flex-end"><button data-touch="left">◀ LEFT</button><button data-touch="right">RIGHT ▶</button></div><div style="display:flex;gap:8px;align-items:flex-end"><button class="rts-small" id="rts-exit">EXIT</button><button class="rts-small" id="rts-camera">CAM</button><button class="rts-small" data-touch="brake">SLOW</button><button data-touch="throttle">ACCEL</button></div></div>';
    document.body.appendChild(root);this.ui=root;
    root.querySelector('#rts-primary').addEventListener('click',()=>this._onPrimary());
    root.querySelector('#rts-dismiss').addEventListener('click',()=>this._onDismiss());
    root.querySelector('#rts-camera').addEventListener('click',()=>this.changeCamera());
+   root.querySelector('#rts-exit').addEventListener('click',()=>this.leave());
    for(const el of root.querySelectorAll('[data-touch]')){
      const type=el.dataset.touch;
      el.addEventListener('pointerdown',e=>{e.preventDefault();this.touch[type]=true;el.setPointerCapture?.(e.pointerId)});
@@ -157,7 +181,7 @@ export class RaceTheSoundMinigame{
    boat.root.position.x=x;boat.root.position.z=z;
    boat.root.position.y+=(y+lift-boat.root.position.y)*.16;
    boat.root.rotation.y=heading;boat.root.rotation.z=bank;
-   boat.sail.rotation.y=Math.sin(this.t*.7+heading)*.12;
+   if(boat.sail)boat.sail.rotation.y=Math.sin(this.t*.7+heading)*.12;
  }
  updateHarbour(dt){
    this.t+=clamp(dt,0,.05);
@@ -243,7 +267,7 @@ export class RaceTheSoundMinigame{
    if(!this.ui||!this.active)return;
    const next=SOUND_MARKS[this.own.gate],turn=next?angleDelta(headingTo(this.own,next),this.own.heading):0;
    const cue=turn>.18?'TURN RIGHT':turn<-.18?'TURN LEFT':'STRAIGHT';
-   this.ui.querySelector('#rts-stage').textContent=this.complete?'RACE FINISHED':this.countdown>0?'START IN '+Math.max(1,Math.ceil(this.countdown)):'NEXT · '+(next?.name||'FINISH')+' · '+cue;
+   this.ui.querySelector('#rts-stage').textContent=this.complete?'RACE FINISHED':this.countdown>0?'START IN '+Math.max(1,Math.ceil(this.countdown)):'NEXT · '+(next?.name||'FINISH')+' · '+Math.round(distanceToMark(this.own,next))+'m · '+cue;
    this.ui.querySelector('#rts-mark').textContent=this.complete?'FINISHED':'MARK '+Math.min(this.own.gate+1,SOUND_MARKS.length)+' / '+SOUND_MARKS.length;
    this.ui.querySelector('#rts-time').textContent=this.formatTime(this.own.time);
    this.ui.querySelector('#rts-speed').textContent=Math.round(this.own.speed*METERS_TO_KNOTS)+' KTS';
