@@ -580,11 +580,11 @@ jobs:
           replace_once('src/game/GameState.js',
               "'bermuda.qa.fish-landing.save.v1'", "'bermuda.qa.race-the-sound.save.v1'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v1'")
+              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v2'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fish-landing-startup-ready-v4'", "'bermuda-qa-race-the-sound-startup-ready-v1'")
+              "'bermuda-qa-fish-landing-startup-ready-v4'", "'bermuda-qa-race-the-sound-startup-ready-v2'")
           replace_once('public/sw.js',
-              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v1'")
+              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-race-the-sound-assets-v2'")
           replace_once('public/sw.js',
               "'bermuda-qa-fish-landing-assets-'", "'bermuda-qa-race-the-sound-assets-'")
           PY
