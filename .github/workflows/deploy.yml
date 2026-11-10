@@ -494,6 +494,7 @@ jobs:
           git apply --check ../../tools/patches/fish-landing.patch
           git apply ../../tools/patches/fish-landing.patch
           cd ../..
+          python3 tools/prepare_fish_landing_v2.py
           python3 - <<'PY'
           from pathlib import Path
           root=Path('_qa/fftcore')
@@ -507,16 +508,16 @@ jobs:
           replace_once('src/game/GameState.js',
               "'bermuda.qa.fftcore.save.v1'", "'bermuda.qa.fish-landing.save.v1'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fftcore-assets-v38'", "'bermuda-qa-fish-landing-assets-v1'")
+              "'bermuda-qa-fftcore-assets-v38'", "'bermuda-qa-fish-landing-assets-v2'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fftcore-startup-ready-v38'", "'bermuda-qa-fish-landing-startup-ready-v1'")
+              "'bermuda-qa-fftcore-startup-ready-v38'", "'bermuda-qa-fish-landing-startup-ready-v2'")
           replace_once('public/sw.js',
-              "'bermuda-qa-fftcore-assets-v38'", "'bermuda-qa-fish-landing-assets-v1'")
+              "'bermuda-qa-fftcore-assets-v38'", "'bermuda-qa-fish-landing-assets-v2'")
           replace_once('public/sw.js',
               "'bermuda-qa-fftcore-assets-'", "'bermuda-qa-fish-landing-assets-'")
           game=(root/'src/game/Game.js').read_text()
-          assert 'const LANDING_SECONDS = 3.3' in game
-          assert "this.hud.showDiveCatch( L.info, 'LANDED' )" in game
+          assert 'const LANDING_SECONDS = 8.0' in game
+          assert "this.hud.showLandedCatch( L.info )" in game
           assert 'this.hud.showCatch( L.card' not in game
           assert 'gpuPlayerMovement( p, inp, this.vendors );' in game
           assert 'v.streamTexturesWhenFar( p.position, dt );' in game
@@ -524,6 +525,11 @@ jobs:
           PY
           cd _qa/fftcore
           node --check src/game/Game.js
+          node --check src/game/GameHUD.js
+          node --check src/game/Vendor.js
+          node --check src/engine/render/Skinning.js
+          node --check src/engine/loaders/GLTF.js
+          node test/game-logic.mjs
           npm run build
           cd ../..
           mkdir -p dist/qa/fish-landing
