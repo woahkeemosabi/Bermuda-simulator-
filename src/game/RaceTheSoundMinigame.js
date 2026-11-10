@@ -192,12 +192,32 @@ export class RaceTheSoundMinigame{
    p.mode='race';p.busy=true;p.prompt=null;p.camInit=false;
    this.app.input.pressed.delete('KeyE');
    document.body.classList.add('rts-racing');
+   // Reuse the ocean's existing Kelvin wake simulation for the foil-cat's
+   // position/velocity only while racing. No second FFT or GPU compute pass.
+   const wake=this.app.wake;
+   if(wake){
+     this._priorWakeBoat=wake.boat;
+     if(!this._raceWake){
+       const race=this;
+       this._raceWake={position:new Vector3(),velocity:new Vector3(),driven:true,throttle:0,rpm:0,
+         forward(out){return out.set(Math.sin(race.own.heading),0,Math.cos(race.own.heading));}};
+     }
+     wake.boat=this._raceWake;
+     wake.hasWindow=false;
+     if(wake.uReset)wake.uReset.value=1;
+   }
    this.syncRaceBoats();
    this.updateCamera(.016);this.updateHUD();
  }
  leave(){
    this.active=false;this.complete=false;this.releaseTouch();this.closeOffer();
    document.body.classList.remove('rts-racing');
+   if(this.app.wake&&this._priorWakeBoat){
+     this.app.wake.boat=this._priorWakeBoat;
+     this.app.wake.hasWindow=false;
+     if(this.app.wake.uReset)this.app.wake.uReset.value=1;
+   }
+   this._priorWakeBoat=null;
    for(const b of this.opponents)b.root.visible=false;
    for(const g of this.gates)g.visible=false;
    this.playerBoat.root.position.set(SOUND_START.x,0,SOUND_START.z);
@@ -266,6 +286,13 @@ export class RaceTheSoundMinigame{
      });
    }
    this.syncRaceBoats();
+   if(this._raceWake){
+     const w=this._raceWake;
+     w.position.set(this.own.x,0,this.own.z);
+     w.velocity.set(Math.sin(this.own.heading)*this.own.speed,0,Math.cos(this.own.heading)*this.own.speed);
+     w.throttle=Math.min(1,this.own.speed/20.2);
+     w.rpm=w.throttle*.5;
+   }
    p.position.set(this.own.x,this.playerBoat.root.position.y+1.1,this.own.z);
    p.prompt=null;p.busy=true;
    this.app.query.setPoint(p.slot,this.own.x,this.own.z);
