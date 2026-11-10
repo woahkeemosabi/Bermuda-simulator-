@@ -9,7 +9,9 @@ assert.equal(gltf.meshes.length,19,'Original 19-section articulated catamaran');
 assert.equal(gltf.materials.length,6,'Original six PBR materials');
 assert.equal(gltf.images.length,3,'Original three embedded textures');
 assert.equal(gltf.skins.length,0);
-assert.equal(gltf.animations.length,0);
+assert.equal(gltf.animations.length,1,'Original 4s rig demo is retained in source GLB');
+assert.equal(gltf.animations[0].name,'Rig_Motion_Demo_4s');
+gltf.animations.length=0; // Only the derived static boat mesh discards the demo clip
 const names=new Set(gltf.nodes.map(n=>n.name));
 for(const n of ['Hull_Port','Hull_Starboard','WingYawPivot',
   'RigidWing_Main','WingFlapPivot','RigidWing_TrailingFlap','Hydrofoil_Port',
