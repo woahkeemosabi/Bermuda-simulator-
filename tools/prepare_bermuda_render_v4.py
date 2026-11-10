@@ -33,7 +33,7 @@ marks="""
         c=mix(c,vec3f(0.67,0.71,0.46),pale*0.35);
     } else if ( pat == ${ PT( 'redHind' ) } ) {
         let dot=vec2f(z,y)*105.0;
-        let cell=floor(dot), q=fract(dot)-0.5;
+        let cell=floor(dot); let q=fract(dot)-0.5;
         let jitter=vec2f(fishHash(cell+3.9),fishHash(cell+8.2))-0.5;
         let spots=1.0-smoothstep(0.11,0.23,length(q-jitter*0.5));
         c=mix(c,vec3f(0.69,0.12,0.11),spots*bodyK*0.95);
