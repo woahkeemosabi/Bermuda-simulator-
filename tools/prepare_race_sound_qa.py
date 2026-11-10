@@ -55,6 +55,20 @@ once("src/App.js",
 once("src/world/bermuda/StaticAsset.js",
      "if ( materials.size >= 4 ) throw new Error( id + ': material budget exceeded.' );",
      "if ( materials.size >= 6 ) throw new Error( id + ': material budget exceeded.' );")
+# The original Race the Sound rig includes a 4-second articulation demo
+# animation and no skin. We drive those exact separate wing/foil/rudder nodes
+# ourselves in the racing code; discard ONLY the demo clip in the isolated QA
+# loader before the static mesh geometry baking pass.
+once("src/world/bermuda/StaticAsset.js",
+     "const gltf = await loadGLB( url );\n\tconst asset = staticGeometry( gltf );",
+     """const gltf = await loadGLB( url );
+    if ( id === 'original-race-the-sound-foil-cat' ) {
+        if ( gltf.skins.length !== 0 || gltf.animations.length !== 1 ||
+             gltf.animations[0].name !== 'Rig_Motion_Demo_4s' )
+            throw new Error( 'Original racing GLB demo animation changed unexpectedly' );
+        gltf.animations.length = 0;
+    }
+    const asset = staticGeometry( gltf );""")
 game=(R/"src/game/Game.js").read_text()
 app=(R/"src/App.js").read_text()
 rules=(R/"src/game/RaceSoundRules.js").read_text()
