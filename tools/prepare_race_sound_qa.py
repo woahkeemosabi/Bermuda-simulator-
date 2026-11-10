@@ -60,7 +60,7 @@ once("src/world/bermuda/StaticAsset.js",
 # ourselves in the racing code; discard ONLY the demo clip in the isolated QA
 # loader before the static mesh geometry baking pass.
 once("src/world/bermuda/StaticAsset.js",
-     "const gltf = await loadGLB( url );\\n\\tconst asset = staticGeometry( gltf );",
+     "const gltf = await loadGLB( url );\n\tconst asset = staticGeometry( gltf );",
      """const gltf = await loadGLB( url );
     if ( id === 'original-race-the-sound-foil-cat' ) {
         if ( gltf.skins.length !== 0 || gltf.animations.length !== 1 ||
