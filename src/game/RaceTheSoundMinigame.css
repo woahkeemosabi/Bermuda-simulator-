@@ -33,3 +33,32 @@ body.rts-racing #rts-controls{display:flex}
  #rts-top .rts-stat{font-size:13px}
  #rts-top .rts-hint{font-size:10px}
 }
+
+/* Race owns the HUD: suppress the inherited fishing/walking header, wallet,
+   clock, objective, map and mobile HUD. Previous build put them on top of race telemetry. */
+body.rts-racing .tw-hud,
+body.rts-racing .tw-rail,
+body.rts-racing #bm-objective,
+body.rts-racing .gm-purse,
+body.rts-racing.bm-mobile .gm-purse,
+body.rts-racing .gm-map,
+body.rts-racing .gm-guide,
+body.rts-racing .gm-coach,
+body.rts-racing #bm-touch-stable .bm-actions,
+body.rts-racing #bm-touch .bm-actions{display:none!important}
+body.rts-racing #rts-top{
+ display:flex!important;top:max(22px,env(safe-area-inset-top));align-items:flex-start;
+ background:none;border:0;box-shadow:none;padding:8px 18px;max-width:none;
+ text-shadow:0 2px 6px rgba(0,20,40,.65);
+}
+body.rts-racing #rts-top .rts-name{color:#defeff;font-size:11px}
+body.rts-racing #rts-top .rts-stat{font-size:24px;font-weight:650;letter-spacing:-.035em}
+body.rts-racing #rts-top .rts-hint{color:#f0fbff;font-size:12px}
+body.rts-racing #rts-controls{display:flex!important}
+#rts-root button:disabled{opacity:.53;cursor:wait}
+@media(max-width:450px){
+ body.rts-racing #rts-top{top:max(17px,env(safe-area-inset-top));padding:9px 12px;gap:4px}
+ body.rts-racing #rts-top .rts-stat{font-size:20px}
+ body.rts-racing #rts-top .rts-hint{font-size:10px}
+ #rts-controls button{box-shadow:0 3px 16px rgba(0,0,0,.24)}
+}
