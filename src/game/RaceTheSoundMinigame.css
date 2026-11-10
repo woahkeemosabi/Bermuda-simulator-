@@ -20,3 +20,16 @@ body.rts-racing #bm-touch-stable .bm-actions,body.rts-racing #bm-touch-stable .b
 body.rts-racing .gm-purse,body.rts-racing .gm-map,body.rts-racing .gm-guide,body.rts-racing .gm-coach{display:none!important}
 body.rts-racing #rts-top{display:flex}
 body.rts-racing #rts-controls{display:flex}
+
+/* A real 390px iPhone: fit 2 helm buttons, EXIT/CAM/SLOW and throttle.
+   Keep all controls out of the safe-area home indicator. */
+@media(max-width:450px){
+ #rts-controls{gap:5px;padding:0 8px;bottom:max(14px,env(safe-area-inset-bottom))}
+ #rts-controls > div{gap:5px!important}
+ #rts-controls button{width:54px;height:57px;font-size:10px}
+ #rts-controls .rts-small{width:36px;height:45px;font-size:9px}
+ #rts-controls [data-touch="throttle"]{width:72px;height:68px}
+ #rts-top{gap:4px;padding:9px 8px}
+ #rts-top .rts-stat{font-size:13px}
+ #rts-top .rts-hint{font-size:10px}
+}
