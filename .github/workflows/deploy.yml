@@ -568,6 +568,9 @@ jobs:
           cp src/game/RaceSoundOriginalAsset.js _qa/fftcore/src/game/RaceSoundOriginalAsset.js
           cp src/game/RaceSoundOriginalModel.js _qa/fftcore/src/game/RaceSoundOriginalModel.js
           cp src/game/HarbourMeshyEnhancement.js _qa/fftcore/src/game/HarbourMeshyEnhancement.js
+          # Only the combined activity snapshot receives the opt-in CPU-side
+          # 512px texture reduction. Stable core and fishing QA are preserved.
+          cp src/world/bermuda/StaticAsset.js _qa/fftcore/src/world/bermuda/StaticAsset.js
           # Reuse the verified originals committed in this same repository;
           # the pinned iPhone snapshot may predate these optimized GLBs.
           mkdir -p _qa/fftcore/public/models/bermuda/mobile-v3 _qa/fftcore/public/models/bermuda/street-life/mobile
@@ -577,6 +580,7 @@ jobs:
           cp test/race-sound-original-model.mjs _qa/fftcore/test/race-sound-original-model.mjs
           cp test/bermuda-activities-integration.mjs _qa/fftcore/test/bermuda-activities-integration.mjs
           cp test/bermuda-meshy-harbour-integration.mjs _qa/fftcore/test/bermuda-meshy-harbour-integration.mjs
+          cp test/bermuda-race-upload-safety.mjs _qa/fftcore/test/bermuda-race-upload-safety.mjs
           python3 tools/prepare_race_sound_qa.py
           python3 - <<'PY'
           from pathlib import Path
@@ -591,11 +595,11 @@ jobs:
           replace_once('src/game/GameState.js',
               "'bermuda.qa.fish-landing.save.v1'", "'bermuda.qa.race-the-sound.save.v1'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-simulator-activities-assets-v2'")
+              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-simulator-activities-assets-v3'")
           replace_once('src/mobile/StartupAssetCache.js',
-              "'bermuda-qa-fish-landing-startup-ready-v4'", "'bermuda-qa-simulator-activities-startup-ready-v2'")
+              "'bermuda-qa-fish-landing-startup-ready-v4'", "'bermuda-qa-simulator-activities-startup-ready-v3'")
           replace_once('public/sw.js',
-              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-simulator-activities-assets-v2'")
+              "'bermuda-qa-fish-landing-assets-v4'", "'bermuda-qa-simulator-activities-assets-v3'")
           replace_once('public/sw.js',
               "'bermuda-qa-fish-landing-assets-'", "'bermuda-qa-simulator-activities-assets-'")
           PY
@@ -606,6 +610,7 @@ jobs:
           node --check src/game/RaceSoundOriginalModel.js
           node --check src/game/HarbourMeshyEnhancement.js
           node --check src/world/bermuda/StaticAsset.js
+          node test/bermuda-race-upload-safety.mjs
           node --check src/game/Game.js
           node --check src/App.js
           node test/game-logic.mjs
