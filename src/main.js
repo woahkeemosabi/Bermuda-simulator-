@@ -143,6 +143,25 @@ app.init( ( p, text, until ) => {
   ui.setLoading( p, text, until );
 } ).then( async () => {
 
+	// 60-second mobile preload: keep the branded loader visible while submitting
+	// one complete, real Bermuda frame per second and waiting for the GPU queue.
+	// This is a device-stability warm-up, not a cosmetic timer or idle delay.
+	if ( mobileFastStart && !app.qs.has('skipPreload') ) {
+		const preloadStart = performance.now();
+		for ( let second = 1; second <= 60; second++ ) {
+			if ( app.engine?.device?.lost && app.engine.device.lostReason ) {
+				throw new Error('GPU device lost during 60-second preload: '+app.engine.device.lostReason);
+			}
+			ui.setLoading( Math.min(.90, .36 + second/60*.54),
+				'Preloading Bermuda graphics · '+(60-second)+'s', .95 );
+			gpuStage('60-second preload '+second+'/60');
+			app.frame(1/60);
+			await GPU.queue.onSubmittedWorkDone();
+			await new Promise(resolve=>setTimeout(resolve,1000));
+		}
+		window.__bermudaPreload = {seconds:60,frames:60,elapsed:Math.round(performance.now()-preloadStart)};
+	}
+
 	if ( mobileFastStart ) applyMobileMemoryProfile( app );
 	if ( mobileFastStart && app.localLights ) app.localLights.strength = Math.max( Number( app.localLights.strength ) || 1, 1.35 );
 	applyBermudaRuntimeLook( app );
