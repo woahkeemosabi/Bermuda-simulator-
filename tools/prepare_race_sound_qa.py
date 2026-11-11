@@ -50,25 +50,14 @@ once("src/App.js",
             if ( this.game?.raceSound?.active ) this.game.raceSound.step( dt );
 \t\t\telse if ( this.freeCam ) this.fly.update( dt );
 \t\t\telse this.player.update( dt );""")
-# Only the isolated race build is allowed to load six source PBR materials.
-# All other QA builds keep the default four-material static asset budget.
-once("src/world/bermuda/StaticAsset.js",
-     "if ( materials.size >= 4 ) throw new Error( id + ': material budget exceeded.' );",
-     "if ( materials.size >= 6 ) throw new Error( id + ': material budget exceeded.' );")
-# The original Race the Sound rig includes a 4-second articulation demo
-# animation and no skin. We drive those exact separate wing/foil/rudder nodes
-# ourselves in the racing code; discard ONLY the demo clip in the isolated QA
-# loader before the static mesh geometry baking pass.
-once("src/world/bermuda/StaticAsset.js",
-     "const gltf = await loadGLB( url );\n\tconst asset = staticGeometry( gltf );",
-     """const gltf = await loadGLB( url );
-    if ( id === 'original-race-the-sound-foil-cat' ) {
-        if ( gltf.skins.length !== 0 || gltf.animations.length !== 1 ||
-             gltf.animations[0].name !== 'Rig_Motion_Demo_4s' )
-            throw new Error( 'Original racing GLB demo animation changed unexpectedly' );
-        gltf.animations.length = 0;
-    }
-    const asset = staticGeometry( gltf );""")
+# The isolated race QA now copies the current StaticAsset.js and uses the
+# loader's opt-in compatibility settings. Never rewrite that shared loader
+# again: the previous string-replacement step collided with the actual fix.
+static_asset=(R/"src/world/bermuda/StaticAsset.js").read_text()
+original_model=(R/"src/game/RaceSoundOriginalModel.js").read_text()
+assert "maxMaterials = 4, ignoreAnimations = false" in static_asset
+assert "materials.size >= maxMaterials" in static_asset
+assert "maxMaterials:6, ignoreAnimations:true" in original_model
 game=(R/"src/game/Game.js").read_text()
 app=(R/"src/App.js").read_text()
 rules=(R/"src/game/RaceSoundRules.js").read_text()
