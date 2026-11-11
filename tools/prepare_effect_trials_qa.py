@@ -1385,9 +1385,10 @@ main = main.slice(0, gateStart) + """\t\t// CPU-only spawn validation. First ful
 \t\tgpuStage('First full scene frame deferred until Explore');
 """ + main.slice(cacheStart);
 
-const cacheEnd = main.indexOf("\n\t\tui.setLoading( 1, 'World ready' );", cacheStart);
-assert(cacheEnd > cacheStart, "Startup cache block end anchor not found");
-main = main.slice(0, cacheStart) + """\t\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive && !app.qs.has( 'bench' ) ) {
+const cacheBlockStart = main.indexOf("\t\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive && !app.qs.has( 'bench' ) ) {", gateStart);
+const cacheEnd = main.indexOf("\n\t\tui.setLoading( 1, 'World ready' );", cacheBlockStart);
+assert(cacheBlockStart > gateStart && cacheEnd > cacheBlockStart, "Startup cache block end anchor not found");
+main = main.slice(0, cacheBlockStart) + """\t\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive && !app.qs.has( 'bench' ) ) {
 \t\t\tconst baseUrl = new URL( import.meta.env.BASE_URL || './', location.href );
 \t\t\twindow.__bermudaAssetCacheState = { pending:true, available:false, stored:0, reused:0, failed:0 };
 \t\t\tvoid cacheStartupAssets( { baseUrl } ).then( state => {
