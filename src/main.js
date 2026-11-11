@@ -8,7 +8,7 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
-import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
+import { validateSpawn } from './mobile/WorldRenderGate.js';
 import { gpuStage, gpuReport } from './mobile/GpuAudit.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
@@ -209,17 +209,13 @@ app.init( ( p, text, until ) => {
 
 	} else if ( mobileDevice ) {
 
-		ui.setLoading( .97, 'Validating the 3D world…', .995 );
-		gpuStage('World verification');
-		if (mobileRecovery || app.qs.has('renderTest')) {
-			// Controlled render-pass diagnostics bypass HDR GPU readback verification.
-			// The standard production path still verifies real scene pixels.
-			validateSpawn(app);
-			window.__bermudaWorldGate = {status:app.qs.has('renderTest')?'render-test-no-readback':'recovery-no-readback',tries:0};
-		} else {
-			await verifyMobileWorld( app, attempt => ui.setLoading(
-				Math.min(.975+attempt*.003,.99), 'Rendering Bermuda world…', .995 ) );
-		}
+		ui.setLoading( .97, 'Preparing the 3D world…', .995 );
+		gpuStage('Mobile world prepared; first frame deferred');
+		// Validate CPU-side spawn/world state here, but do not submit a GPU frame
+		// before the mobile runtime profile, branded UI and start controls are ready.
+		// The first complete scene render occurs in the normal gameplay loop after Start.
+		validateSpawn(app);
+		window.__bermudaWorldGate = {status:'first-frame-deferred',tries:0};
 		ui.setLoading( 1, 'World ready' );
 		let started = false;
 		ui.showStartOverlay( () => {
