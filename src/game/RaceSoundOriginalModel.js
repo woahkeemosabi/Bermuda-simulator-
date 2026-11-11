@@ -25,6 +25,7 @@ export async function loadOriginalRaceSoundAsset() {
   const asset = await loadStaticAsset(ORIGINAL_RTS_GLB_URL, {
     id:'original-race-the-sound-foil-cat', maxTriangles:16000, maxTextureSize:1024,
     maxGpuTextureSize:512, generateGpuMipmaps:false,
+    maxMaterials:6, ignoreAnimations:true,
   });
   if(asset.triangles!==15720 || asset.materials.size!==6 || asset.textures.size!==3)
     throw Error('Recovered Race the Sound GLB identity mismatch');
