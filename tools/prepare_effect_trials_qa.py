@@ -1270,3 +1270,146 @@ assert "cloudLight.value[2] = storm" not in app_file.read_text()
 assert "storm: { coverage: 0.88, wind: 14" in app_file.read_text()
 assert "coastal-v38-storm-sky-isolated" in audit.read_text()
 print("Coastal v38 sky-only storm QA; removed oceanFix global lighting regression; original full ocean FX")
+
+
+# iPhone startup safety: no full-scene GPU submissions before Explore.
+# The prior 30-frame/700ms preload repeatedly ran the full ocean/world workload
+# before gameplay; the reported device loss occurred at frame 32. Defer the first
+# complete scene frame to the paced gameplay loop and remove the artificial 60s hold.
+qa_app = app_file.read_text()
+old_warmup = """\t\tconst warmupFrames = this.mobileFullEffects ? 12 : ( mobileLite ? 1 : 2 );
+\t\tfor ( let i = 0; i < warmupFrames; i ++ ) {
+\t\t\tif ( GPU.fatalError ) throw GPU.fatalError;
+\t\t\t// iOS lost the device at frame 18 after the first twelve shader
+\t\t\t// warm-up frames ran in a burst. Allow the GPU process to settle.
+\t\t\tif ( this.mobileFullEffects ) await new Promise( resolve => setTimeout( resolve, 750 ) );
+\t\t\tif ( GPU.fatalError ) throw GPU.fatalError;
+\t\t\tthis.frame( 1 / 60 );
+\t\t\tawait GPU.queue.onSubmittedWorkDone();
+\t\t\tgpuQueueAck(GPU.frame);
+\t\t\tif ( this.mobileFullEffects ) await GPU.pipelinesReady();
+\t\t\tif ( GPU.fatalError ) throw GPU.fatalError;
+\t\t}
+"""
+new_warmup = """\t\t// Mobile submits no complete simulation frames behind the loader.
+\t\t// First full scene frame is submitted after Explore by the paced gameplay loop.
+\t\tif ( ! mobileLite ) {
+\t\t\tfor ( let i = 0; i < 2; i ++ ) {
+\t\t\t\tif ( GPU.fatalError ) throw GPU.fatalError;
+\t\t\t\tthis.frame( 1 / 60 );
+\t\t\t\tawait GPU.queue.onSubmittedWorkDone();
+\t\t\t\tgpuQueueAck(GPU.frame);
+\t\t\t\tif ( GPU.fatalError ) throw GPU.fatalError;
+\t\t\t}
+\t\t}
+"""
+assert qa_app.count(old_warmup) == 1, "Expected mobile App.init warm-up block not found"
+qa_app = qa_app.replace(old_warmup, new_warmup, 1)
+
+old_precompile = """\t\tconst sr = this.sceneRenderer, hm = sr.hullMaskRT;
+\t\tif ( sr.hullMasks.length ) mr.render( sr.hullMaskScene, {
+\t\t\tlabel: 'hull mask', kind: 'color', camera: this.camera, colorViews: [ hm.texture.view() ], colorFormats: hm.formats,
+\t\t\tclearColors: [ [ 0, 0, 0, 0 ] ], depthView: hm.depthTexture.view(), depthFormat: DEPTH_FORMAT, clearDepth: 0, cull: false,
+\t\t} );
+\t\ttry {
+
+\t\t\t// both water variants: with the hull-mask discard (a hull on screen) and without
+\t\t\tfor ( const hull of [ 0, 1 ] ) {
+
+\t\t\t\tthis.waterMaterial.hullOverride = hull;
+\t\t\t\tthis.frame( 1 / 60 );
+
+\t\t\t}
+
+\t\t} catch ( e ) {
+
+\t\t\tconsole.warn( 'precompile failed', e );
+
+\t\t}
+
+\t\tthis.waterMaterial.hullOverride = null;
+"""
+new_precompile = """\t\tconst sr = this.sceneRenderer, hm = sr.hullMaskRT;
+\t\t// Full App.frame dispatches FFT, shoreline, caustics, spray, clouds and scene passes.
+\t\t// Do not submit these extra precompile frames on iPhone before gameplay.
+\t\tif ( ! this.mobileLite ) {
+\t\t\tif ( sr.hullMasks.length ) mr.render( sr.hullMaskScene, {
+\t\t\t\tlabel: 'hull mask', kind: 'color', camera: this.camera, colorViews: [ hm.texture.view() ], colorFormats: hm.formats,
+\t\t\t\tclearColors: [ [ 0, 0, 0, 0 ] ], depthView: hm.depthTexture.view(), depthFormat: DEPTH_FORMAT, clearDepth: 0, cull: false,
+\t\t\t} );
+\t\t\ttry {
+
+\t\t\t\t// both water variants: with the hull-mask discard (a hull on screen) and without
+\t\t\t\tfor ( const hull of [ 0, 1 ] ) {
+
+\t\t\t\t\tthis.waterMaterial.hullOverride = hull;
+\t\t\t\t\tthis.frame( 1 / 60 );
+
+\t\t\t\t}
+
+\t\t\t} catch ( e ) {
+
+\t\t\t\tconsole.warn( 'precompile failed', e );
+
+\t\t\t}
+\t\t}
+\t\tthis.waterMaterial.hullOverride = null;
+"""
+assert qa_app.count(old_precompile) == 1, "Expected mobile precompile render block not found"
+app_file.write_text(qa_app.replace(old_precompile, new_precompile, 1))
+
+let main = src.read_text();
+main = main.replace(
+  "import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';",
+  "import { validateSpawn } from './mobile/WorldRenderGate.js';"
+);
+main = main.replace(
+  "import { preloadMobileStartup, MOBILE_FULL_PRELOAD_FRAMES, MOBILE_FULL_PRELOAD_WAIT_MS } from './mobile/MobileStartupPreload.js';\n",
+  ""
+);
+main = main.replace(
+  "import { cacheStartupAssets, holdUntilMobileReady, isStartupCacheReady, markStartupCacheReady } from './mobile/StartupAssetCache.js';",
+  "import { cacheStartupAssets, markStartupCacheReady } from './mobile/StartupAssetCache.js';"
+);
+
+const gateStart = main.indexOf("\t\tif (mobileRecovery || app.qs.has('renderTest')) {");
+const cacheStart = main.indexOf("\t\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive", gateStart);
+assert(gateStart >= 0 && cacheStart > gateStart, "Mobile GPU verification/preload anchors not found");
+main = main.slice(0, gateStart) + """\t\t// CPU-only spawn validation. First full scene render is deferred until Explore.
+\t\tvalidateSpawn(app);
+\t\twindow.__bermudaWorldGate = {status:'first-frame-deferred',tries:0};
+\t\twindow.__bermudaQAWarmup = {
+\t\t\ttargetFrames:0, spacingMs:0, queueAcks:0,
+\t\t\tstartMs:performance.now(), elapsedMs:0, complete:true
+\t\t};
+\t\tgpuStage('First full scene frame deferred until Explore');
+""" + main.slice(cacheStart);
+
+const cacheBlockStart = main.indexOf("\t\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive && !app.qs.has( 'bench' ) ) {", gateStart);
+const cacheEnd = main.indexOf("\n\t\tui.setLoading( 1, 'World ready' );", cacheBlockStart);
+assert(cacheBlockStart > gateStart && cacheEnd > cacheBlockStart, "Startup cache block end anchor not found");
+main = main.slice(0, cacheBlockStart) + """\t\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive && !app.qs.has( 'bench' ) ) {
+\t\t\tconst baseUrl = new URL( import.meta.env.BASE_URL || './', location.href );
+\t\t\twindow.__bermudaAssetCacheState = { pending:true, available:false, stored:0, reused:0, failed:0 };
+\t\t\tvoid cacheStartupAssets( { baseUrl } ).then( state => {
+\t\t\t\twindow.__bermudaAssetCacheState = state;
+\t\t\t\tmarkStartupCacheReady( state, window.localStorage );
+\t\t\t} ).catch( error => console.warn( 'Background startup asset cache skipped', error ) );
+\t\t}
+""" + main.slice(cacheEnd);
+src.write_text(main);
+
+let auditSource = audit.read_text();
+const warmStart = auditSource.indexOf("  'QA startup warmup '+");
+const warmEnd = auditSource.indexOf("  'QA sky overcast", warmStart);
+assert(warmStart >= 0 && warmEnd > warmStart, "Startup warmup audit report anchors not found");
+auditSource = auditSource.slice(0,warmStart) +
+  "  'QA startup warmup disabled before Explore; first full frame deferred',\n" +
+  auditSource.slice(warmEnd);
+audit.write_text(auditSource);
+
+assert(!src.read_text().includes("await preloadMobileStartup("), "Mobile preload call remains");
+assert(!src.read_text().includes("await verifyMobileWorld("), "GPU world verification call remains");
+assert(!src.read_text().includes("holdUntilMobileReady"), "60-second startup hold remains");
+assert(app_file.read_text().includes("if ( ! this.mobileLite )"), "Mobile precompile guard missing");
+print("iPhone startup fix: zero pre-Explore scene frames, no 30-frame warmup, no 60-second cache hold");
