@@ -21,4 +21,9 @@ for(const p of ['src/game/RaceSoundOriginalModel.js','src/game/HarbourMeshyEnhan
 }
 const glb=source('src/game/RaceSoundOriginalModel.js');
 assert.ok(glb.includes('asset.textures.size!==3'), 'Keep exact original 3 racing textures and 15,720-triangle boat');
+assert.ok(glb.includes('maxMaterials:6, ignoreAnimations:true'), 'Original GLB must load its 6 materials and discard only its demo animation');
+const staticAsset=source('src/world/bermuda/StaticAsset.js');
+assert.ok(staticAsset.includes('maxMaterials = 4, ignoreAnimations = false'), 'Other Meshy assets retain strict default limits');
+assert.ok(staticAsset.includes('if (ignoreAnimations && gltf.animations.length)'), 'Opt-in original demo clip must be removed before staticGeometry');
+assert.ok(staticAsset.includes('materials.size >= maxMaterials'), 'Original 6-material GLB must not fail after uploading four materials');
 console.log('Bermuda Simulator iPhone: 1024px -> 512px, original GLBs, no GPU mip compute PASS');

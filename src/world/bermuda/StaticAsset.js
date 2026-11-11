@@ -84,9 +84,18 @@ export function downsampleRGBA8( source, limit ) {
 
 export async function loadStaticAsset( url, {
   id, maxTriangles = 6000, maxTextureSize = 1024, maxGpuTextureSize = 0, generateGpuMipmaps = true,
+  maxMaterials = 4, ignoreAnimations = false,
 } ) {
 
 	const gltf = await loadGLB( url );
+  // The recovered Race the Sound GLB includes a 4-second demonstration
+  // animation, but the in-game rig is articulated by independent pivots.
+  // Discard that clip only for callers explicitly opting into static playback.
+  // Never silently discard skinning or animations from ordinary world assets.
+  if (ignoreAnimations && gltf.animations.length) {
+    if (gltf.skins.length) throw new Error(id + ': skinned assets require rigging.');
+    gltf.animations.length = 0;
+  }
 	const asset = staticGeometry( gltf );
 	const materials = new Map(), textures = new Map();
 	asset.id = id;
@@ -116,7 +125,7 @@ export async function loadStaticAsset( url, {
 				const source = gltf.materials[ part.materialIndex ] || {};
 				const pbr = source.pbrMetallicRoughness || {};
 				if ( source.alphaMode === 'BLEND' ) throw new Error( id + ': use opaque or alpha-cutout materials.' );
-				if ( materials.size >= 4 ) throw new Error( id + ': material budget exceeded.' );
+				if ( materials.size >= maxMaterials ) throw new Error( id + ': material budget exceeded.' );
 				let texture;
 				if ( pbr.baseColorTexture ) {
 
