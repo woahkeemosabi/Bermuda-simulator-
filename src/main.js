@@ -44,7 +44,7 @@ window.__bermudaMobileOutputScale = mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
-	for ( const key of [ 'gpuRecovery', 'gpuSafe', 'recoveryReason', 'noSim', 'G' ] ) clean.searchParams.delete( key );
+	for ( const key of [ 'gpuRecovery', 'gpuSafe', 'recoveryReason' ] ) clean.searchParams.delete( key );
 	if ( clean.href !== location.href ) history.replaceState( null, '', clean );
 }
 
@@ -58,13 +58,13 @@ if ( mobileFastStart ) {
 	if (mobileRecovery) {
 		// Separate audio construction and costly GPU effects from iPhone gameplay.
 		for (const key of ['noClouds','noHaze','noCaustics','noSim','noVeg','noAudio'])
-			url.searchParams.set(key,'1');
-		url.searchParams.set('G','12');
-		url.searchParams.set('scale','0.70');
+			if (!url.searchParams.has(key)) url.searchParams.set(key,'1');
+		if (!url.searchParams.has('G')) url.searchParams.set('G','12');
+		if (!url.searchParams.has('scale')) url.searchParams.set('scale','0.70');
 	} else {
-		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
-		url.searchParams.set( 'G', '16' );
-		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.60' : '0.70' );
+		for ( const key of [ 'noClouds', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
+		if (!url.searchParams.has('G')) url.searchParams.set( 'G', '16' );
+		if (!url.searchParams.has('scale')) url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.60' : '0.70' );
 	}
 	if ( mobileLowGPU ) {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.set( key, '1' );
@@ -72,7 +72,7 @@ if ( mobileFastStart ) {
 		if (!['skip','full','instant','freeze'].includes(url.searchParams.get('envtest')))
 			url.searchParams.set( 'envtest', 'freeze' );
 		url.searchParams.set( 'freezeFFT', '1' );
-		url.searchParams.set( 'scale', '0.85' );
+		if (!url.searchParams.has('scale')) url.searchParams.set( 'scale', '0.85' );
 		url.searchParams.set( 'noSpray', '1' );
 		// Mobile vegetation isolation: disable procedural palm forest by default.
 		// ?veg=1 restores it for controlled A/B stability testing.
