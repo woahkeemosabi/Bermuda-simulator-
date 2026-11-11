@@ -20,13 +20,15 @@ const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
-// Low-GPU iPhone default: retain gameplay, freeze FFT ocean and remove expensive sky passes.
-const mobileLowGPU = mobileFastStart; // Full compute ocean is not safe on this mobile driver.
+// Production mobile default keeps the full FFT ocean and visual-effects pipeline enabled.
+// The old v5 isolation path is available only as an explicit diagnostic opt-in.
+const gpuTestMode = new URLSearchParams(location.search).get('gpuTest');
+const mobileLowGPU = mobileFastStart && ['legacy-low', 'minimal'].includes(gpuTestMode);
 window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
 window.__bermudaDisableSwashProbe = mobileLowGPU;
 window.__bermudaSparseVegetation = mobileFastStart;
-window.__bermudaBuildMarker = 'webgpu-isolation-v5-20261023';
+window.__bermudaBuildMarker = mobileLowGPU ? 'legacy-low-gpu-diagnostic' : 'full-effects-mobile-20261111';
 const missionIsolation = new URLSearchParams(location.search).get('missions') === 'off';
 window.__bermudaMissionsDisabledForTest = missionIsolation;
 let mobileRetryLevel = 0;
