@@ -2689,7 +2689,7 @@ body {
 #loader.bm-new-loader.tw-error .loader-inner{max-height:73svh;overflow-y:auto}
 /* Production mobile: keep diagnostics off the playable screen and tighten loader type. */
 @media (max-width: 900px) {
-  #fps, #bm-build-verification { display: none !important; }
+  #fps, #bm-build-verification, #bm-gpu-trace, #bm-gpu-copy { display: none !important; }
   #loader.bm-new-loader .loader-row { font-size: 10px; letter-spacing: .06em; }
   #loader.bm-new-loader .loader-meta { font-size: 9px; }
   #loader.bm-new-loader .loader-panel { gap: 10px; }
