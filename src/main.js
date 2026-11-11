@@ -136,13 +136,6 @@ app.init( ( p, text, until ) => {
 } ).then( async () => {
 
 	if ( mobileFastStart ) applyMobileMemoryProfile( app );
-	if (mobileFastStart) {
-		const profile = app.vegetation ? (window.__bermudaSparseVegetation ? 'SPARSE' : 'FULL') : 'OFF';
-		window.__bermudaVegetationProfile = profile;
-		console.info('[Bermuda build]',window.__bermudaBuildMarker,'vegetation',profile,'palms',app.vegetation?.records?.palms?.length ?? 0);
-		// Production UI: no build-verification banner or diagnostic text over gameplay.
-
-	}
 	if ( mobileFastStart && app.localLights ) app.localLights.strength = Math.max( Number( app.localLights.strength ) || 1, 1.35 );
 	applyBermudaRuntimeLook( app );
 	app.ui = new AppUI( app, ui );
