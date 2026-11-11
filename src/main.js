@@ -149,8 +149,8 @@ app.init( ( p, text, until ) => {
 	if ( mobileFastStart && !app.qs.has('skipPreload') ) {
 		const preloadStart = performance.now();
 		for ( let second = 1; second <= 60; second++ ) {
-			if ( app.engine?.device?.lost && app.engine.device.lostReason ) {
-				throw new Error('GPU device lost during 60-second preload: '+app.engine.device.lostReason);
+			if ( GPU.fatalError || window.__bermudaGpuLost ) {
+				throw new Error('GPU device lost during 60-second preload: '+(GPU.fatalError?.message || window.__bermudaGpuLost));
 			}
 			ui.setLoading( Math.min(.90, .36 + second/60*.54),
 				'Preloading Bermuda graphics · '+(60-second)+'s', .95 );
