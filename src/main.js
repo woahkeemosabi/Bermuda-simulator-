@@ -40,7 +40,8 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64));
+// The approved mobile reference uses native internal render scale; recovery/retry may lower it only after a GPU failure.
+window.__bermudaMobileOutputScale = mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 1.0));
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -51,8 +52,15 @@ if ( mobileDevice ) {
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	// Restore the QA-tested panorama cloud path on mobile; allow ?cloudtest=full for A/B.
-	if (!url.searchParams.has('cloudtest') && !url.searchParams.has('noClouds')) url.searchParams.set('cloudtest','panorama');
+	// Default to the user's approved coastal-seven visual reference on mobile.
+	// Explicit URL values remain authoritative so controlled A/B tests still work.
+	const referenceDefaults = {
+		cloudtest: 'panorama', envtest: 'skip', G: '12', scale: '1', graphics: '75',
+		qualityTest: 'crisp', perf: '60', resCap: '462', simBudget: 'balanced', cloudBudget: 'lattice'
+	};
+	for ( const [ key, value ] of Object.entries( referenceDefaults ) )
+		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
+	if ( ! url.searchParams.has( 'noHaze' ) ) url.searchParams.set( 'noHaze', '1' );
 	// Render-resolution adaptation is allowed; deleting ocean, lighting and spray systems isn't.
 	// Mobile retains FFT swell, shoreline simulation, wave lips, spray, caustics, haze and clouds.
 	if (mobileRecovery) {
