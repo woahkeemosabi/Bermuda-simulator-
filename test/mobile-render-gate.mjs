@@ -5,7 +5,8 @@ const f=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 assert.equal(assessFramePixels(Array(9).fill([0,0,0])).reason,'black-frame');
 assert.equal(assessFramePixels([...Array(6).fill([40,50,60]),...Array(3).fill([0,0,0])]).reason,'black-lower-scene');
 assert.equal(assessFramePixels(Array(9).fill([40,50,60])).valid,true);
-assert.match(f('../src/main.js'),/await verifyMobileWorld/);
+// Mobile startup must not force an extra GPU frame/readback before Explore.
+assert.doesNotMatch(f('../src/main.js'),/verifyMobileWorld/);
 assert.doesNotMatch(f('../src/engine/gpu/GPU.js'),/common\|GPUTextureUsage.COPY_SRC/);
 assert.match(f('../src/engine/gpu/GPU.js'),/fatalError/);
 assert.match(f('../src/mobile/WorldRenderGate.js'),/GPU.onSubmit/);
