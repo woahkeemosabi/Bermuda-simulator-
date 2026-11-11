@@ -146,7 +146,7 @@ app.init( ( p, text, until ) => {
 	// 60-second mobile preload: keep the branded loader visible while submitting
 	// one complete, real Bermuda frame per second and waiting for the GPU queue.
 	// This is a device-stability warm-up, not a cosmetic timer or idle delay.
-	if ( mobileFastStart && !app.qs.has('skipPreload') ) {
+	if ( mobileFastStart && app.qs.has('preload') ) {
 		const preloadStart = performance.now();
 		for ( let second = 1; second <= 60; second++ ) {
 			if ( GPU.fatalError || window.__bermudaGpuLost ) {
