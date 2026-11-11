@@ -16,7 +16,7 @@ import { Lobsters } from './Lobsters.js';
 import { Spear } from './Spear.js';
 
 // Keep the fish in the actual world long enough to see it emerge and swing on the line.
-const LANDING_SECONDS = 3.3;
+const LANDING_SECONDS = 8.0;
 
 // The fishing game on top of the world:
 //   R          take out / put away the rod (on foot, on the pier, on the boat's deck)
