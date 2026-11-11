@@ -508,26 +508,32 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		mr.precompiling = true;
 		this.refraction.enabled = true;
 		const sr = this.sceneRenderer, hm = sr.hullMaskRT;
-		if ( sr.hullMasks.length ) mr.render( sr.hullMaskScene, {
-			label: 'hull mask', kind: 'color', camera: this.camera, colorViews: [ hm.texture.view() ], colorFormats: hm.formats,
-			clearColors: [ [ 0, 0, 0, 0 ] ], depthView: hm.depthTexture.view(), depthFormat: DEPTH_FORMAT, clearDepth: 0, cull: false,
-		} );
-		try {
+		// A full App.frame is not a shader-only operation: on mobile it dispatches
+		// FFT, shoreline, caustics, spray and cloud compute, then records every scene
+		// render pass. Repeating that during startup can trip WebKit's GPU watchdog
+		// before the player even enters the world. Keep mobile pipeline creation
+		// lazy and let the normal, paced gameplay loop compile variants as needed.
+		if ( ! this.mobileLite ) {
+			if ( sr.hullMasks.length ) mr.render( sr.hullMaskScene, {
+				label: 'hull mask', kind: 'color', camera: this.camera, colorViews: [ hm.texture.view() ], colorFormats: hm.formats,
+				clearColors: [ [ 0, 0, 0, 0 ] ], depthView: hm.depthTexture.view(), depthFormat: DEPTH_FORMAT, clearDepth: 0, cull: false,
+			} );
+			try {
 
-			// both water variants: with the hull-mask discard (a hull on screen) and without
-			for ( const hull of [ 0, 1 ] ) {
+				// both water variants: with the hull-mask discard (a hull on screen) and without
+				for ( const hull of [ 0, 1 ] ) {
 
-				this.waterMaterial.hullOverride = hull;
-				this.frame( 1 / 60 );
+					this.waterMaterial.hullOverride = hull;
+					this.frame( 1 / 60 );
+
+				}
+
+			} catch ( e ) {
+
+				console.warn( 'precompile failed', e );
 
 			}
-
-		} catch ( e ) {
-
-			console.warn( 'precompile failed', e );
-
 		}
-
 		this.waterMaterial.hullOverride = null;
 		mr.precompiling = false;
 		this.refraction.enabled = refr;
