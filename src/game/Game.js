@@ -15,9 +15,6 @@ import { Guide } from './Guide.js';
 import { Lobsters } from './Lobsters.js';
 import { Spear } from './Spear.js';
 
-// Keep the fish in the actual world long enough to see it emerge and swing on the line.
-const LANDING_SECONDS = 8.0;
-
 // The fishing game on top of the world:
 //   R          take out / put away the rod (on foot, on the pier, on the boat's deck)
 //   hold LMB   wind up, release to cast (hold longer = farther)
@@ -36,7 +33,6 @@ export class Game {
 		this.rod.onLand = ( where ) => this.onBobberLanded( where );
 		this.stand = new FishStand( { scene: app.scene, terrain: app.terrainData, colliders: app.colliders } );
 		this.display = new CatchDisplay( { scene: app.scene, stall: this.stand.iceFish() } );
-		this.landing = null; // { species, kg, info, notified } while the real fish swings in view
 		this.chandlery = new Chandlery( { scene: app.scene, terrain: app.terrainData, colliders: app.colliders, material: this.stand.material } );
 		this.lobsters = new Lobsters( { scene: app.scene, terrain: app.terrainData, reef: app.reef } );
 		this.spear = new Spear( { scene: app.scene, camera: app.camera } );
@@ -235,27 +231,7 @@ export class Game {
 		if ( this.fight ) this.updateFight( dt, lmb && ! panelOpen );
 
 		rod.update( dt, { visible: can, fight: this.fight } );
-		// Show the real, wet 3D catch coming out of the water and swinging on the rod.
-		// Do not switch to FishPortrait or cover gameplay with a full-screen reward card.
-		const L = this.landing;
-		if ( L && rod.state === 'landing' && can ) {
-
-			const c = app.camera.position, m = rod.bobber;
-			// The fish faces the player and turns slightly as the line settles.
-			const yaw = Math.atan2( c.x - m.x, c.z - m.z ) + Math.sin( rod.t * 0.7 ) * 0.18;
-			this.display.show( L.species, L.kg, m, yaw, dt );
-			if ( ! L.notified && rod.t >= 0.45 && this.hud && L.info ) {
-
-				L.notified = true;
-				// Reuse the existing small, non-blocking catch HUD from diving.
-				// GameState already records/stores/releases the fish at the moment it is caught.
-				this.hud.showDiveCatch( L.info, 'LANDED' );
-
-			}
-
-			if ( rod.t >= LANDING_SECONDS ) this.endLanding();
-
-		} else if ( this.landing || this.display.shown ) this.endLanding();
+		// Catch feedback is text-only: no in-world fish model or landing animation.
 
 		p.busy = rod.lineInWater || rod.state === 'windup';
 
@@ -611,17 +587,11 @@ export class Game {
 			const info = this.state.lastCatch;
 			if ( au && au.fishSplash ) au.fishSplash( this.rod.bobber, 0.8 );
 			if ( au && au.fishFlop ) au.fishFlop();
-			// Inventory, legal release and record tracking continue through GameState.addFish.
-			// Landing changes presentation only: no fullscreen card, no extra portrait render pass.
-			this.landing = { species: f.species, kg: f.kg, info, notified: false };
-			if ( ! this.hud ) {
-
-				if ( entry ) this.toast( `${ info.record ? 'New record! ' : '' }${ name } · ${ entry.kg.toFixed( 2 ) } kg · $${ entry.value }`, 3600 );
-				else this.toast( `${ name } · ${ f.kg.toFixed( 1 ) } kg · released`, 3600 );
-
-			}
-
-			this.rod.land();
+			// Keep the catch, inventory, legal-release and record systems; remove only the fish display animation.
+			if ( this.hud ) this.hud.showDiveCatch( info, 'LANDED' );
+			else if ( entry ) this.toast( `${ info.record ? 'New record! ' : '' }${ name } · ${ entry.kg.toFixed( 2 ) } kg · ${ entry.value }`, 3600 );
+			else this.toast( `${ name } · ${ f.kg.toFixed( 1 ) } kg · released`, 3600 );
+			this.rod.setState( 'idle' );
 
 		} else if ( st === 'snapped' ) {
 
@@ -635,16 +605,6 @@ export class Game {
 			this.rod.endFight();
 
 		}
-
-	}
-
-	// the landed fish goes in the cooler: card, fish and line away
-	endLanding() {
-
-		this.landing = null;
-		this.display.hide();
-		if ( this.hud && this.hud.catchOpen ) this.hud.hideCatch();
-		if ( this.rod.state === 'landing' ) this.rod.setState( 'idle' );
 
 	}
 
