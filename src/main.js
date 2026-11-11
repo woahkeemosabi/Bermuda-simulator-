@@ -27,7 +27,9 @@ const mobileLowGPU = mobileFastStart && ['legacy-low', 'minimal'].includes(gpuTe
 window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
 window.__bermudaDisableSwashProbe = mobileLowGPU;
-window.__bermudaSparseVegetation = mobileFastStart;
+// Match the tested coastal-seven world density: full island vegetation on mobile.
+window.__bermudaSparseVegetation = false;
+window.__bermudaCoastalProfile = mobileFastStart ? 'coastal-seven' : 'desktop';
 window.__bermudaBuildMarker = mobileLowGPU ? 'legacy-low-gpu-diagnostic' : 'full-effects-mobile-20261111';
 const missionIsolation = new URLSearchParams(location.search).get('missions') === 'off';
 window.__bermudaMissionsDisabledForTest = missionIsolation;
@@ -49,6 +51,8 @@ if ( mobileDevice ) {
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
+	// Restore the QA-tested panorama cloud path on mobile; allow ?cloudtest=full for A/B.
+	if (!url.searchParams.has('cloudtest') && !url.searchParams.has('noClouds')) url.searchParams.set('cloudtest','panorama');
 	// Render-resolution adaptation is allowed; deleting ocean, lighting and spray systems isn't.
 	// Mobile retains FFT swell, shoreline simulation, wave lips, spray, caustics, haze and clouds.
 	if (mobileRecovery) {
