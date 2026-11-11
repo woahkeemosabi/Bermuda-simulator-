@@ -8,7 +8,7 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
-import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
+import { validateSpawn } from './mobile/WorldRenderGate.js';
 import { gpuStage, gpuReport } from './mobile/GpuAudit.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
