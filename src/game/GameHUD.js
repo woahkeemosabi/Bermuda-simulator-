@@ -90,13 +90,13 @@ const CSS = /* css */`
 	background: linear-gradient(135deg, rgba(4,24,34,0.88), rgba(8,48,58,0.74)); border: 1px solid rgba(var(--tw-aqua-rgb),0.34);
 	box-shadow: 0 14px 38px rgba(0,0,0,0.3), 0 0 24px rgba(var(--tw-aqua-rgb),0.12); text-align: center;
 	font: 500 var(--tw-fs-md) var(--tw-font); color: var(--tw-ink); opacity: 0; pointer-events: none; }
-.gm-dive-catch.is-on { animation: gm-dive-catch 3.1s var(--tw-ease) both; }
+.gm-dive-catch.is-on { animation: gm-dive-catch 8s var(--tw-ease) both; }
 .gm-dive-catch-kicker { font-size: var(--tw-fs-sm); font-weight: 800; letter-spacing: 0.24em; color: var(--tw-aqua); }
 .gm-dive-catch strong { display: block; margin-top: 3px; font-size: calc(18 * var(--tw-u)); }
 .gm-dive-catch-meta { margin-top: 3px; font-family: var(--tw-mono); color: var(--tw-ink-2); }
 .gm-dive-catch-status { margin-top: 4px; font-size: var(--tw-fs-sm); color: var(--tw-sun); }
 .gm-dive-catch-status.is-release { color: var(--tw-coral); }
-@keyframes gm-dive-catch { 0% { opacity: 0; transform: translate(-50%, -14px) scale(0.96); } 10%, 72% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -6px) scale(0.99); } }
+@keyframes gm-dive-catch { 0% { opacity: 0; transform: translate(-50%, -14px) scale(0.96); } 6%, 90% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -6px) scale(0.99); } }
 
 /* catch card: full screen. The world dims and blurs; the fish lies side-on in its own studio light
    (FishPortrait, a WebGPU canvas) between the name above and the numbers below */
@@ -351,7 +351,7 @@ export class GameHUD {
 		else if ( info.legalSize === false ) status = 'UNDERSIZE · RELEASED';
 		else if ( ! info.kept ) status = 'COOLER FULL · RELEASED';
 		this.diveCatch.innerHTML = 			`<div class="gm-dive-catch-kicker">${ verb }</div><strong>${ f.name }</strong>` +
-			`<div class="gm-dive-catch-meta">${ info.cm } cm · ${ info.kg.toFixed( 2 ) } kg · ${ info.value }</div>` +
+			`<div class="gm-dive-catch-meta">${ info.cm } cm · ${ info.kg.toFixed( 2 ) } kg · BMD ${ info.value }</div>` +
 			`<div class="gm-dive-catch-status ${ info.kept ? '' : 'is-release' }">${ status }</div>`;
 		this.diveCatch.classList.remove( 'is-on' );
 		void this.diveCatch.offsetWidth;

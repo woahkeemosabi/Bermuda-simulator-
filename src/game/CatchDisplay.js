@@ -64,8 +64,8 @@ export class CatchDisplay {
 		const model = FISH[ species ].model;
 		const L = fishLength( species, kg );
 		// struggling: the body curls side to side, the jaw works, the whole fish swings on the line
-		const flap = Math.sin( this.t * 11 ) * 0.9 * Math.exp( - this.t * 0.5 );
-		const swing = Math.sin( this.t * 2.6 ) * 0.25 * Math.exp( - this.t * 0.4 );
+		const flap = Math.sin( this.t * 11 ) * 1.0 * Math.exp( - this.t * 0.16 );
+		const swing = Math.sin( this.t * 2.6 ) * 0.3 * Math.exp( - this.t * 0.12 );
 		_q.setFromAxisAngle( _a.set( 0, 1, 0 ), faceYaw + swing );
 		_f.makeRotationFromQuaternion( _q ).setPosition( mouth );
 		this.place( i, _f, GILL, L, FishProps.gillAnchor( model ), flap, 0, 0.4 + 0.4 * Math.max( 0, Math.sin( this.t * 7 ) ) );
