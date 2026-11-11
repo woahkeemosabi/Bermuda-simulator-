@@ -97,6 +97,10 @@ export class App {
 			/iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 			( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 ) );
 		this.mobileLite = mobileLite;
+		// Coastal v29 mobile profile: preserve the full Bermuda world and FFT ocean while
+		// reducing non-essential per-frame GPU work on iPhone.
+		this.coastalV29 = mobileLite;
+		this._cloudCadenceFrame = 0;
 		this.recoveryMode = mobileLite && qs.get('recovery') === '1';
 		// report a stage, then let the page paint it before the (synchronous) stage work starts
 		const progress = async ( p, text, until ) => {
@@ -274,7 +278,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		} );
 
 		// sunlight bounced off the ground (one diffuse bounce, re-baked with the terrain sun shadow)
-		installGroundBounce( { terrain: this.terrainGPU, clouds: this.clouds } );
+		installGroundBounce( { terrain: this.terrainGPU, clouds: this.clouds, oneTime: mobileLite } );
 		this.sceneRenderer = new SceneRenderer( engine.meshRenderer, scene, camera );
 		const renderTest = mobileLite ? qs.get('renderTest') : null;
 		this.sceneRenderer.diagnosticOpaqueOnly = renderTest === 'opaque' || renderTest === 'opaque-noshadows';
@@ -343,8 +347,9 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		} );
 		scene.add( this.breakers.mesh );
 		// dust, pollen, salt aerosol, seed fluff and gnats drifting around the camera
-		this.airMotes = new AirMotes( { terrain: this.terrainGPU, clouds: this.clouds, csm: this.csm, reversedDepth: true } );
-		scene.add( this.airMotes.mesh );
+		// Coastal v29 omits airborne motes on mobile; underwater MarineSnow remains active.
+		this.airMotes = mobileLite ? null : new AirMotes( { terrain: this.terrainGPU, clouds: this.clouds, csm: this.csm, reversedDepth: true } );
+		if ( this.airMotes ) scene.add( this.airMotes.mesh );
 		this.boatCtl = new BoatController( { model: this.boat, query: this.query, terrain: this.terrainData, colliders: this.colliders } );
 		this.boatSpray = new BoatSpray( { boat: this.boatCtl, spray: this.spray } );
 		// humpback cruising the deep water around the island (model fetched from public/models/whale)
@@ -466,7 +471,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		await progress( 0.96, 'Warming up…' );
 		// All simulation effects remain available. Prime on the loading screen, one GPU
 		// submission at a time; never let startup pretend success after a failed device.
-		for ( let i = 0; i < ( mobileLite ? 1 : 2 ); i ++ ) {
+		for ( let i = 0; i < ( mobileLite ? 4 : 2 ); i ++ ) {
 			if ( GPU.fatalError ) throw GPU.fatalError;
 			this.frame( 1 / 60 );
 			await GPU.queue.onSubmittedWorkDone();
@@ -806,7 +811,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		if ( this.caustics ) this.caustics.update();
 		// drawn while any part of the view can be under water (the specks above the surface are dropped)
 		this.marineSnow.update( this.camera, this.camera.position.y < ( this.cameraWaterHeight ?? 0 ) + LENS_REACH );
-		this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );
+		if ( this.airMotes ) this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );
 		if ( this.shoreSim ) this.shoreSim.update();
 		// Only dispatch the underwater light-map kernels during the first mobile frame.
 		// This gate remains effective even if another system replaces the lighting updater.
@@ -817,8 +822,13 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.breakers.update( this.camera );
 		// Explicitly bypass spray dispatch in mobile low-GPU mode, even if a later system
 		// reassigns spray.update after initialization.
-		if ( !this.qs.has('noSpray') && !this.qs.has('freezeFFT') ) this.spray.update();
-		if ( this.clouds ) this.clouds.update( dt, this.camera );
+		// Coastal v29: suppress airborne spray dispatch at night, retaining daytime spray and shore breakers.
+		if ( !this.qs.has('noSpray') && !this.qs.has('freezeFFT') && ( !this.mobileLite || G.night.value < 0.5 ) ) this.spray.update();
+		// Half-rate cloud updates on mobile; elapsed time is accumulated to preserve drift and weather motion.
+		if ( this.clouds ) {
+			this._cloudCadenceFrame++;
+			if ( !this.mobileLite || this._cloudCadenceFrame % 2 === 0 ) this.clouds.update( this.mobileLite ? dt * 2 : dt, this.camera );
+		}
 		// Mobile WebGPU: don't bake reflection faces while the atmosphere LUTs
 		// are still initializing. This keeps the original reflections and ocean,
 		// but avoids pairing Atmosphere MultiScat with Env Face on startup.
