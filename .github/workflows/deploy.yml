@@ -430,9 +430,12 @@ jobs:
           grep -q 'QA night airborne spray' _qa/fftcore/src/mobile/GpuAudit.js
           grep -q 'let empty = raw.a <= 0.0001' _qa/fftcore/src/sky/SkyProClouds.js
           grep -q 'this.spray.mesh.visible = !nightNoAirborne' _qa/fftcore/src/App.js
-          grep -q 'frameCount: 30' _qa/fftcore/src/main.js
-          grep -Fq "frameWaitMs: new URLSearchParams(location.search).get('bootSpacing') === '1200' ? 1200 : 700" _qa/fftcore/src/main.js
-          grep -q '__bermudaQAWarmup.queueAcks++' _qa/fftcore/src/main.js
+          ! grep -q 'frameCount: 30' _qa/fftcore/src/main.js
+          ! grep -q 'await verifyMobileWorld' _qa/fftcore/src/main.js
+          ! grep -q 'await preloadMobileStartup' _qa/fftcore/src/main.js
+          ! grep -q 'holdUntilMobileReady' _qa/fftcore/src/main.js
+          grep -q 'first-frame-deferred' _qa/fftcore/src/main.js
+          grep -q 'QA startup warmup disabled before Explore' _qa/fftcore/src/mobile/GpuAudit.js
           ! grep -q 'minimumMs: 60000' _qa/fftcore/src/main.js
           grep -q '__bermudaQAWakeAudit' _qa/fftcore/src/App.js
           grep -q '__bermudaQASurfBudget' _qa/fftcore/src/App.js
