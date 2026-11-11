@@ -95,14 +95,35 @@ if ( mobileFastStart ) {
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
+	// The earlier 6.5-second Promise.race treated "still compiling" as success.
+	// That allowed heavy synchronous pipeline creation on the first render frame.
+	// Wait for completion, keep the loader responsive, and fail explicitly on
+	// unsupported pipelines or a bounded 90-second software-adapter stall.
 	App.prototype.precompile = async function() {
-
-		await Promise.race( [
-			GPU.pipelinesReady(),
-			new Promise( ( resolve ) => setTimeout( resolve, 6500 ) ),
-		] );
-		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;
-
+		const startedAt = performance.now();
+		const ready = GPU.pipelinesReady();
+		while (GPU._pending.size) {
+			if (GPU.fatalError) throw GPU.fatalError;
+			const state = GPU.pipelineSnapshot();
+			window.__bermudaShaderWarmup = {
+				...state, elapsedMs: Math.round(performance.now() - startedAt)
+			};
+			gpuStage('Compiling shader pipelines: ' + state.pending + ' remaining');
+			if (performance.now() - startedAt > 90000) {
+				throw new Error('Shader pipeline precompilation timed out: ' +
+					JSON.stringify(window.__bermudaShaderWarmup));
+			}
+			await Promise.race([ready, new Promise(resolve => setTimeout(resolve, 1000))]);
+		}
+		await ready;
+		const state = GPU.pipelineSnapshot();
+		window.__bermudaShaderWarmup = {
+			...state, elapsedMs: Math.round(performance.now() - startedAt), complete:true
+		};
+		if (GPU.fatalError) throw GPU.fatalError;
+		if (state.failed.length)
+			throw new Error('Shader pipeline validation failed: ' + state.failed.slice(0,3).join(' | '));
+		if (this.engine?.meshRenderer) this.engine.meshRenderer.syncPipelines = false;
 	};
 
 }

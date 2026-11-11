@@ -11,6 +11,17 @@ from shutil import copyfile
 root = Path("_qa/fftcore")
 assert (root / "src/main.js").is_file(), "Missing pinned QA checkout"
 
+# Keep the original QA source pin and save namespace. Apply only the
+# adapter-safe mip shaders from this tested repository commit, so a successful
+# change can be evaluated at the SAME /qa/fftcore/ URL rather than deploying
+# an untested alternate game or modifying production saves.
+for relative in ("src/ocean/ComputeMips.js", "src/ocean/OceanFFT.js", "src/ocean/FoamTexture.js"):
+    current = Path(relative)
+    target = root / relative
+    assert current.is_file() and target.is_file(), f"Missing QA mip source: {relative}"
+    copyfile(current, target)
+print("QA shader compatibility: copied 4-storage-texture mip kernels; FFT size/cascades preserved")
+
 
 def replace_once(path: str, old: str, new: str):
     file = root / path
@@ -36,6 +47,112 @@ replace_once("public/sw.js",
 replace_once("public/sw.js",
     "const PREFIX = 'bermuda-assets-';",
     "const PREFIX = 'bermuda-qa-fftcore-assets-';")
+
+
+# Minimal console checkpoints in the *pinned* QA revision, without changing
+# gameplay, shader output, GPU allocations or cache namespaces. The worktree's
+# OceanFFT and FoamTexture sources have matching passive diagnostics.
+for old, label in (
+    ("this.fft = new OceanFFT( renderer, qs.has('freezeFFT') ? {cascades:1} : (this.recoveryMode ? {cascades:2} : {}) );", "FFT constructor"),
+    ("this.foamTexture = createFoamTexture( renderer );", "foam texture construction"),
+    ("this.oceanLOD = new CDLOD( { gridSize: Number( qs.get( 'G' ) || 32 ), leafSize: 8, levels: 12, minY: - 25, maxY: 25 } );", "ocean LOD geometry"),
+    ("this.surface = new WaterSurface( { fft: this.fft, cdlod: this.oceanLOD, foamTexture: this.foamTexture } );", "water surface module"),
+):
+    prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " start');\n"
+    suffix = "\nif (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " complete');"
+    replace_once("src/App.js", old, prefix + old + suffix)
+
+# Trace the subsequent systems after WaterSurface without changing their
+# construction, allocations, scheduling, visual quality or saved-game state.
+for old, label in (
+    ("this.seaDetail = new SeaDetail();", "sea detail"),
+    ("this.shore = new ShoreWaves( this.terrainGPU );", "shore-wave module"),
+    ("installGroundBounce( { terrain: this.terrainGPU, clouds: this.clouds } );", "ground bounce"),
+    ("this.sceneRenderer = new SceneRenderer( engine.meshRenderer, scene, camera );", "scene renderer"),
+    ("this.query = new WaterQuery( renderer, this.surface );", "water query setup"),
+    ("await progress( 0.34, 'Preparing the shaders…' );", "shader preparation progress"),
+    ("await this.precompile();", "pipeline precompilation"),
+):
+    prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " start');\n"
+    suffix = "\nif (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " complete');"
+    replace_once("src/App.js", old, prefix + old + suffix)
+
+for old, label in (
+    ("this.underwaterLighting = installUnderwaterLighting( {", "underwater light install start"),
+    ("this.refraction = new RefractionPass(", "refraction pass setup start"),
+    ("this.waterMaterial = new WaterMaterial( {", "water material setup start"),
+    ("this.waterMaterial.clouds = this.clouds;", "water material setup complete"),
+    ("this.post = mobileLite && !qs.has('fullPost')", "post-processing setup start"),
+    ("G.exposure.value = this.settings.exposure;", "post-processing setup complete"),
+):
+    prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + "');\n"
+    replace_once("src/App.js", old, prefix + old)
+
+# Determine whether Chromium's precompile stall occurs in PostFX build,
+# asynchronous shader pipeline drain, synchronous forced-hull render, or
+# queue completion. These are passive console markers in pinned QA only.
+replace_once("src/App.js",
+    "async precompile() {\n\n\t\tconst mr = this.engine.meshRenderer;",
+    "async precompile() {\n\n\t\tconsole.info('[Bermuda precompile] enter');\n\t\tconst mr = this.engine.meshRenderer;")
+replace_once("src/App.js",
+    "this.post._build();",
+    "console.info('[Bermuda precompile] post FX build start');\n\t\t\tthis.post._build();\n\t\t\tconsole.info('[Bermuda precompile] post FX build complete');")
+replace_once("src/App.js",
+    "await GPU.pipelinesReady();\n\t\tmr.precompiling = true;",
+    "console.info('[Bermuda precompile] initial pipelines start pending=' + GPU._pending?.size);\n\t\tawait GPU.pipelinesReady();\n\t\tconsole.info('[Bermuda precompile] initial pipelines complete');\n\t\tmr.precompiling = true;")
+replace_once("src/App.js",
+    "if ( sr.hullMasks.length ) mr.render( sr.hullMaskScene, {",
+    "console.info('[Bermuda precompile] hull mask render start');\n\t\tif ( sr.hullMasks.length ) mr.render( sr.hullMaskScene, {")
+replace_once("src/App.js",
+    "\t\ttry {\n\n\t\t\t// both water variants: with the hull-mask discard",
+    "\t\tconsole.info('[Bermuda precompile] hull mask render complete');\n\t\ttry {\n\n\t\t\t// both water variants: with the hull-mask discard")
+replace_once("src/App.js",
+    "this.waterMaterial.hullOverride = hull;\n\t\t\t\tthis.frame( 1 / 60 );",
+    "this.waterMaterial.hullOverride = hull;\n\t\t\t\tconsole.info('[Bermuda precompile] warm frame ' + hull + ' start');\n\t\t\t\tthis.frame( 1 / 60 );\n\t\t\t\tconsole.info('[Bermuda precompile] warm frame ' + hull + ' complete');")
+replace_once("src/App.js",
+    "\t\tthis.refraction.enabled = refr;\n\t\tawait GPU.pipelinesReady();\n\t\tawait GPU.queue.onSubmittedWorkDone();",
+    "\t\tthis.refraction.enabled = refr;\n\t\tconsole.info('[Bermuda precompile] final pipelines start pending=' + GPU._pending?.size);\n\t\tawait GPU.pipelinesReady();\n\t\tconsole.info('[Bermuda precompile] final pipelines complete; queue fence start');\n\t\tawait GPU.queue.onSubmittedWorkDone();\n\t\tconsole.info('[Bermuda precompile] queue fence complete');")
+print("QA precompile: installed passive checkpoints without changing shader compilation")
+
+# Controlled A/B probe on the pinned QA copy ONLY. ?compileSlots=2 caps the
+# number of in-flight asynchronous pipeline compiles. With no query flag the
+# original WebGPU pipeline scheduling is preserved. This tests whether the
+# Chromium software-adapter precompile hang is related to compile pressure,
+# without changing ocean resolution, effects, game saves, or production main.
+replace_once("src/engine/gpu/GPU.js",
+    "\t_pending: new Set(),",
+    """\t_pending: new Set(),
+    _compileActive: 0,
+    _compileWaiting: [],
+    _acquireCompileSlot(limit) {
+        if (this._compileActive < limit) {
+            this._compileActive++;
+            return Promise.resolve();
+        }
+        return new Promise(resolve => this._compileWaiting.push(resolve));
+    },
+    _releaseCompileSlot() {
+        const next = this._compileWaiting.shift();
+        if (next) next();
+        else this._compileActive--;
+    },""")
+replace_once("src/engine/gpu/GPU.js",
+    "const p = Promise.resolve().then( () => {",
+    """const compileSlots = Math.min(4, Math.max(0,
+            Number(new URLSearchParams(location.search).get('compileSlots')) || 0));
+        if (compileSlots && !this._compileCapLogged) {
+            this._compileCapLogged = true;
+            console.info('[Bermuda compile] async pipeline concurrency cap=' + compileSlots);
+        }
+        const gate = compileSlots ? this._acquireCompileSlot(compileSlots) : Promise.resolve();
+        const p = gate.then( () => {""")
+replace_once("src/engine/gpu/GPU.js",
+    "} ).finally( () => this._pending.delete( p ) );",
+    """} ).finally( () => {
+            if (compileSlots) this._releaseCompileSlot();
+            this._pending.delete(p);
+        } );""")
+print("QA compile experiment: optional 2-slot asynchronous pipeline gate installed")
 
 
 # All graphical settings match the playable Crisp FFT-core case.
@@ -149,6 +266,183 @@ replace_once("src/main.js",
         document.addEventListener('pointerdown', restoreQAAudio, {capture:true, passive:true});
         document.addEventListener('touchend', restoreQAAudio, {capture:true, passive:true});
         ui.showStartOverlay( () => {""")
+
+# The mobile page *overrides* App.prototype.precompile in main.js. Markers
+# inside App.precompile therefore do not observe the actual mobile execution.
+# Trace the Promise.race winner and pending pipelines in that override directly.
+# This is observational only: it keeps the original time limit, the FFT,
+# resolution and the existing startup/saved-game behaviour unchanged.
+replace_once("src/main.js",
+    "App.prototype.precompile = async function() {\n\n"
+    "\t\t// Full fidelity compiles more shader variants. Give pending compute pipelines\n"
+    "\t\t// time to settle before gradually warming the mesh shaders on later frames.\n"
+    "\t\tawait Promise.race( [\n"
+    "\t\t\tGPU.pipelinesReady(),\n"
+    "\t\t\tnew Promise( ( resolve ) => setTimeout( resolve, mobileFullEffects ? 20000 : 6500 ) ),\n"
+    "\t\t] );\n"
+    "\t\tif ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;\n\n"
+    "\t};",
+    """App.prototype.precompile = async function() {
+        const started = performance.now();
+        const initialPending = GPU._pending?.size ?? -1;
+        console.info('[Bermuda mobile-precompile] enter pending=' + initialPending);
+        const pipelines = GPU.pipelinesReady().then(() => {
+            console.info('[Bermuda mobile-precompile] pending complete after=' +
+                Math.round(performance.now() - started) + 'ms');
+            return 'ready';
+        });
+        let timerId;
+        const timeout = new Promise(resolve => {
+            timerId = setTimeout(() => {
+                console.info('[Bermuda mobile-precompile] timeout pending=' +
+                    (GPU._pending?.size ?? -1) + ' after=' +
+                    Math.round(performance.now() - started) + 'ms');
+                resolve('timeout');
+            }, new URLSearchParams(location.search).get('pipelineBatch') === '2' ? 45000 : (mobileFullEffects ? 20000 : 6500));
+        });
+        const winner = await Promise.race([pipelines, timeout]);
+        clearTimeout(timerId);
+        console.info('[Bermuda mobile-precompile] exit winner=' + winner +
+            ' pending=' + (GPU._pending?.size ?? -1) +
+            ' elapsed=' + Math.round(performance.now() - started) + 'ms');
+        if (winner === 'timeout' &&
+            new URLSearchParams(location.search).get('pipelineBatch') === '2') {
+            throw new Error('QA shader readiness timeout with ' +
+                (GPU._pending?.size ?? -1) + ' pipelines pending');
+        }
+        if (this.engine && this.engine.meshRenderer)
+            this.engine.meshRenderer.syncPipelines = false;
+    };""")
+print("QA diagnostic: active mobile precompile override now reports pending shader count and race winner")
+
+# The previous SwiftShader run stopped after post-processing setup, before
+# even entering the actual mobile precompile override. Split that remaining
+# initialization interval into passive checkpoints, no rendering changes.
+for old, label in (
+    ("this.setRenderScale( this.settings.renderScale );", "render scale apply"),
+    ("this.audio = qs.has( 'noAudio' ) ? null : new SoundScape();", "soundscape creation"),
+    ("this.game = new Game( this );", "fishing and vendor gameplay creation"),
+    ("this.profiler = new Profiler( renderer );", "profiler creation"),
+    ("\t\tthis.updateSun();\n\t\tinstallDebugViews( this );", "sun and debug view setup"),
+    ("await progress( 0.36, 'Compiling shaders…', 0.95 );", "precompile progress animation"),
+):
+    prefix = "if (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " start');\n"
+    suffix = "\nif (qs.get('gpuTrace') === '1') console.info('[Bermuda init] " + label + " complete');"
+    replace_once("src/App.js", old, prefix + old + suffix)
+print("QA diagnostic: traced all remaining initialization work before mobile shader precompile")
+
+# Diagnostic A/B: on SwiftShader the page has reached all post-creation
+# checkpoints, but can stall forever awaiting an rAF before shader precompile.
+# Allow a bounded timer fallback only when ?rafTest=bounded. This is NOT a
+# render-quality reduction or a deployment default. Keep normal iPhone flow.
+replace_once("src/App.js",
+    "if ( typeof requestAnimationFrame === 'function' ) await new Promise( ( r ) => requestAnimationFrame( () => setTimeout( r, 0 ) ) );",
+    """if (typeof requestAnimationFrame === 'function') {
+                const bounded = qs.get('rafTest') === 'bounded';
+                await new Promise(resolve => {
+                    let finished = false;
+                    let fallback;
+                    const done = () => {
+                        if (finished) return;
+                        finished = true;
+                        if (fallback !== undefined) clearTimeout(fallback);
+                        resolve();
+                    };
+                    requestAnimationFrame(() => setTimeout(done, 0));
+                    if (bounded) fallback = setTimeout(() => {
+                        if (qs.get('gpuTrace') === '1')
+                            console.info('[Bermuda init] rAF wait exceeded 350ms; using bounded progress fallback');
+                        done();
+                    }, 350);
+                });
+            }""")
+print("QA diagnostic: opt-in bounded rAF transition (rafTest=bounded), no GPU fidelity change")
+
+# Controlled software-WebGPU experiment: ?pipelineBatch=2 bounds simultaneous
+# createRenderPipelineAsync/createComputePipelineAsync promises to TWO.
+# The shaders, GPU resource types, FFT quality and recorded render passes are
+# unchanged. The default deployed QA game does NOT enable this A/B setting.
+# Console checkpoints identify any one shader that starves the GPU process.
+replace_once("src/engine/gpu/GPU.js",
+    """\t\tconst p = Promise.resolve().then( () => {
+
+\t\t\tif ( h.pipeline ) return;
+\t\t\tconst create = kind === 'render' ? this.device.createRenderPipelineAsync : this.device.createComputePipelineAsync;
+\t\t\treturn create.call( this.device, desc ).then( ( pipeline ) => {
+
+\t\t\t\tif ( ! h.pipeline ) h.pipeline = pipeline;
+\t\t\t\th.desc = null;
+
+\t\t\t}, ( e ) => {
+
+\t\t\t\th.failed = true;
+\t\t\t\tgpuError( 'pipeline '+kind, desc.label+': '+String(e?.message||e) );
+\t\t\t\tconsole.error( `WebGPU: pipeline "${ desc.label }" failed: ${ e.message.split( '\\n' ).slice( 0, 6 ).join( '\\n' ) }` );
+
+\t\t\t} );
+
+\t\t} ).finally( () => this._pending.delete( p ) );""",
+    """\t\tconst p = Promise.resolve().then( async () => {
+
+\t\t\tif ( h.pipeline ) return;
+\t\t\tconst batch = typeof location !== 'undefined' &&
+\t\t\t\tnew URLSearchParams(location.search).get('pipelineBatch') === '2';
+\t\t\tlet gate = null;
+\t\t\tif (batch) {
+\t\t\t\tgate = this._mobileCompileGate ||= { active: 0, waiters: [] };
+\t\t\t\tif (gate.active < 2) gate.active++;
+\t\t\t\telse await new Promise(resolve => gate.waiters.push(resolve));
+\t\t\t\tconsole.info('[Bermuda compile] start ' + kind + ' ' +
+\t\t\t\t\tdesc.label + ' active=' + gate.active +
+\t\t\t\t\t' queued=' + gate.waiters.length);
+\t\t\t}
+\t\t\ttry {
+\t\t\t\tconst create = kind === 'render' ?
+\t\t\t\t\tthis.device.createRenderPipelineAsync : this.device.createComputePipelineAsync;
+\t\t\t\treturn await create.call(this.device, desc).then(pipeline => {
+\t\t\t\t\tif (!h.pipeline) h.pipeline = pipeline;
+\t\t\t\t\th.desc = null;
+\t\t\t\t}, e => {
+\t\t\t\t\th.failed = true;
+\t\t\t\t\tgpuError('pipeline '+kind, desc.label+': '+String(e?.message||e));
+\t\t\t\t\tconsole.error('WebGPU: pipeline "'+desc.label+'" failed: '+String(e?.message||e));
+\t\t\t\t});
+\t\t\t} finally {
+\t\t\t\tif (gate) {
+\t\t\t\t\tconsole.info('[Bermuda compile] settled ' + kind + ' ' + desc.label);
+\t\t\t\t\tconst next = gate.waiters.shift();
+\t\t\t\t\tif (next) next();
+\t\t\t\t\telse gate.active = Math.max(0, gate.active - 1);
+\t\t\t\t}
+\t\t\t}
+
+\t\t} ).finally( () => this._pending.delete( p ) );""")
+print("QA experiment: concurrency-limited WebGPU pipeline compilation (pipelineBatch=2)")
+
+# Bound the FIRST GPU queue fence on the experimental pipelineBatch=2 path.
+# Do not continue to Explore after an unacknowledged GPU submission. Preserve
+# the untouched timing/behaviour for the original iPhone QA link.
+replace_once("src/App.js",
+    "this.frame( 1 / 60 );\n\t\t\tawait GPU.queue.onSubmittedWorkDone();\n\t\t\tgpuQueueAck(GPU.frame);",
+    """this.frame( 1 / 60 );
+            if (qs.get('pipelineBatch') === '2') {
+                console.info('[Bermuda warmup] awaiting queue completion frame=' + GPU.frame);
+                let timerId;
+                try {
+                    await Promise.race([
+                        GPU.queue.onSubmittedWorkDone(),
+                        new Promise((_, reject) => {
+                            timerId = setTimeout(() => reject(
+                                new Error('QA GPU queue did not complete within 20s; frame=' + GPU.frame)), 20000);
+                        })
+                    ]);
+                    console.info('[Bermuda warmup] queue acknowledged frame=' + GPU.frame);
+                } finally { clearTimeout(timerId); }
+            } else {
+                await GPU.queue.onSubmittedWorkDone();
+            }
+            gpuQueueAck(GPU.frame);""")
+print("QA experiment: wait for all shader pipelines before warmup; reject unacknowledged first submit")
 
 # Bermuda QA vegetation: retain mixed trees, shrubs and coastal greenery,
 # but stop filling the hills and walking corridors with repeated coconut palms.

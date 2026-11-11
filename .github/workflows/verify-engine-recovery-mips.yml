@@ -1,0 +1,99 @@
+name: WebGPU mip adapter-limit validation (no deploy)
+
+on:
+  push:
+    branches: ['engine-recovery/mip-storage-limit-20261107']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adapter-compatibility:
+    name: Validate 4-storage-texture compatibility and game logic
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Ensure every mip level is generated within standard WebGPU limits
+        run: node test/compute-mips-limits.mjs
+      - name: Preserve Bermuda world and gameplay
+        run: |
+          node test/game-logic.mjs
+          node test/bermuda-layout.mjs
+          node test/mobile-webgpu-isolation.mjs
+      - name: Compile the real game bundle
+        run: npm run build
+
+  chromium-software-webgpu:
+    name: Chromium software WebGPU on exact patched pinned iPhone QA (not Safari)
+    needs: adapter-compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout existing iPhone QA source revision
+        uses: actions/checkout@v4
+        with:
+          ref: cdc2e9eb800be092901b7772967d177a98ef2c5b
+          path: _qa/fftcore
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium software-WebGPU test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+      - name: Prepare and compile patched original iPhone QA
+        run: |
+          python3 tools/prepare_stable_qa.py
+          cd _qa/fftcore
+          npm ci
+          node --check src/App.js
+          node --check src/ocean/OceanFFT.js
+          node --check src/ocean/FoamTexture.js
+          npm run build
+      - name: Run Chromium on the exact pinned QA asset bundle
+        run: node scripts/qa-mip-webgpu-chromium.mjs --site-dir=_qa/fftcore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mip-webgpu-chromium-pinned-qa-report
+          path: audit-output/mip-webgpu-chromium.json
+
+  pinned-iphone-qa:
+    name: Build the existing pinned FFT-core QA with compatibility fix
+    needs: adapter-compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout existing iPhone QA source revision
+        uses: actions/checkout@v4
+        with:
+          ref: cdc2e9eb800be092901b7772967d177a98ef2c5b
+          path: _qa/fftcore
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Apply original QA isolation and adapter-safe mip kernels
+        run: python3 tools/prepare_stable_qa.py
+      - name: Validate QA source and build, without deployment
+        run: |
+          cd _qa/fftcore
+          npm ci
+          node test/gpu-trace.mjs
+          node --check src/main.js
+          node --check src/ocean/ComputeMips.js
+          node --check src/ocean/OceanFFT.js
+          npm run build

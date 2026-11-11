@@ -78,6 +78,12 @@ fn fftPcg( v: u32 ) -> u32 {
 fn fftToUnit( h: u32 ) -> f32 { return f32( h >> 8u ) * ( 1.0 / 16777216.0 ) + ( 0.5 / 16777216.0 ); }
 `;
 
+// Trace only on explicitly instrumented QA sessions. No GPU allocations.
+const fftTrace = label => {
+	if (typeof location !== 'undefined' &&
+		new URLSearchParams(location.search).get('gpuTrace') === '1')
+		console.info('[Bermuda FFT] ' + label);
+};
 export class OceanFFT {
 
 	constructor( renderer, options = {} ) {
@@ -87,9 +93,11 @@ export class OceanFFT {
 		this.sizes = ( options.sizes ?? DEFAULT_CASCADE_SIZES ).slice( 0, this.cascades );
 		this.depth = options.depth ?? 500;
 
+		fftTrace('wave spectrum systems start');
 		this.local = new WaveSystem( options.local ?? { windSpeed: 7, windDirection: 25, fetch: 120, spreadBlend: 0.85, swell: 0.05 } );
 		this.swell = new WaveSystem( options.swell ?? { scale: 0.48, windSpeed: 6, windDirection: 5, fetch: 1200, spreadBlend: 1.0, swell: 0.9, shortWavesFade: 0.1 } );
 
+		fftTrace('wave spectrum systems complete');
 		const C = this.cascades;
 		this.params = new UniformBlock( 'OceanParams', {
 			// per cascade: x = tile size (m)
@@ -131,6 +139,7 @@ export class OceanFFT {
 		// level 0 of both textures (interleaved) for the compute mip chain, and the 8x8 level 5
 		this.mipSrc = new StorageBuffer( { label: 'fftMipSrc', count: total * 2, type: 'vec4f' } );
 		this.mipMid = new StorageBuffer( { label: 'fftMipMid', count: 64 * C * 2, type: 'vec4f' } );
+		fftTrace('FFT uniform and storage buffers created');
 
 		const makeTex = ( name ) => new Texture( {
 			label: name, width: N, height: N, depth: C, dimension: '2d-array', format: 'rgba16float',
@@ -140,6 +149,7 @@ export class OceanFFT {
 
 		this.displacementTexture = makeTex( 'oceanDisplacement' ); // (Dx, Dy, Dz, foam)
 		this.derivativeTexture = makeTex( 'oceanDerivatives' ); // (dDy/dx, dDy/dz, dDx/dx, dDz/dz)
+		fftTrace('FFT textures created');
 
 		this.module = new ShaderModule( {
 			name: 'ocean',
@@ -174,7 +184,9 @@ fn oceanSampleDisplacementWeighted( xz: vec2f, level: f32, w: vec4f ) -> vec3f {
 `,
 		} );
 
+		fftTrace('FFT compute kernels start');
 		this._buildKernels();
+		fftTrace('FFT compute kernels complete');
 		this.updateSpectrumUniforms();
 		this.needsSpectrum = true;
 
@@ -346,6 +358,7 @@ fn main( @builtin( global_invocation_id ) gid: vec3u ) {
 }`,
 		} );
 
+		fftTrace('FFT initial spectrum shader complete');
 		this.conjugateKernel = new ComputeKernel( {
 			label: 'Ocean Conjugate',
 			bindings: { h0: rw( this.h0 ), tmp: rw( this.tmp ) },
@@ -365,6 +378,7 @@ fn main( @builtin( global_invocation_id ) gid: vec3u ) {
 }`,
 		} );
 
+		fftTrace('FFT conjugate shader complete');
 		this.copyH0Kernel = new ComputeKernel( {
 			label: 'Ocean Copy H0',
 			bindings: { h0: rw( this.h0 ), tmp: rw( this.tmp ), foam: rw( this.foam ) },
@@ -405,6 +419,7 @@ fn main( @builtin( global_invocation_id ) gid: vec3u ) {
 
 		const SHARED = `var<workgroup> fftShared: array<vec4f, ${ N * 2 }>;\n`;
 
+		fftTrace('FFT spectrum copy shader complete');
 		this.rowKernel = new ComputeKernel( {
 			label: 'Ocean FFT Rows',
 			modules: [ commonModule ],
@@ -464,6 +479,7 @@ ${ stages }
 
 		const level = ( tex, l ) => ( { storageTexture: tex, access: 'write', view: { dimension: '2d-array', baseMipLevel: l, mipLevelCount: 1 } } );
 
+		fftTrace('FFT rows shader complete');
 		this.columnKernel = new ComputeKernel( {
 			label: 'Ocean FFT Columns',
 			modules: [ commonModule ],
@@ -529,6 +545,9 @@ ${ stages }
 		// ---- mip chains in compute (instead of 2 textures x 4 layers x 8 levels of render passes)
 		// A: 16x16 threads per 32x32 texel tile of level 0 -> levels 1..5 through workgroup memory
 		// B: one 8x8 workgroup per layer -> levels 6..8
+		// NOTE: Some adapters still report five storage textures for Ocean Mips A
+		// even with four explicit out bindings. Audit the generated bind group layout
+		// before increasing this pass's storage texture count.
 
 		// threads (lx, ly) < width reduce a 2x2 block of `from` (row length 2*width) into `to`
 		const reduce = ( from, to, width, lvl, t ) => {
@@ -541,7 +560,7 @@ ${ stages }
 	if ( lx < ${ width }u && ly < ${ width }u ) {
 		let i = ly * ${ 2 * w2 }u + lx * 2u;
 		let v = ( ${ from }[ i ] + ${ from }[ i + 1u ] + ${ from }[ i + ${ w2 }u ] + ${ from }[ i + ${ w2 + 1 }u ] ) * 0.25;
-		textureStore( out${ lvl }, vec2u( gx * ${ width }u + lx, gy * ${ width }u + ly ), c, v );
+		${ lvl === 5 ? '' : `textureStore( out${ lvl }, vec2u( gx * ${ width }u + lx, gy * ${ width }u + ly ), c, v );` }
 		${ dst }
 	}`;
 
@@ -551,7 +570,7 @@ ${ stages }
 			label: 'Ocean Mips A',
 			bindings: {
 				mipSrc: rw( this.mipSrc ), mipMid: rw( this.mipMid ),
-				out1: level( tex, 1 ), out2: level( tex, 2 ), out3: level( tex, 3 ), out4: level( tex, 4 ), out5: level( tex, 5 ),
+				out1: level( tex, 1 ), out2: level( tex, 2 ), out3: level( tex, 3 ), out4: level( tex, 4 ),
 			},
 			workgroupSize: [ 16, 16, 1 ],
 			code: /* wgsl */`
@@ -580,6 +599,20 @@ ${ reduce( 's4', null, 1, 5, t ) }
 }`,
 		} );
 
+		// A writes mipMid for level 5. A separate kernel writes texture mip 5
+		// to stay within the baseline limit of four storage textures per compute stage.
+		const mipC = ( tex, t ) => new ComputeKernel( {
+			label: 'Ocean Mips C',
+			bindings: { mipMid: rw( this.mipMid ), out5: level( tex, 5 ) },
+			workgroupSize: [ 8, 8, 1 ],
+			code: /* wgsl */`@compute @workgroup_size( WG_X, WG_Y, WG_Z )
+fn main( @builtin( global_invocation_id ) gid: vec3u ) {
+	let c = gid.z;
+	let v = mipMid[ ( c * 64u + gid.y * 8u + gid.x ) * 2u + ${ t }u ];
+	textureStore( out5, gid.xy, c, v );
+}`,
+		} );
+
 		const mipB = ( tex, t ) => new ComputeKernel( {
 			label: 'Ocean Mips B',
 			bindings: { mipMid: rw( this.mipMid ), out6: level( tex, 6 ), out7: level( tex, 7 ), out8: level( tex, 8 ) },
@@ -602,8 +635,13 @@ ${ reduce( 's7', null, 1, 8, t ) }
 }`,
 		} );
 
+		fftTrace('FFT columns shader complete; mip shaders start');
 		this.mipKernelsA = [ mipA( this.displacementTexture, 0 ), mipA( this.derivativeTexture, 1 ) ];
+		fftTrace('FFT mip A complete');
+		this.mipKernelsC = [ mipC( this.displacementTexture, 0 ), mipC( this.derivativeTexture, 1 ) ];
+		fftTrace('FFT mip C complete');
 		this.mipKernelsB = [ mipB( this.displacementTexture, 0 ), mipB( this.derivativeTexture, 1 ) ];
+		fftTrace('FFT mip B complete');
 
 	}
 
@@ -627,6 +665,7 @@ ${ reduce( 's7', null, 1, 8, t ) }
 			this.rowKernel.dispatch( [ N, C, 1 ], { pass } );
 			this.columnKernel.dispatch( [ N, C, 1 ], { pass } );
 			for ( const k of this.mipKernelsA ) k.dispatch( [ N / 32, N / 32, C ], { pass } );
+			for ( const k of this.mipKernelsC ) k.dispatch( [ 1, 1, C ], { pass } );
 			for ( const k of this.mipKernelsB ) k.dispatch( [ 1, 1, C ], { pass } );
 
 		} );

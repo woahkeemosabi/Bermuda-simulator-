@@ -92,6 +92,13 @@ export class App {
 	async init( onProgress = () => {} ) {
 
 		const qs = this.qs;
+		// CPU/GPU startup checkpoints for Chromium software-adapter isolation.
+		// No GPU allocations, shader changes, or normal-gameplay overhead.
+		const traceInit = (label) => {
+			if (qs.get('gpuTrace') !== '1') return;
+			gpuStage(label);
+			console.info('[Bermuda init] ' + label);
+		};
 		// Select the small scene before allocating any buffers, shaders or GPU textures.
 		const mobileLite = !qs.has( 'desktop' ) && ( qs.get( 'quality' ) === 'mobile-safe' ||
 			/iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
@@ -196,17 +203,27 @@ export class App {
 		if ( ! qs.has( 'noVeg' ) ) {
 
 			await progress( 0.14, 'Planting the island…' );
+			traceInit('vegetation construction start');
 			this.vegetation = new Vegetation( { scene, terrain: this.terrainData, village: this.village } );
+			traceInit('vegetation construction complete');
 			useStaticVelocity( this.vegetation.group );
 
 		}
 
 		await progress( 0.19, 'Rolling in the swell…' );
+		traceInit('shorefield CPU computation start');
 		this.shoreField = computeShoreField( this.terrainData, { res: 512, swellDir: [ WORLD.swellDir.x, WORLD.swellDir.y ] } );
+		traceInit('shorefield CPU computation complete');
+		traceInit('terrain GPU resources start');
 		this.terrainGPU = new TerrainGPU( this.terrainData, this.shoreField );
+		traceInit('terrain GPU resources complete');
 		// terrain and rocks apply the heightfield sun shadow (long hill shadows) in their own lighting
+		traceInit('terrain mesh/material start');
 		this.terrain = new Terrain( { scene, terrainData: this.terrainData, terrainGPU: this.terrainGPU, renderer } );
+		traceInit('terrain mesh/material complete');
+		traceInit('rocks mesh/material start');
 		this.rocks = new Rocks( { scene, terrain: this.terrain, village: this.village, colliders: this.colliders } );
+		traceInit('rocks mesh/material complete');
 		// Bermuda rebuild: the legacy Tidewater debris field (wheelbarrows, crate stacks,
 		// barrels, beached skiffs and village yard clutter) is deliberately disabled.
 		// Keep this slot for compatibility; Bermuda-specific harbour props are loaded separately.
@@ -225,17 +242,31 @@ export class App {
 
 		// ---------------------------------------------------------------- ocean
 		await progress( 0.3, 'Simulating the ocean…' );
+		traceInit('ocean FFT constructor start');
 		this.fft = new OceanFFT( renderer, qs.has('freezeFFT') ? {cascades:1} : (this.recoveryMode ? {cascades:2} : {}) );
+		traceInit('ocean FFT constructor complete');
 		if ( this.reef.setOcean ) this.reef.setOcean( this.fft ); // coral / sea fan sway follows the simulated swell
+		traceInit('foam texture and mip generator start');
 		this.foamTexture = createFoamTexture( renderer );
+		traceInit('foam texture and mip generator complete');
+		traceInit('ocean CDLOD geometry start');
 		this.oceanLOD = new CDLOD( { gridSize: Number( qs.get( 'G' ) || 32 ), leafSize: 8, levels: 12, minY: - 25, maxY: 25 } );
+		traceInit('ocean CDLOD geometry complete');
+		traceInit('water surface material start');
 		this.surface = new WaterSurface( { fft: this.fft, cdlod: this.oceanLOD, foamTexture: this.foamTexture } );
+		traceInit('water surface material complete');
 		this.surface.terrain = this.terrainGPU;
+		traceInit('ocean sea detail start');
 		this.seaDetail = new SeaDetail();
+		traceInit('ocean sea detail complete');
 		this.surface.detail = this.seaDetail;
+		traceInit('shore waves start');
 		this.shore = new ShoreWaves( this.terrainGPU );
+		traceInit('shore waves complete');
 		this.surface.shore = this.shore;
+		traceInit('caustics startup start');
 		this.caustics = qs.has( 'noCaustics' ) ? null : new Caustics( renderer, this.fft, { mobile: mobileLite } );
+		traceInit('caustics startup complete');
 		if ( this.caustics ) this.caustics.detail = this.seaDetail;
 
 		if ( ! qs.has( 'noSim' ) ) {
