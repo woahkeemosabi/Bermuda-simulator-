@@ -1358,4 +1358,41 @@ new_precompile = """\t\tconst sr = this.sceneRenderer, hm = sr.hullMaskRT;
 assert qa_app.count(old_precompile) == 1, "Expected mobile precompile render block not found"
 app_file.write_text(qa_app.replace(old_precompile, new_precompile, 1))
 
+# Remove the pre-Explore GPU readback and full-scene warmup from the pinned QA.
+main_file = root / "src/main.js"
+main = main_file.read_text()
+main = main.replace(
+    "import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';",
+    "import { validateSpawn } from './mobile/WorldRenderGate.js';"
+)
+main = main.replace(
+    "import { preloadMobileStartup, MOBILE_FULL_PRELOAD_FRAMES, MOBILE_FULL_PRELOAD_WAIT_MS } from './mobile/MobileStartupPreload.js';\\n",
+    ""
+)
+main = main.replace(
+    "import { cacheStartupAssets, holdUntilMobileReady, isStartupCacheReady, markStartupCacheReady } from './mobile/StartupAssetCache.js';",
+    "import { cacheStartupAssets, markStartupCacheReady } from './mobile/StartupAssetCache.js';"
+)
+gate_start = main.find("\\t\\tif (mobileRecovery || app.qs.has('renderTest')) {")
+cache_start = main.find("\\t\\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive", gate_start)
+assert gate_start >= 0 and cache_start > gate_start, "Mobile GPU verification/preload anchors not found"
+main = main[:gate_start] + """\\t\\t// CPU-only spawn validation. First full scene render is deferred until Explore.
+\\t\\tvalidateSpawn(app);
+\\t\\twindow.__bermudaWorldGate = {status:'first-frame-deferred',tries:0};
+\\t\\twindow.__bermudaQAWarmup = {
+\\t\\t\\ttargetFrames:0, spacingMs:0, queueAcks:0,
+\\t\\t\\tstartMs:performance.now(), elapsedMs:0, complete:true
+\\t\\t};
+\\t\\tgpuStage('First full scene frame deferred until Explore');
+""" + main[cache_start:]
+main_file.write_text(main)
+
+# Make the startup audit explicit so workflow assertions catch regressions.
+audit_file = root / "src/mobile/GpuAudit.js"
+audit = audit_file.read_text()
+audit = audit.replace(
+    "'QA startup warmup '+",
+    "'QA startup warmup disabled before Explore; first full frame deferred '+"
+)
+audit_file.write_text(audit)
 print("iPhone startup fix patch applied to pinned QA checkout")
