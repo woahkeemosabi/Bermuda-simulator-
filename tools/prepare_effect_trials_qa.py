@@ -1365,7 +1365,7 @@ main = main.replace("import { verifyMobileWorld, validateSpawn } from './mobile/
 gate_start = main.find("\t\tif (mobileRecovery || app.qs.has('renderTest')) {")
 cache_start = main.find("\t\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive", gate_start)
 assert gate_start >= 0 and cache_start > gate_start, "Mobile startup gate anchors missing"
-main = main[:gate_start] + "\t\tvalidateSpawn(app);\\n\t\twindow.__bermudaWorldGate = {status:'first-frame-deferred',tries:0};\\n" + main[cache_start:]
+main = main[:gate_start] + "\t\tvalidateSpawn(app);\n\t\twindow.__bermudaWorldGate = {status:'first-frame-deferred',tries:0};\n" + main[cache_start:]
 # Remove the pre-Explore cache readiness gate; caching remains asynchronous and must not block launch.
 cache_gate = "\t\t\tif ( !isStartupCacheReady( window.__bermudaAssetCacheState, window.localStorage ) ) {\n\t\t\t\tawait holdUntilMobileReady( {\n\t\t\t\t\tstartedAt: 0, // first complete load takes at least a minute\n\t\t\t\t\tcheckDevice: () => {\n\t\t\t\t\t\tif ( GPU.fatalError || window.__bermudaGpuLost )\n\t\t\t\t\t\t\tthrow GPU.fatalError || new Error( window.__bermudaGpuLost );\n\t\t\t\t\t},\n\t\t\t\t\tonProgress: seconds => ui.setLoading(\n\t\t\t\t\t\t.994, `World prepared · Explore available in ${seconds}s`, .995 ),\n\t\t\t\t} );\n\t\t\t\tmarkStartupCacheReady( window.__bermudaAssetCacheState, window.localStorage );\n\t\t\t}\n";
 assert main.count(cache_gate)==1, 'Pre-Explore cache readiness gate not found exactly once'
