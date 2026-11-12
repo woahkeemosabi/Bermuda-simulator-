@@ -1361,7 +1361,7 @@ app_file.write_text(qa_app.replace(old_precompile, new_precompile, 1))
 # Remove mobile GPU readback and preload gate before Explore.
 main_file = root / "src/main.js"
 main = main_file.read_text()
-main = main.replace("import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';", "import { validateSpawn } from './mobile/WorldRenderGate.js;")
+main = main.replace("import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';", "import { validateSpawn } from './mobile/WorldRenderGate.js';")
 gate_start = main.find("\\t\\tif (mobileRecovery || app.qs.has('renderTest')) {")
 cache_start = main.find("\\t\\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActive", gate_start)
 assert gate_start >= 0 and cache_start > gate_start, "Mobile startup gate anchors missing"
