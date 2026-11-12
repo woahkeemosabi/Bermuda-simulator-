@@ -1358,4 +1358,13 @@ new_precompile = """\t\tconst sr = this.sceneRenderer, hm = sr.hullMaskRT;
 assert qa_app.count(old_precompile) == 1, "Expected mobile precompile render block not found"
 app_file.write_text(qa_app.replace(old_precompile, new_precompile, 1))
 
-print("iPhone startup fix patch applied to pinned QA checkout")
+# Defer all full-scene GPU work until Explore on mobile QA.
+main_file = root / "src/main.js"
+main = main_file.read_text()
+main = main.replace("import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';", "import { validateSpawn } from './mobile/WorldRenderGate.js';")
+main = main.replace("import { cacheStartupAssets, holdUntilMobileReady, isStartupCacheReady, markStartupCacheReady } from './mobile/StartupAssetCache.js';", "import { cacheStartupAssets, markStartupCacheReady } from './mobile/StartupAssetCache.js;")
+main = main.replace("await verifyMobileWorld(", "/* removed await verifyMobileWorld */(")
+main = main.replace("await preloadMobileStartup(", "/* removed await preloadMobileStartup */(")
+main = main.replace("holdUntilMobileReady(", "/* removed holdUntilMobileReady */(")
+main_file.write_text(main)
+print("iPhone startup deferral patch applied")
