@@ -1367,5 +1367,9 @@ cache_start = main.find("\\t\\tif ( !app.qs.has( 'renderTest' ) && !gpuTraceActi
 assert gate_start >= 0 and cache_start > gate_start, "Mobile startup gate anchors missing"
 main = main[:gate_start] + "\\t\\tvalidateSpawn(app);\\n\\t\\twindow.__bermudaWorldGate = {status:'first-frame-deferred',tries:0};\\n" + main[cache_start:]
 main = main.replace("import { cacheStartupAssets, holdUntilMobileReady, isStartupCacheReady, markStartupCacheReady } from './mobile/StartupAssetCache.js';", "import { cacheStartupAssets, markStartupCacheReady } from './mobile/StartupAssetCache.js';")
+assert 'await verifyMobileWorld(' not in main, 'GPU world readback remains before Explore'
+assert 'await preloadMobileStartup(' not in main, 'Full-scene startup warmup remains before Explore'
+assert 'holdUntilMobileReady(' not in main, 'Startup cache hold remains before Explore'
+assert "status:'first-frame-deferred'" in main, 'Deferred first-frame marker missing'
 main_file.write_text(main)
-print("iPhone startup deferral patch applied")
+print("iPhone startup deferral patch applied and verified")
