@@ -2,6 +2,7 @@ import { Matrix4, Quaternion, Vector3 } from '../engine/index.js';
 import { FishProps } from '../world/fish/FishProps.js';
 import { SPECIES } from '../world/fish/FishSpecies.js';
 import { FISH, FISH_IDS, fishLengthCm } from './FishTable.js';
+import { fishLandingMotion } from './FishLandingMotion.js';
 
 // Real fish (the world's fish models and wet skin, world/fish/FishProps) for the game:
 //  - the fish you just landed, hanging from the line by the gills and flapping, for a moment
@@ -63,12 +64,16 @@ export class CatchDisplay {
 		this.t += dt;
 		const model = FISH[ species ].model;
 		const L = fishLength( species, kg );
-		// struggling: the body curls side to side, the jaw works, the whole fish swings on the line
-		const flap = Math.sin( this.t * 11 ) * 1.0 * Math.exp( - this.t * 0.16 );
-		const swing = Math.sin( this.t * 2.6 ) * 0.3 * Math.exp( - this.t * 0.12 );
-		_q.setFromAxisAngle( _a.set( 0, 1, 0 ), faceYaw + swing );
+		// Irregular, mass-dependent 3D struggles instead of a flat periodic flap.
+		// Reuse the existing fish geometry, instance buffer and render pipeline.
+		const motion = fishLandingMotion( this.t, kg );
+		const arrival = Math.min( 1, this.t / 0.65 );
+		const swing = Math.sin( this.t * 3.4 ) * 0.32 * Math.exp( - this.t * 0.34 );
+		_q.setFromAxisAngle( _a.set( 0, 1, 0 ), faceYaw + swing + motion.yaw );
+		const tilt = new Quaternion().setFromAxisAngle( _a.set( 0, 0, 1 ), motion.roll + Math.sin( this.t * 6.2 ) * 0.12 * Math.exp( - this.t ) );
+		_q.multiply( tilt );
 		_f.makeRotationFromQuaternion( _q ).setPosition( mouth );
-		this.place( i, _f, GILL, L, FishProps.gillAnchor( model ), flap, 0, 0.4 + 0.4 * Math.max( 0, Math.sin( this.t * 7 ) ) );
+		this.place( i, _f, GILL, L * ( 0.94 + 0.06 * arrival ), FishProps.gillAnchor( model ), motion.curl, motion.sag, motion.jaw );
 
 	}
 
