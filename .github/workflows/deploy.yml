@@ -18,10 +18,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout pinned Coastal v29 gameplay
+      - name: Checkout Coastal v29 with tested visual corrections
         uses: actions/checkout@v4
         with:
-          ref: f1239e18ca714a4486c7cb03436cf120afe431e7
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -48,7 +47,7 @@ jobs:
           test -s dist/index.html
           test -d dist/assets
           test -s dist/ui/bermuda-loading.jpg
-          printf '{"channel":"main","version":"coastal-v29","source":"f1239e18ca714a4486c7cb03436cf120afe431e7"}\n' > dist/coastal-release.json
+          printf '{"channel":"main","version":"coastal-v29-sky-fish","source":"visual-fix"}\n' > dist/coastal-release.json
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
