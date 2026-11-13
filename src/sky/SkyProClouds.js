@@ -577,7 +577,13 @@ fn cloudsSample( dir: vec3f ) -> vec4f {
 	let t = clamp( ( elev + ${ f( 4 * DEG ) } ) / ${ f( 94 * DEG ) }, 0.0, 1.0 );
 	let s = textureSampleLevel( cloudsPanorama, smpLinearRepeat, vec2f( u, sqrt( t ) ), 0.0 );
 	let below = smoothstep( -0.07, -0.03, dir.y );
-	return vec4f( s.rgb * below, mix( 1.0, s.a, below ) );
+	// A partially initialized panorama can contain isolated bright texels on mobile.
+	// Reject non-finite radiance and clamp only the cloud contribution at night;
+	// preserve the atmospheric sky, stars, moon and all ocean lighting.
+	let valid = all( s.rgb == s.rgb ) && all( abs( s.rgb ) < vec3f( 10000.0 ) );
+	let night = clamp( frame.night, 0.0, 1.0 );
+	let radiance = min( max( select( vec3f( 0.0 ), s.rgb, valid ), vec3f( 0.0 ) ), vec3f( mix( 10000.0, 0.018, night ) ) );
+	return vec4f( radiance * below, mix( 1.0, clamp( s.a, 0.0, 1.0 ), below ) );
 }
 
 // Transmittance for the sun's disc behind the clouds. The cloud march stops once less than 0.3 % of
