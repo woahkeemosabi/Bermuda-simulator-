@@ -1,8 +1,8 @@
-name: Restore Coastal v29 to GitHub Pages
+name: Bermuda Simulator — single production Pages release
 
 on:
   push:
-    branches: [main, 'bermuda-*']
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -18,7 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Coastal v29 with tested visual corrections
+      - name: Checkout canonical main game
         uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -41,13 +41,21 @@ jobs:
           node test/mobile-environment-isolation.mjs
           node test/first-boat-mode.mjs
           node test/mobile-recovery-profile.mjs
-      - run: npm run build
+      - name: Build canonical game
+        run: |
+          rm -rf dist
+          npm run build
+      - name: Remove legacy alternate game pages from published output
+        run: |
+          rm -rf dist/archive dist/qa dist/recovery dist/coastal dist/previews dist/test-builds
+          find dist -type f -name 'index.html' ! -path 'dist/index.html' -print -delete
+          test "$(find dist -type f -name 'index.html' | wc -l)" -eq 1
       - name: Confirm release files
         run: |
           test -s dist/index.html
           test -d dist/assets
           test -s dist/ui/bermuda-loading.jpg
-          printf '{"channel":"main","version":"coastal-v29-sky-fish","source":"visual-fix"}\n' > dist/coastal-release.json
+          printf '{"channel":"main","version":"canonical","source":"main"}\n' > dist/coastal-release.json
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
