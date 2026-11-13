@@ -710,7 +710,9 @@ jobs:
           PY
 
       - name: Promote Coastal v38 sky-only storm QA to main GitHub Pages
-        if: github.ref == 'refs/heads/main'
+        # Disabled: this experimental QA build has repeatedly lost the WebGPU device on iPhone.
+        # Never overwrite the published game without a separate, runtime-verified release.
+        if: false
         run: |
           python3 - <<'PY'
           from pathlib import Path
