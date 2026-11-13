@@ -15,7 +15,7 @@ const PARK = new Vector3( 0, - 2000, 0 );
 const GILL = new Matrix4().makeBasis( new Vector3( 0, 0, 1 ), new Vector3( 1, 0, 0 ), new Vector3( 0, 1, 0 ) );
 // lying on its side, nose toward +x ('side')
 const SIDE = new Matrix4().makeBasis( new Vector3( 0, 1, 0 ), new Vector3( 0, 0, 1 ), new Vector3( 1, 0, 0 ) );
-const _m = new Matrix4(), _f = new Matrix4(), _q = new Quaternion(), _p = new Vector3(), _s = new Vector3(), _a = new Vector3();
+const _m = new Matrix4(), _f = new Matrix4(), _q = new Quaternion(), _tilt = new Quaternion(), _p = new Vector3(), _s = new Vector3(), _a = new Vector3();
 
 // body length (m) for a weight: the species' length-weight relation (FishTable.fishLengthCm), so the
 // fish on the line is the size the catch card reports
@@ -70,7 +70,7 @@ export class CatchDisplay {
 		const arrival = Math.min( 1, this.t / 0.65 );
 		const swing = Math.sin( this.t * 3.4 ) * 0.32 * Math.exp( - this.t * 0.34 );
 		_q.setFromAxisAngle( _a.set( 0, 1, 0 ), faceYaw + swing + motion.yaw );
-		const tilt = new Quaternion().setFromAxisAngle( _a.set( 0, 0, 1 ), motion.roll + Math.sin( this.t * 6.2 ) * 0.12 * Math.exp( - this.t ) );
+		const tilt = _tilt.setFromAxisAngle( _a.set( 0, 0, 1 ), motion.roll + Math.sin( this.t * 6.2 ) * 0.12 * Math.exp( - this.t ) );
 		_q.multiply( tilt );
 		_f.makeRotationFromQuaternion( _q ).setPosition( mouth );
 		this.place( i, _f, GILL, L * ( 0.94 + 0.06 * arrival ), FishProps.gillAnchor( model ), motion.curl, motion.sag, motion.jaw );
