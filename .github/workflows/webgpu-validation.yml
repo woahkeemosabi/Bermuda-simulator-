@@ -23,7 +23,7 @@ jobs:
         run: |
           node test/game-logic.mjs
           node test/first-boat-mode.mjs
-          node test/fish-bermuda-qa.mjs
+          node test/fish-catch-recovery.mjs
           node test/bermuda-activities-integration.mjs
       - name: World, loading and mobile readiness contracts
         run: |
