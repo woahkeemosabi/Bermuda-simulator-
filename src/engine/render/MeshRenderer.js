@@ -60,7 +60,7 @@ export class MeshRenderer {
 	_ensureDrawBuffer() {
 
 		if ( this.drawBuffer && this.drawData.byteLength >= this.capacity * DRAW_STRIDE ) return;
-		if ( this.drawBuffer ) this.drawBuffer.destroy();
+		if ( this.drawBuffer ) GPU.retire(this.drawBuffer);
 		this.drawBuffer = GPU.device.createBuffer( { label: 'draws', size: this.capacity * DRAW_STRIDE, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST } );
 		this.drawData = new Float32Array( this.capacity * DRAW_STRIDE / 4 );
 		this.drawLayout = getBindGroupLayout( [ { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: DRAW_FLOATS * 4 } } ], 'draw' );
@@ -132,8 +132,8 @@ export class MeshRenderer {
 			this.geometries.set( geometry, g );
 			if ( geometry.addEventListener ) geometry.addEventListener( 'dispose', () => {
 
-				for ( const b of g.buffers.values() ) b.buffer.destroy();
-				if ( g.index ) g.index.buffer.destroy();
+				for ( const b of g.buffers.values() ) GPU.retire(b.buffer);
+				if ( g.index ) GPU.retire(g.index.buffer);
 				this.geometries.delete( geometry );
 
 			} );
@@ -157,7 +157,7 @@ export class MeshRenderer {
 		const conv = convertArray( attr );
 		if ( ! b || b.size < conv.byteLength ) {
 
-			if ( b ) b.buffer.destroy();
+			if ( b ) GPU.retire(b.buffer);
 			b = { buffer: GPU.device.createBuffer( { label: attr.name || 'attribute', size: Math.max( 16, align4( conv.byteLength ) ), usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST } ), size: conv.byteLength, version: - 1 };
 			g.buffers.set( src, b );
 
@@ -197,7 +197,7 @@ export class MeshRenderer {
 		const arr = index.array instanceof Uint16Array || index.array instanceof Uint32Array ? index.array : new Uint32Array( index.array );
 		if ( ! g.index || g.index.size < arr.byteLength ) {
 
-			if ( g.index ) g.index.buffer.destroy();
+			if ( g.index ) GPU.retire(g.index.buffer);
 			g.index = { buffer: GPU.device.createBuffer( { label: 'index', size: Math.max( 16, align4( arr.byteLength ) ), usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST } ), size: arr.byteLength };
 			g.indexVersion = - 1;
 

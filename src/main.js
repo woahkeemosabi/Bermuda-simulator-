@@ -128,6 +128,15 @@ applyBermudaBranding( mobileDevice );
 const app = new App();
 applyBermudaBootLook( app );
 window.__ui = ui;
+window.__bermudaPerformanceReport=()=>({
+    source:import.meta.env.VITE_COMMIT_SHA||'development',userAgent:navigator.userAgent,
+    gate:window.__bermudaWorldGate,frames:window.__bermudaFrameMetrics?.(),
+    resolution:{width:app.engine?.width,height:app.engine?.height,scale:app.settings?.renderScale},
+    resources:GPU.resources,queue:{latencyMs:GPU.queueLatencyMs,peakInFlight:GPU.submissions?.peakInFlight},
+    limits:GPU.limits?{storageTextures:GPU.limits.maxStorageTexturesPerShaderStage}:null,
+    pipelineFailures:GPU.compiler?.failures.map(e=>e.message),deviceLoss:GPU.lostReason,
+    profileAvailable:GPU.hasTimestamp,profile:app.profiler?.result
+});
 
 app.init( ( p, text, until ) => {
   gpuStage('Loading: '+String(text||''));
@@ -199,7 +208,7 @@ app.init( ( p, text, until ) => {
 				'Preloading Bermuda graphics · '+(60-second)+'s', .95 );
 			gpuStage('60-second preload '+second+'/60');
 			app.frame(1/60);
-			await withDeadline(GPU.queue.onSubmittedWorkDone(),6000,'Preload GPU frame');
+			await withDeadline(GPU.whenIdle(),6000,'Preload GPU frame');
 			await new Promise(resolve=>setTimeout(resolve,1000));
 		}
 		window.__bermudaPreload = {seconds:60,frames:60,elapsed:Math.round(performance.now()-preloadStart)};
@@ -239,9 +248,11 @@ app.init( ( p, text, until ) => {
 	showWorldFailure( 'Something went wrong: ' + e.message );
 
 } );
-// deploy-marker: deferred-mobile-first-frame
+// Startup is complete only after the GPU world verification gate.
 
 function showWorldFailure(message){
+    app.engine?.stop();
+    GPU.abortFrame(new Error(message));
 	const L=document.getElementById('loader');
 	if(L){L.style.display='';L.classList.remove('tw-hidden');}
 	ui.setLoadingError(message);
@@ -251,7 +262,7 @@ function showWorldFailure(message){
 	if(copy){
 		copy.hidden=false;
 		copy.onclick=async()=>{
-			try{await navigator.clipboard.writeText(message+'\n'+gpuReport(app,mobileRetryLevel));
+			try{await navigator.clipboard.writeText(message+'\n'+gpuReport(app,mobileRetryLevel)+'\n'+JSON.stringify(window.__bermudaPerformanceReport(),null,2));
 				copy.textContent='Diagnostics copied';}
 			catch(e){copy.textContent='Screenshot diagnostics';}
 		};

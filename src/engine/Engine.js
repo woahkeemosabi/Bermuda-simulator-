@@ -1,6 +1,5 @@
 import { FramePacer, summarizeFrames } from '../mobile/FramePacing.js';
 import { GPU } from './gpu/GPU.js';
-import { gpuQueueAck, gpuQueueStall } from '../mobile/GpuAudit.js';
 import { PerspectiveCamera } from './scene/Camera.js';
 import { Scene } from './scene/Scene.js';
 import { Timer } from './math/Timer.js';
@@ -21,6 +20,8 @@ export class Engine {
 		// resolution while keeping the CSS/camera viewport unchanged for layout decisions.
 		this.renderScale = this.composeMode ? 0.8 : 1;
 		this.clock = new Timer();
+        this.clock.connect(document);
+        document.addEventListener('visibilitychange',()=>{this._visibilityReset=true;this.pacer?.reset();});
 		this.frame = 0;
 		this.pacer = new FramePacer(60);
 		this.frameIntervals = [];
@@ -128,16 +129,20 @@ export class Engine {
 
 		this.stop();
 		this.pacer.reset();
+		this.clock.reset();
 		let lastRendered = null;
 		const loop = ( t ) => {
 
 			// Schedule first so one thrown frame cannot kill the animation loop.
 			this._raf = requestAnimationFrame( loop );
+            if(this._visibilityReset){lastRendered=null;this._visibilityReset=false;}
 			if ( this.mobileGpuFramePacing ) {
-				// Never stack GPU submissions on an iPhone while its previous frame is still
-				// executing. The entire simulation remains active in each rendered frame.
+				// Never stack GPU submissions on an iPhone beyond two frames in flight. The entire simulation remains active in each rendered frame.
 				if (document.hidden) {lastRendered=null;this.pacer.reset();return;}
-				if ( this._gpuInFlight || !this.pacer.take(t) ) return;
+				if (!GPU.submissions.available || !this.pacer.take(t)) {
+                    try {GPU.submissions.checkHealth();}catch(e){this.stop();this.onFrameFailure?.(e,1);}
+                    return;
+                }
 			}
 
 			try {
@@ -151,37 +156,13 @@ export class Engine {
 				let dt = this.clock.getDelta();
 				if ( dt > 0.1 ) dt = 0.1;
 				this.frame ++;
+				this.lastFrameIntervalMs=lastRendered===null?null:t-lastRendered;
 				update( dt, this.clock.getElapsed() );
 				this.consecutiveFrameErrors = 0;
                 if(lastRendered!==null){this.frameIntervals.push(t-lastRendered);if(this.frameIntervals.length>3600)this.frameIntervals.shift();}
                 lastRendered=t;
                 window.__bermudaFrameMetrics=()=>summarizeFrames(this.frameIntervals);
-				if ( this.mobileGpuFramePacing ) {
-					this._gpuInFlight = true;
-					const flight = this._gpuFlight = ( this._gpuFlight || 0 ) + 1;
-					const submittedFrame = GPU.frame;
-					let watchdog;
-					GPU.queue.onSubmittedWorkDone().then( () => {
-						clearTimeout(watchdog);
-						gpuQueueAck(submittedFrame);
-						if ( flight === this._gpuFlight ) this._gpuInFlight = false;
-					}, ( error ) => {
-						clearTimeout(watchdog);
-						this._gpuInFlight = false;
-						gpuQueueStall(String(error?.message || error));
-						this.stop();
-						this.onFrameFailure?.( error, 1 );
-					} );
-					// A wedged WebKit GPU queue may never resolve or reject.
-					watchdog = setTimeout( () => {
-						if ( !document.hidden && this._gpuInFlight && flight === this._gpuFlight ) {
-							this._gpuInFlight = false;
-							gpuQueueStall('WebGPU frame did not complete after 4500ms');
-							this.stop();
-							this.onFrameFailure?.( new Error( 'WebGPU frame did not complete' ), 1 );
-						}
-					}, 4500 );
-				}
+
 				this._sampleBenchmark( t );
 
 			} catch ( e ) {
@@ -200,8 +181,7 @@ export class Engine {
 				// frame and normally clears it in GPU.submit(). If anything throws before submit,
 				// leaving that half-recorded encoder around poisons every following frame on Safari.
 				// Drop the incomplete frame and any readback hooks so the next RAF starts clean.
-				GPU.encoder = null;
-				GPU._submitHooks = [];
+				GPU.abortFrame(e);
 
 				const now = performance.now();
 				if ( ! this._lastFrameErrorLog || now - this._lastFrameErrorLog > 1000 ) {

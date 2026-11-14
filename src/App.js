@@ -1,3 +1,4 @@
+import { ResolutionBudget } from './mobile/ResolutionBudget.js';
 import { withDeadline } from './engine/gpu/PipelineCompiler.js';
 import { Vector3, Euler, Color, MathUtils, Mesh } from './engine/index.js';
 import { GPU } from './engine/gpu/GPU.js';
@@ -479,7 +480,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			for ( let i = 0; i < 2; i ++ ) {
 				if ( GPU.fatalError ) throw GPU.fatalError;
 				this.frame( 1 / 60 );
-				await GPU.queue.onSubmittedWorkDone();
+				await GPU.whenIdle();
 				gpuQueueAck(GPU.frame);
 				if ( GPU.fatalError ) throw GPU.fatalError;
 			}
@@ -513,7 +514,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
             } finally {mr.precompiling=false;this.refraction.enabled=refr;this.waterMaterial.hullOverride=null;this.waterMaterial.__pkFrame=-1;}
             await withDeadline(GPU.pipelinesReady(),120000,'Shader compilation');
             GPU.submit();
-            await withDeadline(GPU.queue.onSubmittedWorkDone(),6000,'Initial GPU uploads');
+            await withDeadline(GPU.whenIdle(),6000,'Initial GPU uploads');
             if(GPU.fatalError)throw GPU.fatalError;
             return;
         }
@@ -563,7 +564,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		mr.precompiling = false;
 		this.refraction.enabled = refr;
 		await GPU.pipelinesReady();
-		await GPU.queue.onSubmittedWorkDone();
+		await GPU.whenIdle();
 
 	}
 
@@ -728,7 +729,17 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 	start() {
 
-		this.engine.start( ( dt, t ) => this.frame( dt, t ) );
+		this.resolutionBudget=new ResolutionBudget();
+        this.engine.start( ( dt, t ) => {
+            const now=performance.now(),samples=this.engine.frameIntervals.slice(-120);
+            if(this.mobileLite&&!this.qs.has('fixedResolution')&&samples.length>=60&&now-(this._budgetAt||0)>=1000){
+                this._budgetAt=now;
+                const bytes=GPU.resources.textures.bytes+GPU.resources.buffers.bytes;
+                const scale=this.resolutionBudget.sample({now,frameMs:samples.reduce((a,b)=>a+b,0)/samples.length,bytes,scale:this.settings.renderScale,idle:GPU.submissions.pending.size===0});
+                if(scale!==this.settings.renderScale)this.setRenderScale(scale);
+            }
+            this.frame(dt,t);
+        } );
 		// The marine animal is retained in the full game and joins after mobile is interactive.
 		// Staggering its asset decode keeps unrelated beach shader compilation uninterrupted.
 		if ( this._deferredWhaleLoad ) {
@@ -781,7 +792,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		GPU.beginFrame();
 		FrameUniforms.fields.frameIndex.value = GPU.frame;
 		const s = this.settings;
-		this.updateFPS( dt );
+		this.updateFPS( (this.engine.lastFrameIntervalMs ?? dt*1000)/1000 );
 		G.dt.value = dt;
 		G.time.value += dt;
 		if ( s.timeSpeed !== 0 ) s.timeOfDay = ( s.timeOfDay + dt * s.timeSpeed + 24 ) % 24;

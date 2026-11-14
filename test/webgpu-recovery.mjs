@@ -36,3 +36,56 @@ test('constructor bake compiles once before async pump',async()=>{
  const compiler=new PipelineCompiler({createComputePipeline:()=>{sync++;return{};},createComputePipelineAsync:()=>{async++;return{};}});
  const h=compiler.request({label:'bake'},'compute');compiler.ready(h);await compiler.readyAll();await tick();assert.equal(sync,1);assert.equal(async,0);
 });
+
+test('aborting a frame releases readback reservations and retired resources once',async()=>{
+ const {GPU}=await import('../src/engine/gpu/GPU.js');
+ let destroys=0,aborts=0;
+ GPU.encoder={};GPU.retire({destroy(){destroys++;}});
+ GPU.onSubmit(null,()=>assert.fail('not submitted'),()=>aborts++);
+ assert.equal(destroys,0);GPU.abortFrame();GPU.abortFrame();
+ assert.equal(destroys,1);assert.equal(aborts,1);assert.equal(GPU.encoder,null);
+});
+test('retirement occurs after submit when earlier commands reference a resource',async()=>{
+ const {GPU}=await import('../src/engine/gpu/GPU.js');const events=[];
+ GPU.submissions={submit(){events.push('submit');}};GPU.encoder={finish(){return{};}};
+ GPU.retire({destroy(){events.push('destroy');}});GPU.submit();
+ assert.deepEqual(events,['submit','destroy']);
+});
+import {SubmissionManager,textureBytes,installLedger} from '../src/engine/gpu/ResourceBudget.js';
+import {ResolutionBudget} from '../src/mobile/ResolutionBudget.js';
+test('two submissions maximum, one acknowledgement per submission',async()=>{
+ const acks=[];let calls=0;
+ const m=new SubmissionManager({submit(){},onSubmittedWorkDone(){calls++;return new Promise(r=>acks.push(r));}},{maxInFlight:2});
+ m.submit([],1);m.submit([],2);assert.equal(m.available,false);assert.throws(()=>m.submit([],3),/capacity/);assert.equal(calls,2);
+ acks.forEach(r=>r());await m.done();assert.equal(m.pending.size,0);assert.equal(m.available,true);
+});
+test('device loss rejects waiters and recovery does not reuse a dead queue',async()=>{
+ const m=new SubmissionManager({submit(){},onSubmittedWorkDone(){return new Promise(()=>{});}});
+ const p=m.submit([],1);m.fail(new Error('device lost'));await assert.rejects(p,/device lost/);assert.throws(()=>m.submit([],2),/device lost/);
+});
+test('background time is excluded from queue watchdog',()=>{
+ let now=0;const m=new SubmissionManager({submit(){},onSubmittedWorkDone(){return new Promise(()=>{});}},{now:()=>now});
+ m.submit([],1);m.setHidden(true);now=100000;m.checkHealth();m.setHidden(false);m.checkHealth();now+=7000;assert.throws(()=>m.checkHealth(),/did not complete/);
+});
+test('memory estimates account for layers, mips and idempotent destruction',()=>{
+ assert.equal(textureBytes({size:[4,4,2],format:'rgba16float',mipLevelCount:3}),336);
+ const d={createBuffer(){return {destroy(){}};},createTexture(){return {destroy(){}};}},ledger=installLedger(d);
+ const b=d.createBuffer({size:128});assert.equal(ledger.buffers.bytes,128);b.destroy();b.destroy();assert.equal(ledger.buffers.bytes,0);assert.equal(ledger.buffers.destroyed,1);
+});
+test('dynamic resolution uses hysteresis and waits for an idle queue',()=>{
+ const b=new ResolutionBudget(),sample={now:0,frameMs:30,bytes:0,scale:1,idle:true};
+ assert.equal(b.sample(sample),1);assert.equal(b.sample(sample),1);assert.equal(b.sample(sample),.95);
+ assert.equal(b.sample({...sample,scale:.95,now:1000}),.95);assert.equal(b.sample({...sample,scale:.95,now:20000,idle:false}),.95);
+});
+import {verifyCompletedFrames} from '../src/mobile/WorldRenderGate.js';
+test('world readiness requires three consecutive valid completed frames',async()=>{
+ let calls=0;const status={};
+ await verifyCompletedFrames({prepare:async()=>{},frame:async()=>({valid:++calls!==2}),isReady:()=>true,status});
+ assert.equal(calls,5);assert.equal(status.status,'ready');assert.equal(status.completedFrames,3);
+});
+test('black or incomplete frames never declare the world ready',async()=>{
+ for(const valid of [true,false])await assert.rejects(verifyCompletedFrames({prepare:async()=>{},frame:async()=>({valid}),isReady:()=>false,maxFrames:3}),/three complete/);
+});
+test('GPU errors stop verification immediately without retries',async()=>{
+ let calls=0;await assert.rejects(verifyCompletedFrames({prepare:async()=>{},frame:async()=>{calls++;throw new Error('device lost');},isReady:()=>true}),/device lost/);assert.equal(calls,1);
+});

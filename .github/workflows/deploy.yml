@@ -31,6 +31,7 @@ jobs:
         run: |
           test -s public/ui/bermuda-loading.jpg
           test "$(wc -c < public/ui/bermuda-loading.jpg)" -gt 100000
+          node test/webgpu-recovery.mjs
           node test/game-logic.mjs
           node test/bermuda-full-fidelity.mjs
           node test/bermuda-loading-screen.mjs
@@ -42,6 +43,8 @@ jobs:
           node test/first-boat-mode.mjs
           node test/mobile-recovery-profile.mjs
       - name: Build canonical game
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
         run: |
           rm -rf dist
           npm run build

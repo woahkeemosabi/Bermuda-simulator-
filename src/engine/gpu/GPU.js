@@ -1,3 +1,4 @@
+import { SubmissionManager, installLedger } from './ResourceBudget.js';
 import { PipelineCompiler } from './PipelineCompiler.js';
 // The WebGPU device and the per-frame command encoder.
 //
@@ -9,7 +10,7 @@ import { PipelineCompiler } from './PipelineCompiler.js';
 // range written twice in one frame keeps only the last value for every pass. Anything that changes
 // between passes of a frame needs its own buffer (or its own offset).
 
-import { gpuStage, gpuCompute, gpuSubmit, gpuError, gpuDeviceDestroyObserved, gpuDestroyHookStatus } from '../../mobile/GpuAudit.js';
+import { gpuStage, gpuCompute, gpuSubmit, gpuError, gpuDeviceDestroyObserved, gpuDestroyHookStatus, gpuQueueAck, gpuQueueStall } from '../../mobile/GpuAudit.js';
 
 export const GPU = {
 
@@ -61,7 +62,7 @@ export const GPU = {
 		for ( const k in want ) if ( L[ k ] !== undefined ) limits[ k ] = Math.min( want[ k ], L[ k ] );
 
 		// GPU timestamp profiling is not a visual feature. Avoid its driver overhead on iOS.
-		const onPhone = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent );
+		const onPhone = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) && !new URLSearchParams(globalThis.location?.search||'').has('profile');
 		const optional = [ 'float32-filterable', ...( onPhone ? [] : [ 'timestamp-query' ] ),
 			'rg11b10ufloat-renderable', 'float32-blendable', 'shader-f16', 'clip-distances' ];
 		const requiredFeatures = optional.filter( ( f ) => adapter.features.has( f ) );
@@ -76,6 +77,14 @@ export const GPU = {
 		this.compiler = new PipelineCompiler(device, mobileAdapter ? 2 : 8);
 		this._pending = this.compiler.pending;
 		this.queue = device.queue;
+        this.resources=installLedger(device);
+        this.submissions=new SubmissionManager(this.queue,{maxInFlight:mobileAdapter?2:Infinity,
+            onComplete:({frame,latencyMs})=>{this.queueLatencyMs=latencyMs;gpuQueueAck(frame);},
+            onFailure:error=>{this.fatalError=error;gpuQueueStall(error.message);this.abortFrame(error);if(typeof window!=='undefined')window.__bermudaOnGPUFailure?.(error.message);}});
+        if(typeof document!=='undefined'){
+            const visibility=()=>this.submissions.setHidden(document.hidden);
+            document.addEventListener('visibilitychange',visibility);visibility();
+        }
 		this.limits = device.limits;
 		// WebGPU reports reason "destroyed" for explicit device.destroy() calls.
 		// Record a JS stack if our app or a dependency destroys the live device.
@@ -99,9 +108,11 @@ export const GPU = {
 		}
 		device.lost.then( ( info ) => {
 			this.lostReason = info.reason || 'unknown';
+			
 			gpuError('lost', info.message || '', this.lostReason);
 			this.fatalError = new Error('WebGPU device lost (' + this.lostReason + '): ' +
 				(info.message || 'Browser provided no device-loss details'));
+			this.submissions.fail(this.fatalError);
 			if ( typeof window !== 'undefined' ) {
 				window.__bermudaGpuLost = this.fatalError.message;
 				window.__bermudaOnGPUFailure?.( this.fatalError.message );
@@ -110,6 +121,7 @@ export const GPU = {
 		} );
 		device.addEventListener && device.addEventListener( 'uncapturederror', ( e ) => {
 			gpuError('uncaptured', e.error?.message || 'uncaptured GPU error');
+			this.submissions.fail(new Error('WebGPU validation: '+(e.error?.message||'uncaptured error')));
 			console.error('WebGPU:',e.error?.message);
 		} );
 
@@ -166,6 +178,7 @@ export const GPU = {
 		if ( ! this.encoder ) {
 			try {
 				this.encoder = this.device.createCommandEncoder();
+				this.profiler?.attach(this.encoder);
 			} catch ( error ) {
 				this.fatalError = new Error( 'WebGPU command encoder unavailable: ' + ( error?.message || error ) );
 				if ( typeof window !== 'undefined' )
@@ -179,23 +192,33 @@ export const GPU = {
 
 	// Submit everything recorded so far. Hooks run right after the submit (readback mapping).
 	submit() {
-
-		if ( ! this.encoder ) return;
-		const hooks = this._submitHooks;
-		this._submitHooks = [];
-		for ( const h of hooks ) if ( h.before ) h.before( this.encoder );
-		this.queue.submit( [ this.encoder.finish() ] );
-		gpuSubmit( this.frame );
-		this.encoder = null;
-		for ( const h of hooks ) if ( h.after ) h.after();
-
-	},
-
-	onSubmit( before, after ) {
-
-		this._submitHooks.push( { before, after } );
-
-	},
+        if(!this.encoder)return;
+        const hooks=this._submitHooks;this._submitHooks=[];
+        try {
+            for(const h of hooks)h.before?.(this.encoder);
+            this.submissions.submit([this.encoder.finish()],this.frame);this.encoder=null;
+            gpuSubmit(this.frame);
+            for(const h of hooks)h.after?.();
+        } catch(error) {
+            this.encoder=null;
+            for(const h of hooks)h.abort?.(error);
+            throw error;
+        } finally {this._drainRetired();}
+    },
+    whenIdle() {return this.submissions.done();},
+    onSubmit(before,after,abort) {this._submitHooks.push({before,after,abort});},
+    abortFrame(error=new Error('GPU frame abandoned')) {
+        this.encoder=null;
+        const hooks=this._submitHooks;this._submitHooks=[];
+        for(const h of hooks)h.abort?.(error);
+        this._drainRetired();
+    },
+    _retired: new Set(),
+    retire(resource) {
+        if(!resource)return;
+        if(this.encoder)this._retired.add(resource);else resource.destroy();
+    },
+    _drainRetired() {for(const r of this._retired)r.destroy();this._retired.clear();},
 
 	// ---- pipelines
 	// Pipelines compile asynchronously: the browser compiles them in parallel on worker threads, and a

@@ -1,0 +1,17 @@
+{
+  "environment": "Dawn / SwiftShader software Vulkan",
+  "storageLimit": 4,
+  "source": "candidate",
+  "frameMs": [
+    380.4471420000002,
+    260.78609300000016,
+    254.12381499999992,
+    284.008061,
+    289.0081949999999,
+    272.8041269999999,
+    267.97739,
+    320.95124899999973
+  ],
+  "errors": [],
+  "passed": true
+}

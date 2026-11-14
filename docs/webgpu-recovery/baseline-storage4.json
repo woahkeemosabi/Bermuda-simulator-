@@ -1,0 +1,11 @@
+{
+  "environment": "Dawn / SwiftShader software Vulkan",
+  "storageLimit": 4,
+  "source": "f756fe8",
+  "frameMs": [],
+  "errors": [
+    "The number of storage textures (5) in the Compute stage exceeds the maximum per-stage limit (4). This adapter supports a higher maxStorageTexturesPerShaderStage of 8, which can be specified in requiredLimits when calling requestDevice(). Limits differ by hardware, so always check the adapter limits prior to requesting a higher limit.\n - While validating binding counts\n - While validating [BindGroupLayoutDescriptor \"\"Ocean Mips A.g1\"\"]\n - While calling [Device].CreateBindGroupLayout([BindGroupLayoutDescriptor \"\"Ocean Mips A.g1\"\"]).\n"
+  ],
+  "passed": false,
+  "failure": "no overload matched for setPipeline:\nvalue is not object"
+}

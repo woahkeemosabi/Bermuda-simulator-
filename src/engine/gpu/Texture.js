@@ -147,7 +147,7 @@ export class Texture {
 
 			// commands recorded earlier this frame may still use it: free it after the submit
 			const old = this.gpu;
-			GPU.onSubmit( null, () => old.destroy() );
+			GPU.retire(old);
 			this.gpu = null;
 
 		}
@@ -191,7 +191,7 @@ export class Texture {
 
 	destroy() {
 
-		if ( this.gpu ) this.gpu.destroy();
+		if ( this.gpu ) GPU.retire(this.gpu);
 		this.gpu = null;
 		this.version ++;
 
@@ -311,7 +311,7 @@ export class StorageBuffer {
 
 	destroy() {
 
-		if ( this.gpu ) this.gpu.destroy();
+		if ( this.gpu ) GPU.retire(this.gpu);
 		this.gpu = null;
 
 	}
