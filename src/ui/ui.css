@@ -2687,10 +2687,3 @@ body {
 #bm-gpu-copy{display:block;margin:6px auto 0;padding:8px 15px;border-radius:18px;
  border:1px solid #85eafa;background:rgba(0,29,44,.87);color:#fff;pointer-events:auto}
 #loader.bm-new-loader.tw-error .loader-inner{max-height:73svh;overflow-y:auto}
-/* Production mobile: keep diagnostics off the playable screen and tighten loader type. */
-@media (max-width: 900px) {
-  #fps, #bm-build-verification, #bm-gpu-trace, #bm-gpu-copy { display: none !important; }
-  #loader.bm-new-loader .loader-row { font-size: 10px; letter-spacing: .06em; }
-  #loader.bm-new-loader .loader-meta { font-size: 9px; }
-  #loader.bm-new-loader .loader-panel { gap: 10px; }
-}

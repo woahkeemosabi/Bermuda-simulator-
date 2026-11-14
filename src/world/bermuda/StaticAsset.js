@@ -66,36 +66,9 @@ function floatAttribute( attribute ) {
 
 }
 
-// Downsample on CPU before GPU upload. This is optional and used only by the
-// combined Bermuda Simulator race QA. Other world assets are unchanged.
-export function downsampleRGBA8( source, limit ) {
-  if ( !limit || Math.max( source.width, source.height ) <= limit ) return source;
-  const width = Math.max( 1, Math.round( source.width * limit / Math.max( source.width, source.height ) ) );
-  const height = Math.max( 1, Math.round( source.height * limit / Math.max( source.width, source.height ) ) );
-  const data = new Uint8Array( width * height * 4 );
-  for ( let y = 0; y < height; y++ ) for ( let x = 0; x < width; x++ ) {
-    const sx = Math.min( source.width - 1, Math.floor( ( x + .5 ) * source.width / width ) );
-    const sy = Math.min( source.height - 1, Math.floor( ( y + .5 ) * source.height / height ) );
-    const si = ( sy * source.width + sx ) * 4, di = ( y * width + x ) * 4;
-    for ( let c = 0; c < 4; c++ ) data[ di + c ] = source.data[ si + c ];
-  }
-  return { data, width, height };
-}
-
-export async function loadStaticAsset( url, {
-  id, maxTriangles = 6000, maxTextureSize = 1024, maxGpuTextureSize = 0, generateGpuMipmaps = true,
-  maxMaterials = 4, ignoreAnimations = false,
-} ) {
+export async function loadStaticAsset( url, { id, maxTriangles = 6000, maxTextureSize = 1024 } ) {
 
 	const gltf = await loadGLB( url );
-  // The recovered Race the Sound GLB includes a 4-second demonstration
-  // animation, but the in-game rig is articulated by independent pivots.
-  // Discard that clip only for callers explicitly opting into static playback.
-  // Never silently discard skinning or animations from ordinary world assets.
-  if (ignoreAnimations && gltf.animations.length) {
-    if (gltf.skins.length) throw new Error(id + ': skinned assets require rigging.');
-    gltf.animations.length = 0;
-  }
 	const asset = staticGeometry( gltf );
 	const materials = new Map(), textures = new Map();
 	asset.id = id;
@@ -125,7 +98,7 @@ export async function loadStaticAsset( url, {
 				const source = gltf.materials[ part.materialIndex ] || {};
 				const pbr = source.pbrMetallicRoughness || {};
 				if ( source.alphaMode === 'BLEND' ) throw new Error( id + ': use opaque or alpha-cutout materials.' );
-				if ( materials.size >= maxMaterials ) throw new Error( id + ': material budget exceeded.' );
+				if ( materials.size >= 4 ) throw new Error( id + ': material budget exceeded.' );
 				let texture;
 				if ( pbr.baseColorTexture ) {
 
@@ -136,23 +109,17 @@ export async function loadStaticAsset( url, {
 
 						const image = gltf.images[ imageIndex ];
 						if ( ! image || ! image.bytes ) throw new Error( id + ': textures must be embedded.' );
-						const full = await decodeImage( image.bytes, image.mimeType );
-                        if ( Math.max( full.width, full.height ) > maxTextureSize ) throw new Error( id + ': texture budget exceeded.' );
-                        const px = downsampleRGBA8( full, maxGpuTextureSize );
-                        const map = new Texture( { label: id + '-base-color', width: px.width, height: px.height,
-                            format: 'rgba8unorm-srgb', data: px.data, mips: generateGpuMipmaps, sampler: 'linearRepeat' } );
+						const px = await decodeImage( image.bytes, image.mimeType );
+						if ( Math.max( px.width, px.height ) > maxTextureSize ) throw new Error( id + ': texture budget exceeded.' );
+						const map = new Texture( { label: id + '-base-color', width: px.width, height: px.height,
+							format: 'rgba8unorm-srgb', data: px.data, mips: true, sampler: 'linearRepeat' } );
 						textures.set( imageIndex, map );
 						map.getGPU();
 						// Upload and finish this asset before the interactive frame loop begins.
-                        // Safari WebGPU can destroy the device when successive
-                        // 1024px PBR uploads and mip dispatches overlap the FFT.
-                        // The racing QA opts out of compute-generated mips.
-                        if ( generateGpuMipmaps ) {
-                          const encoder = GPU.device.createCommandEncoder( { label: id + '-mips' } );
-                          generateMipmaps( map, encoder );
-                          GPU.queue.submit( [ encoder.finish() ] );
-                          await GPU.queue.onSubmittedWorkDone();
-                        }
+                        const encoder = GPU.device.createCommandEncoder( { label: id + '-mips' } );
+                        generateMipmaps( map, encoder );
+                        GPU.queue.submit( [ encoder.finish() ] );
+                        await GPU.queue.onSubmittedWorkDone();
 
 					}
 					texture = textures.get( imageIndex );

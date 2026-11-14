@@ -15,8 +15,8 @@ import { Guide } from './Guide.js';
 import { Lobsters } from './Lobsters.js';
 import { Spear } from './Spear.js';
 
-// Keep the caught fish visible briefly on the line before returning the rod to idle.
-const LANDING_SECONDS = 8.0;
+// how long the catch card stays up unless dismissed (ms)
+const CATCH_CARD_MS = 9000;
 
 // The fishing game on top of the world:
 //   R          take out / put away the rod (on foot, on the pier, on the boat's deck)
@@ -36,7 +36,7 @@ export class Game {
 		this.rod.onLand = ( where ) => this.onBobberLanded( where );
 		this.stand = new FishStand( { scene: app.scene, terrain: app.terrainData, colliders: app.colliders } );
 		this.display = new CatchDisplay( { scene: app.scene, stall: this.stand.iceFish() } );
-		this.landing = null; // { species, kg, info, notified } while the real fish swings in view
+		this.landing = null; // { species, kg } while the caught fish swings in view
 		this.chandlery = new Chandlery( { scene: app.scene, terrain: app.terrainData, colliders: app.colliders, material: this.stand.material } );
 		this.lobsters = new Lobsters( { scene: app.scene, terrain: app.terrainData, reef: app.reef } );
 		this.spear = new Spear( { scene: app.scene, camera: app.camera } );
@@ -153,6 +153,7 @@ export class Game {
 	update( dt ) {
 
 		const app = this.app, p = app.player, inp = app.input, rod = this.rod;
+		this._cardDismissed = false;
 		if ( ! this.hud && app.ui && app.ui.ui && typeof document !== 'undefined' && document.head ) {
 
 			const ui = app.ui.ui;
@@ -235,25 +236,48 @@ export class Game {
 		if ( this.fight ) this.updateFight( dt, lmb && ! panelOpen );
 
 		rod.update( dt, { visible: can, fight: this.fight } );
-		// Show the real, wet 3D catch coming out of the water and swinging on the rod.
-		// Do not switch to FishPortrait or cover gameplay with a full-screen reward card.
+		// the landed fish hangs on the end of the line, turned to face you, then goes in the cooler. With
+		// the HUD the catch card comes up once the fish has swung in, and the fish stays (slowly turning)
+		// until the card is dismissed (click, E, Esc) or times out.
 		const L = this.landing;
 		if ( L && rod.state === 'landing' && can ) {
 
 			const c = app.camera.position, m = rod.bobber;
-			// The fish faces the player and turns slightly as the line settles.
-			const yaw = Math.atan2( c.x - m.x, c.z - m.z ) + Math.sin( rod.t * 0.7 ) * 0.18;
-			this.display.show( L.species, L.kg, m, yaw, dt );
-			if ( ! L.notified && rod.t >= 0.45 && this.hud && L.info ) {
+			let yaw = Math.atan2( c.x - m.x, c.z - m.z );
+			if ( L.card ) {
 
-				L.notified = true;
-				// Reuse the existing small, non-blocking catch HUD from diving.
-				// GameState already records/stores/releases the fish at the moment it is caught.
-				this.hud.showDiveCatch( L.info, 'LANDED' );
+				if ( ! L.shown && rod.t > 0.3 ) {
+
+					L.shown = true;
+					this.hud.showCatch( L.card, CATCH_CARD_MS );
+
+				}
+
+				if ( L.shown ) {
+
+					// a slow turn so both flanks show
+					L.cardT += dt;
+					yaw += Math.sin( L.cardT * 0.7 ) * 0.55;
+					if ( lDown || inp.hit( 'KeyE' ) || inp.hit( 'Escape' ) || L.cardT > CATCH_CARD_MS / 1000 ) {
+
+						this._cardDismissed = true; // this frame's E / click belong to the card
+						this.endLanding();
+
+					}
+
+				}
 
 			}
 
-			if ( rod.t >= LANDING_SECONDS ) this.endLanding();
+			if ( this.landing ) {
+
+				// with the HUD the fish is shown on the full-screen catch card (studio portrait), not on
+				// the line; without it (headless) it hangs on the line for a moment
+				if ( ! L.card ) this.display.show( L.species, L.kg, m, yaw, dt );
+				else if ( this.display.shown ) this.display.hide();
+				if ( ! L.card && rod.t > 2.8 ) this.endLanding();
+
+			}
 
 		} else if ( this.landing || this.display.shown ) this.endLanding();
 
@@ -288,15 +312,6 @@ export class Game {
 		} );
 		if ( this.minimap ) this.minimap.update( dt );
 		if ( this.guide ) this.guide.update( dt );
-
-	}
-
-	endLanding() {
-
-		this.landing = null;
-		this.display.hide();
-		if ( this.hud && this.hud.catchOpen ) this.hud.hideCatch();
-		if ( this.rod.state === 'landing' ) this.rod.setState( 'idle' );
 
 	}
 
@@ -458,7 +473,7 @@ export class Game {
 		if ( p.mode === 'walk' ) for ( const v of this.vendors ) if ( v.inRange( p.position ) ) near = v;
 		for ( const v of this.vendors ) v.talking = !! ( hud && hud.standOpen && hud.vendor === v );
 		if ( hud && hud.standOpen && ( ! near || near !== hud.vendor ) ) hud.closeStand();
-		if ( ! near || this.fight || ( hud && hud.catchOpen ) ) return;
+		if ( ! near || this.fight || this._cardDismissed || ( hud && hud.catchOpen ) ) return;
 		if ( ! p.prompt ) p.prompt = { key: 'E', text: hud && hud.standOpen ? 'Leave' : `Talk to ${ near.name.split( ' ·' )[ 0 ] }` };
 		if ( inp.hit( 'KeyE' ) ) {
 
@@ -620,12 +635,13 @@ export class Game {
 			const info = this.state.lastCatch;
 			if ( au && au.fishSplash ) au.fishSplash( this.rod.bobber, 0.8 );
 			if ( au && au.fishFlop ) au.fishFlop();
-			// Restore the in-world fish landing animation without changing catch or inventory logic.
-			this.landing = { species: f.species, kg: f.kg, info, notified: false };
-			if ( ! this.hud ) {
+			// the catch card (with a HUD) while the fish hangs on the line; a toast otherwise
+			if ( this.hud ) this.landing = { species: f.species, kg: f.kg, card: info, cardT: 0 };
+			else {
 
-				if ( entry ) this.toast( `${ info.record ? 'New record! ' : '' }${ name } · ${ entry.kg.toFixed( 2 ) } kg · ${ entry.value }`, 3600 );
-				else this.toast( `${ name } · ${ f.kg.toFixed( 1 ) } kg · released`, 3600 );
+				if ( entry ) this.toast( `${ info.record ? 'New record! ' : '' }${ name } · ${ entry.kg.toFixed( 2 ) } kg · $${ entry.value }`, 3600 );
+				else this.toast( `${ name } · ${ f.kg.toFixed( 1 ) } kg · no room in the ${ this.state.upgrades.hold > 0 ? 'hold' : 'cooler' }, let it go`, 3600 );
+				this.landing = { species: f.species, kg: f.kg };
 
 			}
 
@@ -643,6 +659,16 @@ export class Game {
 			this.rod.endFight();
 
 		}
+
+	}
+
+	// the landed fish goes in the cooler: card, fish and line away
+	endLanding() {
+
+		this.landing = null;
+		this.display.hide();
+		if ( this.hud && this.hud.catchOpen ) this.hud.hideCatch();
+		if ( this.rod.state === 'landing' ) this.rod.setState( 'idle' );
 
 	}
 

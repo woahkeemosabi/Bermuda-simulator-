@@ -8,7 +8,7 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
-import { validateSpawn } from './mobile/WorldRenderGate.js';
+import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
 import { gpuStage, gpuReport } from './mobile/GpuAudit.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
@@ -20,17 +20,13 @@ const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
-// Production mobile default keeps the full FFT ocean and visual-effects pipeline enabled.
-// The old v5 isolation path is available only as an explicit diagnostic opt-in.
-const gpuTestMode = new URLSearchParams(location.search).get('gpuTest');
-const mobileLowGPU = mobileFastStart && ['legacy-low', 'minimal'].includes(gpuTestMode);
+// Low-GPU iPhone default: retain gameplay, freeze FFT ocean and remove expensive sky passes.
+const mobileLowGPU = mobileFastStart; // Full compute ocean is not safe on this mobile driver.
 window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
 window.__bermudaDisableSwashProbe = mobileLowGPU;
-// Match the tested coastal-seven world density: full island vegetation on mobile.
-window.__bermudaSparseVegetation = false;
-window.__bermudaCoastalProfile = mobileFastStart ? 'coastal-seven' : 'desktop';
-window.__bermudaBuildMarker = mobileLowGPU ? 'legacy-low-gpu-diagnostic' : 'full-effects-mobile-20261111';
+window.__bermudaSparseVegetation = mobileFastStart;
+window.__bermudaBuildMarker = 'webgpu-isolation-v5-20261023';
 const missionIsolation = new URLSearchParams(location.search).get('missions') === 'off';
 window.__bermudaMissionsDisabledForTest = missionIsolation;
 let mobileRetryLevel = 0;
@@ -40,39 +36,29 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-// The approved mobile reference uses native internal render scale; recovery/retry may lower it only after a GPU failure.
-window.__bermudaMobileOutputScale = mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 1.0));
+window.__bermudaMobileOutputScale = mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64));
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
-	for ( const key of [ 'gpuRecovery', 'gpuSafe', 'recoveryReason' ] ) clean.searchParams.delete( key );
+	for ( const key of [ 'gpuRecovery', 'gpuSafe', 'recoveryReason', 'noSim', 'G' ] ) clean.searchParams.delete( key );
 	if ( clean.href !== location.href ) history.replaceState( null, '', clean );
 }
 
 if ( mobileFastStart ) {
 
 	const url = new URL( location.href );
-	// Default to the user's approved coastal-seven visual reference on mobile.
-	// Explicit URL values remain authoritative so controlled A/B tests still work.
-	const referenceDefaults = {
-		cloudtest: 'panorama', envtest: 'skip', G: '12', scale: '1', graphics: '75',
-		qualityTest: 'crisp', perf: '60', resCap: '462', simBudget: 'balanced', cloudBudget: 'lattice'
-	};
-	for ( const [ key, value ] of Object.entries( referenceDefaults ) )
-		if ( ! url.searchParams.has( key ) ) url.searchParams.set( key, value );
-	if ( ! url.searchParams.has( 'noHaze' ) ) url.searchParams.set( 'noHaze', '1' );
 	// Render-resolution adaptation is allowed; deleting ocean, lighting and spray systems isn't.
 	// Mobile retains FFT swell, shoreline simulation, wave lips, spray, caustics, haze and clouds.
 	if (mobileRecovery) {
 		// Separate audio construction and costly GPU effects from iPhone gameplay.
 		for (const key of ['noClouds','noHaze','noCaustics','noSim','noVeg','noAudio'])
-			if (!url.searchParams.has(key)) url.searchParams.set(key,'1');
-		if (!url.searchParams.has('G')) url.searchParams.set('G','12');
-		if (!url.searchParams.has('scale')) url.searchParams.set('scale','0.70');
+			url.searchParams.set(key,'1');
+		url.searchParams.set('G','12');
+		url.searchParams.set('scale','0.70');
 	} else {
-		for ( const key of [ 'noClouds', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
-		if (!url.searchParams.has('G')) url.searchParams.set( 'G', '16' );
-		if (!url.searchParams.has('scale')) url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.60' : '0.70' );
+		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
+		url.searchParams.set( 'G', '16' );
+		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.60' : '0.70' );
 	}
 	if ( mobileLowGPU ) {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.set( key, '1' );
@@ -80,7 +66,7 @@ if ( mobileFastStart ) {
 		if (!['skip','full','instant','freeze'].includes(url.searchParams.get('envtest')))
 			url.searchParams.set( 'envtest', 'freeze' );
 		url.searchParams.set( 'freezeFFT', '1' );
-		if (!url.searchParams.has('scale')) url.searchParams.set( 'scale', '0.85' );
+		url.searchParams.set( 'scale', '0.85' );
 		url.searchParams.set( 'noSpray', '1' );
 		// Mobile vegetation isolation: disable procedural palm forest by default.
 		// ?veg=1 restores it for controlled A/B stability testing.
@@ -143,26 +129,17 @@ app.init( ( p, text, until ) => {
   ui.setLoading( p, text, until );
 } ).then( async () => {
 
-	// 60-second mobile preload: keep the branded loader visible while submitting
-	// one complete, real Bermuda frame per second and waiting for the GPU queue.
-	// This is a device-stability warm-up, not a cosmetic timer or idle delay.
-	if ( mobileFastStart && app.qs.has('preload') ) {
-		const preloadStart = performance.now();
-		for ( let second = 1; second <= 60; second++ ) {
-			if ( GPU.fatalError || window.__bermudaGpuLost ) {
-				throw new Error('GPU device lost during 60-second preload: '+(GPU.fatalError?.message || window.__bermudaGpuLost));
-			}
-			ui.setLoading( Math.min(.90, .36 + second/60*.54),
-				'Preloading Bermuda graphics · '+(60-second)+'s', .95 );
-			gpuStage('60-second preload '+second+'/60');
-			app.frame(1/60);
-			await GPU.queue.onSubmittedWorkDone();
-			await new Promise(resolve=>setTimeout(resolve,1000));
-		}
-		window.__bermudaPreload = {seconds:60,frames:60,elapsed:Math.round(performance.now()-preloadStart)};
-	}
-
 	if ( mobileFastStart ) applyMobileMemoryProfile( app );
+	if (mobileFastStart) {
+		const profile = app.vegetation ? (window.__bermudaSparseVegetation ? 'SPARSE' : 'FULL') : 'OFF';
+		window.__bermudaVegetationProfile = profile;
+		console.info('[Bermuda build]',window.__bermudaBuildMarker,'vegetation',profile,'palms',app.vegetation?.records?.palms?.length ?? 0);
+		const marker = document.createElement('div');
+		marker.id='bm-build-verification';
+		marker.textContent='BUILD '+window.__bermudaBuildMarker+' | MISSIONS '+(missionIsolation?'ISOLATED':'BASELINE')+' | GPU '+(new URLSearchParams(location.search).get('gpuTest')||'normal')+' | TREES '+profile+' | PALMS '+(app.vegetation?.records?.palms?.length ?? 0)+' | ATMO '+(app.atmosphere?.mobileMode||'unknown');
+		Object.assign(marker.style,{position:'fixed',top:'max(6px, env(safe-area-inset-top))',left:'6px',zIndex:'2147483647',background:'rgba(0,0,0,.8)',color:'#fff',font:'11px monospace',padding:'5px 7px',pointerEvents:'none'});
+		document.body.appendChild(marker);
+	}
 	if ( mobileFastStart && app.localLights ) app.localLights.strength = Math.max( Number( app.localLights.strength ) || 1, 1.35 );
 	applyBermudaRuntimeLook( app );
 	app.ui = new AppUI( app, ui );
@@ -209,13 +186,17 @@ app.init( ( p, text, until ) => {
 
 	} else if ( mobileDevice ) {
 
-		ui.setLoading( .97, 'Preparing the 3D world…', .995 );
-		gpuStage('Mobile world prepared; first frame deferred');
-		// Validate CPU-side spawn/world state here, but do not submit a GPU frame
-		// before the mobile runtime profile, branded UI and start controls are ready.
-		// The first complete scene render occurs in the normal gameplay loop after Start.
-		validateSpawn(app);
-		window.__bermudaWorldGate = {status:'first-frame-deferred',tries:0};
+		ui.setLoading( .97, 'Validating the 3D world…', .995 );
+		gpuStage('World verification');
+		if (mobileRecovery || app.qs.has('renderTest')) {
+			// Controlled render-pass diagnostics bypass HDR GPU readback verification.
+			// The standard production path still verifies real scene pixels.
+			validateSpawn(app);
+			window.__bermudaWorldGate = {status:app.qs.has('renderTest')?'render-test-no-readback':'recovery-no-readback',tries:0};
+		} else {
+			await verifyMobileWorld( app, attempt => ui.setLoading(
+				Math.min(.975+attempt*.003,.99), 'Rendering Bermuda world…', .995 ) );
+		}
 		ui.setLoading( 1, 'World ready' );
 		let started = false;
 		ui.showStartOverlay( () => {

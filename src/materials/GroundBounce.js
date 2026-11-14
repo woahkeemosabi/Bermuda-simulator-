@@ -56,7 +56,7 @@ const lin = ( r, g, b ) => {
 
 // terrain: the TerrainGPU (its module: terrainHeightAt, terrainNormalRockLevel, terrainSplatLevel,
 // terrainSunShadowAt); clouds: optional Clouds (its module: cloudsShadow)
-export function installGroundBounce( { terrain, clouds = null, oneTime = false } ) {
+export function installGroundBounce( { terrain, clouds = null } ) {
 
 	const make = ( name ) => new Texture( { label: name, width: N, height: N, format: 'rgba16float', usage: [ 'sample', 'storage' ] } );
 	const raw = make( 'groundBounceRaw' );
@@ -137,7 +137,7 @@ ${ taps }	textureStore( gbMapOut, vec2u( gid.xy ), sum );
 	terrain.updateSunShadow = ( renderer, force = false ) => {
 
 		const baked = orig( renderer, force );
-		if ( !done || ( baked && !oneTime ) ) bake( renderer );
+		if ( baked || ! done ) bake( renderer );
 		done = true;
 		return baked;
 

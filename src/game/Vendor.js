@@ -36,10 +36,7 @@ export class Vendor {
 		this.character = null;
 		this.talking = false;
 		this._near = false;
-		// Keep the lightweight stand-in at startup. Upload the animated GLB only when
-		// the player is close enough to actually see and interact with this vendor.
-		this._characterConfig = character;
-		this._characterLoading = false;
+		if ( character ) this.loadCharacter( character.url, character ).catch( ( e ) => console.warn( 'Vendor: character failed to load', e ) );
 
 	}
 
@@ -79,19 +76,6 @@ export class Vendor {
 	update( dt, lookAt = null ) {
 
 		this._t += dt;
-		if ( !this.character && this._characterConfig && !this._characterLoading && lookAt ) {
-
-			const dx = lookAt.x - this.position.x, dz = lookAt.z - this.position.z;
-			if ( dx * dx + dz * dz < 25 ) {
-
-				const config = this._characterConfig;
-				this._characterConfig = null;
-				this._characterLoading = true;
-				this.loadCharacter( config.url, config ).catch( ( e ) => console.warn( 'Vendor: character failed to load', e ) );
-
-			}
-
-		}
 		let want = 0;
 		if ( lookAt ) {
 
