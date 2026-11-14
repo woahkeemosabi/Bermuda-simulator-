@@ -173,7 +173,7 @@ export class App {
 		// reflection shader). The iPhone diagnostic can force the former 128px
 		// cubemap using ?envtest=full for a controlled comparison.
 		const envTest = qs.get( 'envtest' );
-		this.environment = new Environment( renderer, scene, this.sky, this.recoveryMode ? 32 : (mobileLite && envTest !== 'full' ? 64 : 128) );
+		this.environment = new Environment( renderer, scene, this.sky, this.recoveryMode ? 32 : (mobileLite && envTest !== 'full' ? 64 : 128), { deferBake: mobileLite && envTest === 'skip' } );
 		this.environment.disablePrime = mobileLite && envTest === 'skip';
 		// A/B test: do the full, original initial reflection bake, then hold that
 		// image-based lighting instead of periodically refreshing the cubemap.
@@ -516,6 +516,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
             GPU.submit();
             await withDeadline(GPU.whenIdle(),6000,'Initial GPU uploads');
             if(GPU.fatalError)throw GPU.fatalError;
+            await this.vegetation?.prepareGPU(step=>gpuStage('Vegetation atlas tile '+step));
             return;
         }
 		const mr = this.engine.meshRenderer;

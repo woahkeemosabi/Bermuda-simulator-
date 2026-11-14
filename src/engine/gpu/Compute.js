@@ -30,12 +30,14 @@ export class ComputeKernel {
 		this.source = c.code;
 		this.bindings = c.bindings;
 		this.group0 = c.group0;
-		const module = createShaderModule( c.code, label );
-		this.handle = GPU.computePipeline( {
+		this.handle = GPU.computePipeline( () => {
+            const module = createShaderModule( c.code, label );
+            return {
 			label,
 			layout: GPU.device.createPipelineLayout( { bindGroupLayouts: [ c.group0.layout, c.bindings.layout ] } ),
 			compute: { module, entryPoint },
-		} );
+		};
+        }, label );
 		this.timestampWrites = null; // set by the profiler
 
 	}

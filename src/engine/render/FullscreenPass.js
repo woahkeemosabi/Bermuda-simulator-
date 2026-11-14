@@ -42,7 +42,8 @@ export class FullscreenPass {
 		const c = composeShader( { modules: [ commonModule, ...modules ], bindings, code: VERTEX.replace( 'FS_DEPTH', depth.toFixed( 6 ) ) + main, defines, stage: 'render', label } );
 		this.source = c.code;
 		this.bindings = c.bindings;
-		const module = createShaderModule( c.code, label );
+		this.handle = GPU.renderPipeline( () => {
+        const module = createShaderModule( c.code, label );
 		const desc = {
 			label,
 			layout: GPU.device.createPipelineLayout( { bindGroupLayouts: [ c.group0.layout, c.bindings.layout ] } ),
@@ -55,7 +56,8 @@ export class FullscreenPass {
 			primitive: { topology: 'triangle-list' },
 		};
 		if ( depthFormat ) desc.depthStencil = { format: depthFormat, depthCompare, depthWriteEnabled: depthWrite };
-		this.handle = GPU.renderPipeline( desc );
+		return desc;
+        }, label );
 		this.timestampWrites = null;
 
 	}
@@ -76,7 +78,7 @@ export class FullscreenPass {
 	}
 
 	// colorViews: GPUTextureView[] (or Texture[]); clear: null (load) or [ r, g, b, a ]
-	render( { colorViews, clear = null, viewport = null, frameBlock = FrameUniforms, depthView = null, encoder = GPU.getEncoder() } = {} ) {
+	render( { colorViews, clear = null, viewport = null, scissor = null, frameBlock = FrameUniforms, depthView = null, encoder = GPU.getEncoder() } = {} ) {
 
 		const views = colorViews.map( ( v ) => v.isTexture ? v.view( { dimension: '2d', mipLevelCount: 1 } ) : v );
 		const desc = {
@@ -88,6 +90,7 @@ export class FullscreenPass {
 		gpuRender(desc.label);
 		const rp = encoder.beginRenderPass( desc );
 		if ( viewport ) rp.setViewport( ...viewport );
+        if (scissor) rp.setScissorRect(...scissor);
 		this.draw( rp, frameBlock );
 		rp.end();
 

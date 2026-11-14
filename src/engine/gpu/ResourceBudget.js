@@ -36,14 +36,18 @@ export function textureBytes(d){
   return bytes;
 }
 export function installLedger(device){
-  const stats={textures:{created:0,destroyed:0,live:0,bytes:0,peakBytes:0},buffers:{created:0,destroyed:0,live:0,bytes:0,peakBytes:0},incomplete:false};
+  const stats={textures:{created:0,destroyed:0,live:0,bytes:0,peakBytes:0},buffers:{created:0,destroyed:0,live:0,bytes:0,peakBytes:0},incomplete:false,byLabel:Object.create(null)};
   for(const [name,kind] of [['createTexture','textures'],['createBuffer','buffers']]){
     const native=device[name].bind(device);
     try{Object.defineProperty(device,name,{configurable:true,value(d){
       const r=native(d),s=stats[kind],bytes=kind==='buffers'?d.size:textureBytes(d);let destroyed=false;
       s.created++;s.live++;s.bytes+=bytes;s.peakBytes=Math.max(s.bytes,s.peakBytes);
+      const rawKey=kind+':'+String(d.label||'(unlabelled)').slice(0,100);
+      const key=stats.byLabel[rawKey]||Object.keys(stats.byLabel).length<256?rawKey:kind+':(other)';
+      const bucket=stats.byLabel[key]||(stats.byLabel[key]={bytes:0,live:0,peakBytes:0});
+      bucket.bytes+=bytes;bucket.live++;bucket.peakBytes=Math.max(bucket.peakBytes,bucket.bytes);
       const destroy=r.destroy.bind(r);
-      try{Object.defineProperty(r,'destroy',{configurable:true,value(){if(!destroyed){destroyed=true;s.destroyed++;s.live--;s.bytes-=bytes;}return destroy();}});}catch(_){stats.incomplete=true;}
+      try{Object.defineProperty(r,'destroy',{configurable:true,value(){if(!destroyed){destroyed=true;s.destroyed++;s.live--;s.bytes-=bytes;bucket.bytes-=bytes;bucket.live--;}return destroy();}});}catch(_){stats.incomplete=true;}
       return r;
     }});}catch(_){stats.incomplete=true;}
   }return stats;

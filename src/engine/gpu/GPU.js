@@ -228,19 +228,19 @@ export const GPU = {
 	_pending: new Set(),
 	syncCompiles: [], // labels of pipelines needed before their async compile finished (diagnostics)
 
-	renderPipeline( desc ) {
+	renderPipeline( desc, label ) {
 
-		return this._async( desc, 'render' );
-
-	},
-
-	computePipeline( desc ) {
-
-		return this._async( desc, 'compute' );
+		return this._async( desc, 'render', label );
 
 	},
 
-	_async( desc, kind ) { return this.compiler.request(desc,kind); },
+	computePipeline( desc, label ) {
+
+		return this._async( desc, 'compute', label );
+
+	},
+
+	_async( desc, kind, label ) { return this.compiler.request(desc,kind,label); },
 
 	ready( h ) {
 		if (!h.pipeline && h.state === 'queued') this.syncCompiles.push(h.label);

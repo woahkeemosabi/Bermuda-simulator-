@@ -1,0 +1,24 @@
+{
+  "source": "/tmp/Wake-Physics-split.wgsl",
+  "unrolled": false,
+  "characters": 30078,
+  "environment": "Dawn/SwiftShader",
+  "samples": [
+    {
+      "stage": "device ready",
+      "ms": 9.592628999999988,
+      "rss": 49692672
+    },
+    {
+      "stage": "module created",
+      "ms": 44.21486399999999,
+      "rss": 59387904
+    },
+    {
+      "stage": "pipeline complete",
+      "ms": 324.927302,
+      "rss": 117137408
+    }
+  ],
+  "passed": true
+}

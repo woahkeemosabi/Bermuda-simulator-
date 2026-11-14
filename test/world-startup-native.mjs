@@ -29,13 +29,41 @@ const {App}=await import('../src/App.js');const {GPU}=await import('../src/engin
 const {applyBermudaBootLook,applyBermudaRuntimeLook}=await import('../src/world/BermudaIdentity.js');
 const {verifyMobileWorld}=await import('../src/mobile/WorldRenderGate.js');
 const output=process.argv[2]||'/tmp/world-startup-native.json';
-const report={environment:'Native Dawn / SwiftShader; DOM stubs, not Safari/UI',stages:[],errors:[],passed:false};
-function checkpoint(stage){report.stages.push({stage,ms:performance.now()});writeFileSync(output,JSON.stringify(report,null,2));console.log(stage);}
+const timeoutMs=Number(process.env.NATIVE_FRAME_TIMEOUT_MS||6000);
+const report={source:process.env.SOURCE_SHA||'working-tree',environment:'Native Dawn / SwiftShader; DOM stubs, not Safari/UI',frameTimeoutMs:timeoutMs,productionDeadline:timeoutMs===6000,stages:[],frames:[],errors:[],passed:false};
+function checkpoint(stage){
+ report.stages.push({stage,ms:performance.now(),rss:process.memoryUsage().rss,resources:GPU.resources?{textures:{...GPU.resources.textures},buffers:{...GPU.resources.buffers},largest:Object.entries(GPU.resources.byLabel||{}).sort((a,b)=>b[1].bytes-a[1].bytes).slice(0,12)}:null,pending:GPU.compiler?.pending.size,active:GPU.compiler?.active});
+ if(report.stages.length>200)report.stages.shift();
+ writeFileSync(output,JSON.stringify(report,null,2));console.log(stage);
+}
+const nativeInit=GPU.init.bind(GPU);
+GPU.init=async(...args)=>{
+ const result=await nativeInit(...args);
+ report.shaderModules={count:0,totalCharacters:0,largest:[]};
+ const nativeShader=GPU.device.createShaderModule.bind(GPU.device);
+ GPU.device.createShaderModule=desc=>{
+  const stats=report.shaderModules;stats.count++;stats.totalCharacters+=desc.code.length;
+  stats.largest.push({label:desc.label,characters:desc.code.length});stats.largest.sort((a,b)=>b.characters-a.characters);stats.largest.length=Math.min(stats.largest.length,12);
+  checkpoint('shader module '+stats.count+': '+desc.label+' ('+desc.code.length+' chars)');
+  if(process.env.DUMP_WAKE&&desc.label.startsWith('Wake ')){writeFileSync('/tmp/'+desc.label.replaceAll(' ','-')+'.wgsl',desc.code);if(desc.label==='Wake Columns'){report.diagnosticOnly='Exported wake shader sources; no world validation attempted';checkpoint('wake shader export complete');process.exit(0);}}
+  return nativeShader(desc);
+ };
+ for(const method of ['createRenderPipelineAsync','createComputePipelineAsync']){
+  const native=GPU.device[method].bind(GPU.device);
+  GPU.device[method]=async desc=>{checkpoint('compile start: '+desc.label);const p=await native(desc);checkpoint('compile done: '+desc.label);return p;};
+ }
+ return result;
+};
+const heartbeat=setInterval(()=>{
+ checkpoint('heartbeat');
+ if(process.memoryUsage().rss>Number(process.env.RSS_LIMIT_MIB||1536)*1024*1024){report.failure='Diagnostic RSS budget exceeded; stopped before host exhaustion';checkpoint('diagnostic memory limit');process.exit(2);}
+},2000);
 try{
  const app=new App();applyBermudaBootLook(app);checkpoint('initializing');
  await app.init((p,label)=>checkpoint(label));
  GPU.device.addEventListener('uncapturederror',e=>report.errors.push(e.error.message));
  applyBermudaRuntimeLook(app);checkpoint('preparing pipelines');await app.precompile();checkpoint('verifying GPU frames');
- await verifyMobileWorld(app);report.gate=window.__bermudaWorldGate;report.resources=GPU.resources;report.passed=true;checkpoint('verified');
+ const submit=GPU.submit.bind(GPU);GPU.submit=(...args)=>{const start=performance.now(),frame=GPU.frame;const r=submit(...args);GPU.whenIdle().then(()=>{report.frames.push({frame,elapsedMs:performance.now()-start,draws:app.engine.meshRenderer.stats.draws});checkpoint('completed frame '+frame);},()=>{});return r;};
+ await verifyMobileWorld(app,attempt=>checkpoint('verifying frame '+(attempt+1)),{timeoutMs});report.gate=window.__bermudaWorldGate;report.resources=GPU.resources;report.passed=true;checkpoint('verified');
 }catch(e){report.failure=e.stack;checkpoint('failed');}
-writeFileSync(output,JSON.stringify(report,null,2));process.exit(report.passed?0:1);
+clearInterval(heartbeat);writeFileSync(output,JSON.stringify(report,null,2));process.exit(report.passed?0:1);

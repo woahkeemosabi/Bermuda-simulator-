@@ -1,0 +1,29 @@
+{
+  "source": "/tmp/Wake-Columns.wgsl",
+  "unrolled": false,
+  "characters": 25988,
+  "environment": "Dawn/SwiftShader",
+  "samples": [
+    {
+      "stage": "device ready",
+      "ms": 8.527552999999997,
+      "rss": 49664000
+    },
+    {
+      "stage": "module created",
+      "ms": 41.0895,
+      "rss": 58277888
+    },
+    {
+      "stage": "compiling",
+      "ms": 1008.8535149999999,
+      "rss": 337940480
+    },
+    {
+      "stage": "pipeline complete",
+      "ms": 1589.904761,
+      "rss": 237817856
+    }
+  ],
+  "passed": true
+}

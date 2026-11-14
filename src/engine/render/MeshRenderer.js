@@ -37,7 +37,10 @@ export class MeshRenderer {
 
 	constructor() {
 
-		this.pipelines = new Map();
+		this.pipelines = new Map(); // per-material bindings
+        this.programs = new Map(); // shared immutable native pipeline handles
+        this._layoutIds = new WeakMap();
+        this._nextLayoutId = 0;
 		this.geometries = new WeakMap();
 		this.capacity = 8192;
 		this.drawBuffer = null;
@@ -341,9 +344,9 @@ export class MeshRenderer {
 
 		const src = buildMeshShader( material, vl.layout, pass );
 		const c = composeShader( { modules: src.modules, bindings: src.bindings, code: src.code, defines: src.defines, stage: 'render', label: material.name } );
-		const module = createShaderModule( c.code, material.name );
+
 		this._ensureDrawBuffer();
-		const layout = GPU.device.createPipelineLayout( { bindGroupLayouts: [ c.group0.layout, c.bindings.layout, this.drawLayout ] } );
+		const layouts = [c.group0.layout,c.bindings.layout,this.drawLayout];
 
 		const blend = blendState( material.blending );
 		let targets = [];
@@ -366,11 +369,10 @@ export class MeshRenderer {
 		const depthCompare = material.depthTest ? ( material.depthCompare || pass.depthCompare ) : 'always';
 		const desc = {
 			label: material.name + ' ' + pass.kind,
-			layout,
-			vertex: { module, entryPoint: 'vs', buffers: vl.buffers.map( ( b ) => b.layout ) },
+			vertex: { entryPoint: 'vs', buffers: vl.buffers.map( ( b ) => b.layout ) },
 			primitive: { topology: material.topology, cullMode, frontFace: 'ccw' },
 		};
-		if ( src.hasFragment ) desc.fragment = { module, entryPoint: 'fs', targets };
+		if ( src.hasFragment ) desc.fragment = { entryPoint: 'fs', targets };
 		if ( pass.depthFormat ) desc.depthStencil = {
 			format: pass.depthFormat,
 			depthWriteEnabled: material.depthWrite,
@@ -378,8 +380,24 @@ export class MeshRenderer {
 			depthBias: pass.kind === 'depth' ? ( pass.depthBias || 0 ) : material.depthBias,
 			depthBiasSlopeScale: pass.kind === 'depth' ? ( pass.depthBiasSlopeScale || 0 ) : material.depthBiasSlopeScale,
 		};
-		// compiled in the background: the draw is skipped until it is ready (see GPU.renderPipeline)
-		const p = { handle: GPU.renderPipeline( desc ), bindings: c.bindings, label: desc.label };
+        // Material IDs select uniform buffers, not shader behavior. Normalize only
+        // this material's struct name; keep each BindingSet and all render state distinct.
+        const code=c.code.replace(new RegExp('\\b'+material.uniformBlock.structName+'\\b','g'),'BermudaMaterialParams');
+        const layoutKey=layouts.map(layout=>{
+            if(!this._layoutIds.has(layout))this._layoutIds.set(layout,this._nextLayoutId++);
+            return this._layoutIds.get(layout);
+        }).join('/');
+        const programKey=layoutKey+'|'+JSON.stringify({...desc,label:undefined})+'|'+code;
+        let handle=this.programs.get(programKey);
+        if(!handle){
+            handle=GPU.renderPipeline(()=>{
+                const module=createShaderModule(code,material.name);
+                const layout=GPU.device.createPipelineLayout({bindGroupLayouts:layouts});
+                return {...desc,layout,vertex:{...desc.vertex,module},...(desc.fragment?{fragment:{...desc.fragment,module}}:{})};
+            },desc.label);
+            this.programs.set(programKey,handle);
+        }
+        const p={handle,bindings:c.bindings,label:desc.label};
 		this.pipelines.set( key, p );
 		this.stats.pipelines = this.pipelines.size;
 		return p;
@@ -520,6 +538,7 @@ export class MeshRenderer {
 		gpuRender(desc.label);
 		const rp = enc.beginRenderPass( desc );
 		if ( pass.viewport ) rp.setViewport( ...pass.viewport );
+        if(pass.scissor)rp.setScissorRect(...pass.scissor);
 		rp.setBindGroup( 0, group0ForBlock( pass.frameBlock, 'render' ).getBindGroup() );
 		this.drawItems( rp, lists.opaque, pass );
 		if ( pass.betweenLists ) pass.betweenLists( rp );
@@ -560,10 +579,10 @@ export class MeshRenderer {
 			p = this._pipeline( material, vl, pass );
 			const pipeline = p.handle.pipeline || ( this.syncPipelines ? GPU.ready( p.handle ) : null );
 			if ( ! pipeline ) continue; // still compiling
-			if ( p !== lastPipeline ) {
+			if ( pipeline !== lastPipeline ) {
 
 				rp.setPipeline( pipeline );
-				lastPipeline = p;
+				lastPipeline = pipeline;
 
 			}
 

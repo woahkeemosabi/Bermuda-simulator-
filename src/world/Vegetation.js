@@ -1,3 +1,5 @@
+import { GPU } from '../engine/gpu/GPU.js';
+import { withDeadline } from '../engine/gpu/PipelineCompiler.js';
 import * as THREE from '../engine/index.js';
 import { G } from '../core/Globals.js';
 import { VegSite, scatterVegetation, buildGrassMask, RULES } from './vegetation/Scatter.js';
@@ -240,6 +242,25 @@ export class Vegetation {
 		this.timings.total = performance.now() - t0;
 
 	}
+
+    async prepareGPU(onProgress=()=>{}) {
+        if(this.atlas.baked)return;
+        const start=performance.now();
+        this.leafAtlas.prepare();this.atlas.prepare();
+        await withDeadline(GPU.pipelinesReady(),120000,'Vegetation shaders');
+        let index=0;
+        for(const [atlas,finish] of [[this.leafAtlas,()=>{this.leafAtlas.baked=true;}],[this.atlas,()=>this.atlas.finishBake()]]){
+            for(const step of atlas.bakeSteps()){
+                onProgress(++index);
+                GPU.beginFrame();step();GPU.submit();
+                await withDeadline(GPU.whenIdle(),6000,'Vegetation atlas tile');
+                if(GPU.fatalError)throw GPU.fatalError;
+                await new Promise(resolve=>setTimeout(resolve,0));
+            }
+            finish();
+        }
+        this.timings.bake=performance.now()-start;
+    }
 
 	update( dt, camera ) {
 

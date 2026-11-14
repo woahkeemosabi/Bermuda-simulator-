@@ -31,7 +31,7 @@ function decodeHalf(h){
  const v=e===0?m/16777216:e===31?0:(1+m/1024)*2**(e-15);
  return Math.max(0,Math.min(255,Math.round((h&32768?-1:1)*v*255)));
 }
-async function captureSceneFrame(app){
+async function captureSceneFrame(app,timeoutMs){
  if(GPU.fatalError)throw GPU.fatalError;
  const buffer=GPU.device.createBuffer({label:'bermuda-scene-samples',
   size:POINTS.length*256,usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
@@ -60,8 +60,8 @@ async function captureSceneFrame(app){
  result.catch(()=>{});
  try{
   app.frame(1/60);
-  const data=await withDeadline(result,6000,'GPU scene sample');
-  await withDeadline(GPU.whenIdle(),6000,'GPU queue did not finish startup frame');
+  const data=await withDeadline(result,timeoutMs,'GPU scene sample');
+  await withDeadline(GPU.whenIdle(),timeoutMs,'GPU queue did not finish startup frame');
   if(GPU.fatalError)throw GPU.fatalError;
   return data;
  } finally {
@@ -76,7 +76,7 @@ async function captureSceneFrame(app){
   buffer.destroy();
  }
 }
-export async function verifyMobileWorld(app,onProgress=()=>{}){
+export async function verifyMobileWorld(app,onProgress=()=>{},{timeoutMs=6000}={}){
  if(!app?.terrain?.mesh||!app.ocean||!app.post||!app.sceneRenderer?.sceneRT)
   throw new Error('Terrain, ocean or WebGPU render target missing.');
  validateSpawn(app);
@@ -89,8 +89,8 @@ export async function verifyMobileWorld(app,onProgress=()=>{}){
    if(GPU.fatalError)throw GPU.fatalError;
    GPU.device.pushErrorScope('validation');GPU.device.pushErrorScope('out-of-memory');
    let data,frameError;
-   try {data=await captureSceneFrame(app);} catch(e){frameError=e;}
-   const errors=await withDeadline(Promise.all([GPU.device.popErrorScope(),GPU.device.popErrorScope()]),6000,'GPU validation');
+   try {data=await captureSceneFrame(app,timeoutMs);} catch(e){frameError=e;}
+   const errors=await withDeadline(Promise.all([GPU.device.popErrorScope(),GPU.device.popErrorScope()]),timeoutMs,'GPU validation');
    if(frameError)throw frameError;
    const error=errors.find(Boolean);if(error)throw new Error(error.message);
    return data;

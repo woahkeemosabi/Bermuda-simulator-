@@ -134,7 +134,7 @@ window.__bermudaPerformanceReport=()=>({
     resolution:{width:app.engine?.width,height:app.engine?.height,scale:app.settings?.renderScale},
     resources:GPU.resources,queue:{latencyMs:GPU.queueLatencyMs,peakInFlight:GPU.submissions?.peakInFlight},
     limits:GPU.limits?{storageTextures:GPU.limits.maxStorageTexturesPerShaderStage}:null,
-    pipelineFailures:GPU.compiler?.failures.map(e=>e.message),deviceLoss:GPU.lostReason,
+    pipelines:GPU.compiler?.diagnostics(),pipelineFailures:GPU.compiler?.failures.map(e=>e.message),deviceLoss:GPU.lostReason,
     profileAvailable:GPU.hasTimestamp,profile:app.profiler?.result
 });
 

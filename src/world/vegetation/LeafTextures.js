@@ -91,7 +91,8 @@ fn vegLeafSample( st: vec2f, tile: f32 ) -> vec4f {
 	}
 
 	// renderer: unused (kept for the three.js signature); records into the frame encoder
-	bake() {
+	prepare() {
+        if(this.pass)return this.pass;
 
 		let body = '';
 		for ( let t = 0; t < 4; t ++ ) {
@@ -120,7 +121,7 @@ fn vegLeafSample( st: vec2f, tile: f32 ) -> vec4f {
 
 		}
 
-		const pass = new FullscreenPass( {
+		const pass = this.pass = new FullscreenPass( {
 			label: 'veg leaf atlas bake',
 			modules: [ vegModule ],
 			colorFormats: [ 'rgba8unorm' ],
@@ -139,11 +140,22 @@ ${ body }
 }
 `,
 		} );
-		pass.render( { colorViews: [ this.texture ], clear: [ 0, 0, 0, 0 ] } );
-		generateMipmaps( this.texture );
-		this.baked = true;
+        return pass;
+    }
 
-	}
+    *bakeSteps() {
+        const pass=this.prepare();
+        // Keep atlas size and supersampling. Only bound work in each submission.
+        for(let y=0;y<SIZE;y+=128){
+            yield ()=>pass.render({colorViews:[this.texture],clear:y===0?[0,0,0,0]:null,scissor:[0,y,SIZE,Math.min(128,SIZE-y)]});
+        }
+        yield ()=>generateMipmaps(this.texture);
+    }
+
+    bake() {
+        for(const step of this.bakeSteps())step();
+        this.baked=true;
+    }
 
 }
 

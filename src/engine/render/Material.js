@@ -65,6 +65,7 @@ export class Material {
 		this.shadow = o.shadow || '';
 		this.defines = { ...( o.defines || {} ) };
 		this.lit = o.lit !== false;
+        this.lightingHooks = o.lightingHooks !== false;
 		this.side = o.side || 'front';
 		this.transparent = !! o.transparent;
 		this.blending = o.blending || ( this.transparent ? 'normal' : 'none' );

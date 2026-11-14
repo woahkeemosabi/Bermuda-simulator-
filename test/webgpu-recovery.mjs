@@ -96,3 +96,11 @@ test('terminal startup failure cancels queued compilation without launching more
  compiler.cancel(new Error('startup failed'));await assert.rejects(compiler.readyAll(),/startup failed/);
  finish({});await tick();assert.equal(calls,1);assert.equal(first.pipeline,null);assert.throws(()=>compiler.request({},'compute'),/startup failed/);
 });
+test('shader module creation is deferred and shares the compiler concurrency bound',async()=>{
+ let modules=0;const releases=[];
+ const c=new PipelineCompiler({createComputePipelineAsync:()=>new Promise(r=>releases.push(r))},2);
+ for(let i=0;i<10;i++)c.request(()=>{modules++;return {label:String(i)};},'compute',String(i));
+ assert.equal(modules,0);await tick();assert.equal(modules,2);
+ while(c.pending.size){releases.splice(0).forEach(r=>r({}));await tick();}
+ assert.equal(modules,10);await c.readyAll();
+});

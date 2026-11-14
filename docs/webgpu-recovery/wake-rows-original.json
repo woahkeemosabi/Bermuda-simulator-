@@ -1,0 +1,140 @@
+{
+  "source": "/tmp/Wake-Rows.wgsl",
+  "unrolled": false,
+  "characters": 30645,
+  "environment": "Dawn/SwiftShader",
+  "samples": [
+    {
+      "stage": "device ready",
+      "ms": 9.040396000000001,
+      "rss": 49704960
+    },
+    {
+      "stage": "module created",
+      "ms": 41.71087100000001,
+      "rss": 59600896
+    },
+    {
+      "stage": "compiling",
+      "ms": 1037.5574410000002,
+      "rss": 267825152
+    },
+    {
+      "stage": "compiling",
+      "ms": 2021.3457070000002,
+      "rss": 345309184
+    },
+    {
+      "stage": "compiling",
+      "ms": 3021.323633,
+      "rss": 454963200
+    },
+    {
+      "stage": "compiling",
+      "ms": 4030.9941689999996,
+      "rss": 480915456
+    },
+    {
+      "stage": "compiling",
+      "ms": 5060.508599,
+      "rss": 625487872
+    },
+    {
+      "stage": "compiling",
+      "ms": 6068.285076,
+      "rss": 751263744
+    },
+    {
+      "stage": "compiling",
+      "ms": 7074.232384,
+      "rss": 751656960
+    },
+    {
+      "stage": "compiling",
+      "ms": 8081.938525999999,
+      "rss": 752181248
+    },
+    {
+      "stage": "compiling",
+      "ms": 9091.539187,
+      "rss": 752181248
+    },
+    {
+      "stage": "compiling",
+      "ms": 10101.702237000001,
+      "rss": 791703552
+    },
+    {
+      "stage": "compiling",
+      "ms": 11108.053573000001,
+      "rss": 907702272
+    },
+    {
+      "stage": "compiling",
+      "ms": 12107.319629000001,
+      "rss": 1049784320
+    },
+    {
+      "stage": "compiling",
+      "ms": 13107.321766000001,
+      "rss": 1189638144
+    },
+    {
+      "stage": "compiling",
+      "ms": 14119.361811,
+      "rss": 1292136448
+    },
+    {
+      "stage": "compiling",
+      "ms": 15147.526193000002,
+      "rss": 1292861440
+    },
+    {
+      "stage": "compiling",
+      "ms": 16147.335425000001,
+      "rss": 1293586432
+    },
+    {
+      "stage": "compiling",
+      "ms": 17147.319355,
+      "rss": 1352175616
+    },
+    {
+      "stage": "compiling",
+      "ms": 18147.330592000002,
+      "rss": 1491767296
+    },
+    {
+      "stage": "compiling",
+      "ms": 19161.131468,
+      "rss": 1645121536
+    },
+    {
+      "stage": "compiling",
+      "ms": 20177.220989,
+      "rss": 1791922176
+    },
+    {
+      "stage": "compiling",
+      "ms": 21186.698255,
+      "rss": 1944096768
+    },
+    {
+      "stage": "compiling",
+      "ms": 22198.708308,
+      "rss": 2096140288
+    },
+    {
+      "stage": "compiling",
+      "ms": 23205.509186,
+      "rss": 2252640256
+    },
+    {
+      "stage": "stopped",
+      "ms": 23205.987858,
+      "rss": 2252771328
+    }
+  ],
+  "passed": false,
+  "failure": "Diagnostic 2 GiB RSS limit"
+}

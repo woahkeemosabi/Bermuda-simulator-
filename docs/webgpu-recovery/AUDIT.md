@@ -16,6 +16,16 @@
 
 **The actual reported iPhone loss trigger is not established.** The four-storage-texture failure is reproduced with a real native WebGPU validation error, but the affected iPhone's adapter/device limits have not been captured. A `destroyed` loss reason without details is not proof of memory exhaustion, an explicit JavaScript destroy, or a WebKit defect. No driver claim is made.
 
+## Follow-up: reproduced wake shader compiler pressure
+
+Full-world tracing localized another failure to the original `Wake Rows` shader. This shader inlined per-cell wake physics inside a 256-wide FFT with workgroup barriers. The isolated native Dawn/SwiftShader compilation exceeded the diagnostic 2 GiB process-RSS limit after 23.2 seconds without producing a pipeline (`wake-rows-original.json`). The neighbouring column shader compiled in 1.59 seconds. The exact generated original row shader is retained in `test/fixtures/wake-rows-fused.wgsl`.
+
+The candidate separates per-cell physics from the row transform, using the existing spectral buffer. It changes no physics equations, grid size, FFT stages or ocean cascades and adds no persistent buffer. Isolated physics/row compilation completed in 0.325 / 0.459 seconds with 111.7 / 162.6 MiB process RSS. These are **software compiler measurements**, not Apple GPU memory or iPhone frame rates. The row transform also agrees with an independent CPU DFT within 0.000475 absolute error; 24 moving/turning boat frames produce finite data with no validation errors (`wake-split-regression.json`).
+
+Shader module creation now occurs inside the bounded compilation slots; previously modules were all created eagerly even while native pipeline requests were queued. Identical material programs share native pipelines while retaining independent uniform bindings: two differently coloured meshes use one program with exactly the same red/blue pixel outputs (`material-program-before.json`, `material-program-after.json`). The approved `envtest=skip` profile no longer compiles unused environment convolution programs; later activation still prepares them. One-off vegetation atlases are prepared in bounded submissions before the world gate, retaining atlas resolution and releasing bake-only depth/draw resources.
+
+Full-world preparation now completes, but the six-second first-frame gate still fails on this software renderer (`native-world-staged-atlas.json`). A separate 60-second-deadline diagnostic completed five world frames with zero validation errors and reached the gate: first queue completion 12.31 seconds, subsequent frames 2.72–3.02 seconds (`native-world-long-deadline.json`). This passes the functional readback gate only with a diagnostic timeout override; it does not pass the six-second production gate on this software device. Production deadlines have not been relaxed. **This evidence does not yet establish which failure caused the reported iPhone device loss.**
+
 ## Rendering and allocation audit
 
 | Pipeline area | Audited behavior | Candidate instrumentation / change | Device measurements |
@@ -39,7 +49,7 @@ The 256 MiB allocation budget is a conservative application policy, **not a meas
 
 ## Verification completed
 
-- 18 behavioural regression tests: timeout/error propagation, bounded compilation, no duplicate compilation, pacing, real interval statistics, queue capacity/loss/background watchdog, memory estimates, resource retirement, resolution hysteresis, consecutive-frame readiness and terminal errors.
+- 19 behavioural regression tests: timeout/error propagation, bounded compilation, no duplicate compilation, pacing, real interval statistics, queue capacity/loss/background watchdog, memory estimates, resource retirement, resolution hysteresis, consecutive-frame readiness and terminal errors.
 - Native Dawn/SwiftShader engine smoke: 12 draws, 7,386 triangles, eight pipelines.
 - Native FFT at four and eight storage-texture limits: all four cascades, finite texture data, representative mip levels; no candidate validation errors.
 - Native resource regression: every mip and all six cube faces at 32/64/128/256/512 resolutions; 100 texture lifetimes; aborted and successfully retried readback; zero validation errors.

@@ -1,0 +1,24 @@
+{
+  "source": "/tmp/Wake-Rows-split.wgsl",
+  "unrolled": false,
+  "characters": 30655,
+  "environment": "Dawn/SwiftShader",
+  "samples": [
+    {
+      "stage": "device ready",
+      "ms": 5.759432000000004,
+      "rss": 49463296
+    },
+    {
+      "stage": "module created",
+      "ms": 15.679845999999998,
+      "rss": 59305984
+    },
+    {
+      "stage": "pipeline complete",
+      "ms": 459.139624,
+      "rss": 170512384
+    }
+  ],
+  "passed": true
+}
