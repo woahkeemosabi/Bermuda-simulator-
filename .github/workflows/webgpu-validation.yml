@@ -9,6 +9,7 @@ permissions:
 jobs:
   source-and-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,10 +17,64 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: node test/webgpu-recovery.mjs
-      - run: node test/game-logic.mjs
-      - run: node test/mobile-render-gate.mjs && node test/mobile-recovery-profile.mjs
-      - run: node test/bermuda-full-fidelity.mjs && node test/bermuda-loading-screen.mjs
-      - run: npm run build
+      - name: WebGPU lifecycle, readiness, pacing and resource unit tests
+        run: node test/webgpu-recovery.mjs
+      - name: Gameplay, persistence and fishing protections
+        run: |
+          node test/game-logic.mjs
+          node test/first-boat-mode.mjs
+          node test/fish-bermuda-qa.mjs
+          node test/bermuda-activities-integration.mjs
+      - name: World, loading and mobile readiness contracts
+        run: |
+          node test/bermuda-layout.mjs
+          node test/mobile-render-gate.mjs
+          node test/mobile-recovery-profile.mjs
+          node test/bermuda-full-fidelity.mjs
+          node test/bermuda-loading-screen.mjs
+      - name: Build canonical game (no Pages deployment)
+        run: npm run build
         env:
           VITE_COMMIT_SHA: ${{ github.sha }}
+
+  # Hardware-independent GPU regressions exercise real Dawn pipelines through
+  # software Vulkan. Native GPU availability depends on the runner image.
+  # Diagnostic until the runner setup and baselines have been verified; never
+  # interpret this result as a physical iPhone Safari or 40 FPS pass.
+  native-gpu-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install software Vulkan driver
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libvulkan1 mesa-vulkan-drivers
+          ICD=$(find /usr/share/vulkan/icd.d /etc/vulkan/icd.d -type f -name 'lvp_icd*.json' 2>/dev/null | head -n 1)
+          test -n "$ICD" || { echo 'Software Vulkan ICD not found'; exit 1; }
+          echo "VK_ICD_FILENAMES=$ICD" >> "$GITHUB_ENV"
+          echo "Using software Vulkan ICD: $ICD"
+      - name: Native engine shader/draw smoke
+        run: timeout 240s node test/engine-smoke.mjs
+      - name: FFT all cascades on 4-storage-texture limit
+        env:
+          STORAGE_LIMIT: '4'
+        run: timeout 240s node test/fft-capability.mjs
+      - name: FFT all cascades on 8-storage-texture limit
+        env:
+          STORAGE_LIMIT: '8'
+        run: timeout 240s node test/fft-capability.mjs
+      - name: GPU mipmaps, resource lifetimes and readback recovery
+        run: timeout 240s node test/gpu-resource-native.mjs
+      - name: Shared native material pipeline retains per-material colours
+        env:
+          EXPECT_SHARED: '1'
+        run: timeout 240s node test/material-program-native.mjs
+      - name: Wake split vs CPU DFT and 24 moving boat frames
+        run: timeout 360s node test/wake-split-native.mjs
