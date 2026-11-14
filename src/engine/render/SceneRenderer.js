@@ -114,6 +114,21 @@ export class SceneRenderer {
 
 	}
 
+    prepareDepthPass() {
+		if ( ! this._depthHalfPass ) this._depthHalfPass = new FullscreenPass( {
+			label: 'opaque depth half', colorFormats: [ 'r16float' ],
+			bindings: { srcDepth: { texture: () => this.opaqueCopy.depthTexture } },
+			code: 'fn fragment( in: FSIn ) -> vec4f { return vec4f( textureLoad( srcDepth, vec2i( in.pos.xy ), 0 ), 0.0, 0.0, 1.0 ); }',
+		} );
+    }
+    preparePipelines() {
+        this.prepareDepthPass();
+        const mr=this.meshRenderer, common={camera:this.camera,colorFormats:this.sceneRT.formats,depthFormat:DEPTH_FORMAT,kind:'main'};
+        mr.render(this.scene,{...common,layerMask:1<<LAYERS.OPAQUE});
+        mr.render(this.scene,{...common,late:true,layerMask:(1<<LAYERS.WATER)|(1<<LAYERS.TRANSPARENT)});
+        mr.render(this.hullMaskScene,{kind:'color',camera:this.camera,colorFormats:this.hullMaskRT.formats,depthFormat:DEPTH_FORMAT,cull:false});
+    }
+
 	render() {
 
 		const { scene, camera, meshRenderer: mr } = this;
@@ -136,11 +151,7 @@ export class SceneRenderer {
 		const size = { width: rt.width, height: rt.height };
 		enc.copyTextureToTexture( { texture: rt.texture.getGPU() }, { texture: this.opaqueCopy.texture.getGPU() }, size );
 		enc.copyTextureToTexture( { texture: rt.depthTexture.getGPU() }, { texture: this.opaqueCopy.depthTexture.getGPU() }, size );
-		if ( ! this._depthHalfPass ) this._depthHalfPass = new FullscreenPass( {
-			label: 'opaque depth half', colorFormats: [ 'r16float' ],
-			bindings: { srcDepth: { texture: () => this.opaqueCopy.depthTexture } },
-			code: 'fn fragment( in: FSIn ) -> vec4f { return vec4f( textureLoad( srcDepth, vec2i( in.pos.xy ), 0 ), 0.0, 0.0, 1.0 ); }',
-		} );
+		this.prepareDepthPass();
 		this._depthHalfPass.render( { colorViews: [ this.opaqueDepthHalf.texture ], clear: [ 0, 0, 0, 0 ] } );
 
 		// 3. hull interiors

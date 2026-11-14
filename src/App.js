@@ -1,3 +1,4 @@
+import { withDeadline } from './engine/gpu/PipelineCompiler.js';
 import { Vector3, Euler, Color, MathUtils, Mesh } from './engine/index.js';
 import { GPU } from './engine/gpu/GPU.js';
 import { gpuStage, gpuQueueAck } from './mobile/GpuAudit.js';
@@ -466,7 +467,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// stage weights: in the browser the pipeline compile below takes far longer than everything before it
 		await progress( 0.36, 'Compiling shaders…', 0.95 );
 		gpuStage('Precompile shaders');
-		await this.precompile();
+		if (!mobileLite) await this.precompile();
 		gpuStage('Startup GPU warmup');
 		await progress( 0.96, 'Warming up…' );
 		// All simulation effects remain available. Prime on the loading screen, one GPU
@@ -492,6 +493,30 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 	// the hull mask are forced on so their variants are built too.
 	async precompile() {
 
+        if (this.mobileLite) {
+            if(!this.post._built){this.post._build();this.post._outW=0;}
+            if(!this.query.kernel)this.query._build();
+            if(!this.spray.updateKernel)this.spray._buildUpdate();
+            const mr=this.engine.meshRenderer;
+            this.oceanLOD.update(this.camera);this.terrain.update(this.camera);this.rocks.update(this.camera);
+            mr.precompiling=true;
+            const refr=this.refraction.enabled;
+            try {
+                this.post.beginFrame();
+                this.shadows.update(this.camera,G.sunDir.value);
+                this.shadows.render(this.scene,mr,this.shadows.cascades.map((_,i)=>i));
+                this.refraction.enabled=true;this.refraction.render(G.seaLevel.value);
+                for(const hull of [0,1]) {
+                    this.waterMaterial.hullOverride=hull;this.waterMaterial.__pkFrame=-1;
+                    this.sceneRenderer.preparePipelines();
+                }
+            } finally {mr.precompiling=false;this.refraction.enabled=refr;this.waterMaterial.hullOverride=null;this.waterMaterial.__pkFrame=-1;}
+            await withDeadline(GPU.pipelinesReady(),120000,'Shader compilation');
+            GPU.submit();
+            await withDeadline(GPU.queue.onSubmittedWorkDone(),6000,'Initial GPU uploads');
+            if(GPU.fatalError)throw GPU.fatalError;
+            return;
+        }
 		const mr = this.engine.meshRenderer;
 		const refr = this.refraction.enabled;
 		// compute / post pipelines were requested while the systems were built: let them finish first

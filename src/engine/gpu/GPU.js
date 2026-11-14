@@ -1,3 +1,4 @@
+import { PipelineCompiler } from './PipelineCompiler.js';
 // The WebGPU device and the per-frame command encoder.
 //
 // Everything GPU-side goes through this singleton: `GPU.device`, `GPU.queue`, the shared samplers
@@ -72,6 +73,8 @@ export const GPU = {
 		const device = await adapter.requestDevice( { requiredFeatures, requiredLimits: limits } );
 		gpuStage('WebGPU device acquired');
 		this.device = device;
+		this.compiler = new PipelineCompiler(device, mobileAdapter ? 2 : 8);
+		this._pending = this.compiler.pending;
 		this.queue = device.queue;
 		this.limits = device.limits;
 		// WebGPU reports reason "destroyed" for explicit device.destroy() calls.
@@ -214,57 +217,21 @@ export const GPU = {
 
 	},
 
-	_async( desc, kind ) {
+	_async( desc, kind ) { return this.compiler.request(desc,kind); },
 
-		const h = { pipeline: null, label: desc.label, desc, kind, failed: false };
-		// started after the current task: a kernel dispatched right after it was made (a one-off bake)
-		// compiles once, synchronously, instead of twice
-		const p = Promise.resolve().then( () => {
-
-			if ( h.pipeline ) return;
-			const create = kind === 'render' ? this.device.createRenderPipelineAsync : this.device.createComputePipelineAsync;
-			return create.call( this.device, desc ).then( ( pipeline ) => {
-
-				if ( ! h.pipeline ) h.pipeline = pipeline;
-				h.desc = null;
-
-			}, ( e ) => {
-
-				h.failed = true;
-				console.error( `WebGPU: pipeline "${ desc.label }" failed: ${ e.message.split( '\n' ).slice( 0, 6 ).join( '\n' ) }` );
-
-			} );
-
-		} ).finally( () => this._pending.delete( p ) );
-		this._pending.add( p );
-		return h;
-
-	},
-
-	// the pipeline now (synchronous compile when the async one has not finished)
 	ready( h ) {
-
-		if ( h.pipeline || h.failed ) return h.pipeline;
-		this.syncCompiles.push( h.label );
-		h.pipeline = h.kind === 'render' ? this.device.createRenderPipeline( h.desc ) : this.device.createComputePipeline( h.desc );
-		return h.pipeline;
-
+		if (!h.pipeline && h.state === 'queued') this.syncCompiles.push(h.label);
+		return this.compiler.ready(h);
 	},
 
-	// resolves when every pipeline requested so far has compiled
-	async pipelinesReady() {
-
-		while ( this._pending.size ) await Promise.all( [ ...this._pending ] );
-
-	},
+	async pipelinesReady() { await this.compiler.readyAll(); if(this.fatalError)throw this.fatalError; },
 
 	// A compute or render pass on the frame encoder.
 	computePass( label, fn, timestampWrites ) {
 
 		gpuCompute( label );
 		const pass = this.getEncoder().beginComputePass( { label, timestampWrites } );
-		fn( pass );
-		pass.end();
+		try { fn( pass ); } finally { pass.end(); }
 
 	},
 

@@ -1,9 +1,10 @@
+import { withDeadline } from '../engine/gpu/PipelineCompiler.js';
 import { GPU } from '../engine/gpu/GPU.js';
 import { assessFramePixels } from './FrameHealth.js';
 
 // Keep the original WebGPU effects and terrain. Inspect the HDR scene, not Safari's
 // presentation surface; never request a COPY_SRC swapchain or repeatedly retry dead devices.
-const POINTS=[[.24,.25],[.50,.25],[.76,.25],[.30,.57],[.70,.57],[.30,.80],[.70,.80]];
+const POINTS=[[.24,.25],[.50,.25],[.76,.25],[.24,.57],[.50,.57],[.76,.57],[.24,.80],[.50,.80],[.76,.80]];
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const message=e=>String(e?.message||e);
 
@@ -56,14 +57,12 @@ async function captureSceneFrame(app){
    }).catch(e=>{if(!settled){settled=true;reject(e);}});
   });
  });
+ result.catch(()=>{});
  try{
   app.frame(1/60);
-  const data=await Promise.race([result,sleep(6000).then(()=>{
-   throw new Error('GPU scene sample timed out');
-  })]);
-  await Promise.race([GPU.queue.onSubmittedWorkDone(),sleep(6000).then(()=>{
-   throw new Error('GPU queue did not finish startup frame');
-  })]);
+  const data=await withDeadline(result,6000,'GPU scene sample');
+  await withDeadline(GPU.queue.onSubmittedWorkDone(),6000,'GPU queue did not finish startup frame');
+  if(GPU.fatalError)throw GPU.fatalError;
   return data;
  } finally {
   settled=true;
@@ -82,35 +81,25 @@ export async function verifyMobileWorld(app,onProgress=()=>{}){
   throw new Error('Terrain, ocean or WebGPU render target missing.');
  validateSpawn(app);
  const status=window.__bermudaWorldGate={status:'checking',tries:0,last:null};
- // First visible frame also requests missing materials' asynchronous pipelines.
- // One submitted frame at a time: do NOT flood the iPhone driver with retries.
- for(let attempt=0;attempt<3;attempt++){
-  if(GPU.fatalError||window.__bermudaGpuLost)
-   throw GPU.fatalError||new Error(window.__bermudaGpuLost);
-  onProgress(attempt);
-  await Promise.race([GPU.pipelinesReady(),sleep(6000)]);
-  try{
-   const data=await captureSceneFrame(app);
+ let consecutive=0;
+ try {
+  for(let attempt=0;attempt<24;attempt++) {
+   if(GPU.fatalError)throw GPU.fatalError;
+   onProgress(attempt);
+   await withDeadline(GPU.pipelinesReady(),120000,'Shader compilation');
+   GPU.device.pushErrorScope('validation');GPU.device.pushErrorScope('out-of-memory');
+   let data,frameError;
+   try {data=await captureSceneFrame(app);} catch(e){frameError=e;}
+   const errors=await withDeadline(Promise.all([GPU.device.popErrorScope(),GPU.device.popErrorScope()]),6000,'GPU validation');
+   if(frameError)throw frameError;
+   const error=errors.find(Boolean);if(error)throw new Error(error.message);
    status.tries=attempt+1;status.last=data;
-   if(data.valid){status.status='ready';return data;}
-  }catch(e){
-   status.tries=attempt+1;
-   status.last={valid:false,reason:'gpu-error',error:message(e)};
-   // An encoder failure is a terminal loss of the GPU context, not a black-pixel
-   // condition. A new GPUDevice needs a page reload, not another command encoder.
-   if(GPU.fatalError||/command encoder|createCommandEncoder|device lost|out of memory|timed out|queue did not finish/i.test(message(e))){
-    status.status='gpu-lost';
-    throw e;
-   }
-   if(attempt===2)throw e;
+   const atmosphereReady=app.atmosphere.mobileMode!=='staged'||app.atmosphere.mobileInitStage>=3;
+   const ready=data.valid&&atmosphereReady&&app.atmosphere._svValid&&app.query.cpuValid&&GPU._pending.size===0&&app.engine.meshRenderer.stats.draws>0;
+   consecutive=ready?consecutive+1:0;
+   if(consecutive>=3){status.status='ready';status.completedFrames=consecutive;return data;}
+   await sleep(50);
   }
-  // Change only anti-aliasing/pixel scale, not spray, waves, fish, or lighting.
-  if(attempt===1){
-   app.post.aaMode='fxaa';
-   app.setRenderScale(Math.max(.60,app.settings.renderScale-.05));
-  }
-  await sleep(350);
- }
- status.status='black-scene';
- throw new Error('The Bermuda world is still black after GPU verification. Retry Loading.');
+  throw new Error('Bermuda world did not produce three complete GPU frames.');
+ } catch(e){status.status='failed';status.error=message(e);throw e;}
 }

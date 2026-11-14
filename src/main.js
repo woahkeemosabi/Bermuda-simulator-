@@ -1,3 +1,4 @@
+import { withDeadline } from './engine/gpu/PipelineCompiler.js';
 import './core/BenchSeed.js';
 import { App } from './App.js';
 import { GPU } from './engine/gpu/GPU.js';
@@ -8,7 +9,7 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
-import { validateSpawn } from './mobile/WorldRenderGate.js';
+import { verifyMobileWorld } from './mobile/WorldRenderGate.js';
 import { gpuStage, gpuReport } from './mobile/GpuAudit.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
@@ -95,16 +96,6 @@ if ( mobileFastStart ) {
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
-	App.prototype.precompile = async function() {
-
-		await Promise.race( [
-			GPU.pipelinesReady(),
-			new Promise( ( resolve ) => setTimeout( resolve, 6500 ) ),
-		] );
-		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;
-
-	};
-
 }
 
 // The previous early-return on App.frame silently skipped every warm-up frame.
@@ -143,24 +134,6 @@ app.init( ( p, text, until ) => {
   ui.setLoading( p, text, until );
 } ).then( async () => {
 
-	// 60-second mobile preload: keep the branded loader visible while submitting
-	// one complete, real Bermuda frame per second and waiting for the GPU queue.
-	// This is a device-stability warm-up, not a cosmetic timer or idle delay.
-	if ( mobileFastStart && app.qs.has('preload') ) {
-		const preloadStart = performance.now();
-		for ( let second = 1; second <= 60; second++ ) {
-			if ( GPU.fatalError || window.__bermudaGpuLost ) {
-				throw new Error('GPU device lost during 60-second preload: '+(GPU.fatalError?.message || window.__bermudaGpuLost));
-			}
-			ui.setLoading( Math.min(.90, .36 + second/60*.54),
-				'Preloading Bermuda graphics · '+(60-second)+'s', .95 );
-			gpuStage('60-second preload '+second+'/60');
-			app.frame(1/60);
-			await GPU.queue.onSubmittedWorkDone();
-			await new Promise(resolve=>setTimeout(resolve,1000));
-		}
-		window.__bermudaPreload = {seconds:60,frames:60,elapsed:Math.round(performance.now()-preloadStart)};
-	}
 
 	if ( mobileFastStart ) applyMobileMemoryProfile( app );
 	if ( mobileFastStart && app.localLights ) app.localLights.strength = Math.max( Number( app.localLights.strength ) || 1, 1.35 );
@@ -196,7 +169,7 @@ app.init( ( p, text, until ) => {
 		}
 
 	}
-	ui.setLoading( 1, 'Ready' );
+	if (!mobileDevice) ui.setLoading( 1, 'Ready' );
 
 	// frame-time benchmark and reference shots (see core/Bench.js): it drives the frames itself
 	if ( app.qs.has( 'bench' ) ) {
@@ -210,12 +183,27 @@ app.init( ( p, text, until ) => {
 	} else if ( mobileDevice ) {
 
 		ui.setLoading( .97, 'Preparing the 3D world…', .995 );
-		gpuStage('Mobile world prepared; first frame deferred');
-		// Validate CPU-side spawn/world state here, but do not submit a GPU frame
-		// before the mobile runtime profile, branded UI and start controls are ready.
-		// The first complete scene render occurs in the normal gameplay loop after Start.
-		validateSpawn(app);
-		window.__bermudaWorldGate = {status:'first-frame-deferred',tries:0};
+        gpuStage('Compiling final mobile world');
+        await app.precompile();
+        await verifyMobileWorld(app,attempt=>ui.setLoading(.97,'Verifying GPU frames · '+(attempt+1),.995));
+	// 60-second mobile preload: keep the branded loader visible while submitting
+	// one complete, real Bermuda frame per second and waiting for the GPU queue.
+	// This is a device-stability warm-up, not a cosmetic timer or idle delay.
+	if ( mobileFastStart && app.qs.has('preload') ) {
+		const preloadStart = performance.now();
+		for ( let second = 1; second <= 60; second++ ) {
+			if ( GPU.fatalError || window.__bermudaGpuLost ) {
+				throw new Error('GPU device lost during 60-second preload: '+(GPU.fatalError?.message || window.__bermudaGpuLost));
+			}
+			ui.setLoading( Math.min(.90, .36 + second/60*.54),
+				'Preloading Bermuda graphics · '+(60-second)+'s', .95 );
+			gpuStage('60-second preload '+second+'/60');
+			app.frame(1/60);
+			await withDeadline(GPU.queue.onSubmittedWorkDone(),6000,'Preload GPU frame');
+			await new Promise(resolve=>setTimeout(resolve,1000));
+		}
+		window.__bermudaPreload = {seconds:60,frames:60,elapsed:Math.round(performance.now()-preloadStart)};
+	}
 		ui.setLoading( 1, 'World ready' );
 		let started = false;
 		ui.showStartOverlay( () => {

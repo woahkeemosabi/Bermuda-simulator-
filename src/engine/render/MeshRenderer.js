@@ -496,6 +496,12 @@ export class MeshRenderer {
 		};
 		pass.passKey = `${ pass.kind }.${ pass.late ? 1 : 0 }.${ pass.colorFormats.join( ',' ) }.${ pass.depthFormat }.${ pass.depthCompare }.${ pass.cullOverride || '' }.${ pass.defines ? JSON.stringify( pass.defines ) : '' }`;
 		const lists = pass.items || this.collect( scene, pass );
+        if (this.precompiling) {
+            for (const {object,geometry,material} of [...lists.opaque,...lists.transparent]) {
+                this._pipeline(material,this._cachedLayout(object,geometry,material),pass);
+            }
+            return; // Pipeline discovery must not record draws or advance GPU simulations.
+        }
 		const enc = GPU.getEncoder();
 		const colorAttachments = ( pass.colorViews || [] ).map( ( view, i ) => {
 
