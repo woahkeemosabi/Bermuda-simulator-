@@ -46,5 +46,5 @@ for(let i=0;i<24;i++){
 }
 const state=new Float32Array(await readBuffer(wake.state,wake.state.byteLength));
 assert.ok(state.every(Number.isFinite));assert.ok(state.some(v=>Math.abs(v)>.001));assert.deepEqual(errors,[]);
-const report={environment:'Dawn/SwiftShader, mobile 256x256 wake; not iPhone',passed:true,compileMs,maxRowDFTError:maxError,movingBoatFrames:24,frameMs,errors,logicalResources:GPU.resources};
+const report={environment:'Dawn / software Vulkan ('+(process.env.VK_ICD_FILENAMES?.split('/').at(-1)||'ICD unspecified')+'), mobile 256x256 wake; not iPhone',passed:true,compileMs,maxRowDFTError:maxError,movingBoatFrames:24,frameMs,errors,logicalResources:GPU.resources};
 if(process.argv[2])writeFileSync(process.argv[2],JSON.stringify(report,null,2));console.log(JSON.stringify(report));process.exit(0);

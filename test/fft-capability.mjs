@@ -11,7 +11,7 @@ const limit=Number(process.env.STORAGE_LIMIT||4),errors=[];
 await GPU.init({headless:true,requiredLimits:{maxStorageTexturesPerShaderStage:limit}});
 GPU.device.addEventListener('uncapturederror',e=>errors.push(e.error.message));
 GPU.device.pushErrorScope('validation');
-const result={environment:'Dawn / SwiftShader software Vulkan',storageLimit:limit,source:process.env.SOURCE_SHA||'candidate',frameMs:[],errors};
+const result={environment:'Dawn / software Vulkan ('+(process.env.VK_ICD_FILENAMES?.split('/').at(-1)||'ICD unspecified')+')',storageLimit:limit,source:process.env.SOURCE_SHA||'candidate',frameMs:[],errors};
 try{
  const profiler=process.env.PROFILE?new Profiler(null,{enabled:true}):null;
  const fft=new OceanFFT(null);await GPU.pipelinesReady();

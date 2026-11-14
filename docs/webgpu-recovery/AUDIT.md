@@ -79,6 +79,16 @@ Still required before merge/deployment: successful full-world cold and repeated 
 
 There is **no production deployment deliverable yet**. Keeping this draft unmerged follows the requirement not to deploy a failing or unverified build.
 
+## CI continuation — 2026-11-14
+
+The WebGPU recovery PR now has two validation jobs: `source-and-build` and **required** `native-gpu-regressions` on Ubuntu 24.04 with Mesa Lavapipe software Vulkan. The native job initially passed all six groups on commit `d46f667`; at that checkpoint, the 4/8-storage-texture FFT runs returned zero validation errors, all cubemap mip/readback and 100-resource retirement checks passed, two independent material colours retained one native pipeline, and the split wake agreed with an independent DFT (maximum error 3.43e-7 across sampled rows) through 24 moving-boat frames. This verifies functional GPU components on the CI software adapter, **not** Safari performance. The job is now release-blocking if these tests regress.
+
+The source job also runs 19 WebGPU behaviour tests plus current-game fishing, first-boat, wallet/save, loading, world-profile and layout checks. A new `test/fish-catch-recovery.mjs` specifically tests that the **current canonical fish roster** resolves to 3D anatomy/skin, protected or undersized catches are released, sales credit the wallet, and landing motion remains finite and visibly active. This test passed on the recovery branch. It does not assert new fish species or unique silhouettes that have not shipped.
+
+Two older feature-specific tests were found to be out of sync with the canonical source and remain in the repository for reconciliation rather than being rewritten to conceal the mismatch: `test/fish-bermuda-qa.mjs` imports symbols not exported by `FishTable.js` and expects different roster data; `test/bermuda-activities-integration.mjs` asserts a `raceSound.offer()` source call not present in `Game.js`. Neither is used as a WebGPU recovery gate. Their failure does **not** prove the associated in-game feature is broken or working; both need feature-owner review. Interactive iPhone fishing, race NPC and boating remain release validation tasks.
+
+Native CI reports are now labelled with the actual software Vulkan ICD filename when available, avoiding the previous misleading SwiftShader-only label on Mesa runners. Passing native and JS CI remains **insufficient to merge or deploy**: repeated physical iPhone Safari startup, gameplay, memory/device-loss and 40 FPS measurements are still missing.
+
 ## Reproduction
 
 ```sh
