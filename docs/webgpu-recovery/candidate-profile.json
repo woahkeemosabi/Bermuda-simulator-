@@ -1,0 +1,63 @@
+{
+  "environment": "Dawn / SwiftShader software Vulkan",
+  "storageLimit": 8,
+  "source": "candidate",
+  "frameMs": [
+    592.3715749999997,
+    450.5702019999994,
+    398.62528399999974,
+    393.2829949999996,
+    510.49105300000065,
+    435.9752840000001,
+    520.3752559999994,
+    458.49541899999986
+  ],
+  "errors": [],
+  "profile": {
+    "frame": 31,
+    "spanMs": 551.354368,
+    "items": [
+      {
+        "name": "Ocean Init Spectrum",
+        "kind": "compute",
+        "ms": 22.478848
+      },
+      {
+        "name": "Ocean Conjugate",
+        "kind": "compute",
+        "ms": 5.505024
+      },
+      {
+        "name": "Ocean Copy H0",
+        "kind": "compute",
+        "ms": 3.538944
+      },
+      {
+        "name": "Ocean FFT",
+        "kind": "compute",
+        "ms": 519.831552
+      }
+    ],
+    "compute": 551.354368,
+    "render": 0,
+    "note": "Pass durations may overlap; sums are not total GPU time."
+  },
+  "resources": {
+    "textures": {
+      "created": 2,
+      "destroyed": 0,
+      "live": 2,
+      "bytes": 5592384,
+      "peakBytes": 5592384
+    },
+    "buffers": {
+      "created": 36,
+      "destroyed": 24,
+      "live": 12,
+      "bytes": 26231744,
+      "peakBytes": 26756032
+    },
+    "incomplete": false
+  },
+  "passed": true
+}

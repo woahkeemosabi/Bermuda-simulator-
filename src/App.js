@@ -475,7 +475,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// submission at a time; never let startup pretend success after a failed device.
 		// Do not render warm-up frames from inside App.init on mobile. The mobile
 		// runtime profile, world look and UI are applied by main.js after init resolves.
-		// The first real frame is deferred until the player starts the simulation.
+		// main.js verifies completed frames after applying the final runtime world look.
 		if ( ! mobileLite ) {
 			for ( let i = 0; i < 2; i ++ ) {
 				if ( GPU.fatalError ) throw GPU.fatalError;

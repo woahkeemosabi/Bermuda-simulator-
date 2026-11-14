@@ -100,7 +100,7 @@ if ( mobileFastStart ) {
 
 // The previous early-return on App.frame silently skipped every warm-up frame.
 // Shader variants were therefore all requested together on the first gameplay frame.
-// App.init now primes frames behind the loader after its mobile systems are allocated.
+// The final runtime look is applied before compile-only discovery and verified startup frames.
 
 function applyMobileMemoryProfile( app ) {
 	if ( ! mobileFastStart || ! app ) return;
@@ -253,6 +253,7 @@ app.init( ( p, text, until ) => {
 function showWorldFailure(message){
     app.engine?.stop();
     GPU.abortFrame(new Error(message));
+    GPU.compiler?.cancel(new Error(message));
 	const L=document.getElementById('loader');
 	if(L){L.style.display='';L.classList.remove('tw-hidden');}
 	ui.setLoadingError(message);

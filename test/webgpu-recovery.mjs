@@ -89,3 +89,10 @@ test('black or incomplete frames never declare the world ready',async()=>{
 test('GPU errors stop verification immediately without retries',async()=>{
  let calls=0;await assert.rejects(verifyCompletedFrames({prepare:async()=>{},frame:async()=>{calls++;throw new Error('device lost');},isReady:()=>true}),/device lost/);assert.equal(calls,1);
 });
+test('terminal startup failure cancels queued compilation without launching more work',async()=>{
+ let calls=0,finish;
+ const compiler=new PipelineCompiler({createComputePipelineAsync(){calls++;return new Promise(r=>finish=r);}},1);
+ const first=compiler.request({label:'first'},'compute');compiler.request({label:'queued'},'compute');await tick();
+ compiler.cancel(new Error('startup failed'));await assert.rejects(compiler.readyAll(),/startup failed/);
+ finish({});await tick();assert.equal(calls,1);assert.equal(first.pipeline,null);assert.throws(()=>compiler.request({},'compute'),/startup failed/);
+});

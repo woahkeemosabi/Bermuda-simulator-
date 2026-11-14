@@ -1,0 +1,61 @@
+{
+  "environment": "Native Dawn / SwiftShader; DOM stubs, not Safari/UI",
+  "stages": [
+    {
+      "stage": "initializing",
+      "ms": 602.422475
+    },
+    {
+      "stage": "Starting WebGPU\u2026",
+      "ms": 603.939404
+    },
+    {
+      "stage": "Building the atmosphere\u2026",
+      "ms": 617.613438
+    },
+    {
+      "stage": "Shaping the island\u2026",
+      "ms": 984.178322
+    },
+    {
+      "stage": "Building the village\u2026",
+      "ms": 3583.522144
+    },
+    {
+      "stage": "Planting the island\u2026",
+      "ms": 3587.217124
+    },
+    {
+      "stage": "Rolling in the swell\u2026",
+      "ms": 5166.719381
+    },
+    {
+      "stage": "Growing the reef\u2026",
+      "ms": 5900.58083
+    },
+    {
+      "stage": "Simulating the ocean\u2026",
+      "ms": 7691.997544
+    },
+    {
+      "stage": "Preparing the shaders\u2026",
+      "ms": 8512.273022
+    },
+    {
+      "stage": "Compiling shaders\u2026",
+      "ms": 8639.812015
+    },
+    {
+      "stage": "Warming up\u2026",
+      "ms": 8658.674935
+    },
+    {
+      "stage": "preparing pipelines",
+      "ms": 8666.166138
+    }
+  ],
+  "errors": [],
+  "passed": false,
+  "termination": "Host process killed, exit 137, during pipeline preparation. Cause not established; no completed full-world GPU frames.",
+  "iPhoneConclusion": "None: software Vulkan and DOM stubs do not reproduce Safari."
+}

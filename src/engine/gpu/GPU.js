@@ -80,7 +80,7 @@ export const GPU = {
         this.resources=installLedger(device);
         this.submissions=new SubmissionManager(this.queue,{maxInFlight:mobileAdapter?2:Infinity,
             onComplete:({frame,latencyMs})=>{this.queueLatencyMs=latencyMs;gpuQueueAck(frame);},
-            onFailure:error=>{this.fatalError=error;gpuQueueStall(error.message);this.abortFrame(error);if(typeof window!=='undefined')window.__bermudaOnGPUFailure?.(error.message);}});
+            onFailure:error=>{this.fatalError=error;this.compiler.cancel(error);gpuQueueStall(error.message);this.abortFrame(error);if(typeof window!=='undefined')window.__bermudaOnGPUFailure?.(error.message);}});
         if(typeof document!=='undefined'){
             const visibility=()=>this.submissions.setHidden(document.hidden);
             document.addEventListener('visibilitychange',visibility);visibility();
@@ -108,7 +108,7 @@ export const GPU = {
 		}
 		device.lost.then( ( info ) => {
 			this.lostReason = info.reason || 'unknown';
-			
+
 			gpuError('lost', info.message || '', this.lostReason);
 			this.fatalError = new Error('WebGPU device lost (' + this.lostReason + '): ' +
 				(info.message || 'Browser provided no device-loss details'));
@@ -224,7 +224,7 @@ export const GPU = {
 	// Pipelines compile asynchronously: the browser compiles them in parallel on worker threads, and a
 	// pipeline created synchronously would stall the GPU process (and with it the page) at first use.
 	// Handles are { pipeline, label }; `pipeline` is null until the compile finishes. Users that must
-	// run this frame (compute, post) call ready( handle ), which falls back to a synchronous create.
+	// run this frame call ready(handle); an already compiling handle must be awaited, never duplicated.
 	_pending: new Set(),
 	syncCompiles: [], // labels of pipelines needed before their async compile finished (diagnostics)
 

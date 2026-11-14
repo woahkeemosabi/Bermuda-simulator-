@@ -2,14 +2,20 @@
 export class PipelineCompiler {
  constructor(device, concurrency=2) { this.device=device;this.concurrency=concurrency;this.active=0;this.pending=new Set();this.queue=[];this.failures=[]; }
  request(desc,kind) {
+  if(this.cancelled)throw this.cancelled;
   const h={desc,kind,label:desc.label,pipeline:null,state:'queued',failed:false};
   h.promise=new Promise(resolve=>h.resolve=resolve);
   this.pending.add(h);this.queue.push(h);queueMicrotask(()=>this.pump());return h;
  }
  finish(h,pipeline,error) {
+  if(!this.pending.has(h))return;
   h.pipeline=pipeline;h.error=error;h.failed=!!error;h.state=error?'failed':'ready';h.desc=null;
   if(error)this.failures.push(error);
   this.pending.delete(h);h.resolve();
+ }
+ cancel(error) {
+  this.cancelled=error;this.queue=[];
+  for(const h of [...this.pending])this.finish(h,null,error);
  }
  pump() {
   while(this.active<this.concurrency&&this.queue.length) {
