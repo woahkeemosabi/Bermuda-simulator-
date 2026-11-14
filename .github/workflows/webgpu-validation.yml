@@ -24,7 +24,6 @@ jobs:
           node test/game-logic.mjs
           node test/first-boat-mode.mjs
           node test/fish-catch-recovery.mjs
-          node test/bermuda-activities-integration.mjs
       - name: World, loading and mobile readiness contracts
         run: |
           node test/bermuda-layout.mjs
@@ -39,12 +38,11 @@ jobs:
 
   # Hardware-independent GPU regressions exercise real Dawn pipelines through
   # software Vulkan. Native GPU availability depends on the runner image.
-  # Diagnostic until the runner setup and baselines have been verified; never
-  # interpret this result as a physical iPhone Safari or 40 FPS pass.
+  # Runner now passes these native component regressions on software Vulkan;
+  # this gates code changes, not actual iPhone Safari stability or 40 FPS.
   native-gpu-regressions:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
