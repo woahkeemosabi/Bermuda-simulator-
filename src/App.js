@@ -79,7 +79,7 @@ export class App {
 		this.settings = {
 			timeOfDay: 16.2,
 			sunAzimuth: 0, // degrees: turns the sun's daily path about the vertical
-			timeSpeed: 0.05, // hours per real second; T pauses/resumes the day
+			timeSpeed: 0.0005, // 30 real minutes per game hour; prevent daylight becoming midnight within minutes
 			weatherMode: 'clear',
 			weatherTimer: 0,
 			exposure: 0.55,
