@@ -23,7 +23,7 @@ const beachZoneAt = ( x, z ) => ( 1 - smoothstep( 120, 205, Math.abs( x - 10 ) )
 const RES = 2048; // 1 m texels over the 2048 m domain
 
 // volcanic plugs on the summit ridge: [x, z, radius, height above the envelope]
-const PLUGS = [ [ - 42, - 505, 72, 62 ], [ 152, - 466, 46, 38 ], [ - 238, - 458, 40, 26 ] ];
+const PLUGS = []; // Remove artificial volcanic peaks behind the playable harbour.
 const VILLAGE = WORLD.village.center;
 
 // CPU-side procedural island heightmap plus bilinear queries.
