@@ -5,24 +5,9 @@
 // to 2.2 * height + 40 m). Each polyline is the max of its segments; polylines are combined
 // with a p-norm so junctions and saddles round off naturally. The cross profile is concave
 // (sharp crest, flanks easing out toward the valley floors).
-export const RIDGES = [
-	// main east-west divide with the summit north of the bay
-	[ [ - 480, - 360, 40 ], [ - 380, - 410, 110 ], [ - 250, - 460, 150 ], [ - 120, - 495, 178 ], [ - 35, - 510, 215 ], [ 50, - 495, 176 ], [ 150, - 470, 168 ], [ 270, - 430, 124 ], [ 400, - 360, 60 ], [ 470, - 320, 25 ] ],
-	// west headland spur
-	[ [ - 250, - 460, 140 ], [ - 262, - 340, 100 ], [ - 272, - 200, 66 ], [ - 278, - 70, 48, 120 ], [ - 274, 60, 36, 100 ], [ - 264, 165, 20, 70 ] ],
-	// east headland spur
-	[ [ 150, - 470, 155 ], [ 240, - 340, 108 ], [ 284, - 190, 70 ], [ 294, - 50, 50, 125 ], [ 294, 80, 36, 105 ], [ 290, 190, 18, 70 ] ],
-	// central spur behind the village
-	[ [ - 35, - 505, 195 ], [ - 15, - 410, 138 ], [ 8, - 330, 80, 180 ], [ 22, - 275, 38, 110 ] ],
-	// minor spurs framing the valley
-	[ [ - 150, - 485, 160 ], [ - 135, - 370, 104 ], [ - 118, - 280, 44, 120 ] ],
-	[ [ 105, - 485, 162 ], [ 140, - 370, 110 ], [ 162, - 275, 42, 120 ] ],
-	// north spurs
-	[ [ - 110, - 500, 170 ], [ - 160, - 640, 110 ], [ - 200, - 770, 38 ] ],
-	[ [ 50, - 495, 168 ], [ 115, - 630, 112 ], [ 165, - 765, 38 ] ],
-	[ [ - 380, - 410, 100 ], [ - 440, - 560, 56 ] ],
-	[ [ 270, - 430, 115 ], [ 390, - 550, 52 ] ],
-];
+// Bermuda's playable harbour must not inherit the obsolete volcanic massif.
+// Retain the coastline, beaches, dunes, reefs and ground collision; omit the artificial ridge skeleton.
+export const RIDGES = []
 
 for ( const r of RIDGES ) for ( const p of r ) if ( p.length < 4 ) p.push( 2.5 * p[ 2 ] + 50 );
 
