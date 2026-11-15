@@ -1,16 +1,25 @@
-// High remains opt-in until the target iPhone has passed the driving/device-loss test.
+// Canonical mobile quality profile: preserve the approved coastal effects.
+// Recovery-only degradation must be explicitly requested, never forced on every iPhone.
 export function mobileQualityParameters(input, safeLevel = 0) {
     const p = new URLSearchParams(input);
-    const high = p.get('quality') === 'mobile-high' && safeLevel === 0;
-    p.set('noClouds','1');
-    p.set('noVeg','1'); // legacy island vegetation only; Meshy Bermuda gardens load separately
-    if (high) {
-        p.set('scale','0.85'); p.set('G','24');
-        p.delete('noHaze'); p.delete('noCaustics');
-        if(p.get('shoreSim') === '1') p.delete('noSim'); else p.set('noSim','1');
+    const recovery = p.get('recovery') === '1' || safeLevel >= 2;
+    p.set('G', recovery ? '12' : '12');
+    p.set('scale', recovery ? '0.72' : '0.85');
+    if (recovery) {
+        p.set('noClouds','1');
+        p.set('noHaze','1');
+        p.set('noCaustics','1');
+        p.set('noSim','1');
     } else {
-        p.set('noHaze','1'); p.set('noCaustics','1'); p.set('noSim','1');
-        p.set('scale',safeLevel >= 2 ? '0.72' : '0.82'); p.set('G','16');
+        p.delete('noClouds');
+        p.delete('noCaustics');
+        p.delete('noSim');
+        p.delete('noVeg');
+        p.delete('freezeFFT');
+        p.delete('noSpray');
+        p.set('noHaze','1');
+        p.set('cloudtest','panorama');
+        p.set('envtest','skip');
     }
     return p;
 }
