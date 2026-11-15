@@ -21,12 +21,12 @@ const mobileFastStart = mobileDevice && ! forceDesktop;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
 // Low-GPU iPhone default: retain gameplay, freeze FFT ocean and remove expensive sky passes.
-const mobileLowGPU = mobileFastStart; // Full compute ocean is not safe on this mobile driver.
+const mobileLowGPU = mobileRecovery; // Reduced GPU effects are explicit recovery-only, not production defaults.
 window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
 window.__bermudaDisableSwashProbe = mobileLowGPU;
-window.__bermudaSparseVegetation = mobileFastStart;
-window.__bermudaBuildMarker = 'webgpu-isolation-v5-20261023';
+window.__bermudaSparseVegetation = mobileRecovery;
+window.__bermudaBuildMarker = 'coastal-main-restored';
 const missionIsolation = new URLSearchParams(location.search).get('missions') === 'off';
 window.__bermudaMissionsDisabledForTest = missionIsolation;
 let mobileRetryLevel = 0;
@@ -36,7 +36,7 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = mobileLowGPU ? 0.85 : (mobileRecovery ? 0.56 : (mobileRetryLevel > 0 ? 0.54 : 0.64));
+window.__bermudaMobileOutputScale = mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.72 : 0.85);
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -57,8 +57,14 @@ if ( mobileFastStart ) {
 		url.searchParams.set('scale','0.70');
 	} else {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
-		url.searchParams.set( 'G', '16' );
-		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.60' : '0.70' );
+		url.searchParams.set( 'G', '12' );
+		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.72' : '0.85' );
+		url.searchParams.set( 'cloudtest', 'panorama' );
+		url.searchParams.set( 'envtest', 'skip' );
+		url.searchParams.set( 'noHaze', '1' ); // Approved coastal-seven configuration; retain clouds, FFT, caustics and shore simulation.
+		url.searchParams.delete( 'freezeFFT' );
+		url.searchParams.delete( 'noSpray' );
+		url.searchParams.delete( 'noVeg' );
 	}
 	if ( mobileLowGPU ) {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.set( key, '1' );
@@ -134,11 +140,13 @@ app.init( ( p, text, until ) => {
 		const profile = app.vegetation ? (window.__bermudaSparseVegetation ? 'SPARSE' : 'FULL') : 'OFF';
 		window.__bermudaVegetationProfile = profile;
 		console.info('[Bermuda build]',window.__bermudaBuildMarker,'vegetation',profile,'palms',app.vegetation?.records?.palms?.length ?? 0);
+		if (new URLSearchParams(location.search).has('debugBuild')) {
 		const marker = document.createElement('div');
 		marker.id='bm-build-verification';
 		marker.textContent='BUILD '+window.__bermudaBuildMarker+' | MISSIONS '+(missionIsolation?'ISOLATED':'BASELINE')+' | GPU '+(new URLSearchParams(location.search).get('gpuTest')||'normal')+' | TREES '+profile+' | PALMS '+(app.vegetation?.records?.palms?.length ?? 0)+' | ATMO '+(app.atmosphere?.mobileMode||'unknown');
 		Object.assign(marker.style,{position:'fixed',top:'max(6px, env(safe-area-inset-top))',left:'6px',zIndex:'2147483647',background:'rgba(0,0,0,.8)',color:'#fff',font:'11px monospace',padding:'5px 7px',pointerEvents:'none'});
 		document.body.appendChild(marker);
+		}
 	}
 	if ( mobileFastStart && app.localLights ) app.localLights.strength = Math.max( Number( app.localLights.strength ) || 1, 1.35 );
 	applyBermudaRuntimeLook( app );
