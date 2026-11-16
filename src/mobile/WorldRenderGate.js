@@ -77,6 +77,37 @@ async function captureSceneFrame(app){
   buffer.destroy();
  }
 }
+// Mobile startup verifies actual GPU submissions without HDR texture copies or mapAsync.
+// A successful queue completion is necessary but does not prove visually correct pixels.
+export async function verifyMobileWorldNoReadback(app,onProgress=()=>{}){
+ if(!app?.terrain?.mesh||!app.ocean||!app.post||!app.sceneRenderer?.sceneRT)
+  throw new Error('Terrain, ocean or WebGPU render target missing.');
+ validateSpawn(app);
+ const status=window.__bermudaWorldGate={status:'checking-gpu-frames',tries:0,last:null};
+ for(let i=0;i<3;i++){
+  if(GPU.fatalError||window.__bermudaGpuLost)
+   throw GPU.fatalError||new Error(window.__bermudaGpuLost);
+  onProgress(i);
+  // Never start another frame while the previous one remains in flight.
+  try{
+   app.frame(1/60);
+   await Promise.race([
+    GPU.queue.onSubmittedWorkDone(),
+    sleep(8000).then(()=>{throw new Error('GPU queue did not finish startup frame');})
+   ]);
+  }catch(e){
+   status.status='gpu-error';
+   status.last={frame:i+1,error:message(e)};
+   throw e;
+  }
+  status.tries=i+1;
+  status.last={frame:i+1,queueCompleted:true};
+  await sleep(100);
+ }
+ status.status='gpu-frames-ready';
+ return status.last;
+}
+
 export async function verifyMobileWorld(app,onProgress=()=>{}){
  if(!app?.terrain?.mesh||!app.ocean||!app.post||!app.sceneRenderer?.sceneRT)
   throw new Error('Terrain, ocean or WebGPU render target missing.');
