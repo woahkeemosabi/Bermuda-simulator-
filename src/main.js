@@ -8,7 +8,7 @@ import { applyBermudaBootLook, applyBermudaRuntimeLook } from './world/BermudaId
 import { applyBermudaBranding } from './mobile/BermudaMobileUX.js';
 import { installStableMobileControls } from './mobile/BermudaMobileStable.js';
 import { installMobileScreenshotHUD } from './mobile/MobileScreenshotHUD.js';
-import { verifyMobileWorld, validateSpawn } from './mobile/WorldRenderGate.js';
+import { verifyMobileWorldNoReadback, validateSpawn } from './mobile/WorldRenderGate.js';
 import { gpuStage, gpuReport } from './mobile/GpuAudit.js';
 
 // Keep every gameplay/visual effect enabled on mobile; adapt rendering resolution and compile scheduling.
@@ -202,8 +202,8 @@ app.init( ( p, text, until ) => {
 			validateSpawn(app);
 			window.__bermudaWorldGate = {status:app.qs.has('renderTest')?'render-test-no-readback':'recovery-no-readback',tries:0};
 		} else {
-			await verifyMobileWorld( app, attempt => ui.setLoading(
-				Math.min(.975+attempt*.003,.99), 'Rendering Bermuda world…', .995 ) );
+			await verifyMobileWorldNoReadback( app, attempt => ui.setLoading(
+				Math.min(.975+attempt*.003,.99), 'Verifying GPU frames…', .995 ) );
 		}
 		ui.setLoading( 1, 'World ready' );
 		let started = false;
