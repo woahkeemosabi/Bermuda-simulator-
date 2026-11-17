@@ -48,7 +48,10 @@ export function installUnderwaterLighting( { fft, caustics, clouds = null, terra
 	const T = !! terrain;
 	const S = !! ( shore && terrain );
 	const deps = [ commonModule, surfaceModule, fft.module, terrain && terrain.module, S && shore.module, shoreSim && shoreSim.module,
-		caustics && caustics.module, clouds && clouds.module, surface && surface.attenuationModule ];
+		// The bake does not sample clouds. Keep cloud sampling in hookDeps below only:
+		// inheriting its panorama/view/shadow bindings here exceeds the 16-sampled-texture
+		// limit on baseline WebGPU adapters and makes Underwater Light Map fail validation.
+		caustics && caustics.module, surface && surface.attenuationModule ];
 
 	const C3 = Math.min( 3, fft.cascades ), C2 = Math.min( 2, fft.cascades );
 
