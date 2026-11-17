@@ -728,6 +728,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 	}
 
 	updateFPS( dt ) {
+        dt = (this.engine.lastFrameIntervalMs ?? dt * 1000) / 1000;
 
 		const f = this._fps || ( this._fps = { el: document.getElementById( 'fps' ), acc: 0, n: 0, worst: 0 } );
 		f.acc += dt;
@@ -832,9 +833,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		}
 
-		// During mobile GPU warmup, reuse initialized effect textures instead of
-		// dispatching all costly coastal simulations on every consecutive frame.
-		// Never skip their initial update; distribute later refreshes across frames.
+		// Restore the historical steady coastal cadence; initialized textures persist.
 		const cadence = this.coastalCadence;
 		if ( this.caustics && (!cadence || cadence.allow('caustics',67)) ) {
 			this.caustics.update();

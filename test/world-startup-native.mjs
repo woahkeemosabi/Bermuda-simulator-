@@ -27,7 +27,7 @@ globalThis.fetch=async url=>{try{return new Response(readFileSync(asset(url)));}
 window.__bermudaMobileOutputScale=1;
 const {App}=await import('../src/App.js');const {GPU}=await import('../src/engine/gpu/GPU.js');
 const {applyBermudaBootLook,applyBermudaRuntimeLook}=await import('../src/world/BermudaIdentity.js');
-const {verifyMobileWorldNoReadback}=await import('../src/mobile/WorldRenderGate.js');
+const {verifyMobileWorldNoReadback,verifyMobileWorld}=await import('../src/mobile/WorldRenderGate.js');
 const output=process.argv[2]||'/tmp/world-startup-native.json';
 const timeoutMs=Number(process.env.NATIVE_FRAME_TIMEOUT_MS||8000);
 const report={frameTimeoutMs:timeoutMs,productionDeadline:timeoutMs===8000,source:process.env.SOURCE_SHA||'working-tree',environment:'Native Dawn / SwiftShader; DOM stubs, not Safari/UI',stages:[],frames:[],errors:[],passed:false};
@@ -64,6 +64,11 @@ try{
  GPU.device.addEventListener('uncapturederror',e=>report.errors.push(e.error.message));
  applyBermudaRuntimeLook(app);checkpoint('preparing pipelines');await app.precompile();checkpoint('verifying GPU frames');
  const submit=GPU.submit.bind(GPU);GPU.submit=(...args)=>{const start=performance.now(),frame=GPU.frame;const r=submit(...args);GPU.whenIdle().then(()=>{report.frames.push({frame,elapsedMs:performance.now()-start,draws:app.engine.meshRenderer.stats.draws});checkpoint('completed frame '+frame);},()=>{});return r;};
- await verifyMobileWorldNoReadback(app,attempt=>checkpoint('verifying frame '+(attempt+1)),{timeoutMs});report.gate=window.__bermudaWorldGate;report.resources=GPU.resources;report.passed=true;checkpoint('verified');
+ const verify=process.env.NATIVE_PIXEL_CHECK==='1'?verifyMobileWorld:verifyMobileWorldNoReadback;
+ report.pixelCheck=process.env.NATIVE_PIXEL_CHECK==='1';
+ await verify(app,attempt=>checkpoint('verifying frame '+(attempt+1)),{timeoutMs});
+ for(let i=0;i<Number(process.env.NATIVE_EXTRA_FRAMES||0);i++){app.frame(1/60);await GPU.whenIdle();if(GPU.fatalError)throw GPU.fatalError;}
+ if(report.errors.length)throw new Error(report.errors.join('\n'));
+ report.gate=window.__bermudaWorldGate;report.resources=GPU.resources;report.passed=true;checkpoint('verified');
 }catch(e){report.failure=e.stack;checkpoint('failed');}
 clearInterval(heartbeat);writeFileSync(output,JSON.stringify(report,null,2));process.exit(report.passed?0:1);

@@ -20,7 +20,7 @@ const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
-// Low-GPU iPhone default: retain gameplay, freeze FFT ocean and remove expensive sky passes.
+// Explicit recovery mode only; normal mobile keeps the coastal effects.
 const mobileLowGPU = mobileRecovery; // Reduced GPU effects are explicit recovery-only, not production defaults.
 window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
@@ -190,7 +190,7 @@ app.init( ( p, text, until ) => {
         await app.precompile();
 		if (mobileRecovery || app.qs.has('renderTest')) {
 			// Controlled render-pass diagnostics bypass HDR GPU readback verification.
-			// The standard production path still verifies real scene pixels.
+			// The standard production path verifies completed GPU frames without pixel readback.
 			validateSpawn(app);
 			window.__bermudaWorldGate = {status:app.qs.has('renderTest')?'render-test-no-readback':'recovery-no-readback',tries:0};
 		} else {
@@ -228,6 +228,8 @@ app.init( ( p, text, until ) => {
 
 } ).catch( ( e ) => {
 
+    GPU.compiler?.cancel(e);
+    GPU.abortFrame(e);
 	console.error( e );
 	showWorldFailure( 'Something went wrong: ' + e.message );
 

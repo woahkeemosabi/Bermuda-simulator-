@@ -76,3 +76,25 @@ jobs:
         run: timeout 240s node test/material-program-native.mjs
       - name: Wake split vs CPU DFT and 24 moving boat frames
         run: timeout 360s node test/wake-split-native.mjs
+
+  browser-startup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Fresh and cached mobile-browser startup, frames and loss handling
+        run: |
+          npm run dev > /tmp/vite.log 2>&1 &
+          for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:5189/ >/dev/null && break; sleep 1; done
+          node test/browser-recovery.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chromium-software-gpu-evidence
+          path: test-results/

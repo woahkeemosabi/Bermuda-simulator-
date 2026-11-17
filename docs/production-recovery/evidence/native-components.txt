@@ -1,0 +1,180 @@
+{
+  "environment": "Dawn / software Vulkan (vk_swiftshader_icd.json)",
+  "storageLimit": 4,
+  "source": "candidate",
+  "frameMs": [
+    388.85372800000005,
+    308.089191,
+    290.09066600000006,
+    265.849518,
+    353.0989709999999,
+    291.21715200000017,
+    331.16490899999917,
+    292.61563899999965
+  ],
+  "errors": [],
+  "resources": {
+    "textures": {
+      "created": 2,
+      "destroyed": 0,
+      "live": 2,
+      "bytes": 5592384,
+      "peakBytes": 5592384
+    },
+    "buffers": {
+      "created": 31,
+      "destroyed": 24,
+      "live": 7,
+      "bytes": 26215360,
+      "peakBytes": 26739648
+    },
+    "incomplete": false,
+    "byLabel": {
+      "buffers:frame": {
+        "bytes": 736,
+        "live": 1,
+        "peakBytes": 736
+      },
+      "buffers:fftH0": {
+        "bytes": 4194304,
+        "live": 1,
+        "peakBytes": 4194304
+      },
+      "buffers:fftWave": {
+        "bytes": 4194304,
+        "live": 1,
+        "peakBytes": 4194304
+      },
+      "buffers:ocean": {
+        "bytes": 224,
+        "live": 1,
+        "peakBytes": 224
+      },
+      "buffers:fftTmp": {
+        "bytes": 8388608,
+        "live": 1,
+        "peakBytes": 8388608
+      },
+      "buffers:fftFoam": {
+        "bytes": 1048576,
+        "live": 1,
+        "peakBytes": 1048576
+      },
+      "buffers:fftMipSrc": {
+        "bytes": 8388608,
+        "live": 1,
+        "peakBytes": 8388608
+      },
+      "textures:oceanDisplacement": {
+        "bytes": 2796192,
+        "live": 1,
+        "peakBytes": 2796192
+      },
+      "textures:oceanDerivatives": {
+        "bytes": 2796192,
+        "live": 1,
+        "peakBytes": 2796192
+      },
+      "buffers:(unlabelled)": {
+        "bytes": 0,
+        "live": 0,
+        "peakBytes": 524288
+      }
+    }
+  },
+  "passed": true
+}
+{
+  "environment": "Dawn / software Vulkan (vk_swiftshader_icd.json)",
+  "storageLimit": 8,
+  "source": "candidate",
+  "frameMs": [
+    454.6427099999996,
+    312.4678130000002,
+    356.496134,
+    377.3563220000001,
+    351.4109130000006,
+    369.77784099999917,
+    341.8890739999997,
+    352.32133200000044
+  ],
+  "errors": [],
+  "resources": {
+    "textures": {
+      "created": 2,
+      "destroyed": 0,
+      "live": 2,
+      "bytes": 5592384,
+      "peakBytes": 5592384
+    },
+    "buffers": {
+      "created": 32,
+      "destroyed": 24,
+      "live": 8,
+      "bytes": 26223552,
+      "peakBytes": 26747840
+    },
+    "incomplete": false,
+    "byLabel": {
+      "buffers:frame": {
+        "bytes": 736,
+        "live": 1,
+        "peakBytes": 736
+      },
+      "buffers:fftH0": {
+        "bytes": 4194304,
+        "live": 1,
+        "peakBytes": 4194304
+      },
+      "buffers:fftWave": {
+        "bytes": 4194304,
+        "live": 1,
+        "peakBytes": 4194304
+      },
+      "buffers:ocean": {
+        "bytes": 224,
+        "live": 1,
+        "peakBytes": 224
+      },
+      "buffers:fftTmp": {
+        "bytes": 8388608,
+        "live": 1,
+        "peakBytes": 8388608
+      },
+      "buffers:fftFoam": {
+        "bytes": 1048576,
+        "live": 1,
+        "peakBytes": 1048576
+      },
+      "buffers:fftMipSrc": {
+        "bytes": 8388608,
+        "live": 1,
+        "peakBytes": 8388608
+      },
+      "textures:oceanDisplacement": {
+        "bytes": 2796192,
+        "live": 1,
+        "peakBytes": 2796192
+      },
+      "textures:oceanDerivatives": {
+        "bytes": 2796192,
+        "live": 1,
+        "peakBytes": 2796192
+      },
+      "buffers:fftMipMid": {
+        "bytes": 8192,
+        "live": 1,
+        "peakBytes": 8192
+      },
+      "buffers:(unlabelled)": {
+        "bytes": 0,
+        "live": 0,
+        "peakBytes": 524288
+      }
+    }
+  },
+  "passed": true
+}
+Passed: all cube mips, 100 texture retirements, aborted/readmitted readback; zero validation errors
+{"materialInstances":2,"materialBindingSets":2,"nativePrograms":1,"left":[255,0,0],"right":[0,0,255],"errors":[]}
+{"environment":"Dawn / software Vulkan (vk_swiftshader_icd.json), mobile 256x256 wake; not iPhone","passed":true,"compileMs":1598.679134,"maxRowDFTError":0.0004743429112328279,"movingBoatFrames":24,"frameMs":[105.53430400000002,151.95858499999986,108.38176599999997,106.36007500000005,108.83113099999991,89.16326499999968,97.599874,117.51160200000004,98.55290700000023,101.01202599999988,115.51165600000013,125.62316800000008,97.0435980000002,99.16822299999967,84.32425899999998,106.45792299999994,102.54874500000005,99.82849600000009,121.55306999999993,104.37268799999993,91.09017300000005,93.48712100000012,96.40872399999989,97.72848799999974],"errors":[],"logicalResources":{"textures":{"created":5,"destroyed":0,"live":5,"bytes":1076680,"peakBytes":1076680},"buffers":{"created":11,"destroyed":3,"live":8,"bytes":3682176,"peakBytes":4730752},"incomplete":false,"byLabel":{"buffers:wakeState":{"bytes":1048576,"live":1,"peakBytes":1048576},"buffers:frame":{"bytes":736,"live":1,"peakBytes":736},"buffers:wakeScratch":{"bytes":1048576,"live":1,"peakBytes":1048576},"buffers:wakeSpectrum":{"bytes":1048576,"live":1,"peakBytes":1048576},"buffers:wakeAer":{"bytes":262144,"live":1,"peakBytes":262144},"buffers:wakeAerNext":{"bytes":262144,"live":1,"peakBytes":262144},"textures:wakeHull":{"bytes":5376,"live":1,"peakBytes":5376},"textures:wakePiles":{"bytes":200,"live":1,"peakBytes":200},"textures:wakeDisplay":{"bytes":524288,"live":1,"peakBytes":524288},"textures:wakeAeration":{"bytes":524288,"live":1,"peakBytes":524288},"buffers:wake kernel params":{"bytes":160,"live":1,"peakBytes":160},"buffers:(unlabelled)":{"bytes":0,"live":0,"peakBytes":1048576},"buffers:wakeNearMean":{"bytes":11264,"live":1,"peakBytes":11264},"textures:wakeNearField":{"bytes":22528,"live":1,"peakBytes":22528}}}}

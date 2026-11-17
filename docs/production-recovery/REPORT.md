@@ -45,3 +45,14 @@ The prior session recorded an eight-second full-world deadline failure despite s
 No physical iPhone is connected. Sustained40FPS, long-session Safari stability, visual approval, fresh/cached Safari entry, and real touch fishing/boating remain unverified. The no-readback production gate verifies completion, not image pixels.
 
 Pages run43955859895 succeeded at current main. Vercel's play.bermudasimulator.com also pointed to the same main SHA during inspection, with sign-in protection enabled. Protection is preserved. The review branch disables its Vercel preview; Pages publishes only main. No historical branches/assets are deleted.
+
+## Fresh results after workspace recovery
+
+- Candidate source tree `89872279e2f28e2c7d468e717a968ce4bab7f500` is preserved in commit `f5a5e9d8910f58c4eeff41fca6945a7f1f21836a`, draft PR97. GitHub run44103133249 passed both source/build and native GPU component jobs.
+- 18 lifecycle tests pass. Gameplay/fishing/boat/persistence logic passes; build passes.
+- FFT at both four/eight storage texture limits: eight frames each, zero validation errors. Cube mip/resource test:100 retirements plus aborted/retried readback pass. Shared material programs preserve red and blue pixels.
+- Wake:24 moving frames, independent CPU DFT max absolute error0.000474343, compilation1.599s, zero validation errors on local SwiftShader.
+- Full world, strict production eight-second frame deadline: **FAIL**, first frame deadline exceeded; no validation errors.
+- Full world with explicitly diagnostic60second deadline:18 completed frames; first13.251s, later2.136–3.470s. Readiness completes in88.178s. Logical textures408,898,746bytes, buffers65,723,036bytes; process RSS2,735,534,080bytes. Driver/compiler overhead means RSS is not GPU memory. This is far from a40FPS benchmark and is not a production pass.
+- Local browser automation is blocked by the environment's Unix socket restriction before Chrome starts. A real Chromium/SwiftShader CI job is added for fresh/cached startup,120 gameplay frames per run, a synthetic saved wallet and deliberate test-device loss. It is still not iPhone Safari.
+- Release remains held; strict deadline is not increased to conceal the failure.
