@@ -44,6 +44,10 @@ export const GPU = {
 
 		const L = adapter.limits;
 		const want = {
+			// The coastal world uses 13+ uniform buffers in a shader stage.
+			// Without requesting this optional higher limit, WebGPU grants the
+			// default of 12 even when the adapter supports more.
+			maxUniformBuffersPerShaderStage: 16,
 			maxSampledTexturesPerShaderStage: 32,
 			maxSamplersPerShaderStage: 16,
 			maxStorageBuffersPerShaderStage: 10,
