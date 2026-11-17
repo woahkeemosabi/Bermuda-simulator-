@@ -56,3 +56,9 @@ Pages run43955859895 succeeded at current main. Vercel's play.bermudasimulator.c
 - Full world with explicitly diagnostic60second deadline:18 completed frames; first13.251s, later2.136–3.470s. Readiness completes in88.178s. Logical textures408,898,746bytes, buffers65,723,036bytes; process RSS2,735,534,080bytes. Driver/compiler overhead means RSS is not GPU memory. This is far from a40FPS benchmark and is not a production pass.
 - Local browser automation is blocked by the environment's Unix socket restriction before Chrome starts. A real Chromium/SwiftShader CI job is added for fresh/cached startup,120 gameplay frames per run, a synthetic saved wallet and deliberate test-device loss. It is still not iPhone Safari.
 - Release remains held; strict deadline is not increased to conceal the failure.
+
+### Pixel and extended native check
+
+The diagnostic pixel run completed48 GPU frames in168.477seconds with zero validation errors. The readiness gate required18 frames and recorded three consecutive valid HDR samples (all nine bright, including all three lower-scene samples). Thirty additional frames completed after readiness. Texture allocation stayed at408,898,746bytes; buffer allocation returned from65,725,340bytes (sample staging buffer included) to65,723,036bytes. No sustained allocation growth appeared in that short run. It is **not** an extended real-time iPhone gameplay soak.
+
+All ten checks in the existing production workflow pass locally; see production-contracts.json. GitHub run44103725213 at code commit6c5befa58895de1f655b80e80532161dd04b107c passes source/build and native-GPU component jobs; browser job pending at this checkpoint. Vercel reports zero deployments for the review branch. Main's game rules, save schema, terrain/bermuda geometry and all public assets have zero diff.

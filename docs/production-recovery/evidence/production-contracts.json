@@ -1,0 +1,52 @@
+[
+  {
+    "test": "game-logic",
+    "exitCode": 0,
+    "output": "     sand: delay ~Infinity s; nothing\n     shallows: delay ~5.6 s; mullet 58%, needlefish 24%, silverside 11%, jack 7%, tarpon 0%\n     pier: delay ~4.0 s; grunt 23%, sergeant 22%, needlefish 10%, mullet 8%, jack 7%\n     reef: delay ~4.0 s; sergeant 13%, grunt 11%, laneSnapper 10%, tang 8%, parrot 8%\n     deep: delay ~5.2 s; redSnapper 28%, mahi 17%, tuna 10%, barracuda 9%, redHind 9%\nok   nothing bites on dry sand\nok   no bite delay on sand\nok   deep water gives offshore species only\nok   the reef gives mostly reef fish (91.2%)\nok   tarpon bite at night (241 vs 18 by day)\nok   bigger fish is worth more\n     grunt 0.8 kg, careful: caught after 16.6 s\n     grunt 0.8 kg, mash: caught after 13.3 s\n     grunt 0.8 kg, idle: escaped after 4.4 s\n     yellowtail 1.2 kg, careful: caught after 18.1 s\n     yellowtail 1.2 kg, mash: caught after 13.7 s\n     yellowtail 1.2 kg, idle: escaped after 8.6 s\n     jack 6 kg, careful: caught after 22.4 s\n     jack 6 kg, mash: snapped after 3.3 s\n     jack 6 kg, idle: escaped after 28.0 s\n     redSnapper 5 kg, careful: caught after 18.2 s\n     redSnapper 5 kg, mash: snapped after 2.8 s\n     redSnapper 5 kg, idle: escaped after 16.0 s\n     tuna 6 kg, careful: caught after 23.3 s\n     tuna 6 kg, mash: snapped after 2.3 s\n     tuna 6 kg, idle: escaped after 24.0 s\n     tuna 13 kg, careful: snapped after 4.2 s\n     tuna 13 kg, mash: snapped after 1.3 s\n     tuna 13 kg, idle: snapped after 3.1 s\n     tarpon 35 kg, careful: snapped after 2.7 s\n     tarpon 35 kg, mash: snapped after 1.1 s\n     tarpon 35 kg, idle: snapped after 2.1 s\nok   careful reeling lands small fish\nok   careful reeling lands a 6 kg jack on the starter line\nok   holding reel on a big fish snaps the line\nok   a 13 kg tuna needs the 30 lb line\nok   never reeling loses the fish\nok   a 35 kg tarpon beats the starter line\nok   the top line and reel land it\nok   new player starts dock-first with cash, basic fishing gear and the first-boat goal\nok   cooler holds 30 kg\nok   fish go into the cooler\nok   a fish too big for the hold is logged but not kept\nok   selling one fish adds its value to the wallet\nok   missions move from available to active to completed\nok   relationship reputation is persistent progression state\nok   save / load round trip\nok   ids keep counting after a load\nok   mission director accepts the dock-first boat goal\nok   mission director exposes current active objective\nok   mission director completes the first-boat goal\nok   first-boat completion applies its reputation rewards\nok   first-boat completion unlocks the post-purchase campaign\nok   every species has a scientific name and a plausible, increasing length (5\u2013200 cm)\nok   length-weight: a 10 kg mahi ~108 cm, a 0.84 kg grunt ~36 cm\nok   first of a species: new species, not a record, length stored\nok   a smaller one: no record, best unchanged\nok   a bigger one: new record, previous best reported, log updated\nok   a fish that does not fit: logged, card says released\nok   old saves migrate without losing fishing progress or restoring the removed starter bicycle\nok   blocked storage does not throw\nok   cannot spend more than you have\nok   gear stats\nok   buying the reel upgrade\nok   cannot buy what you cannot afford\nok   fuel burns and costs to refill\nok   refuel stops when the money runs out\nok   a new tank comes full\nok   fish finder: one level\nvalue check 22\nall passed\n"
+  },
+  {
+    "test": "bermuda-full-fidelity",
+    "exitCode": 0,
+    "output": "Full visual FX preserved; beach starts uncluttered; mobile crash guard installed.\n"
+  },
+  {
+    "test": "bermuda-loading-screen",
+    "exitCode": 0,
+    "output": "Bermuda loading and start screens use branded art.\n"
+  },
+  {
+    "test": "mobile-render-gate",
+    "exitCode": 0,
+    "output": "Bermuda mobile render gate: real pixels, retained ocean and spray\n"
+  },
+  {
+    "test": "mobile-postfx",
+    "exitCode": 0,
+    "output": "iOS compatibility post: one ACES presentation, full world simulation retained.\n"
+  },
+  {
+    "test": "mobile-gpu-audit",
+    "exitCode": 0,
+    "output": "Mobile GPU device-lifetime diagnostics ready\n"
+  },
+  {
+    "test": "mobile-cloud-isolation",
+    "exitCode": 0,
+    "output": "Controlled panorama-cloud A/B diagnostic: ocean and full baseline preserved.\n"
+  },
+  {
+    "test": "mobile-environment-isolation",
+    "exitCode": 0,
+    "output": "Reflection-refresh A/B test retains the initial full-quality environment and all ocean systems.\n"
+  },
+  {
+    "test": "first-boat-mode",
+    "exitCode": 0,
+    "output": "First boat only: no lost money, completed missions or saved history; purchase retained.\n"
+  },
+  {
+    "test": "mobile-recovery-profile",
+    "exitCode": 0,
+    "output": "Recovery profile: isolated audio, 2-cascade FFT, progressive 32px HDR, 128px bounce and real boat payment.\n"
+  }
+]
