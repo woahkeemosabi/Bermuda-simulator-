@@ -200,6 +200,16 @@ export const GPU = {
 	// Handles are { pipeline, label }; `pipeline` is null until the compile finishes. Users that must
 	// run this frame (compute, post) call ready( handle ), which falls back to a synchronous create.
 	_pending: new Set(),
+	_pipelineHandles: new Set(), // JS-only diagnostics; never allocates GPU memory
+	_pipelineFailures: [],
+	pipelineSnapshot() {
+		return {
+			pending: this._pending.size,
+			pendingLabels: [...this._pipelineHandles].slice(0,12).map(h=>h.label),
+			failed: this._pipelineFailures.slice(-8),
+			syncCompiles: this.syncCompiles.slice(-8)
+		};
+	},
 	syncCompiles: [], // labels of pipelines needed before their async compile finished (diagnostics)
 
 	renderPipeline( desc ) {
@@ -217,6 +227,7 @@ export const GPU = {
 	_async( desc, kind ) {
 
 		const h = { pipeline: null, label: desc.label, desc, kind, failed: false };
+		this._pipelineHandles.add(h);
 		// started after the current task: a kernel dispatched right after it was made (a one-off bake)
 		// compiles once, synchronously, instead of twice
 		const p = Promise.resolve().then( () => {
@@ -231,11 +242,16 @@ export const GPU = {
 			}, ( e ) => {
 
 				h.failed = true;
+				this._pipelineFailures.push(String(desc.label) + ': ' + String(e?.message || e).slice(0,180));
+				if (this._pipelineFailures.length > 32) this._pipelineFailures.shift();
 				console.error( `WebGPU: pipeline "${ desc.label }" failed: ${ e.message.split( '\n' ).slice( 0, 6 ).join( '\n' ) }` );
 
 			} );
 
-		} ).finally( () => this._pending.delete( p ) );
+		} ).finally( () => {
+			this._pending.delete(p);
+			this._pipelineHandles.delete(h);
+		} );
 		this._pending.add( p );
 		return h;
 

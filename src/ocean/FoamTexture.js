@@ -12,11 +12,18 @@ import { Texture, ComputeKernel, generateMipmaps } from '../engine/webgpu.js';
 // Sample it with smpAnisoRepeat / smpLinearRepeat (mipmapped rgba16float).
 export function createFoamTexture( renderer, size = 1024 ) {
 
+	const trace = label => {
+		if (typeof location !== 'undefined' &&
+			new URLSearchParams(location.search).get('gpuTrace') === '1')
+			console.info('[Bermuda Foam] ' + label);
+	};
+	trace('Foam texture allocation start');
 	const tex = new Texture( {
 		label: 'foamPattern', width: size, height: size, format: 'rgba16float', mips: true,
 		usage: [ 'sample', 'storage', 'copyDst' ], sampler: 'anisoRepeat',
 	} );
 
+	trace('Foam texture allocation complete');
 	// fbm( uv, base, oct ) unrolled like the TSL version (constant octave weights)
 	const fbm = ( uv, base, oct ) => {
 
@@ -33,6 +40,7 @@ export function createFoamTexture( renderer, size = 1024 ) {
 
 	};
 
+	trace('Foam compute shader start');
 	const kernel = new ComputeKernel( {
 		label: 'Foam Pattern',
 		bindings: { foamOut: { storageTexture: tex, access: 'write', view: { dimension: '2d', baseMipLevel: 0, mipLevelCount: 1 } } },
@@ -104,8 +112,12 @@ fn main( @builtin( global_invocation_id ) gid: vec3u ) {
 }`,
 	} );
 
+	trace('Foam compute shader complete; dispatch start');
 	kernel.dispatch( [ size / 8, size / 8, 1 ] );
+	trace('Foam compute dispatch complete');
+	trace('Foam mip generation start');
 	generateMipmaps( tex );
+	trace('Foam mip generation complete');
 	return tex;
 
 }
