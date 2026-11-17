@@ -1,3 +1,4 @@
+import { ComputeMips } from './ComputeMips.js';
 import { Vector4, MathUtils } from '../engine/index.js';
 import { GPU, UniformBlock, Texture, StorageBuffer, ShaderModule, ComputeKernel, GRAVITY } from '../engine/webgpu.js';
 import { commonModule } from '../engine/render/wgsl/common.js';
@@ -526,6 +527,10 @@ ${ stages }
 }`,
 		} );
 
+        if(GPU.limits.maxStorageTexturesPerShaderStage<5){
+            this.compatibilityMips=[new ComputeMips(this.displacementTexture,'Ocean displacement'),new ComputeMips(this.derivativeTexture,'Ocean derivatives')];
+            this.mipKernelsA=[];this.mipKernelsB=[];return;
+        }
 		// ---- mip chains in compute (instead of 2 textures x 4 layers x 8 levels of render passes)
 		// A: 16x16 threads per 32x32 texel tile of level 0 -> levels 1..5 through workgroup memory
 		// B: one 8x8 workgroup per layer -> levels 6..8
@@ -626,6 +631,7 @@ ${ reduce( 's7', null, 1, 8, t ) }
 
 			this.rowKernel.dispatch( [ N, C, 1 ], { pass } );
 			this.columnKernel.dispatch( [ N, C, 1 ], { pass } );
+			if(this.compatibilityMips)for(const m of this.compatibilityMips)m.dispatch(pass);
 			for ( const k of this.mipKernelsA ) k.dispatch( [ N / 32, N / 32, C ], { pass } );
 			for ( const k of this.mipKernelsB ) k.dispatch( [ 1, 1, C ], { pass } );
 

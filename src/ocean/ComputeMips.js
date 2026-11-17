@@ -1,4 +1,4 @@
-import { ComputeKernel } from '../engine/webgpu.js';
+import { GPU, ComputeKernel } from '../engine/webgpu.js';
 
 // Box-filtered mip chain of a square power-of-two 2d / 2d-array / cube texture in two compute
 // dispatches, instead of a render pass per level and layer (generateMipmaps):
@@ -20,6 +20,21 @@ export class ComputeMips {
 		const top = Math.min( 5, levels - 1 );
 		const out = ( l ) => ( { storageTexture: tex, access: 'write', view: { dimension: '2d-array', baseMipLevel: l, mipLevelCount: 1 } } );
 		const src = ( l ) => ( { texture: tex, view: { dimension: '2d-array', baseMipLevel: l, mipLevelCount: 1 } } );
+        // WebGPU baseline devices expose four storage textures, while the fused
+        // path writes five. Preserve every mip using one storage binding per dispatch.
+        if(top>GPU.limits.maxStorageTexturesPerShaderStage){
+          this.levelKernels=[];
+          for(let level=1;level<levels;level++){
+            const width=Math.max(1,res>>level);
+            this.levelKernels.push({width,kernel:new ComputeKernel({label:label+' mip '+level,
+              bindings:{inputMip:src(level-1),outputMip:out(level)},workgroupSize:[8,8,1],code:`
+@compute @workgroup_size(WG_X,WG_Y,WG_Z) fn main(@builtin(global_invocation_id) p:vec3u){
+ if(p.x>=${width}u||p.y>=${width}u){return;}let q=p.xy*2u;
+ let v=(textureLoad(inputMip,q,p.z,0)+textureLoad(inputMip,q+vec2u(1u,0u),p.z,0)+textureLoad(inputMip,q+vec2u(0u,1u),p.z,0)+textureLoad(inputMip,q+vec2u(1u,1u),p.z,0))*0.25;
+ textureStore(outputMip,p.xy,p.z,v);
+}`})});
+          }return;
+        }
 		// threads (lx, ly) < width reduce 2x2 of `from` (row 2 * width) into level lvl (and `to`)
 		const reduce = ( from, to, width, lvl ) => /* wgsl */`
 	if ( lx < ${ width }u && ly < ${ width }u ) {
@@ -99,6 +114,7 @@ ${ codeB }
 	dispatch( pass = null ) {
 
 		const o = pass ? { pass } : undefined;
+        if(this.levelKernels){for(const {width,kernel} of this.levelKernels)kernel.dispatch([Math.ceil(width/8),Math.ceil(width/8),this.layers],o);return;}
 		this.kernelA.dispatch( [ this.res / 32, this.res / 32, this.layers ], o );
 		if ( this.kernelB ) this.kernelB.dispatch( [ 1, 1, this.layers ], o );
 

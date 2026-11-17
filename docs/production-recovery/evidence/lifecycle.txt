@@ -1,0 +1,26 @@
+✔ 60 Hz pacing no longer rounds 42 ms to three display ticks (1.182317ms)
+✔ 40 FPS pacing accumulates fractional display intervals (0.21928ms)
+✔ FPS uses real elapsed intervals including stalls (0.19274ms)
+✔ timeout rejects rather than unlocking the world (6.124096ms)
+✔ compiler bounds concurrency and avoids duplicate in-flight sync compilation (1.426013ms)
+✔ compile errors propagate through startup (0.399411ms)
+✔ constructor bake compiles once before async pump (0.648054ms)
+✔ aborting a frame releases readback reservations and retired resources once (0.514504ms)
+✔ retirement occurs after submit when earlier commands reference a resource (0.942387ms)
+✔ two submissions maximum, one acknowledgement per submission (0.592911ms)
+✔ device loss rejects waiters and recovery does not reuse a dead queue (0.242524ms)
+✔ background time is excluded from queue watchdog (0.192559ms)
+✔ memory estimates account for layers, mips and idempotent destruction (0.404478ms)
+✔ world readiness requires three consecutive valid completed frames (202.053729ms)
+✔ black or incomplete frames never declare the world ready (302.646089ms)
+✔ GPU errors stop verification immediately without retries (0.768916ms)
+✔ terminal startup failure cancels queued compilation without launching more work (0.6919ms)
+✔ shader module creation is deferred and shares the compiler concurrency bound (0.978121ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 612.880815

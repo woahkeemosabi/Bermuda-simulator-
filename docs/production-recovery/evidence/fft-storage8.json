@@ -1,0 +1,91 @@
+{
+  "environment": "Dawn / software Vulkan (vk_swiftshader_icd.json)",
+  "storageLimit": 8,
+  "source": "candidate",
+  "frameMs": [
+    454.6427099999996,
+    312.4678130000002,
+    356.496134,
+    377.3563220000001,
+    351.4109130000006,
+    369.77784099999917,
+    341.8890739999997,
+    352.32133200000044
+  ],
+  "errors": [],
+  "resources": {
+    "textures": {
+      "created": 2,
+      "destroyed": 0,
+      "live": 2,
+      "bytes": 5592384,
+      "peakBytes": 5592384
+    },
+    "buffers": {
+      "created": 32,
+      "destroyed": 24,
+      "live": 8,
+      "bytes": 26223552,
+      "peakBytes": 26747840
+    },
+    "incomplete": false,
+    "byLabel": {
+      "buffers:frame": {
+        "bytes": 736,
+        "live": 1,
+        "peakBytes": 736
+      },
+      "buffers:fftH0": {
+        "bytes": 4194304,
+        "live": 1,
+        "peakBytes": 4194304
+      },
+      "buffers:fftWave": {
+        "bytes": 4194304,
+        "live": 1,
+        "peakBytes": 4194304
+      },
+      "buffers:ocean": {
+        "bytes": 224,
+        "live": 1,
+        "peakBytes": 224
+      },
+      "buffers:fftTmp": {
+        "bytes": 8388608,
+        "live": 1,
+        "peakBytes": 8388608
+      },
+      "buffers:fftFoam": {
+        "bytes": 1048576,
+        "live": 1,
+        "peakBytes": 1048576
+      },
+      "buffers:fftMipSrc": {
+        "bytes": 8388608,
+        "live": 1,
+        "peakBytes": 8388608
+      },
+      "textures:oceanDisplacement": {
+        "bytes": 2796192,
+        "live": 1,
+        "peakBytes": 2796192
+      },
+      "textures:oceanDerivatives": {
+        "bytes": 2796192,
+        "live": 1,
+        "peakBytes": 2796192
+      },
+      "buffers:fftMipMid": {
+        "bytes": 8192,
+        "live": 1,
+        "peakBytes": 8192
+      },
+      "buffers:(unlabelled)": {
+        "bytes": 0,
+        "live": 0,
+        "peakBytes": 524288
+      }
+    }
+  },
+  "passed": true
+}

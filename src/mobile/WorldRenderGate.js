@@ -1,9 +1,10 @@
+import { withDeadline } from '../engine/gpu/PipelineCompiler.js';
 import { GPU } from '../engine/gpu/GPU.js';
 import { assessFramePixels } from './FrameHealth.js';
 
 // Keep the original WebGPU effects and terrain. Inspect the HDR scene, not Safari's
 // presentation surface; never request a COPY_SRC swapchain or repeatedly retry dead devices.
-const POINTS=[[.24,.25],[.50,.25],[.76,.25],[.30,.57],[.70,.57],[.30,.80],[.70,.80]];
+const POINTS=[[.24,.25],[.50,.25],[.76,.25],[.24,.57],[.50,.57],[.76,.57],[.24,.80],[.50,.80],[.76,.80]];
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const message=e=>String(e?.message||e);
 
@@ -30,7 +31,7 @@ function decodeHalf(h){
  const v=e===0?m/16777216:e===31?0:(1+m/1024)*2**(e-15);
  return Math.max(0,Math.min(255,Math.round((h&32768?-1:1)*v*255)));
 }
-async function captureSceneFrame(app){
+async function captureSceneFrame(app,timeoutMs){
  if(GPU.fatalError)throw GPU.fatalError;
  const buffer=GPU.device.createBuffer({label:'bermuda-scene-samples',
   size:POINTS.length*256,usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
@@ -56,92 +57,71 @@ async function captureSceneFrame(app){
    }).catch(e=>{if(!settled){settled=true;reject(e);}});
   });
  });
+ result.catch(()=>{});
  try{
   app.frame(1/60);
-  const data=await Promise.race([result,sleep(6000).then(()=>{
-   throw new Error('GPU scene sample timed out');
-  })]);
-  await Promise.race([GPU.queue.onSubmittedWorkDone(),sleep(6000).then(()=>{
-   throw new Error('GPU queue did not finish startup frame');
-  })]);
+  const data=await withDeadline(result,timeoutMs,'GPU scene sample');
+  await withDeadline(GPU.whenIdle(),timeoutMs,'GPU queue did not finish startup frame');
+  if(GPU.fatalError)throw GPU.fatalError;
   return data;
  } finally {
   settled=true;
   if(GPU.encoder){
    // A failed frame's incomplete encoder must not be reused.
-   GPU.encoder=null;GPU._submitHooks=[];
+   GPU.abortFrame();
   }
   // Never retry with a poisoned GPU device. If no submit happened, drop the hook.
-  if(!submitted&&rejectPending)GPU._submitHooks=[];
+  if(!submitted&&rejectPending)GPU.abortFrame();
   try{if(buffer.mapState==='mapped')buffer.unmap();}catch(_){}
   buffer.destroy();
  }
 }
-// Mobile startup verifies actual GPU submissions without HDR texture copies or mapAsync.
-// A successful queue completion is necessary but does not prove visually correct pixels.
-export async function verifyMobileWorldNoReadback(app,onProgress=()=>{}){
- if(!app?.terrain?.mesh||!app.ocean||!app.post||!app.sceneRenderer?.sceneRT)
-  throw new Error('Terrain, ocean or WebGPU render target missing.');
- validateSpawn(app);
- const status=window.__bermudaWorldGate={status:'checking-gpu-frames',tries:0,last:null};
- for(let i=0;i<3;i++){
-  if(GPU.fatalError||window.__bermudaGpuLost)
-   throw GPU.fatalError||new Error(window.__bermudaGpuLost);
-  onProgress(i);
-  // Never start another frame while the previous one remains in flight.
-  try{
-   app.frame(1/60);
-   await Promise.race([
-    GPU.queue.onSubmittedWorkDone(),
-    sleep(8000).then(()=>{throw new Error('GPU queue did not finish startup frame');})
-   ]);
-  }catch(e){
-   status.status='gpu-error';
-   status.last={frame:i+1,error:message(e)};
-   throw e;
-  }
-  status.tries=i+1;
-  status.last={frame:i+1,queueCompleted:true};
-  await sleep(100);
- }
- status.status='gpu-frames-ready';
- return status.last;
-}
-
-export async function verifyMobileWorld(app,onProgress=()=>{}){
+export async function verifyMobileWorld(app,onProgress=()=>{},{timeoutMs=8000,readback=true}={}){
  if(!app?.terrain?.mesh||!app.ocean||!app.post||!app.sceneRenderer?.sceneRT)
   throw new Error('Terrain, ocean or WebGPU render target missing.');
  validateSpawn(app);
  const status=window.__bermudaWorldGate={status:'checking',tries:0,last:null};
- // First visible frame also requests missing materials' asynchronous pipelines.
- // One submitted frame at a time: do NOT flood the iPhone driver with retries.
- for(let attempt=0;attempt<3;attempt++){
-  if(GPU.fatalError||window.__bermudaGpuLost)
-   throw GPU.fatalError||new Error(window.__bermudaGpuLost);
-  onProgress(attempt);
-  await Promise.race([GPU.pipelinesReady(),sleep(6000)]);
-  try{
-   const data=await captureSceneFrame(app);
-   status.tries=attempt+1;status.last=data;
-   if(data.valid){status.status='ready';return data;}
-  }catch(e){
-   status.tries=attempt+1;
-   status.last={valid:false,reason:'gpu-error',error:message(e)};
-   // An encoder failure is a terminal loss of the GPU context, not a black-pixel
-   // condition. A new GPUDevice needs a page reload, not another command encoder.
-   if(GPU.fatalError||/command encoder|createCommandEncoder|device lost|out of memory|timed out|queue did not finish/i.test(message(e))){
-    status.status='gpu-lost';
-    throw e;
-   }
-   if(attempt===2)throw e;
-  }
-  // Change only anti-aliasing/pixel scale, not spray, waves, fish, or lighting.
-  if(attempt===1){
-   app.post.aaMode='fxaa';
-   app.setRenderScale(Math.max(.60,app.settings.renderScale-.05));
-  }
-  await sleep(350);
- }
- status.status='black-scene';
- throw new Error('The Bermuda world is still black after GPU verification. Retry Loading.');
+ try {
+  return await verifyCompletedFrames({
+   prepare:()=>withDeadline(GPU.pipelinesReady(),120000,'Shader compilation'),
+   onProgress,
+   frame:async()=>{
+   if(GPU.fatalError)throw GPU.fatalError;
+   GPU.device.pushErrorScope('validation');GPU.device.pushErrorScope('out-of-memory');
+   let data,frameError;
+   try {
+    if(readback)data=await captureSceneFrame(app,timeoutMs);
+    else {
+     const sequence=GPU.submissions.sequence;app.frame(1/60);
+     if(GPU.submissions.sequence!==sequence+1)throw new Error('Startup frame was not submitted');
+     await withDeadline(GPU.whenIdle(),timeoutMs,'GPU startup frame');
+     if(GPU.fatalError)throw GPU.fatalError;
+     data={valid:true,queueCompleted:true,source:'queue-completion; pixels not inspected'};
+    }
+   } catch(e){GPU.abortFrame(e);frameError=e;}
+   const errors=await withDeadline(Promise.all([GPU.device.popErrorScope(),GPU.device.popErrorScope()]),timeoutMs,'GPU validation');
+   if(frameError)throw frameError;
+   const error=errors.find(Boolean);if(error)throw new Error(error.message);
+   return data;
+   },
+   isReady:()=>{
+    const atmosphereReady=app.atmosphere.mobileMode!=='staged'||app.atmosphere.mobileInitStage>=3;
+    return atmosphereReady&&app.atmosphere._svValid&&(!app.clouds?.mobileAlwaysIncrementalPanorama||app.clouds.frameIndex>=16)&&app.query.cpuValid&&GPU._pending.size===0&&app.engine.meshRenderer.stats.draws>0;
+   },status
+  });
+ } catch(e){status.status='failed';status.error=message(e);throw e;}
 }
+
+export async function verifyCompletedFrames({prepare,frame,isReady,status={},onProgress=()=>{},maxFrames=64}) {
+ let consecutive=0;
+ for(let attempt=0;attempt<maxFrames;attempt++){
+  onProgress(attempt);await prepare();
+  const data=await frame();status.tries=attempt+1;status.last=data;
+  consecutive=data.valid&&isReady()?consecutive+1:0;
+  if(consecutive>=3){status.status='ready';status.completedFrames=consecutive;return data;}
+  await sleep(50);
+ }
+ throw new Error('Bermuda world did not produce three complete GPU frames.');
+}
+
+export function verifyMobileWorldNoReadback(app,onProgress,options={}) { return verifyMobileWorld(app,onProgress,{...options,readback:false}); }

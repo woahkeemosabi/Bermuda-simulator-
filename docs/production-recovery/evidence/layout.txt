@@ -1,0 +1,18 @@
+Dock elevation, vendor interaction, walking clearance and quality recovery pass.
+Chandlery: stall assets failed, using the plain table [TypeError: Failed to parse URL from /models/props/props.json] {
+  [cause]: TypeError: Invalid URL
+      at new URL (node:internal/url:895:25)
+      at new Request (node:internal/deps/undici/undici:12164:25)
+      at fetch (node:internal/deps/undici/undici:13088:25)
+      at fetch (node:internal/deps/undici/undici:17998:10)
+      at fetch (node:internal/bootstrap/web/exposed-window-or-worker:83:12)
+      at bytes (file:///workspace/scratch/79b33bf837be/Bermuda-simulator-/src/game/StallKit.js:49:20)
+      at _load (file:///workspace/scratch/79b33bf837be/Bermuda-simulator-/src/game/StallKit.js:89:59)
+      at loadStallAssets (file:///workspace/scratch/79b33bf837be/Bermuda-simulator-/src/game/StallKit.js:82:32)
+      at new Chandlery (file:///workspace/scratch/79b33bf837be/Bermuda-simulator-/src/game/Chandlery.js:23:16)
+      at file:///workspace/scratch/79b33bf837be/Bermuda-simulator-/test/bermuda-layout.mjs:15:14 {
+    code: 'ERR_INVALID_URL',
+    input: '/models/props/props.json'
+  }
+}
+Three eligible world notices stay in sync with job rotation and active job.

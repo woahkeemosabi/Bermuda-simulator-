@@ -1,3 +1,5 @@
+import { COASTAL_MOBILE, CoastalCadence } from './mobile/CoastalProfile.js';
+import { withDeadline } from './engine/gpu/PipelineCompiler.js';
 import { Vector3, Euler, Color, MathUtils, Mesh } from './engine/index.js';
 import { GPU } from './engine/gpu/GPU.js';
 import { gpuStage, gpuQueueAck } from './mobile/GpuAudit.js';
@@ -97,6 +99,7 @@ export class App {
 			/iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 			( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 ) );
 		this.mobileLite = mobileLite;
+        this.coastalCadence = mobileLite ? new CoastalCadence() : null;
 		this.recoveryMode = mobileLite && qs.get('recovery') === '1';
 		// report a stage, then let the page paint it before the (synchronous) stage work starts
 		const progress = async ( p, text, until ) => {
@@ -147,6 +150,7 @@ export class App {
 			if ( mobileLite && qs.get( 'cloudtest' ) === 'panorama' &&
 				this.clouds instanceof SkyProClouds ) {
 				this.clouds.mobilePanoramaOnly = true;
+                this.clouds.mobileAlwaysIncrementalPanorama = true;
 				window.__bermudaCloudExperiment = 'panorama-only';
 			} else {
 				window.__bermudaCloudExperiment = 'full-clouds';
@@ -160,14 +164,14 @@ export class App {
 		// contact-hardening filter sized by the sun's disc on the near cascade. Each cascade's depth range
 		// is its light margin (200 m) + its extent, which keeps the depth bias small in metres.
 		// Shadows come from the opaque and the late (transparent-pass) layers.
-		this.csm = this.shadows = new SunShadows( { size: this.recoveryMode ? 512 : (mobileLite ? 1024 : 2048), splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
+		this.csm = this.shadows = new SunShadows( { size: this.recoveryMode ? 512 : (mobileLite ? COASTAL_MOBILE.shadow : 2048), splits: [ 10, 60, 400 ], lightMargin: 200, normalBias: [ 0.015, 0.06, 0.3 ], bias: 0.00002 } );
 		this.shadows.layerMask = ( 1 << LAYERS.OPAQUE ) | ( 1 << LAYERS.TRANSPARENT );
 
 		// Reduce the mobile IBL *cubemap* face work (not the ocean, terrain or
 		// reflection shader). The iPhone diagnostic can force the former 128px
 		// cubemap using ?envtest=full for a controlled comparison.
 		const envTest = qs.get( 'envtest' );
-		this.environment = new Environment( renderer, scene, this.sky, this.recoveryMode ? 32 : (mobileLite && envTest !== 'full' ? 64 : 128) );
+		this.environment = new Environment( renderer, scene, this.sky, this.recoveryMode ? 32 : (mobileLite && envTest !== 'full' ? 64 : 128), { deferBake: mobileLite && envTest === 'skip' } );
 		this.environment.disablePrime = mobileLite && envTest === 'skip';
 		// A/B test: do the full, original initial reflection bake, then hold that
 		// image-based lighting instead of periodically refreshing the cubemap.
@@ -236,7 +240,7 @@ export class App {
 
 		if ( ! qs.has( 'noSim' ) ) {
 
-			this.shoreSim = new ShoreSim( renderer, { terrainGPU: this.terrainGPU, shore: this.shore, res: mobileLite ? 512 : 768 } );
+			this.shoreSim = new ShoreSim( renderer, { terrainGPU: this.terrainGPU, shore: this.shore, res: mobileLite ? COASTAL_MOBILE.shore : 768 } );
 			this.surface.shoreSim = this.shoreSim;
 			// WGSL: fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f (x = wetness, y = sand foam)
 			this.terrain.wetness = {
@@ -334,7 +338,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// spray.emit() / emitAlongPoints() for boat bow spray and splashes)
 		this.spray = new Spray( renderer, { query: this.query, terrain: this.terrainGPU,
 			sceneCopy: this.sceneRenderer.opaqueCopy, clouds: this.clouds,
-			gpuCapacity: mobileLite ? 8192 : 32768, cpuCapacity: mobileLite ? 2048 : 8192 } );
+			gpuCapacity: mobileLite ? COASTAL_MOBILE.sprayGPU : 32768, cpuCapacity: mobileLite ? COASTAL_MOBILE.sprayCPU : 8192 } );
 		scene.add( this.spray.mesh );
 		if ( this.reef.setSpray ) this.reef.setSpray( this.spray ); // splashes of leaping fish
 		this.breakers = new Breakers( renderer, {
@@ -461,12 +465,12 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// stage weights: in the browser the pipeline compile below takes far longer than everything before it
 		await progress( 0.36, 'Compiling shaders…', 0.95 );
 		gpuStage('Precompile shaders');
-		await this.precompile();
+		if (!mobileLite) await this.precompile();
 		gpuStage('Startup GPU warmup');
 		await progress( 0.96, 'Warming up…' );
 		// All simulation effects remain available. Prime on the loading screen, one GPU
 		// submission at a time; never let startup pretend success after a failed device.
-		for ( let i = 0; i < ( mobileLite ? 1 : 2 ); i ++ ) {
+		for ( let i = 0; i < ( mobileLite ? 0 : 2 ); i ++ ) {
 			if ( GPU.fatalError ) throw GPU.fatalError;
 			this.frame( 1 / 60 );
 			await GPU.queue.onSubmittedWorkDone();
@@ -481,6 +485,31 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 	// pipelines compile in parallel in the background (GPU.renderPipeline); the refraction pass and
 	// the hull mask are forced on so their variants are built too.
 	async precompile() {
+        if (this.mobileLite) {
+            if(!this.post._built){this.post._build();this.post._outW=0;}
+            if(!this.query.kernel)this.query._build();
+            if(!this.spray.updateKernel)this.spray._buildUpdate();
+            const mr=this.engine.meshRenderer;
+            this.oceanLOD.update(this.camera);this.terrain.update(this.camera);this.rocks.update(this.camera);
+            mr.precompiling=true;
+            const refr=this.refraction.enabled;
+            try {
+                this.post.beginFrame();
+                this.shadows.update(this.camera,G.sunDir.value);
+                this.shadows.render(this.scene,mr,this.shadows.cascades.map((_,i)=>i));
+                this.refraction.enabled=true;this.refraction.render(G.seaLevel.value);
+                for(const hull of [0,1]) {
+                    this.waterMaterial.hullOverride=hull;this.waterMaterial.__pkFrame=-1;
+                    this.sceneRenderer.preparePipelines();
+                }
+            } finally {mr.precompiling=false;this.refraction.enabled=refr;this.waterMaterial.hullOverride=null;this.waterMaterial.__pkFrame=-1;}
+            await withDeadline(GPU.pipelinesReady(),120000,'Shader compilation');
+            GPU.submit();
+            await withDeadline(GPU.whenIdle(),8000,'Initial GPU uploads');
+            if(GPU.fatalError)throw GPU.fatalError;
+            await this.vegetation?.prepareGPU(step=>gpuStage('Vegetation atlas tile '+step));
+            return;
+        }
 
 		const mr = this.engine.meshRenderer;
 		const refr = this.refraction.enabled;
@@ -699,6 +728,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 	}
 
 	updateFPS( dt ) {
+        dt = (this.engine.lastFrameIntervalMs ?? dt * 1000) / 1000;
 
 		const f = this._fps || ( this._fps = { el: document.getElementById( 'fps' ), acc: 0, n: 0, worst: 0 } );
 		f.acc += dt;
@@ -803,19 +833,16 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		}
 
-		// During mobile GPU warmup, reuse initialized effect textures instead of
-		// dispatching all costly coastal simulations on every consecutive frame.
-		// Never skip their initial update; distribute later refreshes across frames.
-		const mobileWarmup = this.mobileLite && GPU.frame < 90;
-		const coastalPhase = GPU.frame % 4;
-		if ( this.caustics && (!mobileWarmup || !this._causticsPrimed || coastalPhase === 0) ) {
+		// Restore the historical steady coastal cadence; initialized textures persist.
+		const cadence = this.coastalCadence;
+		if ( this.caustics && (!cadence || cadence.allow('caustics',67)) ) {
 			this.caustics.update();
 			this._causticsPrimed = true;
 		}
 		// drawn while any part of the view can be under water (the specks above the surface are dropped)
 		this.marineSnow.update( this.camera, this.camera.position.y < ( this.cameraWaterHeight ?? 0 ) + LENS_REACH );
 		this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );
-		if ( this.shoreSim && (!mobileWarmup || !this._shoreSimPrimed || coastalPhase === 1) ) {
+		if ( this.shoreSim && (!cadence || cadence.allow('shore',67)) ) {
 			this.shoreSim.update();
 			this._shoreSimPrimed = true;
 		}
@@ -828,12 +855,11 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.breakers.update( this.camera );
 		// Explicitly bypass spray dispatch in mobile low-GPU mode, even if a later system
 		// reassigns spray.update after initialization.
-		if ( !this.qs.has('noSpray') && !this.qs.has('freezeFFT') &&
-			(!mobileWarmup || !this._sprayPrimed || coastalPhase === 2) ) {
+		if ( !this.qs.has('noSpray') && !this.qs.has('freezeFFT') ) {
 			this.spray.update();
 			this._sprayPrimed = true;
 		}
-		if ( this.clouds ) this.clouds.update( dt, this.camera );
+		if ( this.clouds && (!cadence || cadence.allow('clouds',100,dt)) ) this.clouds.update( cadence ? cadence.usedDelta.clouds : dt, this.camera );
 		// Mobile WebGPU: don't bake reflection faces while the atmosphere LUTs
 		// are still initializing. This keeps the original reflections and ocean,
 		// but avoids pairing Atmosphere MultiScat with Env Face on startup.

@@ -20,7 +20,7 @@ const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
-// Low-GPU iPhone default: retain gameplay, freeze FFT ocean and remove expensive sky passes.
+// Explicit recovery mode only; normal mobile keeps the coastal effects.
 const mobileLowGPU = mobileRecovery; // Reduced GPU effects are explicit recovery-only, not production defaults.
 window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
 window.__bermudaThrottleWaterQueries = mobileLowGPU;
@@ -36,7 +36,7 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.72 : 0.85);
+window.__bermudaMobileOutputScale = mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.85 : 1);
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -58,7 +58,7 @@ if ( mobileFastStart ) {
 	} else {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
 		url.searchParams.set( 'G', '12' );
-		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.72' : '0.85' );
+		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.85' : '1' );
 		url.searchParams.set( 'cloudtest', 'panorama' );
 		url.searchParams.set( 'envtest', 'skip' );
 		url.searchParams.set( 'noHaze', '1' ); // Approved coastal-seven configuration; retain clouds, FFT, caustics and shore simulation.
@@ -87,15 +87,6 @@ if ( mobileFastStart ) {
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
-	App.prototype.precompile = async function() {
-
-		await Promise.race( [
-			GPU.pipelinesReady(),
-			new Promise( ( resolve ) => setTimeout( resolve, 6500 ) ),
-		] );
-		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;
-
-	};
 
 }
 
@@ -196,9 +187,10 @@ app.init( ( p, text, until ) => {
 
 		ui.setLoading( .97, 'Validating the 3D world…', .995 );
 		gpuStage('World verification');
+        await app.precompile();
 		if (mobileRecovery || app.qs.has('renderTest')) {
 			// Controlled render-pass diagnostics bypass HDR GPU readback verification.
-			// The standard production path still verifies real scene pixels.
+			// The standard production path verifies completed GPU frames without pixel readback.
 			validateSpawn(app);
 			window.__bermudaWorldGate = {status:app.qs.has('renderTest')?'render-test-no-readback':'recovery-no-readback',tries:0};
 		} else {
@@ -236,6 +228,8 @@ app.init( ( p, text, until ) => {
 
 } ).catch( ( e ) => {
 
+    GPU.compiler?.cancel(e);
+    GPU.abortFrame(e);
 	console.error( e );
 	showWorldFailure( 'Something went wrong: ' + e.message );
 
@@ -243,6 +237,10 @@ app.init( ( p, text, until ) => {
 // deploy-marker: deferred-mobile-first-frame
 
 function showWorldFailure(message){
+	// Failed init must resolve the same readiness state as a failed render gate.
+	// Otherwise browser automation (and external launchers) cannot distinguish
+	// an immediate startup exception from a still-loading world.
+	window.__bermudaWorldGate = { ...(window.__bermudaWorldGate || {}), status: 'failed', error: String(message) };
 	const L=document.getElementById('loader');
 	if(L){L.style.display='';L.classList.remove('tw-hidden');}
 	ui.setLoadingError(message);

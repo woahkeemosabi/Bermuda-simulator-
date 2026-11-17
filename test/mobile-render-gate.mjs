@@ -22,9 +22,19 @@ assert.match(f('../src/engine/render/MeshRenderer.js'),/iosStableDrawOrder/);
 assert.match(f('../src/mobile/WorldRenderGate.js'),/queue did not finish/);
 
 // All high-end effects remain instantiated, but their mobile GPU workloads are bounded.
-assert.match(f('../src/App.js'),/gpuCapacity: mobileLite \? 8192 : 32768/);
-assert.match(f('../src/App.js'),/res: mobileLite \? 512 : 768/);
+assert.match(f('../src/App.js'),/gpuCapacity: mobileLite \? COASTAL_MOBILE.sprayGPU : 32768/);
+assert.match(f('../src/App.js'),/res: mobileLite \? COASTAL_MOBILE.shore : 768/);
 assert.match(f('../src/ocean/WakeSim.js'),/MOBILE_WAKE \? 256 : 512/);
 assert.match(f('../src/ocean/Caustics.js'),/mobile \? 256 : 512/);
 assert.match(f('../src/sky/SkyProClouds.js'),/MOBILE_CLOUDS \? 128 : 256/);
 assert.doesNotMatch(f('../src/main.js'),/if \( ! this\.__bermudaMobileReady \) return/);
+
+// Underwater compute bake does not need the cloud panorama, view or shadow bindings;
+// leaving them in exceeds 16 sampled textures on baseline WebGPU adapters.
+// Full cloud shading remains present in the scene's underwater material hooks.
+const uwLighting = f('../src/ocean/UnderwaterLighting.js');
+const uwBakeDeps = uwLighting.split('const deps =')[1]?.split('const C3 =')[0] || '';
+const uwHookDeps = uwLighting.split('const hookDeps =')[1]?.split('const direct =')[0] || '';
+assert.ok(uwBakeDeps.includes('caustics && caustics.module'));
+assert.ok(!uwBakeDeps.includes('clouds && clouds.module'));
+assert.ok(uwHookDeps.includes('clouds && clouds.module'));

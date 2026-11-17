@@ -1,3 +1,5 @@
+import { SubmissionManager, installLedger } from './ResourceBudget.js';
+import { PipelineCompiler } from './PipelineCompiler.js';
 // The WebGPU device and the per-frame command encoder.
 //
 // Everything GPU-side goes through this singleton: `GPU.device`, `GPU.queue`, the shared samplers
@@ -8,7 +10,7 @@
 // range written twice in one frame keeps only the last value for every pass. Anything that changes
 // between passes of a frame needs its own buffer (or its own offset).
 
-import { gpuStage, gpuCompute, gpuSubmit, gpuError, gpuDeviceDestroyObserved, gpuDestroyHookStatus } from '../../mobile/GpuAudit.js';
+import { gpuStage, gpuCompute, gpuSubmit, gpuError, gpuDeviceDestroyObserved, gpuDestroyHookStatus, gpuQueueAck, gpuQueueStall } from '../../mobile/GpuAudit.js';
 
 export const GPU = {
 
@@ -60,7 +62,7 @@ export const GPU = {
 		for ( const k in want ) if ( L[ k ] !== undefined ) limits[ k ] = Math.min( want[ k ], L[ k ] );
 
 		// GPU timestamp profiling is not a visual feature. Avoid its driver overhead on iOS.
-		const onPhone = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent );
+		const onPhone = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) && !new URLSearchParams(globalThis.location?.search||'').has('profile');
 		const optional = [ 'float32-filterable', ...( onPhone ? [] : [ 'timestamp-query' ] ),
 			'rg11b10ufloat-renderable', 'float32-blendable', 'shader-f16', 'clip-distances' ];
 		const requiredFeatures = optional.filter( ( f ) => adapter.features.has( f ) );
@@ -72,7 +74,17 @@ export const GPU = {
 		const device = await adapter.requestDevice( { requiredFeatures, requiredLimits: limits } );
 		gpuStage('WebGPU device acquired');
 		this.device = device;
+		this.compiler = new PipelineCompiler(device, mobileAdapter ? 2 : 8);
+		this._pending = this.compiler.pending;
 		this.queue = device.queue;
+        this.resources=installLedger(device);
+        this.submissions=new SubmissionManager(this.queue,{maxInFlight:mobileAdapter?1:Infinity,
+            onComplete:({frame,latencyMs})=>{this.queueLatencyMs=latencyMs;gpuQueueAck(frame);},
+            onFailure:error=>{this.fatalError=error;this.compiler.cancel(error);gpuQueueStall(error.message);this.abortFrame(error);if(typeof window!=='undefined')window.__bermudaOnGPUFailure?.(error.message);}});
+        if(typeof document!=='undefined'){
+            const visibility=()=>this.submissions.setHidden(document.hidden);
+            document.addEventListener('visibilitychange',visibility);visibility();
+        }
 		this.limits = device.limits;
 		// WebGPU reports reason "destroyed" for explicit device.destroy() calls.
 		// Record a JS stack if our app or a dependency destroys the live device.
@@ -96,9 +108,11 @@ export const GPU = {
 		}
 		device.lost.then( ( info ) => {
 			this.lostReason = info.reason || 'unknown';
+
 			gpuError('lost', info.message || '', this.lostReason);
 			this.fatalError = new Error('WebGPU device lost (' + this.lostReason + '): ' +
 				(info.message || 'Browser provided no device-loss details'));
+			this.submissions.fail(this.fatalError);
 			if ( typeof window !== 'undefined' ) {
 				window.__bermudaGpuLost = this.fatalError.message;
 				window.__bermudaOnGPUFailure?.( this.fatalError.message );
@@ -107,6 +121,7 @@ export const GPU = {
 		} );
 		device.addEventListener && device.addEventListener( 'uncapturederror', ( e ) => {
 			gpuError('uncaptured', e.error?.message || 'uncaptured GPU error');
+			this.submissions.fail(new Error('WebGPU validation: '+(e.error?.message||'uncaptured error')));
 			console.error('WebGPU:',e.error?.message);
 		} );
 
@@ -163,6 +178,7 @@ export const GPU = {
 		if ( ! this.encoder ) {
 			try {
 				this.encoder = this.device.createCommandEncoder();
+				this.profiler?.attach(this.encoder);
 			} catch ( error ) {
 				this.fatalError = new Error( 'WebGPU command encoder unavailable: ' + ( error?.message || error ) );
 				if ( typeof window !== 'undefined' )
@@ -176,95 +192,69 @@ export const GPU = {
 
 	// Submit everything recorded so far. Hooks run right after the submit (readback mapping).
 	submit() {
-
-		if ( ! this.encoder ) return;
-		const hooks = this._submitHooks;
-		this._submitHooks = [];
-		for ( const h of hooks ) if ( h.before ) h.before( this.encoder );
-		this.queue.submit( [ this.encoder.finish() ] );
-		gpuSubmit( this.frame );
-		this.encoder = null;
-		for ( const h of hooks ) if ( h.after ) h.after();
-
-	},
-
-	onSubmit( before, after ) {
-
-		this._submitHooks.push( { before, after } );
-
-	},
+        if(!this.encoder)return;
+        const hooks=this._submitHooks;this._submitHooks=[];
+        try {
+            for(const h of hooks)h.before?.(this.encoder);
+            this.submissions.submit([this.encoder.finish()],this.frame);this.encoder=null;
+            gpuSubmit(this.frame);
+            for(const h of hooks)h.after?.();
+        } catch(error) {
+            this.encoder=null;
+            for(const h of hooks)h.abort?.(error);
+            throw error;
+        } finally {this._drainRetired();}
+    },
+    whenIdle() {return this.submissions.done();},
+    onSubmit(before,after,abort) {this._submitHooks.push({before,after,abort});},
+    abortFrame(error=new Error('GPU frame abandoned')) {
+        this.encoder=null;
+        const hooks=this._submitHooks;this._submitHooks=[];
+        for(const h of hooks)h.abort?.(error);
+        this._drainRetired();
+    },
+    _retired: new Set(),
+    retire(resource) {
+        if(!resource)return;
+        if(this.encoder)this._retired.add(resource);else resource.destroy();
+    },
+    _drainRetired() {for(const r of this._retired)r.destroy();this._retired.clear();},
 
 	// ---- pipelines
 	// Pipelines compile asynchronously: the browser compiles them in parallel on worker threads, and a
 	// pipeline created synchronously would stall the GPU process (and with it the page) at first use.
 	// Handles are { pipeline, label }; `pipeline` is null until the compile finishes. Users that must
-	// run this frame (compute, post) call ready( handle ), which falls back to a synchronous create.
+	// run this frame call ready(handle); an already compiling handle must be awaited, never duplicated.
 	_pending: new Set(),
 	syncCompiles: [], // labels of pipelines needed before their async compile finished (diagnostics)
 
-	renderPipeline( desc ) {
+	renderPipeline( desc, label ) {
 
-		return this._async( desc, 'render' );
-
-	},
-
-	computePipeline( desc ) {
-
-		return this._async( desc, 'compute' );
+		return this._async( desc, 'render', label );
 
 	},
 
-	_async( desc, kind ) {
+	computePipeline( desc, label ) {
 
-		const h = { pipeline: null, label: desc.label, desc, kind, failed: false };
-		// started after the current task: a kernel dispatched right after it was made (a one-off bake)
-		// compiles once, synchronously, instead of twice
-		const p = Promise.resolve().then( () => {
-
-			if ( h.pipeline ) return;
-			const create = kind === 'render' ? this.device.createRenderPipelineAsync : this.device.createComputePipelineAsync;
-			return create.call( this.device, desc ).then( ( pipeline ) => {
-
-				if ( ! h.pipeline ) h.pipeline = pipeline;
-				h.desc = null;
-
-			}, ( e ) => {
-
-				h.failed = true;
-				console.error( `WebGPU: pipeline "${ desc.label }" failed: ${ e.message.split( '\n' ).slice( 0, 6 ).join( '\n' ) }` );
-
-			} );
-
-		} ).finally( () => this._pending.delete( p ) );
-		this._pending.add( p );
-		return h;
+		return this._async( desc, 'compute', label );
 
 	},
 
-	// the pipeline now (synchronous compile when the async one has not finished)
+	_async( desc, kind, label ) { return this.compiler.request(desc,kind,label); },
+
 	ready( h ) {
-
-		if ( h.pipeline || h.failed ) return h.pipeline;
-		this.syncCompiles.push( h.label );
-		h.pipeline = h.kind === 'render' ? this.device.createRenderPipeline( h.desc ) : this.device.createComputePipeline( h.desc );
-		return h.pipeline;
-
+		if (!h.pipeline && h.state === 'queued') this.syncCompiles.push(h.label);
+		return this.compiler.ready(h);
 	},
 
-	// resolves when every pipeline requested so far has compiled
-	async pipelinesReady() {
-
-		while ( this._pending.size ) await Promise.all( [ ...this._pending ] );
-
-	},
+	async pipelinesReady() { await this.compiler.readyAll(); if(this.fatalError)throw this.fatalError; },
 
 	// A compute or render pass on the frame encoder.
 	computePass( label, fn, timestampWrites ) {
 
 		gpuCompute( label );
 		const pass = this.getEncoder().beginComputePass( { label, timestampWrites } );
-		fn( pass );
-		pass.end();
+		try { fn( pass ); } finally { pass.end(); }
 
 	},
 

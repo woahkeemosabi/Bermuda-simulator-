@@ -1,3 +1,4 @@
+import { GPU } from '../../engine/gpu/GPU.js';
 import * as THREE from '../../engine/index.js';
 import { Texture } from '../../engine/gpu/Texture.js';
 import { generateMipmaps } from '../../engine/gpu/Mipmaps.js';
@@ -114,57 +115,63 @@ export class ImpostorAtlas {
 
 	}
 
-	// Records the bake into the frame encoder (renderer: optional MeshRenderer; a private one is
-	// used otherwise). Every group has its own orthographic view block (one buffer value per submit).
-	bake( renderer = null ) {
+    _jobs() {
+        if(this._bakeJobs)return this._bakeJobs;
+        const jobs=[];
+        for(const [rt,mat] of [[this.rtA,this.bakeMaterials.albedo],[this.rtB,this.bakeMaterials.normal]]){
+            this.groups.forEach((g,gi)=>{
+                const R=g.radius;
+                const cam=new THREE.OrthographicCamera(0,this.variantCount*OCT_N*2*R,OCT_N*2*R,0,.1,6*R+10);
+                cam.position.set(0,0,3*R+2);cam.lookAt(0,0,-1);cam.updateMatrixWorld();cam.updateProjectionMatrix();
+                const block=(this._blocks||(this._blocks=[]))[gi]||(this._blocks[gi]=createViewUniforms('vegImpostorBake'+gi));
+                setFrameCamera(cam,this.width,this.height,{block});
+                const scene=new THREE.Scene();
+                g.variants.forEach((geo,vi)=>{
+                    const mats=this._frameMatrices(g,vi),mesh=new THREE.InstancedMesh(geo,mat,mats.length);
+                    mats.forEach((m,k)=>mesh.setMatrixAt(k,m));mesh.frustumCulled=false;scene.add(mesh);
+                });
+                scene.updateMatrixWorld(true);
+                jobs.push({scene,rt,first:gi===0,pass:{camera:cam,frameBlock:block,kind:'color',label:'veg impostor bake',colorFormats:['rgba8unorm'],depthFormat:'depth32float',clearDepth:0}});
+            });
+        }
+        return this._bakeJobs=jobs;
+    }
 
-		const t0 = performance.now();
-		const mr = renderer && renderer.render && renderer.collect ? renderer : ( this._mr || ( this._mr = new MeshRenderer() ) );
-		const depthView = this.depth.view();
-		let first = true;
+    prepare() {
+        const mr=this._mr||(this._mr=new MeshRenderer());
+        mr.precompiling=true;
+        try{for(const job of this._jobs())mr.render(job.scene,job.pass);}
+        finally{mr.precompiling=false;}
+    }
 
-		for ( const [ rt, mat ] of [ [ this.rtA, this.bakeMaterials.albedo ], [ this.rtB, this.bakeMaterials.normal ] ] ) {
+    *bakeSteps() {
+        const mr=this._mr||(this._mr=new MeshRenderer());
+        for(const job of this._jobs()){
+            for(let y=0;y<this.height;y+=256){
+                yield ()=>mr.render(job.scene,{...job.pass,
+                    colorViews:[job.rt.texture.view({dimension:'2d',baseMipLevel:0,mipLevelCount:1})],
+                    depthView:this.depth.view(),clearColors:[job.first&&y===0?[0,0,0,0]:null],
+                    scissor:[0,y,this.width,Math.min(256,this.height-y)]});
+            }
+        }
+        yield ()=>generateMipmaps(this.rtA.texture);
+        yield ()=>generateMipmaps(this.rtB.texture);
+    }
 
-			first = true;
-			const colorView = rt.texture.view( { dimension: '2d', baseMipLevel: 0, mipLevelCount: 1 } );
-			this.groups.forEach( ( g, gi ) => {
+    finishBake() {
+        this.baked=true;
+        // Only colour/normal atlases are sampled at runtime. Drop one-off depth and draw storage.
+        this.depth.destroy();
+        for(const g of this.groups)for(const geo of g.variants)geo.dispose();
+        if(this._mr){GPU.retire(this._mr.drawBuffer);this._mr.pipelines.clear();this._mr.programs.clear();}
+        this._mr=null;this._bakeJobs=null;
+    }
 
-				// the atlas plane is one orthographic view: every cell of this group is 2R wide
-				const R = g.radius;
-				const cam = new THREE.OrthographicCamera( 0, this.variantCount * OCT_N * 2 * R, OCT_N * 2 * R, 0, 0.1, 6 * R + 10 );
-				cam.position.set( 0, 0, 3 * R + 2 );
-				cam.lookAt( 0, 0, - 1 );
-				cam.updateMatrixWorld();
-				cam.updateProjectionMatrix();
-				const block = ( this._blocks || ( this._blocks = [] ) )[ gi ] || ( this._blocks[ gi ] = createViewUniforms( 'vegImpostorBake' + gi ) );
-				setFrameCamera( cam, this.width, this.height, { block } );
-				const scene = new THREE.Scene();
-				g.variants.forEach( ( geo, vi ) => {
-
-					const mats = this._frameMatrices( g, vi );
-					const mesh = new THREE.InstancedMesh( geo, mat, mats.length );
-					mats.forEach( ( m, k ) => mesh.setMatrixAt( k, m ) );
-					mesh.frustumCulled = false;
-					scene.add( mesh );
-
-				} );
-				scene.updateMatrixWorld( true );
-				mr.render( scene, {
-					camera: cam, frameBlock: block, kind: 'color', label: 'veg impostor bake',
-					colorViews: [ colorView ], colorFormats: [ 'rgba8unorm' ], depthView, depthFormat: 'depth32float',
-					clearColors: [ first ? [ 0, 0, 0, 0 ] : null ], clearDepth: 0,
-				} );
-				first = false;
-
-			} );
-			generateMipmaps( rt.texture );
-
-		}
-
-		this.baked = true;
-		this.bakeMs = performance.now() - t0;
-
-	}
+    bake() {
+        const start=performance.now();
+        for(const step of this.bakeSteps())step();
+        this.finishBake();this.bakeMs=performance.now()-start;
+    }
 
 	// Runtime material. The callbacks return WGSL expressions (strings):
 	// isGroup1( iDat ): bool (per instance) selecting group 1 (shrubs) over group 0 (trees);
