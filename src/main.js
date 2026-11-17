@@ -237,6 +237,10 @@ app.init( ( p, text, until ) => {
 // deploy-marker: deferred-mobile-first-frame
 
 function showWorldFailure(message){
+	// Failed init must resolve the same readiness state as a failed render gate.
+	// Otherwise browser automation (and external launchers) cannot distinguish
+	// an immediate startup exception from a still-loading world.
+	window.__bermudaWorldGate = { ...(window.__bermudaWorldGate || {}), status: 'failed', error: String(message) };
 	const L=document.getElementById('loader');
 	if(L){L.style.display='';L.classList.remove('tw-hidden');}
 	ui.setLoadingError(message);
