@@ -199,6 +199,10 @@ app.init( ( p, text, until ) => {
 		}
 		ui.setLoading( 1, 'World ready' );
 		let started = false;
+		// The Explore control must not be armed underneath the fading loader.
+		// Waiting for the loader to leave also prevents the finishing tap from
+		// accidentally entering gameplay through the newly exposed overlay.
+		await ui.hideLoader();
 		ui.showStartOverlay( () => {
 			if ( started ) return;
 			started = true;
@@ -210,7 +214,6 @@ app.init( ( p, text, until ) => {
 				try { app.audio.resume(); } catch (error) { console.warn('Audio resume failed', error); }
 			}
 		} );
-		await ui.hideLoader();
 		return;
 
 	} else {
