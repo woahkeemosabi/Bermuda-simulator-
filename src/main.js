@@ -36,7 +36,7 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.72 : 0.85);
+window.__bermudaMobileOutputScale = mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.85 : 1);
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -58,7 +58,7 @@ if ( mobileFastStart ) {
 	} else {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
 		url.searchParams.set( 'G', '12' );
-		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.72' : '0.85' );
+		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.85' : '1' );
 		url.searchParams.set( 'cloudtest', 'panorama' );
 		url.searchParams.set( 'envtest', 'skip' );
 		url.searchParams.set( 'noHaze', '1' ); // Approved coastal-seven configuration; retain clouds, FFT, caustics and shore simulation.
@@ -87,15 +87,6 @@ if ( mobileFastStart ) {
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
-	App.prototype.precompile = async function() {
-
-		await Promise.race( [
-			GPU.pipelinesReady(),
-			new Promise( ( resolve ) => setTimeout( resolve, 6500 ) ),
-		] );
-		if ( this.engine && this.engine.meshRenderer ) this.engine.meshRenderer.syncPipelines = false;
-
-	};
 
 }
 
@@ -196,6 +187,7 @@ app.init( ( p, text, until ) => {
 
 		ui.setLoading( .97, 'Validating the 3D world…', .995 );
 		gpuStage('World verification');
+        await app.precompile();
 		if (mobileRecovery || app.qs.has('renderTest')) {
 			// Controlled render-pass diagnostics bypass HDR GPU readback verification.
 			// The standard production path still verifies real scene pixels.

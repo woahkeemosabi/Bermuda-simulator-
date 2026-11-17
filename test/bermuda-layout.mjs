@@ -34,9 +34,9 @@ for(let z=-40;z<=-17;z+=.25) {
 }
 for(const fish of joe.iceFish()) assert(fish.frame.elements[13]>2);
 const high=mobileQualityParameters('quality=mobile-high&noCaustics=1&noHaze=1');
-assert.equal(high.get('scale'),'0.85');assert.equal(high.get('G'),'24');
-assert(!high.has('noHaze')&&!high.has('noCaustics'));
-assert(high.has('noSim')&&high.has('noClouds'));
+assert.equal(high.get('scale'),'1');assert.equal(high.get('G'),'12');
+assert(high.has('noHaze')&&!high.has('noCaustics'));
+assert(!high.has('noSim')&&!high.has('noClouds'));
 const recovery=mobileQualityParameters(high,2);
 assert.equal(recovery.get('scale'),'0.72'); assert(recovery.has('noCaustics'));
 console.log('Dock elevation, vendor interaction, walking clearance and quality recovery pass.');

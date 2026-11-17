@@ -31,12 +31,12 @@ const f = ( x ) => {
 // Height h and vertical velocity w on a 512^2 grid (0.4 m cells, 205 m) in a window that follows
 // the boat. The window is addressed toroidally (world cell I lives in texel I mod N): it scrolls
 // by whole cells without moving any data, and the FFT's periodicity is the addressing itself.
-// Each step is 3 dispatches in one compute pass (~0.13 ms on an M5 Pro):
-//   1. rows: per-cell physics (hull pressure, dissipation, breaking, foam, obstacles), display
-//      texture, forward FFT along x
-//   2. columns: forward FFT along z, spectral operators, inverse FFT along z (spare workgroups
+// Each step is four dispatches in one compute pass:
+//   1. per-cell physics (hull pressure, dissipation, breaking, foam, obstacles), display texture
+//   2. forward FFT along x
+//   3. columns: forward FFT along z, spectral operators, inverse FFT along z (spare workgroups
 //      update the boat's near-field template)
-//   3. rows: inverse FFT along x, symplectic Euler step, absorbing sponge at the window edges
+//   4. rows: inverse FFT along x, symplectic Euler step, absorbing sponge at the window edges
 //
 // Waves: dw/dt = -g L[h + P], dh/dt = w. L = |k| tanh(|k| d) is the Dirichlet-to-Neumann operator of
 // linear water waves; P is the pressure head of the hull (the boat is a moving pressure
@@ -574,16 +574,29 @@ fn wakeCell( col: u32, row: u32 ) -> vec4f {
 }
 `;
 
-		this.rowKernel = new ComputeKernel( {
-			label: 'Wake Rows',
+		this.physicsKernel = new ComputeKernel( {
+			label: 'Wake Cell Physics',
 			modules: [ simModule ],
 			bindings: {
 				wakePileTex: { texture: this.pileTex },
 				wakeDisplayOut: { storageTexture: this.display, access: 'write' },
 				wakeAerOut: { storageTexture: this.aerTex, access: 'write' },
 			},
-			workgroupSize: [ HALF, 1, 1 ],
-			code: cellPhysics + /* wgsl */`
+			workgroupSize: [ 8, 8, 1 ],
+            code: cellPhysics + /* wgsl */`
+@compute @workgroup_size(WG_X, WG_Y, WG_Z)
+fn main(@builtin(global_invocation_id) gid: vec3u) {
+    if(gid.x >= WAKE_N || gid.y >= WAKE_N) { return; }
+    wakeSpec[gid.y * WAKE_N + gid.x] = wakeCell(gid.x, gid.y);
+}`,
+        } );
+
+        // A dispatch boundary makes cell writes visible before the row FFT reads
+        // them. Reuse wakeSpec: no extra field or change to the wake equations.
+        this.rowKernel = new ComputeKernel( {
+            label: 'Wake Rows', modules: [simModule],
+            workgroupSize: [ HALF, 1, 1 ],
+			code: /* wgsl */`
 var<workgroup> shRow: array<vec4f, ${ N }>;
 
 @compute @workgroup_size( WG_X, 1, 1 )
@@ -592,7 +605,7 @@ fn main( @builtin( local_invocation_id ) lid: vec3u, @builtin( workgroup_id ) wi
 	let row = wid.x;
 	for ( var e = 0u; e < 2u; e++ ) {
 		let col = t + e * WAKE_HALF;
-		shRow[ wakeBrev( col ) ] = wakeCell( col, row );
+		shRow[ wakeBrev( col ) ] = wakeSpec[ row * WAKE_N + col ];
 	}
 	workgroupBarrier();
 ${ stages( 'shRow', [ 0 ], - 1 ) }
@@ -850,6 +863,8 @@ fn wakeFragment( xz: vec2f ) -> WakeFrag {
 	_dispatch() {
 
 		GPU.computePass( 'Wake', ( pass ) => {
+
+            this.physicsKernel.dispatch( [ N / 8, N / 8, 1 ], { pass } );
 
 			this.rowKernel.dispatch( N, { pass } );
 			this.colKernel.dispatch( N, { pass } );

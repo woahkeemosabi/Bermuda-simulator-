@@ -732,6 +732,7 @@ export function createCanopyBakeMaterials( leafAtlas ) {
 
 	const make = ( which ) => new Material( {
 		name: 'veg-impostor-bake-' + which,
+        lightingHooks: false,
 		side: 'double',
 		lit: false,
 		modules: [ vegModule, leafAtlas.module ],

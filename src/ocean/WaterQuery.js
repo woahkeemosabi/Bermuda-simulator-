@@ -43,6 +43,7 @@ export class WaterQuery {
 		this.frameLatency = 0;
 		this.slots = new Map();
 		this.readback = new Readback( { byteLength: MAX_QUERIES * 16, ring: 3, label: 'waterQuery' } );
+		this.readback.onError = () => {this._pending=false;};
 
 		this.resultsModule = new ShaderModule( {
 			name: 'waterQuery',

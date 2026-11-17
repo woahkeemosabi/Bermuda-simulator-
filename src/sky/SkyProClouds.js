@@ -1024,7 +1024,7 @@ ${ MAIN } {
 
 		} else this.shadowKernel.dispatch( [ SHADOW_RES / 8, SHADOW_RES / 32, 1 ] );
 
-		if ( this.panoWarm ) {
+		if ( this.panoWarm && !this.mobileAlwaysIncrementalPanorama ) {
 
 			F.pano.value = [ 0, 0, 1, 0 ];
 			this.panoKernel.dispatch( [ PANO_W / 8, PANO_H / 8, 1 ] );
@@ -1032,6 +1032,7 @@ ${ MAIN } {
 
 		} else {
 
+			if (this.mobileAlwaysIncrementalPanorama) this.panoWarm=false;
 			const k = this.frameIndex % ( PANO_LATTICE * PANO_LATTICE );
 			F.pano.value = [ k % PANO_LATTICE, Math.floor( k / PANO_LATTICE ), PANO_LATTICE, 0 ];
 			this.panoKernel.dispatch( [ Math.ceil( PANO_W / PANO_LATTICE / 8 ), Math.ceil( PANO_H / PANO_LATTICE / 8 ), 1 ] );

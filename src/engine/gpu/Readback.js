@@ -18,6 +18,7 @@ export class Readback {
 		this.latest = null;
 		this.frame = - 1;
 		this.onData = null;
+		this.onError = null;
 
 	}
 
@@ -59,13 +60,14 @@ export class Readback {
 
 				}
 
-			} ).catch( () => {
+			} ).catch( (error) => {
 
 				s.busy = false;
+				this.onError?.(error);
 
 			} );
 
-		} );
+		}, (error)=>{s.busy=false;this.onError?.(error);} );
 		return true;
 
 	}

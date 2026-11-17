@@ -1,3 +1,4 @@
+import { GPU } from '../engine/gpu/GPU.js';
 import { ShaderModule, UniformBlock } from '../engine/gpu/Shader.js';
 import { ComputeKernel } from '../engine/gpu/Compute.js';
 import { Texture, StorageBuffer } from '../engine/gpu/Texture.js';
@@ -51,7 +52,7 @@ fn envCubeDir( face: u32, x: u32, y: u32, size: u32 ) -> vec3f {
 
 export class Environment {
 
-	constructor( renderer, scene, sky, size = 128 ) {
+	constructor( renderer, scene, sky, size = 128, { deferBake = false } = {} ) {
 
 		this.renderer = renderer;
 		this.scene = scene;
@@ -77,12 +78,14 @@ export class Environment {
 		this.progressivePrime = false;
 		this.refreshCount = 0;
 
-		this._build();
-		this.steps = this._buildSteps();
+		this._buildHooks();
+        this.steps = null;
+        this._bakeReady = !deferBake;
+        if(!deferBake){this._buildBake();this.steps=this._buildSteps();}
 
 	}
 
-	_build() {
+	_buildBake() {
 
 		const sky = this.sky;
 		const size = this.size;
@@ -219,6 +222,9 @@ var<workgroup> acc: array<array<vec3f, 9>, 128>;
 }`,
 		} ) );
 
+	}
+
+	_buildHooks() {
 		// ---- hooks (read the front target)
 		this.envUniforms = new UniformBlock( 'EnvParams', { levels: [ 'f32', LEVELS - 1 ] }, { label: 'env' } );
 		SceneLighting.set( 'envSpecular', new ShaderModule( {
@@ -283,7 +289,15 @@ fn hookEnvDiffuse( N: vec3f ) -> vec3f {
 
 		// A/B only: skip the environmental cubemap bake to identify whether it
 		// participates in device loss. Never enabled on the normal renderer.
-		if (this.disablePrime && !force) return;
+		if (this.disablePrime && !force && !this._forcePending) return;
+        if(!this.steps){
+            this._buildBake();this.steps=this._buildSteps();this._forcePending=force;
+            GPU.pipelinesReady().then(()=>{this._bakeReady=true;},error=>{this._bakeError=error;});
+            return; // Enabling a deferred bake must not dispatch incomplete pipelines.
+        }
+        if(this._bakeError)throw this._bakeError;
+        if(!this._bakeReady)return;
+        force ||= !!this._forcePending;this._forcePending=false;
 
 		// Freeze test deliberately preserves an already computed cubemap and SH.
 		// It cannot bypass the initial bake: physically based island and boat
