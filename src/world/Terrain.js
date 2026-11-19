@@ -30,7 +30,7 @@ export class Terrain {
 	// sunShadow: apply the heightfield sun shadow here (pass false if it is applied to every scene
 	// material through SceneLighting.directModulation). renderer: optional (unused: the sun shadow
 	// map is baked from update() into the frame encoder).
-	constructor( { scene, terrainData, terrainGPU, gridSize = 40, rangeFactor = 2.0, sunShadow = true, renderer = null } ) {
+	constructor( { scene, terrainData, terrainGPU, gridSize = 40, rangeFactor = 2.0, sunShadow = true, renderer = null, flattenLand = false } ) {
 
 		this.data = terrainData;
 		this.gpu = terrainGPU;
@@ -75,7 +75,7 @@ export class Terrain {
 	let y0 = terrainHeightAt( snapped );
 	let cv = terrainLodMorph( v.nodeData, v.position.xz, mat.viewPos, y0 );
 	v.useWorld = true;
-	v.worldPos = vec3f( cv.worldXZ.x, terrainHeightAt( cv.worldXZ ), cv.worldXZ.y );
+	v.worldPos = vec3f( cv.worldXZ.x, ${ flattenLand ? "min( terrainHeightAt( cv.worldXZ ), -0.15 )" : "terrainHeightAt( cv.worldXZ )" }, cv.worldXZ.y );
 	v.worldNormal = vec3f( 0.0, 1.0, 0.0 );
 `;
 
