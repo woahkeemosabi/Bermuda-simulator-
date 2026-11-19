@@ -86,8 +86,10 @@ export class Engine {
 
 	resize() {
 
-		const w = Math.max(1, Math.round(window.visualViewport?.width || window.innerWidth));
-		const h = Math.max(1, Math.round(window.visualViewport?.height || window.innerHeight));
+		// Match the CSS layout viewport (100dvh). visualViewport can be smaller
+		// than the layout viewport on Safari, causing an undersized canvas.
+		const w = Math.max(1, Math.round(document.documentElement.clientWidth || window.innerWidth));
+		const h = Math.max(1, Math.round(window.innerHeight));
 		const cap = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 462 : Infinity;
 		const dpr = Number.isFinite(cap) ? coastalOutputScale(w,h,this.renderScale) : this.renderScale;
 		this.canvas.width = Math.max( 1, Math.floor( w * dpr ) );
