@@ -608,6 +608,26 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 	}
 
+	installWeatherControls() {
+		if (typeof document === 'undefined' || document.getElementById('bermuda-weather-controls')) return;
+		const panel = document.createElement('div');
+		panel.id = 'bermuda-weather-controls';
+		panel.style.cssText = 'position:fixed;left:12px;bottom:105px;z-index:9000;background:rgba(3,20,33,.82);color:#e9f8ff;border:1px solid #32768b;border-radius:12px;padding:9px;font:12px system-ui;max-width:195px;box-shadow:0 2px 12px #0005';
+		panel.innerHTML = '<div style="font-weight:700;margin-bottom:5px">WEATHER & TIME</div><select aria-label="Weather" style="width:100%;background:#123344;color:white;border-radius:6px;padding:5px"><option value="clear">Clear</option><option value="overcast">Overcast</option><option value="storm">Storm / Rain</option></select><div style="display:flex;gap:5px;margin-top:6px"><button type="button" data-hour="6">Dawn</button><button type="button" data-hour="12">Day</button><button type="button" data-hour="18">Dusk</button><button type="button" data-hour="0">Night</button></div><label style="display:block;margin-top:6px"><input type="checkbox" checked> Cycle day/night</label>';
+		for (const b of panel.querySelectorAll('button')) b.style.cssText='flex:1;background:#16475b;color:white;border:1px solid #387c90;border-radius:5px;padding:5px 2px;font-size:10px';
+		panel.querySelector('select').value = this.settings.weatherMode;
+		panel.querySelector('select').addEventListener('change',e=>{this.settings.weatherMode=e.target.value;this.settings.weatherTimer=0;this.updateWeather(0);});
+		panel.querySelectorAll('[data-hour]').forEach(b=>b.addEventListener('click',()=>{this.settings.timeOfDay=Number(b.dataset.hour);this.updateSun();}));
+		panel.querySelector('input').addEventListener('change',e=>{this.settings.timeSpeed=e.target.checked?0.025:0;});
+		this.settings.timeSpeed=0.025; // one simulated day every 16 real minutes
+		const rain=document.createElement('div');
+		rain.id='bermuda-weather-rain';
+		rain.style.cssText='position:fixed;inset:0;z-index:100;pointer-events:none;opacity:0;background-image:repeating-linear-gradient(105deg,transparent 0px,transparent 19px,rgba(185,222,244,.43) 20px,transparent 21px,transparent 36px);background-size:160px 240px;animation:bermudaRain .55s linear infinite;transition:opacity .8s';
+		const style=document.createElement('style');style.textContent='@keyframes bermudaRain{from{background-position:0 -240px}to{background-position:-45px 240px}}';
+		document.head.appendChild(style);document.body.appendChild(rain);document.body.appendChild(panel);
+		this._weatherRainOverlay=rain;
+	}
+
 	cycleWeather() {
 
 		const modes = [ 'clear', 'overcast', 'storm' ];
@@ -646,6 +666,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		if ( this.shore?.amplitude ) this.shore.amplitude.value += ( profile.surf - this.shore.amplitude.value ) * Math.min( 1, dt * 0.7 );
 		if ( G.windSpeed ) G.windSpeed.value = profile.wind;
 		this.settings.weather = s.weatherMode;
+		if (this._weatherRainOverlay) this._weatherRainOverlay.style.opacity = s.weatherMode === 'storm' && !(G.cameraUnderwater?.value > 0.5) ? '0.55' : '0';
 
 	}
 
