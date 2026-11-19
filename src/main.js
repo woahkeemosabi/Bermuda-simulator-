@@ -64,7 +64,7 @@ if ( mobileFastStart ) {
 		// Use the standard sky/cloud path rather than forcing the experimental panorama-only shader.
 		url.searchParams.delete( 'cloudtest' );
 		url.searchParams.delete( 'oldClouds' );
-		url.searchParams.set( 'envtest', 'full' );
+		url.searchParams.set( 'envtest', 'freeze' ); // Bake environment once, then stop recurring reflection GPU work.
 		url.searchParams.delete( 'noHaze' ); // Restore full atmospheric and aerial perspective.
 		url.searchParams.delete( 'freezeFFT' );
 		url.searchParams.delete( 'noSpray' );
