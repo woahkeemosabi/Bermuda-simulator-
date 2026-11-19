@@ -63,7 +63,7 @@ if ( mobileFastStart ) {
 		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.85' : '1' );
 		// Use the standard sky/cloud path rather than forcing the experimental panorama-only shader.
 		url.searchParams.delete( 'cloudtest' );
-		url.searchParams.delete( 'oldClouds' );
+		url.searchParams.set( 'oldClouds', '1' ); // Avoid broken SkyPro cloud view on iPhone until its compositing is repaired.
 		url.searchParams.set( 'envtest', 'freeze' ); // Bake environment once, then stop recurring reflection GPU work.
 		url.searchParams.delete( 'noHaze' ); // Restore full atmospheric and aerial perspective.
 		url.searchParams.delete( 'freezeFFT' );
