@@ -636,7 +636,7 @@ export class Game {
 			if ( au && au.fishSplash ) au.fishSplash( this.rod.bobber, 0.8 );
 			if ( au && au.fishFlop ) au.fishFlop();
 			// the catch card (with a HUD) while the fish hangs on the line; a toast otherwise
-			if ( this.hud ) this.landing = { species: f.species, kg: f.kg, card: info, cardT: 0 };
+			if ( this.hud ) { this.landing = { species: f.species, kg: f.kg }; if (entry) this.toast(`${name} · ${entry.kg.toFixed(2)} kg · ${entry.value}`, 2400); }
 			else {
 
 				if ( entry ) this.toast( `${ info.record ? 'New record! ' : '' }${ name } · ${ entry.kg.toFixed( 2 ) } kg · $${ entry.value }`, 3600 );
