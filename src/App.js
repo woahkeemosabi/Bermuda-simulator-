@@ -219,8 +219,9 @@ export class App {
 			// Preserve Bermuda's actual coastline, beaches and underwater seabed.
 			// Only decorative assets are hidden; terrain must remain rendered.
 			if (this.terrain?.mesh) this.terrain.mesh.visible = true; // Keep seabed shading and depth rendering alive
-			if (this.rocks?.group) this.rocks.group.visible = true;
-			if (this.village?.group) this.village.group.visible = true;
+			// Ocean-floor terrain remains rendered; hide above-water land dressing.
+			if (this.rocks?.group) this.rocks.group.visible = false;
+			if (this.village?.group) this.village.group.visible = false;
 		}
 		// Bermuda rebuild: the legacy Tidewater debris field (wheelbarrows, crate stacks,
 		// barrels, beached skiffs and village yard clutter) is deliberately disabled.
@@ -456,6 +457,12 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.player.audio = this.audio;
 		// the fishing game (rod, bites, catch, cooler, fish stand)
 		this.game = new Game( this );
+		// Sea-only mode: suppress visible dockside shops and NPC figures, not gameplay state.
+		if (window.__bermudaHighSeaOnly) {
+			if (this.game.stand?.group) this.game.stand.group.visible = false;
+			if (this.game.chandlery?.group) this.game.chandlery.group.visible = false;
+			for (const vendor of this.game.vendors || []) if (vendor?.group) vendor.group.visible = false;
+		}
 		// the lanterns at Joe's fish stand and Marta's chandlery (lit from dusk like the village lamps);
 		// positions are in each stall's frame (x right, z toward the customer), turned by its yaw
 		for ( const s of [ STAND, CHANDLERY ] ) {
