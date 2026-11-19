@@ -1,5 +1,6 @@
 import { withDeadline } from '../engine/gpu/PipelineCompiler.js';
 import { GPU } from '../engine/gpu/GPU.js';
+import { gpuStage } from './GpuAudit.js';
 import { assessFramePixels } from './FrameHealth.js';
 
 // Keep the original WebGPU effects and terrain. Inspect the HDR scene, not Safari's
@@ -120,11 +121,24 @@ export async function verifyMobileWorld(app,onProgress=()=>{},{timeoutMs=8000,re
 export async function verifyCompletedFrames({prepare,frame,isReady,status={},onProgress=()=>{},maxFrames=64}) {
  let consecutive=0;
  for(let attempt=0;attempt<maxFrames;attempt++){
-  onProgress(attempt);await prepare();
-  const data=await frame();status.tries=attempt+1;status.last=data;
+  const n=attempt+1;
+  gpuStage('Verification '+n+': compiling pipelines');
+  onProgress(attempt);
+  await prepare();
+  if(GPU.fatalError)throw GPU.fatalError;
+  gpuStage('Verification '+n+': encoding and submitting frame');
+  const data=await frame();
+  status.tries=n;status.last=data;
+  gpuStage('Verification '+n+': GPU queue completed');
+  if(GPU.fatalError)throw GPU.fatalError;
   consecutive=data.valid&&isReady()?consecutive+1:0;
-  if(consecutive>=3){status.status='ready';status.completedFrames=consecutive;return data;}
-  await sleep(50);
+  if(consecutive>=3){status.status='ready';status.completedFrames=consecutive;gpuStage('Verification complete: three GPU frames');return data;}
+  // Do not enqueue another full cloud/ocean/render frame immediately after
+  // the previous completion. Give mobile Safari a full scheduling turn to
+  // retire GPU resources and process device-loss notifications.
+  gpuStage('Verification '+n+': cooling GPU before next frame');
+  await sleep(250);
+  if(GPU.fatalError)throw GPU.fatalError;
  }
  throw new Error('Bermuda world did not produce three complete GPU frames.');
 }
