@@ -242,7 +242,7 @@ app.init( ( p, text, until ) => {
 			// Keep sound off on mobile until the renderer is proven stable.
 			// ?audio=on is an explicit diagnostic opt-in; sound is not required to play.
 			gpuStage('Starting simulation (mobile audio disabled)');
-			try { app.start(); app.installWeatherControls(); } catch (error) { showWorldFailure('Simulation start failed: ' + String(error?.message || error)); return; }
+			try { app.installWeatherControls(); app.start(); } catch (error) { showWorldFailure('Simulation start failed: ' + String(error?.message || error)); return; }
 			if ( app.audio && new URLSearchParams(location.search).get('audio') === 'on' ) {
 				try { app.audio.resume(); } catch (error) { console.warn('Audio resume failed', error); }
 			}
