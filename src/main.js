@@ -64,7 +64,7 @@ if ( mobileFastStart ) {
 		// Use the standard sky/cloud path rather than forcing the experimental panorama-only shader.
 		url.searchParams.delete( 'cloudtest' );
 		url.searchParams.set( 'oldClouds', '1' ); // Restore blue-sky legacy clouds shown in accepted iPhone reference.
-		url.searchParams.set( 'envtest', 'freeze' ); // Prime reflections after staged atmosphere becomes ready; avoid live reflection workload during startup.
+		url.searchParams.set( 'envtest', 'full' ); // Allow live environment reflections with complete atmosphere; progressive cubemap priming remains enabled.
 		url.searchParams.delete( 'noHaze' ); // Restore full atmospheric and aerial perspective.
 		url.searchParams.delete( 'freezeFFT' );
 		url.searchParams.delete( 'noSpray' );
