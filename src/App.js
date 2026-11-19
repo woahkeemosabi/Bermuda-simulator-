@@ -145,9 +145,10 @@ export class App {
 			this.clouds = qs.has( 'oldClouds' ) ? new Clouds( renderer, this.atmosphere ) : new SkyProClouds( renderer, this.atmosphere );
 			// Keep the legacy cloud deck in a realistic marine trade-wind layer.
 			if (window.__bermudaHighSeaOnly && this.clouds instanceof Clouds) {
-				this.clouds.bottom.value = 900;
-				this.clouds.top.value = 1750;
-				this.clouds.densityScale.value = 0.045;
+				this.clouds.bottom.value = 1100;
+				this.clouds.top.value = 1580;
+				this.clouds.densityScale.value = 0.038;
+				this.clouds.cirrus.value = 0.65;
 			}
 			// Explicit controlled diagnostic: preserve panorama clouds, atmospheric
 			// transmittance and cloud shadows while bypassing ONLY the full-screen
@@ -687,6 +688,11 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			storm: { coverage: 0.88, wind: 14, chop: 1.08, surf: 0.62 },
 		}[ s.weatherMode ] || { coverage: 0.30, wind: 5.2, chop: 0.76, surf: 0.24 };
 		if ( this.clouds?.coverage ) this.clouds.coverage.value += ( profile.coverage - this.clouds.coverage.value ) * Math.min( 1, dt * 0.8 );
+		// Shape a broad marine cloud deck instead of isolated vertical cloud towers.
+		if (window.__bermudaHighSeaOnly && this.clouds instanceof Clouds) {
+			const targetTop = s.weatherMode === 'storm' ? 1950 : s.weatherMode === 'overcast' ? 1730 : 1580;
+			this.clouds.top.value += (targetTop - this.clouds.top.value) * Math.min(1,dt*0.25);
+		}
 		if ( this.fft?.local ) {
 
 			this.fft.local.windSpeed += ( profile.wind - this.fft.local.windSpeed ) * Math.min( 1, dt * 0.45 );
