@@ -616,7 +616,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		panel.innerHTML = '<div style="font-weight:700;margin-bottom:5px">WEATHER & TIME</div><select aria-label="Weather" style="width:100%;background:#123344;color:white;border-radius:6px;padding:5px"><option value="clear">Clear</option><option value="overcast">Overcast</option><option value="storm">Storm / Rain</option></select><div style="display:flex;gap:5px;margin-top:6px"><button type="button" data-hour="6">Dawn</button><button type="button" data-hour="12">Day</button><button type="button" data-hour="18">Dusk</button><button type="button" data-hour="0">Night</button></div><label style="display:block;margin-top:6px"><input type="checkbox" checked> Cycle day/night</label>';
 		for (const b of panel.querySelectorAll('button')) b.style.cssText='flex:1;background:#16475b;color:white;border:1px solid #387c90;border-radius:5px;padding:5px 2px;font-size:10px';
 		panel.querySelector('select').value = this.settings.weatherMode;
-		panel.querySelector('select').addEventListener('change',e=>{this.settings.weatherMode=e.target.value;this.settings.weatherTimer=0;this.updateWeather(0);});
+		panel.querySelector('select').addEventListener('change',e=>{this.settings.weatherMode=e.target.value;this.settings.weatherTimer=0;this._weatherManual=true;this.updateWeather(0);});
 		panel.querySelectorAll('[data-hour]').forEach(b=>b.addEventListener('click',()=>{this.settings.timeOfDay=Number(b.dataset.hour);this.updateSun();}));
 		panel.querySelector('input').addEventListener('change',e=>{this.settings.timeSpeed=e.target.checked?0.025:0;});
 		this.settings.timeSpeed=0.025; // one simulated day every 16 real minutes
@@ -643,7 +643,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		const s = this.settings;
 		s.weatherTimer += dt;
-		if ( s.weatherTimer > 180 ) {
+		if ( s.weatherTimer > 180 && !this._weatherManual ) {
 
 			const modes = [ 'clear', 'overcast', 'storm' ];
 			s.weatherMode = modes[ ( modes.indexOf( s.weatherMode ) + 1 ) % modes.length ];
