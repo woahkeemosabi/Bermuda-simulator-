@@ -31,7 +31,8 @@ export class MobilePostFX {
   this.uniforms=new UniformBlock('MobileColorParams',{
    aoStrength:['f32',1],bloom:['f32',.05],
    vignette:['f32',.22],saturation:['f32',1.06],contrast:['f32',1.04],
-   warmth:['f32',.02],grain:['f32',.009],sharpen:['f32',.22]
+   warmth:['f32',.02],grain:['f32',.009],sharpen:['f32',.22],
+   submerged:['f32',0],waterDepth:['f32',0]
   },{label:'bermuda-mobile-filmic'});
   this.params=this.uniforms.fields;
   const colorModule=new ShaderModule({name:'bermudaMobileColor',
@@ -40,12 +41,30 @@ export class MobilePostFX {
    label:'Bermuda mobile one-pass ACES finish',
    colorFormats:[GPU.format],
    modules:[colorModule],
-   bindings:{mobileHDR:{texture:()=>this.sceneRenderer.sceneRT.texture}},
-   code:ACES_WGSL+"\nfn fragment(in:FSIn)->vec4f {\n let uv=clamp(in.uv,vec2f(0.0),vec2f(1.0));\n let texel=1.0/vec2f(textureDimensions(mobileHDR));\n var c=textureSampleLevel(mobileHDR,smpLinearClamp,uv,0.0).rgb;\n let neighbor=(textureSampleLevel(mobileHDR,smpLinearClamp,uv+vec2f(texel.x,0.0),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv-vec2f(texel.x,0.0),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv+vec2f(0.0,texel.y),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv-vec2f(0.0,texel.y),0.0).rgb)*0.25;\n c=max(c+(c-neighbor)*mobileColor.sharpen*.32,vec3f(0.0));\n c=c*vec3f(1.0+mobileColor.warmth,1.0,1.0-mobileColor.warmth);\n let lum=dot(c,vec3f(.2126,.7152,.0722));\n c=mix(vec3f(lum),c,mobileColor.saturation);\n c=pow(max(c,vec3f(0.0))/.18,vec3f(mobileColor.contrast))*.18;\n let v=(uv-.5)*vec2f(1.0,.82);\n c*=1.0-smoothstep(.25,.8,length(v))*mobileColor.vignette;\n let hashed=fract(sin(dot(in.pos.xy,vec2f(12.9898,78.233))+\n   f32(frame.frameIndex%127u)*.11)*43758.5453);\n c*=1.0+(hashed-.5)*mobileColor.grain;\n let graded=acesFilmicToneMapping(c,frame.exposure);\n return vec4f(linearToSrgb(graded),1.0);\n}\n"
+   bindings:{mobileHDR:{texture:()=>this.sceneRenderer.sceneRT.texture},
+    mobileDepth:{texture:()=>this.sceneRenderer.sceneRT.depthTexture}},
+   code:ACES_WGSL+"\nfn fragment(in:FSIn)->vec4f {\n let uv=clamp(in.uv,vec2f(0.0),vec2f(1.0));\n let texel=1.0/vec2f(textureDimensions(mobileHDR));\n var c=textureSampleLevel(mobileHDR,smpLinearClamp,uv,0.0).rgb;
+ // Mobile marine aerial perspective: depth-aware underwater attenuation.
+ // Reverse-Z depth is near / distance for the far-plane range used here.
+ // Preserve near-field coral detail; dissolve distant geometry into seawater.
+ let depth=textureLoad(mobileDepth,clamp(vec2i(uv*vec2f(textureDimensions(mobileDepth))),vec2i(0),vec2i(textureDimensions(mobileDepth))-1),0);
+ let distance=0.1/max(depth,0.000001);
+ let marine=smoothstep(8.0,125.0,distance)*mobileColor.submerged;
+ let seawater=vec3f(0.012,0.13,0.17);
+ c=mix(c,seawater,marine*0.93);
+ // Camera underwater: attenuate the distant background as well as the seabed.
+ if(mobileColor.submerged>0.5 && depth<0.00001){c=mix(c,seawater,0.94);}
+\n let neighbor=(textureSampleLevel(mobileHDR,smpLinearClamp,uv+vec2f(texel.x,0.0),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv-vec2f(texel.x,0.0),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv+vec2f(0.0,texel.y),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv-vec2f(0.0,texel.y),0.0).rgb)*0.25;\n c=max(c+(c-neighbor)*mobileColor.sharpen*.32,vec3f(0.0));\n c=c*vec3f(1.0+mobileColor.warmth,1.0,1.0-mobileColor.warmth);\n let lum=dot(c,vec3f(.2126,.7152,.0722));\n c=mix(vec3f(lum),c,mobileColor.saturation);\n c=pow(max(c,vec3f(0.0))/.18,vec3f(mobileColor.contrast))*.18;\n let v=(uv-.5)*vec2f(1.0,.82);\n c*=1.0-smoothstep(.25,.8,length(v))*mobileColor.vignette;\n let hashed=fract(sin(dot(in.pos.xy,vec2f(12.9898,78.233))+\n   f32(frame.frameIndex%127u)*.11)*43758.5453);\n c*=1.0+(hashed-.5)*mobileColor.grain;\n let graded=acesFilmicToneMapping(c,frame.exposure);\n return vec4f(linearToSrgb(graded),1.0);\n}\n"
   });
  }
  setScale(s){this.scale=Math.max(.5,Math.min(1,s));this.sceneRenderer.scale=this.scale;}
  beginFrame(){
+  // The camera is in the water whenever its lens is below the instantaneous
+  // water surface. The sea level fallback is stable if GPU query readback stalls.
+  const cameraY=this.camera.position.y;
+  const surfaceY=Number.isFinite(this.waterHeight)?this.waterHeight:0;
+  this.params.submerged.value=cameraY<surfaceY?1:0;
+  this.params.waterDepth.value=Math.max(0,surfaceY-cameraY);
   const w=this.outputSize?.width||this.renderer.width;
   const h=this.outputSize?.height||this.renderer.height;
   const iw=Math.max(1,Math.round(w*this.scale));
