@@ -246,7 +246,7 @@ export class Game {
 			let yaw = Math.atan2( c.x - m.x, c.z - m.z );
 			if ( L.card ) {
 
-				if ( ! L.shown && rod.t > 0.3 ) {
+				if ( ! L.shown && rod.t > 1.4 ) {
 
 					L.shown = true;
 					this.hud.showCatch( L.card, CATCH_CARD_MS );
@@ -271,9 +271,9 @@ export class Game {
 
 			if ( this.landing ) {
 
-				// with the HUD the fish is shown on the full-screen catch card (studio portrait), not on
-				// the line; without it (headless) it hangs on the line for a moment
-				if ( ! L.card ) this.display.show( L.species, L.kg, m, yaw, dt );
+				// Show the actual 3D landed fish swinging on the line before the
+				// catch card, including when the mobile HUD is enabled.
+				if ( ! L.shown ) this.display.show( L.species, L.kg, m, yaw, dt );
 				else if ( this.display.shown ) this.display.hide();
 				if ( ! L.card && rod.t > 2.8 ) this.endLanding();
 
