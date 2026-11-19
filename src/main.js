@@ -63,7 +63,7 @@ if ( mobileFastStart ) {
 		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.85' : '1' );
 		// Use the standard sky/cloud path rather than forcing the experimental panorama-only shader.
 		url.searchParams.delete( 'cloudtest' );
-		url.searchParams.delete( 'oldClouds' ); // Restore default Tidewater-derived PC SkyPro clouds.
+		url.searchParams.set( 'oldClouds', '1' ); // Restore blue-sky legacy clouds shown in accepted iPhone reference.
 		url.searchParams.set( 'envtest', 'freeze' ); // Bake environment once, then stop recurring reflection GPU work.
 		url.searchParams.delete( 'noHaze' ); // Restore full atmospheric and aerial perspective.
 		url.searchParams.delete( 'freezeFFT' );
