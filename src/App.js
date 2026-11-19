@@ -143,6 +143,12 @@ export class App {
 
 			// sky-pro-webgpu's clouds ("Partly cloudy"); ?oldClouds: the previous ones
 			this.clouds = qs.has( 'oldClouds' ) ? new Clouds( renderer, this.atmosphere ) : new SkyProClouds( renderer, this.atmosphere );
+			// Keep the legacy cloud deck in a realistic marine trade-wind layer.
+			if (window.__bermudaHighSeaOnly && this.clouds instanceof Clouds) {
+				this.clouds.bottom.value = 900;
+				this.clouds.top.value = 1750;
+				this.clouds.densityScale.value = 0.045;
+			}
 			// Explicit controlled diagnostic: preserve panorama clouds, atmospheric
 			// transmittance and cloud shadows while bypassing ONLY the full-screen
 			// volumetric trace + temporal resolve. Not the permanent graphics mode.
@@ -612,7 +618,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		if (typeof document === 'undefined' || document.getElementById('bermuda-weather-controls')) return;
 		const panel = document.createElement('div');
 		panel.id = 'bermuda-weather-controls';
-		panel.style.cssText = 'position:fixed;left:12px;bottom:105px;z-index:9000;background:rgba(3,20,33,.82);color:#e9f8ff;border:1px solid #32768b;border-radius:12px;padding:9px;font:12px system-ui;max-width:195px;box-shadow:0 2px 12px #0005';
+		panel.style.cssText = 'position:fixed;left:12px;top:38%;z-index:2147483646;background:rgba(3,20,33,.94);color:#e9f8ff;border:1px solid #32768b;border-radius:12px;padding:9px;font:12px system-ui;max-width:195px;box-shadow:0 2px 12px #0005;display:none';
 		panel.innerHTML = '<div style="font-weight:700;margin-bottom:5px">WEATHER & TIME</div><select aria-label="Weather" style="width:100%;background:#123344;color:white;border-radius:6px;padding:5px"><option value="clear">Clear</option><option value="overcast">Overcast</option><option value="storm">Storm / Rain</option></select><div style="display:flex;gap:5px;margin-top:6px"><button type="button" data-hour="6">Dawn</button><button type="button" data-hour="12">Day</button><button type="button" data-hour="18">Dusk</button><button type="button" data-hour="0">Night</button></div><label style="display:block;margin-top:6px"><input type="checkbox" checked> Cycle day/night</label>';
 		for (const b of panel.querySelectorAll('button')) b.style.cssText='flex:1;background:#16475b;color:white;border:1px solid #387c90;border-radius:5px;padding:5px 2px;font-size:10px';
 		panel.querySelector('select').value = this.settings.weatherMode;
@@ -625,6 +631,14 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		rain.style.cssText='position:fixed;inset:0;z-index:100;pointer-events:none;opacity:0;background-image:repeating-linear-gradient(105deg,transparent 0px,transparent 19px,rgba(185,222,244,.43) 20px,transparent 21px,transparent 36px);background-size:160px 240px;animation:bermudaRain .55s linear infinite;transition:opacity .8s';
 		const style=document.createElement('style');style.textContent='@keyframes bermudaRain{from{background-position:0 -240px}to{background-position:-45px 240px}}';
 		document.head.appendChild(style);document.body.appendChild(rain);document.body.appendChild(panel);
+		const toggle=document.createElement('button');
+		toggle.id='bermuda-weather-toggle';
+		toggle.type='button';
+		toggle.textContent='☁ WEATHER';
+		toggle.setAttribute('aria-label','Open weather and time controls');
+		toggle.style.cssText='position:fixed;left:12px;top:32%;z-index:2147483647;background:#0b3448;color:#fff;border:1px solid #53bbcb;border-radius:18px;padding:10px 14px;font:700 13px system-ui;box-shadow:0 3px 14px #0009;pointer-events:auto;touch-action:manipulation';
+		toggle.addEventListener('click',()=>{const open=panel.style.display==='none';panel.style.display=open?'block':'none';toggle.textContent=open?'✕ WEATHER':'☁ WEATHER';});
+		document.body.appendChild(toggle);
 		this._weatherRainOverlay=rain;
 	}
 
