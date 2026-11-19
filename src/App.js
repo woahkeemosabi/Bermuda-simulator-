@@ -205,7 +205,7 @@ export class App {
 		this.shoreField = computeShoreField( this.terrainData, { res: 512, swellDir: [ WORLD.swellDir.x, WORLD.swellDir.y ] } );
 		this.terrainGPU = new TerrainGPU( this.terrainData, this.shoreField );
 		// terrain and rocks apply the heightfield sun shadow (long hill shadows) in their own lighting
-		this.terrain = new Terrain( { scene, terrainData: this.terrainData, terrainGPU: this.terrainGPU, renderer, gridSize: window.__bermudaHighSeaOnly ? 64 : 40, rangeFactor: window.__bermudaHighSeaOnly ? 1.8 : 2.0 } );
+		this.terrain = new Terrain( { scene, terrainData: this.terrainData, terrainGPU: this.terrainGPU, renderer, gridSize: window.__bermudaHighSeaOnly ? 64 : 40, rangeFactor: window.__bermudaHighSeaOnly ? 1.8 : 2.0, flattenLand: !!window.__bermudaHighSeaOnly } );
 		this.rocks = new Rocks( { scene, terrain: this.terrain, village: this.village, colliders: this.colliders } );
 		// Sea-only high-quality mode: retain heightfield physics, collision and shoreline
 		// queries while removing visible landforms and decorative scenery.
