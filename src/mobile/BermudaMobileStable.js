@@ -71,6 +71,41 @@ export function installStableMobileControls( app ) {
 		</div>`;
 	document.body.appendChild( root );
 
+	// Independently dismissible objective and gameplay task panels.
+	// Keep their content and gameplay state intact; only toggle presentation.
+	const notices = document.createElement('div');
+	notices.id = 'bm-notice-toggles';
+	notices.innerHTML = '<button type="button" data-notice="objective" aria-pressed="true">Hide objective</button><button type="button" data-notice="task" aria-pressed="true">Hide task</button>';
+	document.body.appendChild(notices);
+	const noticeStyle = document.createElement('style');
+	noticeStyle.textContent = `
+		#bm-notice-toggles{position:fixed;top:175px;left:16px;z-index:110;display:flex;gap:7px;pointer-events:auto}
+		#bm-notice-toggles button{border:1px solid rgba(139,243,234,.5);border-radius:999px;background:rgba(5,22,31,.82);color:#eaffff;padding:6px 10px;font:600 11px system-ui,-apple-system,sans-serif;touch-action:manipulation}
+		body.bm-objective-hidden #bm-objective,body.bm-objective-hidden .bm-objective{display:none!important}
+		body.bm-task-hidden .bm-gameplay-task,body.bm-task-hidden .bm-mission-panel,body.bm-task-hidden .gm-mission{display:none!important}
+	`;
+	document.head.appendChild(noticeStyle);
+	const noticeButtons = [...notices.querySelectorAll('button')];
+	const refreshNotices = () => {
+		const objective = document.querySelector('#bm-objective,.bm-objective');
+		// Mission/task elements may be mounted after the initial HUD.
+		const task = document.querySelector('.bm-gameplay-task,.bm-mission-panel,.gm-mission');
+		noticeButtons[0].hidden = !objective;
+		noticeButtons[1].hidden = !task;
+	};
+	noticeButtons.forEach(button => button.addEventListener('click', e => {
+		e.preventDefault();
+		const kind = button.dataset.notice;
+		const hiddenClass = kind === 'objective' ? 'bm-objective-hidden' : 'bm-task-hidden';
+		const hidden = document.body.classList.toggle(hiddenClass);
+		button.textContent = (hidden ? 'Show ' : 'Hide ') + (kind === 'objective' ? 'objective' : 'task');
+		button.setAttribute('aria-pressed', String(!hidden));
+	}));
+	refreshNotices();
+	const noticeObserver = new MutationObserver(refreshNotices);
+	noticeObserver.observe(document.body,{childList:true,subtree:true});
+
+
 	const stick = root.querySelector( '.bm-stick' );
 	const nub = root.querySelector( '.bm-nub' );
 	const buttons = Object.fromEntries( [ ...root.querySelectorAll( '[data-role]' ) ].map( ( b ) => [ b.dataset.role, b ] ) );
