@@ -212,7 +212,7 @@ export class App {
 		if (window.__bermudaHighSeaOnly) {
 			// Preserve Bermuda's actual coastline, beaches and underwater seabed.
 			// Only decorative assets are hidden; terrain must remain rendered.
-			if (this.terrain?.mesh) this.terrain.mesh.visible = false;
+			if (this.terrain?.mesh) this.terrain.mesh.visible = true; // Keep seabed shading and depth rendering alive
 			if (this.rocks?.group) this.rocks.group.visible = true;
 			if (this.village?.group) this.village.group.visible = true;
 		}
@@ -884,6 +884,9 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		gpuStage('Island world preparation', GPU.frame);
 		this.oceanLOD.update( this.camera );
 		this.terrain.update( this.camera );
+		// Keep high-detail terrain visible for underwater seabed rendering; hiding
+		// the whole mesh made the ocean floor black. Land geometry remains part
+		// of the shared heightfield until a separate land-only draw mask exists.
 		this.rocks.update( this.camera );
 		if ( this.debris ) this.debris.update( this.camera );
 		this.reef.update( dt, this.camera.position );
