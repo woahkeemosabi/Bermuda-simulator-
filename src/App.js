@@ -898,8 +898,8 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// are still initializing. This keeps the original reflections and ocean,
 		// but avoids pairing Atmosphere MultiScat with Env Face on startup.
 		const atmosphereReadyForReflections = !this.mobileLite ||
-			( this.atmosphere.mobileInitStage >= 3 && this.atmosphere._svValid &&
-			  !this.atmosphere.mobileSkyViewDispatched );
+			( (this.atmosphere.mobileMode !== 'staged' || this.atmosphere.mobileInitStage >= 3) &&
+			  this.atmosphere._svValid && !this.atmosphere.mobileSkyViewDispatched );
 		if ( atmosphereReadyForReflections ) this.environment.update( dt );
 
 		// ---- world
