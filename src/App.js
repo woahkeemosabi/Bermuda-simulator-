@@ -210,7 +210,9 @@ export class App {
 		// Sea-only high-quality mode: retain heightfield physics, collision and shoreline
 		// queries while removing visible landforms and decorative scenery.
 		if (window.__bermudaHighSeaOnly) {
-			if (this.terrain?.mesh) this.terrain.mesh.visible = false;
+			// Preserve Bermuda's actual coastline, beaches and underwater seabed.
+			// Only decorative assets are hidden; terrain must remain rendered.
+			if (this.terrain?.mesh) this.terrain.mesh.visible = true;
 			if (this.rocks?.group) this.rocks.group.visible = false;
 			if (this.village?.group) this.village.group.visible = false;
 		}
