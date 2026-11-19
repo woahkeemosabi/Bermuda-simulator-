@@ -36,7 +36,8 @@ export class Vendor {
 		this.character = null;
 		this.talking = false;
 		this._near = false;
-		if ( character ) this.loadCharacter( character.url, character ).catch( ( e ) => console.warn( 'Vendor: character failed to load', e ) );
+		// Keep lightweight procedural vendor figures; do not allocate textured/skinned GLB NPCs.
+		// Vendor interaction, dialogue, and shops remain functional.
 
 	}
 
