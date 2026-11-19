@@ -29,7 +29,7 @@ window.__bermudaThrottleWaterQueries = mobileLowGPU;
 window.__bermudaDisableSwashProbe = mobileLowGPU;
 window.__bermudaSparseVegetation = mobileRecovery;
 window.__bermudaBuildMarker = 'coastal-main-restored';
-const missionIsolation = new URLSearchParams(location.search).get('missions') === 'off';
+const missionIsolation = new URLSearchParams(location.search).get('missions') === 'off' || highSeaOnly;
 window.__bermudaMissionsDisabledForTest = missionIsolation;
 let mobileRetryLevel = 0;
 if ( mobileFastStart ) {
