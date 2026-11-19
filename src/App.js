@@ -212,9 +212,9 @@ export class App {
 		if (window.__bermudaHighSeaOnly) {
 			// Preserve Bermuda's actual coastline, beaches and underwater seabed.
 			// Only decorative assets are hidden; terrain must remain rendered.
-			if (this.terrain?.mesh) this.terrain.mesh.visible = true;
-			if (this.rocks?.group) this.rocks.group.visible = false;
-			if (this.village?.group) this.village.group.visible = false;
+			if (this.terrain?.mesh) this.terrain.mesh.visible = false;
+			if (this.rocks?.group) this.rocks.group.visible = true;
+			if (this.village?.group) this.village.group.visible = true;
 		}
 		// Bermuda rebuild: the legacy Tidewater debris field (wheelbarrows, crate stacks,
 		// barrels, beached skiffs and village yard clutter) is deliberately disabled.
