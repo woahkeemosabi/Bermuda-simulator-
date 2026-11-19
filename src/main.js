@@ -61,7 +61,9 @@ if ( mobileFastStart ) {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
 		url.searchParams.set( 'G', '12' );
 		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.85' : '1' );
-		url.searchParams.set( 'cloudtest', 'panorama' );
+		// Use the standard sky/cloud path rather than forcing the experimental panorama-only shader.
+		url.searchParams.delete( 'cloudtest' );
+		url.searchParams.set( 'oldClouds', '1' );
 		url.searchParams.set( 'envtest', 'skip' );
 		url.searchParams.set( 'noHaze', '1' ); // Approved coastal-seven configuration; retain clouds, FFT, caustics and shore simulation.
 		url.searchParams.delete( 'freezeFFT' );
@@ -212,13 +214,22 @@ app.init( ( p, text, until ) => {
 		// No app.start(), gameplay RAF, or additional render submissions during this gate.
 		const holdMs = 60000;
 		const holdStart = performance.now();
+		const loader = document.getElementById('loader');
+		const countdown = document.createElement('div');
+		countdown.id = 'bermuda-explore-countdown';
+		countdown.setAttribute('role','status');
+		countdown.style.cssText = 'position:fixed;left:50%;bottom:18%;transform:translateX(-50%);z-index:2147483646;color:white;background:rgba(5,20,32,.88);padding:14px 22px;border-radius:12px;font:600 18px system-ui,sans-serif;text-align:center;min-width:230px;pointer-events:none';
+		countdown.textContent = 'Explore unlocks in 60s';
+		(loader || document.body).appendChild(countdown);
 		while (performance.now() - holdStart < holdMs) {
 			if (GPU.fatalError) throw GPU.fatalError;
 			const remaining = Math.ceil((holdMs - (performance.now() - holdStart)) / 1000);
-			ui.setLoading(.995, `World loaded · Explore unlocks in ${Math.max(0,remaining)}s`, .999);
+			countdown.textContent = `World loaded · Explore unlocks in ${Math.max(0,remaining)}s`;
+			ui.setLoading(.995, `Explore unlocks in ${Math.max(0,remaining)}s`, .999);
 			await new Promise(resolve => setTimeout(resolve, Math.min(1000, Math.max(1,holdMs-(performance.now()-holdStart)))));
 		}
 		if (GPU.fatalError) throw GPU.fatalError;
+		countdown.remove();
 		ui.setLoading( 1, 'World ready · Explore unlocked' );
 		let started = false;
 		// The Explore control must not be armed underneath the fading loader.
