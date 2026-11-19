@@ -46,9 +46,6 @@ export class Engine {
 		this.camera = new PerspectiveCamera( 62, window.innerWidth / window.innerHeight, 0.06, 60000 );
 		this.scene = new Scene();
 		window.addEventListener( 'resize', () => this.resize() );
-		// Safari's browser chrome changes the visual viewport without reliably
-		// firing a window resize; keep canvas and camera aspect synchronized.
-		window.visualViewport?.addEventListener( 'resize', () => this.resize() );
 		this.resize();
 
 		if ( this.benchmarkMode && typeof window !== 'undefined' ) {
@@ -86,8 +83,7 @@ export class Engine {
 
 	resize() {
 
-		const w = Math.max(1, Math.round(window.visualViewport?.width || window.innerWidth));
-		const h = Math.max(1, Math.round(window.visualViewport?.height || window.innerHeight));
+		const w = window.innerWidth, h = window.innerHeight;
 		const cap = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 462 : Infinity;
 		const dpr = Number.isFinite(cap) ? coastalOutputScale(w,h,this.renderScale) : this.renderScale;
 		this.canvas.width = Math.max( 1, Math.floor( w * dpr ) );
