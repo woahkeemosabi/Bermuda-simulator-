@@ -38,7 +38,7 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = highSeaOnly ? 1 : (mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.85 : 1));
+window.__bermudaMobileOutputScale = highSeaOnly ? 0.9 : (mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.85 : 1));
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -88,7 +88,7 @@ if ( mobileFastStart ) {
 		if (url.searchParams.get('gpuTest') !== 'minimal') url.searchParams.set( 'G', '12' );
 	}
 	if (highSeaOnly) {
-		url.searchParams.set('scale','1');
+		url.searchParams.set('scale','0.9');
 		url.searchParams.set('noVeg','1');
 		url.searchParams.set('noSpray','1');
 		url.searchParams.delete('freezeFFT');
@@ -208,7 +208,18 @@ app.init( ( p, text, until ) => {
 			await verifyMobileWorldNoReadback( app, attempt => ui.setLoading(
 				Math.min(.975+attempt*.003,.99), 'Verifying GPU frames…', .995 ) );
 		}
-		ui.setLoading( 1, 'World ready' );
+		// Hold the initialized world behind the loader for a full 60 seconds.
+		// No app.start(), gameplay RAF, or additional render submissions during this gate.
+		const holdMs = 60000;
+		const holdStart = performance.now();
+		while (performance.now() - holdStart < holdMs) {
+			if (GPU.fatalError) throw GPU.fatalError;
+			const remaining = Math.ceil((holdMs - (performance.now() - holdStart)) / 1000);
+			ui.setLoading(.995, `World loaded · Explore unlocks in ${Math.max(0,remaining)}s`, .999);
+			await new Promise(resolve => setTimeout(resolve, Math.min(1000, Math.max(1,holdMs-(performance.now()-holdStart)))));
+		}
+		if (GPU.fatalError) throw GPU.fatalError;
+		ui.setLoading( 1, 'World ready · Explore unlocked' );
 		let started = false;
 		// The Explore control must not be armed underneath the fading loader.
 		// Waiting for the loader to leave also prevents the finishing tap from
