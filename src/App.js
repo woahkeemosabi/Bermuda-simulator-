@@ -934,6 +934,12 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		// the post chain sets the TAAU jitter + internal size and writes the camera into the frame
 		// uniforms (setFrameCamera); shadows then render with this frame's sun and camera
+		if (this.post instanceof MobilePostFX) {
+			// The sea surface is the reference for the mobile underwater distance fade.
+			// Use the latest camera-local wave sample when available.
+			this.post.waterHeight = Number.isFinite(this.cameraWaterHeight)
+				? this.cameraWaterHeight : G.seaLevel.value;
+		}
 		this.post.beginFrame();
 		this.underwater.updateCamera( this.camera );
 		this.shadows.render( this.scene, this.engine.meshRenderer, this.shadows.update( this.camera, G.sunDir.value ) );
