@@ -63,7 +63,7 @@ if ( mobileFastStart ) {
 		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.85' : '1' );
 		// Use the standard sky/cloud path rather than forcing the experimental panorama-only shader.
 		url.searchParams.delete( 'cloudtest' );
-		url.searchParams.set( 'oldClouds', '1' ); // Avoid broken SkyPro cloud view on iPhone until its compositing is repaired.
+		url.searchParams.delete( 'oldClouds' ); // Restore default Tidewater-derived PC SkyPro clouds.
 		url.searchParams.set( 'envtest', 'freeze' ); // Bake environment once, then stop recurring reflection GPU work.
 		url.searchParams.delete( 'noHaze' ); // Restore full atmospheric and aerial perspective.
 		url.searchParams.delete( 'freezeFFT' );
@@ -242,7 +242,7 @@ app.init( ( p, text, until ) => {
 			// Keep sound off on mobile until the renderer is proven stable.
 			// ?audio=on is an explicit diagnostic opt-in; sound is not required to play.
 			gpuStage('Starting simulation (mobile audio disabled)');
-			try { app.installWeatherControls(); app.start(); } catch (error) { showWorldFailure('Simulation start failed: ' + String(error?.message || error)); return; }
+			try { app.start(); } catch (error) { showWorldFailure('Simulation start failed: ' + String(error?.message || error)); return; }
 			if ( app.audio && new URLSearchParams(location.search).get('audio') === 'on' ) {
 				try { app.audio.resume(); } catch (error) { console.warn('Audio resume failed', error); }
 			}
