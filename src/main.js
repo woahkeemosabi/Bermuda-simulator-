@@ -69,8 +69,8 @@ if ( mobileFastStart ) {
 		url.searchParams.set( 'envtest', 'full' ); // Allow live environment reflections with complete atmosphere; progressive cubemap priming remains enabled.
 		url.searchParams.delete( 'noHaze' ); // Restore full atmospheric and aerial perspective.
 		url.searchParams.delete( 'freezeFFT' );
-		url.searchParams.delete( 'noSpray' );
-		url.searchParams.delete( 'noVeg' );
+		// Preserve explicitly selected stability exclusions. The production
+		// mobile profile also applies these below, without needing a shared link.
 	}
 	if ( mobileLowGPU ) {
 		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.set( key, '1' );
@@ -92,6 +92,8 @@ if ( mobileFastStart ) {
 		if (url.searchParams.get('gpuTest') !== 'minimal') url.searchParams.set( 'G', '12' );
 	}
 	if (highSeaOnly) {
+		// The working iPhone profile is the default on BOTH production hosts.
+		// No URL query parameters are required to select it.
 		url.searchParams.set('scale','1');
 		url.searchParams.set('noVeg','1'); // No procedural palm forest; preserve terrain and coastline.
 		url.searchParams.set('noSpray','1');
