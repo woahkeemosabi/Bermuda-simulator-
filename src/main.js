@@ -19,7 +19,7 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
-const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1';
+const mobileRecovery = mobileFastStart && (new URLSearchParams(location.search).get('recovery') === '1' || Number(sessionStorage.getItem('bermudaGpuRetryLevel') || 0) >= 2);
 // Explicit recovery mode only; normal mobile keeps the coastal effects.
 const mobileLowGPU = mobileRecovery; // Reduced GPU effects are explicit recovery-only, not production defaults.
 window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
