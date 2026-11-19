@@ -2687,3 +2687,15 @@ body {
 #bm-gpu-copy{display:block;margin:6px auto 0;padding:8px 15px;border-radius:18px;
  border:1px solid #85eafa;background:rgba(0,29,44,.87);color:#fff;pointer-events:auto}
 #loader.bm-new-loader.tw-error .loader-inner{max-height:73svh;overflow-y:auto}
+
+
+/* Host-independent iPhone layout: use the same dynamic layout viewport for
+   the splash artwork, HUD host and WebGPU canvas. Avoid visualViewport-only
+   heights, which can shrink the scene under Safari's browser controls. */
+html, body { width:100%; height:100%; height:100dvh; overflow:hidden; }
+#app, #loader { width:100%; height:100%; height:100dvh; }
+#app canvas { width:100%; height:100%; display:block; }
+#loader.bm-new-loader .loader-art {
+  width:100%; height:100%; object-fit:cover; object-position:50% 40%;
+  transform:none; animation:none;
+}
