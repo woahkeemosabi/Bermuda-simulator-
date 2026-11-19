@@ -241,9 +241,13 @@ export class App {
 
 		// ---------------------------------------------------------------- ocean
 		await progress( 0.3, 'Simulating the ocean…' );
+		gpuStage('Ocean FFT: allocating cascades');
 		this.fft = new OceanFFT( renderer, qs.has('freezeFFT') ? {cascades:1} : (this.recoveryMode ? {cascades:2} : {}) );
+		gpuStage('Ocean FFT: cascades allocated');
 		if ( this.reef.setOcean ) this.reef.setOcean( this.fft ); // coral / sea fan sway follows the simulated swell
+		gpuStage('Ocean: creating foam texture');
 		this.foamTexture = createFoamTexture( renderer );
+		gpuStage('Ocean: foam texture ready');
 		this.oceanLOD = new CDLOD( { gridSize: Number( qs.get( 'G' ) || 32 ), leafSize: 8, levels: 12, minY: - 25, maxY: 25 } );
 		this.surface = new WaterSurface( { fft: this.fft, cdlod: this.oceanLOD, foamTexture: this.foamTexture } );
 		this.surface.terrain = this.terrainGPU;
@@ -251,7 +255,9 @@ export class App {
 		this.surface.detail = this.seaDetail;
 		this.shore = new ShoreWaves( this.terrainGPU );
 		this.surface.shore = this.shore;
+		gpuStage('Ocean: creating caustics');
 		this.caustics = qs.has( 'noCaustics' ) ? null : new Caustics( renderer, this.fft, { mobile: mobileLite } );
+		gpuStage('Ocean: caustics ready');
 		if ( this.caustics ) this.caustics.detail = this.seaDetail;
 
 		if ( ! qs.has( 'noSim' ) ) {
