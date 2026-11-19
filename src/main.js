@@ -91,7 +91,7 @@ if ( mobileFastStart ) {
 	}
 	if (highSeaOnly) {
 		url.searchParams.set('scale','1');
-		url.searchParams.delete('noVeg');
+		url.searchParams.set('noVeg','1'); // No procedural palm forest; preserve terrain and coastline.
 		url.searchParams.set('noSpray','1');
 		url.searchParams.delete('freezeFFT');
 		url.searchParams.delete('noSim');
