@@ -38,7 +38,7 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = highSeaOnly ? 0.9 : (mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.85 : 1));
+window.__bermudaMobileOutputScale = highSeaOnly ? 1 : (mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.85 : 1));
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -63,9 +63,9 @@ if ( mobileFastStart ) {
 		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.85' : '1' );
 		// Use the standard sky/cloud path rather than forcing the experimental panorama-only shader.
 		url.searchParams.delete( 'cloudtest' );
-		url.searchParams.set( 'oldClouds', '1' );
-		url.searchParams.set( 'envtest', 'skip' );
-		url.searchParams.set( 'noHaze', '1' ); // Approved coastal-seven configuration; retain clouds, FFT, caustics and shore simulation.
+		url.searchParams.delete( 'oldClouds' );
+		url.searchParams.set( 'envtest', 'full' );
+		url.searchParams.delete( 'noHaze' ); // Restore full atmospheric and aerial perspective.
 		url.searchParams.delete( 'freezeFFT' );
 		url.searchParams.delete( 'noSpray' );
 		url.searchParams.delete( 'noVeg' );
@@ -90,7 +90,7 @@ if ( mobileFastStart ) {
 		if (url.searchParams.get('gpuTest') !== 'minimal') url.searchParams.set( 'G', '12' );
 	}
 	if (highSeaOnly) {
-		url.searchParams.set('scale','0.9');
+		url.searchParams.set('scale','1');
 		url.searchParams.delete('noVeg');
 		url.searchParams.set('noSpray','1');
 		url.searchParams.delete('freezeFFT');
