@@ -132,9 +132,9 @@ export class App {
 		this.atmosphere = new Atmosphere( renderer );
 		// Keep the original sky shader. Spread its LUT initialization across mobile frames.
 		// Diagnostic A/B: ?atmotest=skip, trans, full; default mobile: staged.
-		this.atmosphere.mobileMode = mobileLite
-			? ( ['full','skip','trans'].includes(qs.get('atmotest')) ? qs.get('atmotest') : 'staged' )
-			: 'full';
+		this.atmosphere.mobileMode = (window.__bermudaHighSeaOnly && mobileLite)
+			? 'full' // Sea-only needs a complete sky-view LUT before presenting ocean frames.
+			: (mobileLite ? (['full','skip','trans'].includes(qs.get('atmotest')) ? qs.get('atmotest') : 'staged') : 'full');
 		// Diagnostic only: keep the completed sky-view texture instead of repeatedly
 		// recomputing it while preserving the atmosphere's rendering shader.
 		this.atmosphere.mobileHoldAfterPrime = mobileLite && qs.get('atmotest') === 'hold';
