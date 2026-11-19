@@ -19,7 +19,9 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
-const mobileRecovery = mobileFastStart && (new URLSearchParams(location.search).get('recovery') === '1' || Number(sessionStorage.getItem('bermudaGpuRetryLevel') || 0) >= 2);
+const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1' && new URLSearchParams(location.search).get('highSeaOnly') !== '1';
+const highSeaOnly = mobileFastStart && new URLSearchParams(location.search).get('highSeaOnly') !== '0';
+window.__bermudaHighSeaOnly = highSeaOnly;
 // Explicit recovery mode only; normal mobile keeps the coastal effects.
 const mobileLowGPU = mobileRecovery; // Reduced GPU effects are explicit recovery-only, not production defaults.
 window.__bermudaFreezeUnderwaterLight = mobileLowGPU;
@@ -36,7 +38,7 @@ if ( mobileFastStart ) {
 			Number( sessionStorage.getItem( 'bermudaGpuRetryLevel' ) ) || 0 ) );
 	} catch (_) { /* storage may be blocked */ }
 }
-window.__bermudaMobileOutputScale = mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.85 : 1);
+window.__bermudaMobileOutputScale = highSeaOnly ? 1 : (mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.85 : 1));
 
 if ( mobileDevice ) {
 	const clean = new URL( location.href );
@@ -84,6 +86,15 @@ if ( mobileFastStart ) {
 			url.searchParams.set('G','8');
 		}
 		if (url.searchParams.get('gpuTest') !== 'minimal') url.searchParams.set( 'G', '12' );
+	}
+	if (highSeaOnly) {
+		url.searchParams.set('scale','1');
+		url.searchParams.set('noVeg','1');
+		url.searchParams.set('noSpray','1');
+		url.searchParams.delete('freezeFFT');
+		url.searchParams.delete('noSim');
+		url.searchParams.delete('noClouds');
+		url.searchParams.delete('noCaustics');
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
 
