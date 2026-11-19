@@ -294,7 +294,9 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		} );
 
 		// sunlight bounced off the ground (one diffuse bounce, re-baked with the terrain sun shadow)
-		installGroundBounce( { terrain: this.terrainGPU, clouds: this.clouds } );
+		// Avoid first-frame terrain sun-shadow and ground-bounce GPU bakes on iPhone.
+		// Keep the atmospheric sky, clouds, terrain, ocean and normal sun shadows.
+		if (!window.__bermudaHighSeaOnly) installGroundBounce( { terrain: this.terrainGPU, clouds: this.clouds } );
 		this.sceneRenderer = new SceneRenderer( engine.meshRenderer, scene, camera );
 		const renderTest = mobileLite ? qs.get('renderTest') : null;
 		this.sceneRenderer.diagnosticOpaqueOnly = renderTest === 'opaque' || renderTest === 'opaque-noshadows';
