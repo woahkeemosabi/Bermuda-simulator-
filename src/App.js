@@ -207,6 +207,13 @@ export class App {
 		// terrain and rocks apply the heightfield sun shadow (long hill shadows) in their own lighting
 		this.terrain = new Terrain( { scene, terrainData: this.terrainData, terrainGPU: this.terrainGPU, renderer } );
 		this.rocks = new Rocks( { scene, terrain: this.terrain, village: this.village, colliders: this.colliders } );
+		// Sea-only high-quality mode: retain heightfield physics, collision and shoreline
+		// queries while removing visible landforms and decorative scenery.
+		if (window.__bermudaHighSeaOnly) {
+			if (this.terrain?.mesh) this.terrain.mesh.visible = false;
+			if (this.rocks?.group) this.rocks.group.visible = false;
+			if (this.village?.group) this.village.group.visible = false;
+		}
 		// Bermuda rebuild: the legacy Tidewater debris field (wheelbarrows, crate stacks,
 		// barrels, beached skiffs and village yard clutter) is deliberately disabled.
 		// Keep this slot for compatibility; Bermuda-specific harbour props are loaded separately.
@@ -333,6 +340,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		this.marineSnow = new MarineSnow( { fft: this.fft, query: this.query } );
 		scene.add( this.marineSnow.mesh );
+		if (window.__bermudaHighSeaOnly) { this.marineSnow.mesh.visible = false; this.marineSnow.update = () => {}; }
 
 		// ---- surf: plunging lips along the beach + spray particles (the breakers emit on the GPU;
 		// spray.emit() / emitAlongPoints() for boat bow spray and splashes)
@@ -361,7 +369,8 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 				console.warn( 'whale model failed to load', e );
 			}
 		};
-		if ( !mobileLite ) await loadWhale();
+		if ( !mobileLite && !window.__bermudaHighSeaOnly ) await loadWhale();
+		if (window.__bermudaHighSeaOnly && this.whale?.group) this.whale.group.visible = false;
 
 		// interactive wake around the boat (Kelvin pattern, bow/stern waves, prop wash foam)
 		this.wake = new WakeSim( renderer, { terrainGPU: this.terrainGPU, boat: this.boatCtl, colliders: this.colliders } );
@@ -386,7 +395,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			this.wake.update = () => {};
 			this.surface.wake = null;
 		}
-		if (qs.has('noSpray')) {
+		if (qs.has('noSpray') || window.__bermudaHighSeaOnly) {
 			if (this.spray?.mesh) this.spray.mesh.visible = false;
 			if (this.spray) this.spray.update = () => {};
 			if (this.boatSpray) this.boatSpray.update = () => {};
