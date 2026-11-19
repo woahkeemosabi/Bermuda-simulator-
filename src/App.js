@@ -615,51 +615,6 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 	}
 
-	installWeatherControls() {
-		if (typeof document === 'undefined' || document.getElementById('bermuda-weather-toggle')) return;
-		const panel = document.createElement('section');
-		panel.id = 'bermuda-weather-controls';
-		panel.setAttribute('aria-label', 'Weather and time');
-		panel.style.cssText = 'position:fixed;left:12px;top:37%;z-index:2147483646;background:rgba(5,25,39,.96);color:#e9f8ff;border:1px solid #397b8e;border-radius:14px;padding:12px;font:12px system-ui;width:220px;max-width:calc(100vw - 28px);box-shadow:0 8px 24px #0008;display:none';
-		panel.innerHTML = '<div style="font-weight:700;letter-spacing:.1em;margin-bottom:10px">SEA CONDITIONS</div><label for="bermuda-weather-select">Weather</label><select id="bermuda-weather-select" style="display:block;width:100%;margin:5px 0 10px;background:#123344;color:white;border:1px solid #5a9aad;border-radius:7px;padding:9px"><option value="clear">☀ Clear skies</option><option value="overcast">☁ Overcast</option><option value="storm">☂ Atlantic storm</option></select><div style="font-weight:600;margin-bottom:6px">Time of day</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px"><button type="button" data-hour="6">Dawn</button><button type="button" data-hour="12">Day</button><button type="button" data-hour="18">Dusk</button><button type="button" data-hour="0">Night</button></div><label style="display:flex;align-items:center;gap:7px;margin-top:12px"><input type="checkbox" checked> Automatic day/night cycle</label><div id="bermuda-weather-status" role="status" style="color:#a9d8e5;margin-top:10px">Clear · daylight</div>';
-		for (const b of panel.querySelectorAll('button')) b.style.cssText='background:#16475b;color:white;border:1px solid #387c90;border-radius:6px;padding:9px 1px;font-size:11px';
-		const status=panel.querySelector('#bermuda-weather-status');
-		const select=panel.querySelector('select');
-		select.value=this.settings.weatherMode;
-		const sync=()=>{status.textContent=select.options[select.selectedIndex].text+' · '+String(Math.floor(this.settings.timeOfDay)).padStart(2,'0')+':00';};
-		select.addEventListener('change',e=>{this.settings.weatherMode=e.target.value;this.settings.weatherTimer=0;this._weatherManual=true;this.updateWeather(0);sync();});
-		panel.querySelectorAll('[data-hour]').forEach(b=>b.addEventListener('click',()=>{this.settings.timeOfDay=Number(b.dataset.hour);this.updateSun();sync();}));
-		panel.querySelector('input').addEventListener('change',e=>{this.settings.timeSpeed=e.target.checked?0.025:0;});
-		this.settings.timeSpeed=0.025;
-		const canvas=document.createElement('canvas');
-		canvas.id='bermuda-weather-rain';
-		canvas.setAttribute('aria-hidden','true');
-		canvas.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:100;pointer-events:none;opacity:0;transition:opacity .6s';
-		const ctx=canvas.getContext('2d',{alpha:true});
-		const drops=Array.from({length:110},(_,i)=>({x:(i*0.61803398875)%1,y:(i*0.754877666)%1,s:0.4+(i%7)*0.12,l:3+(i%5)*1.5}));
-		let last=0;
-		const animate=(now)=>{
-			requestAnimationFrame(animate);
-			if(canvas.style.opacity==='0'||!ctx)return;
-			const w=canvas.clientWidth,h=canvas.clientHeight,dpr=Math.min(2,window.devicePixelRatio||1);
-			if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}
-			ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
-			const dt=Math.min(0.05,(now-(last||now))/1000);last=now;
-			ctx.lineWidth=0.65;ctx.strokeStyle='rgba(198,226,242,.43)';ctx.beginPath();
-			for(const drop of drops){drop.y=(drop.y+dt*drop.s*1.1)%1;drop.x=(drop.x+dt*0.045)%1;const x=drop.x*w,y=drop.y*h;ctx.moveTo(x,y);ctx.lineTo(x-1.2,y+drop.l);}
-			ctx.stroke();
-		};
-		requestAnimationFrame(animate);
-		document.body.appendChild(canvas);document.body.appendChild(panel);
-		const toggle=document.createElement('button');
-		toggle.id='bermuda-weather-toggle';toggle.type='button';toggle.textContent='☁ WEATHER';
-		toggle.setAttribute('aria-label','Open weather and time controls');
-		toggle.setAttribute('aria-expanded','false');
-		toggle.style.cssText='position:fixed;left:12px;top:32%;z-index:2147483647;background:#0b3448;color:#fff;border:1px solid #53bbcb;border-radius:20px;padding:10px 14px;font:700 12px system-ui;box-shadow:0 3px 14px #0009;touch-action:manipulation';
-		toggle.addEventListener('click',()=>{const open=panel.style.display==='none';panel.style.display=open?'block':'none';toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'✕ CLOSE':'☁ WEATHER';});
-		document.body.appendChild(toggle);this._weatherRainOverlay=canvas;sync();
-	}
-
 	cycleWeather() {
 
 		const modes = [ 'clear', 'overcast', 'storm' ];
@@ -703,7 +658,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		if ( this.shore?.amplitude ) this.shore.amplitude.value += ( profile.surf - this.shore.amplitude.value ) * Math.min( 1, dt * 0.7 );
 		if ( G.windSpeed ) G.windSpeed.value = profile.wind;
 		this.settings.weather = s.weatherMode;
-		if (this._weatherRainOverlay) this._weatherRainOverlay.style.opacity = s.weatherMode === 'storm' && !(G.cameraUnderwater?.value > 0.5) ? '0.75' : '0';
+		// Rain is intentionally disabled until a physically credible implementation is ready.
 
 	}
 
