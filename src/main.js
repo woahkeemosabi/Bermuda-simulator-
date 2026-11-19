@@ -18,6 +18,8 @@ const mobileDevice = /iPhone|iPad|iPod|Android/i.test( navigator.userAgent ) ||
 	( navigator.maxTouchPoints > 1 && Math.min( screen.width, screen.height ) < 1024 );
 const forceDesktop = new URLSearchParams( location.search ).has( 'desktop' );
 const mobileFastStart = mobileDevice && ! forceDesktop;
+// Capture the visitor-facing URL before mobile startup adds internal render flags.
+window.__bermudaPublicUrl = location.href;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1' && new URLSearchParams(location.search).get('highSeaOnly') !== '1';
 const highSeaOnly = mobileFastStart && new URLSearchParams(location.search).get('highSeaOnly') !== '0';
@@ -99,6 +101,7 @@ if ( mobileFastStart ) {
 		url.searchParams.delete('noCaustics');
 	}
 	if ( url.href !== location.href ) history.replaceState( null, '', url );
+	// Internal GPU settings remain active during initialization; restore the clean public URL once ready.
 
 
 }
@@ -236,6 +239,9 @@ app.init( ( p, text, until ) => {
 		// Waiting for the loader to leave also prevents the finishing tap from
 		// accidentally entering gameplay through the newly exposed overlay.
 		await ui.hideLoader();
+		// Hide internal mobile GPU overrides only after initialization and verification.
+		// Preserve any query parameters the visitor supplied explicitly.
+		if (mobileFastStart) history.replaceState(null, '', window.__bermudaPublicUrl || (location.origin + location.pathname));
 		ui.showStartOverlay( () => {
 			if ( started ) return;
 			started = true;
