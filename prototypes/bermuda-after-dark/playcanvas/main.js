@@ -66,7 +66,7 @@ window.addEventListener('keydown',e=>{const k={ArrowUp:'up',ArrowDown:'down',Arr
 window.addEventListener('keyup',e=>{const k={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right'}[e.key];if(k)keys.delete(k);});
 let aboard=false,boatSpeed=0,boatHeading=0;
 function act(){
- if(aboard){aboard=false;boatSpeed=0;const p=boat.getPosition();avatar.enabled=true;avatar.setPosition(1.8,dockGround,pc.math.clamp(p.z,-7.5,7.5));info.textContent='Disembarked · joystick to walk';return;}
+ if(aboard){const p=boat.getPosition();if(Math.abs(p.x)>7||p.z < -10||p.z>10||Math.abs(boatSpeed)>.7){info.textContent='Return alongside the dock and slow down before disembarking.';return;}aboard=false;boatSpeed=0;avatar.enabled=true;avatar.setPosition(1.8,dockGround,pc.math.clamp(p.z,-7.5,7.5));info.textContent='Disembarked · joystick to walk';return;}
  const p=avatar.getPosition(),b=boat.getPosition();
  if(Math.hypot(p.x-b.x,p.z-b.z)<6.5 && p.z<0){aboard=true;avatar.enabled=false;info.textContent='BOARDED · joystick up/down = throttle · left/right = steer · ACT = exit';}
  else info.textContent='Walk to the right edge of the dock beside the boat to board.';
@@ -80,20 +80,23 @@ app.on('update',dt=>{
  const magnitude=Math.hypot(dx,dz);
  const t=performance.now()*.001;
  if(aboard){
-   boatSpeed=pc.math.clamp(boatSpeed-dz*dt*2.0,0,5);
-   boatHeading+=dx*dt*(.35+boatSpeed*.12);
+   // Up accelerates forward, down brakes then reverses. Neutral joystick gradually reduces speed.
+   const throttle=-pc.math.clamp(dz,-1,1);
+   boatSpeed=pc.math.clamp(boatSpeed+throttle*dt*2.2,-2.0,5);
+   if(Math.abs(throttle)<.08)boatSpeed*=Math.exp(-.45*dt);
+   // Positive X on the stick means a starboard/right turn in screen/world coordinates.
+   boatHeading+=dx*dt*(.35+Math.abs(boatSpeed)*.12)*(boatSpeed < -.1 ? -1 : 1);
    const p=boat.getPosition();
-   const bx=p.x-Math.sin(boatHeading)*boatSpeed*dt,bz=p.z-Math.cos(boatHeading)*boatSpeed*dt;
+   const bx=p.x+Math.sin(boatHeading)*boatSpeed*dt,bz=p.z-Math.cos(boatHeading)*boatSpeed*dt;
    boat.setPosition(bx,waves(bx,bz,t)*.45+.15,bz);
-   boat.setEulerAngles(Math.sin(t*1.4)*1.6,boatHeading*180/Math.PI,Math.cos(t*1.1)*2);
+   boat.setEulerAngles(Math.sin(t*1.4)*1.6,-boatHeading*180/Math.PI,Math.cos(t*1.1)*2);
  } else if(magnitude>.04){
    const scale=Math.min(1,magnitude)/magnitude,p=avatar.getPosition();
    avatar.setPosition(pc.math.clamp(p.x+dx*scale*dt*3,-2.05,2.05),dockGround,pc.math.clamp(p.z+dz*scale*dt*3,-7.9,8));
    avatar.setEulerAngles(0,Math.atan2(-dx,-dz)*180/Math.PI,0);
  }
  const p=aboard?boat.getPosition():avatar.getPosition();
- camera.setPosition(p.x,p.y+(aboard?5:3.3),p.z+(aboard?9:6.8));
- camera.lookAt(p.x,p.y+(aboard?1.1:1.3),p.z-5);
+ if(aboard){camera.setPosition(p.x-Math.sin(boatHeading)*9,p.y+4.6,p.z+Math.cos(boatHeading)*9);camera.lookAt(p.x+Math.sin(boatHeading)*5,p.y+1.2,p.z-Math.cos(boatHeading)*5);}else{camera.setPosition(p.x,p.y+3.3,p.z+6.8);camera.lookAt(p.x,p.y+1.3,p.z-5);}
  updateOcean(t);
  count++;time+=dt;if(time>1){fps.textContent=Math.round(count/time)+' FPS';time=0;count=0;}
 });
