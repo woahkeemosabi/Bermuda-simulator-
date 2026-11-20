@@ -8,6 +8,13 @@ import { assessFramePixels } from './FrameHealth.js';
 const POINTS=[[.24,.25],[.50,.25],[.76,.25],[.24,.57],[.50,.57],[.76,.57],[.24,.80],[.50,.80],[.76,.80]];
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const message=e=>String(e?.message||e);
+// Do not wait for a validation-scope timeout after Safari has already lost its GPU device.
+async function awaitGpuOrLoss(work,timeoutMs,label) {
+ const lost = GPU.device.lost.then(info => {
+  throw GPU.fatalError || new Error('WebGPU device lost ('+(info?.reason||'unknown')+'): '+(info?.message||'Browser supplied no details'));
+ });
+ return withDeadline(Promise.race([work,lost]),timeoutMs,label);
+}
 
 export function validateSpawn(app){
  const p=app?.player,t=app?.terrainData,c=app?.colliders;
@@ -84,7 +91,7 @@ export async function verifyMobileWorld(app,onProgress=()=>{},{timeoutMs=8000,re
  const status=window.__bermudaWorldGate={status:'checking',tries:0,last:null};
  try {
   return await verifyCompletedFrames({
-   prepare:()=>withDeadline(GPU.pipelinesReady(),120000,'Shader compilation'),
+   prepare:()=>awaitGpuOrLoss(GPU.pipelinesReady(),120000,'Shader compilation'),
    onProgress,
    frame:async()=>{
    if(GPU.fatalError)throw GPU.fatalError;
@@ -95,12 +102,13 @@ export async function verifyMobileWorld(app,onProgress=()=>{},{timeoutMs=8000,re
     else {
      const sequence=GPU.submissions.sequence;app.frame(1/60);
      if(GPU.submissions.sequence!==sequence+1)throw new Error('Startup frame was not submitted');
-     await withDeadline(GPU.whenIdle(),timeoutMs,'GPU startup frame');
+     await awaitGpuOrLoss(GPU.whenIdle(),timeoutMs,'GPU startup frame');
      if(GPU.fatalError)throw GPU.fatalError;
      data={valid:true,queueCompleted:true,source:'queue-completion; pixels not inspected'};
     }
    } catch(e){GPU.abortFrame(e);frameError=e;}
-   const errors=await withDeadline(Promise.all([GPU.device.popErrorScope(),GPU.device.popErrorScope()]),timeoutMs,'GPU validation');
+   // Pop both validation scopes, but prefer a device-loss report over the generic timeout.
+   const errors=await awaitGpuOrLoss(Promise.all([GPU.device.popErrorScope(),GPU.device.popErrorScope()]),timeoutMs,'GPU validation');
    if(frameError)throw frameError;
    const error=errors.find(Boolean);if(error)throw new Error(error.message);
    return data;
