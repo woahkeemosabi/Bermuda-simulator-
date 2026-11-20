@@ -68,6 +68,8 @@ export function gpuError(kind,message,reason=''){
 }
 export function gpuReport(app,attempt=0){
  const a=gpuAudit,scene=app?.sceneRenderer,engine=app?.engine;
+ const resources=app?.gpu?.resources;
+ const pipelines=app?.gpu?.compiler?.diagnostics?.();
  return [
   a.version+' | retry '+attempt,
   'Elapsed '+Math.round((now()-began)/1000)+'s | Frame '+a.frame+' | Submits '+a.submits,
@@ -77,6 +79,15 @@ export function gpuReport(app,attempt=0){
   'Render passes in last submit '+a.lastSubmittedRenderCount+' | Last passes '+(a.lastSubmittedRenders.join(' > ')||'none'),
   'Last queue completion frame '+a.queueAckFrame+' @'+a.queueAckAt+'ms'+(a.queueStall?' | Stall '+a.queueStall:''),
   'GPUDevice.destroy() hook '+a.destroyHook+' | Called from JS '+(a.explicitDestroyCall?'YES':'NO'),
+  'GPU logical resources '+(resources
+   ? 'textures '+resources.textures.live+' / '+(resources.textures.bytes/1048576).toFixed(1)+' MiB; buffers '+resources.buffers.live+' / '+(resources.buffers.bytes/1048576).toFixed(1)+' MiB'
+   : 'unavailable'),
+  'Pipelines '+(pipelines
+   ? 'requested '+pipelines.requested+' | ready '+pipelines.completed+' | failed '+pipelines.failed+' | compiling '+pipelines.compiling.length+' | queued '+pipelines.queued
+   : 'unavailable'),
+  ...(pipelines?.compiling?.length
+   ? ['Active compiler '+pipelines.compiling.slice(0,3).map(p=>p.label).join(' > ')]
+   : []),
   ...(a.destroyCallStack?['Destroy caller '+a.destroyCallStack]:[]),
   'Scene '+(scene?scene.width+'x'+scene.height:'unavailable')+
    ' | Canvas '+(engine?engine.width+'x'+engine.height:'unavailable'),
