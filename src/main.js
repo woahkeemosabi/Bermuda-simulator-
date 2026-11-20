@@ -42,11 +42,7 @@ if ( mobileFastStart ) {
 }
 window.__bermudaMobileOutputScale = highSeaOnly ? 1 : (mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.85 : 1));
 
-if ( mobileDevice ) {
-	const clean = new URL( location.href );
-	for ( const key of [ 'gpuRecovery', 'gpuSafe', 'recoveryReason', 'noSim', 'G' ] ) clean.searchParams.delete( key );
-	if ( clean.href !== location.href ) history.replaceState( null, '', clean );
-}
+// Preserve the exact public URL. Internal mobile overrides belong in startup state.
 
 if ( mobileFastStart ) {
 
@@ -102,8 +98,8 @@ if ( mobileFastStart ) {
 		url.searchParams.delete('noClouds');
 		url.searchParams.delete('noCaustics');
 	}
-	if ( url.href !== location.href ) history.replaceState( null, '', url );
-	// Internal GPU settings remain active during initialization; restore the clean public URL once ready.
+	// Keep the effective mobile profile for App without rewriting Safari's address bar.
+	window.__bermudaBootSearch = url.search;
 
 
 }
@@ -241,9 +237,7 @@ app.init( ( p, text, until ) => {
 		// Waiting for the loader to leave also prevents the finishing tap from
 		// accidentally entering gameplay through the newly exposed overlay.
 		await ui.hideLoader();
-		// Hide internal mobile GPU overrides only after initialization and verification.
-		// Preserve any query parameters the visitor supplied explicitly.
-		if (mobileFastStart) history.replaceState(null, '', window.__bermudaPublicUrl || (location.origin + location.pathname));
+		// The address bar remains the visitor's original URL throughout startup.
 		ui.showStartOverlay( () => {
 			if ( started ) return;
 			started = true;
