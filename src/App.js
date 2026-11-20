@@ -87,7 +87,9 @@ export class App {
 			exposure: 0.55,
 			renderScale: 1, // internal resolution (the temporal upscaler reconstructs the output), Performance tab
 		};
-		this.qs = new URLSearchParams( location.search );
+		// Use the effective startup profile, without exposing internal flags in the public URL.
+		this.qs = new URLSearchParams( typeof window !== 'undefined' && window.__bermudaBootSearch != null
+			? window.__bermudaBootSearch : location.search );
 
 	}
 
