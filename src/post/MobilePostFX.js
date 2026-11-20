@@ -1,6 +1,4 @@
 import { GPU } from '../engine/gpu/GPU.js';
-import { RenderTarget } from '../engine/gpu/Texture.js';
-import { LENS_REACH } from './Underwater.js';
 import { ShaderModule, UniformBlock } from '../engine/gpu/Shader.js';
 import { FullscreenPass } from '../engine/render/FullscreenPass.js';
 import { FrameUniforms, setFrameCamera } from '../engine/render/Frame.js';
@@ -39,29 +37,13 @@ export class MobilePostFX {
   this.params=this.uniforms.fields;
   const colorModule=new ShaderModule({name:'bermudaMobileColor',
    uniforms:this.uniforms,uniformName:'mobileColor'});
-  // Full Underwater.js medium, shafts and waterline/participating-medium composite.
-  // Marine snow remains disabled by the existing high-sea mobile profile.
-  this.medium=new RenderTarget(1,1,{colors:['r8unorm'],label:'mobile-underwater-medium'});
-  this.beauty=new RenderTarget(1,1,{colors:['rgba16float'],label:'mobile-underwater-beauty'});
-  this.underwater.mediumTexture=this.medium.texture;
-  this._mediumPass=new FullscreenPass({
-   label:'mobile underwater medium',colorFormats:['r8unorm'],
-   modules:[this.underwater.module],
-   code:'fn fragment(in:FSIn)->vec4f{return vec4f(underwaterMedium(in.uv),0.0,0.0,1.0);}'
-  });
-  this._beautyPass=new FullscreenPass({
-   label:'mobile full underwater composite',colorFormats:['rgba16float'],
-   modules:[this.underwater.compositeModule],
-   bindings:{postScene:{texture:()=>this.sceneRenderer.sceneRT.texture}},
-   code:'fn postSceneSample(uv:vec2f)->vec3f{return textureSampleLevel(postScene,smpLinearClamp,clamp(uv,vec2f(0.0),vec2f(1.0)),0.0).rgb;}\nfn fragment(in:FSIn)->vec4f{return underwaterComposite(in.uv,in.pos.xy);}'
-  });
   this._finalPass=new FullscreenPass({
    label:'Bermuda mobile one-pass ACES finish',
    colorFormats:[GPU.format],
    modules:[colorModule],
-   bindings:{mobileHDR:{texture:()=>this.beauty.texture},
+   bindings:{mobileHDR:{texture:()=>this.sceneRenderer.sceneRT.texture},
     mobileDepth:{texture:()=>this.sceneRenderer.sceneRT.depthTexture}},
-   code:ACES_WGSL+"\nfn fragment(in:FSIn)->vec4f {\n let uv=clamp(in.uv,vec2f(0.0),vec2f(1.0));\n let texel=1.0/vec2f(textureDimensions(mobileHDR));\n var c=textureSampleLevel(mobileHDR,smpLinearClamp,uv,0.0).rgb;\n let neighbor=(textureSampleLevel(mobileHDR,smpLinearClamp,uv+vec2f(texel.x,0.0),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv-vec2f(texel.x,0.0),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv+vec2f(0.0,texel.y),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv-vec2f(0.0,texel.y),0.0).rgb)*0.25;\n c=max(c+(c-neighbor)*mobileColor.sharpen*.32,vec3f(0.0));\n c=c*vec3f(1.0+mobileColor.warmth,1.0,1.0-mobileColor.warmth);\n let lum=dot(c,vec3f(.2126,.7152,.0722));\n c=mix(vec3f(lum),c,mobileColor.saturation);\n c=pow(max(c,vec3f(0.0))/.18,vec3f(mobileColor.contrast))*.18;\n let v=(uv-.5)*vec2f(1.0,.82);\n c*=1.0-smoothstep(.25,.8,length(v))*mobileColor.vignette;\n let hashed=fract(sin(dot(in.pos.xy,vec2f(12.9898,78.233))+\n   f32(frame.frameIndex%127u)*.11)*43758.5453);\n c*=1.0+(hashed-.5)*mobileColor.grain;\n let graded=acesFilmicToneMapping(c,frame.exposure);\n return vec4f(linearToSrgb(graded),1.0);\n}\n"
+   code:ACES_WGSL+"\nfn fragment(in:FSIn)->vec4f {\n let uv=clamp(in.uv,vec2f(0.0),vec2f(1.0));\n let texel=1.0/vec2f(textureDimensions(mobileHDR));\n var c=textureSampleLevel(mobileHDR,smpLinearClamp,uv,0.0).rgb;\n // Mobile marine aerial perspective: depth-aware underwater attenuation.\n // Reverse-Z depth is near / distance for the far-plane range used here.\n // Preserve near-field coral detail; dissolve distant geometry into seawater.\n let depth=textureLoad(mobileDepth,clamp(vec2i(uv*vec2f(textureDimensions(mobileDepth))),vec2i(0),vec2i(textureDimensions(mobileDepth))-1),0);\n let distance=0.1/max(depth,0.000001);\n let marine=smoothstep(8.0,125.0,distance)*mobileColor.submerged;\n let seawater=vec3f(0.012,0.13,0.17);\n c=mix(c,seawater,marine*0.93);\n // Camera underwater: attenuate the distant background as well as the seabed.\n if(mobileColor.submerged>0.5 && depth<0.00001){c=mix(c,seawater,0.94);}\n\n let neighbor=(textureSampleLevel(mobileHDR,smpLinearClamp,uv+vec2f(texel.x,0.0),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv-vec2f(texel.x,0.0),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv+vec2f(0.0,texel.y),0.0).rgb+\n  textureSampleLevel(mobileHDR,smpLinearClamp,uv-vec2f(0.0,texel.y),0.0).rgb)*0.25;\n c=max(c+(c-neighbor)*mobileColor.sharpen*.32,vec3f(0.0));\n c=c*vec3f(1.0+mobileColor.warmth,1.0,1.0-mobileColor.warmth);\n let lum=dot(c,vec3f(.2126,.7152,.0722));\n c=mix(vec3f(lum),c,mobileColor.saturation);\n c=pow(max(c,vec3f(0.0))/.18,vec3f(mobileColor.contrast))*.18;\n let v=(uv-.5)*vec2f(1.0,.82);\n c*=1.0-smoothstep(.25,.8,length(v))*mobileColor.vignette;\n let hashed=fract(sin(dot(in.pos.xy,vec2f(12.9898,78.233))+\n   f32(frame.frameIndex%127u)*.11)*43758.5453);\n c*=1.0+(hashed-.5)*mobileColor.grain;\n let graded=acesFilmicToneMapping(c,frame.exposure);\n return vec4f(linearToSrgb(graded),1.0);\n}\n"
   });
  }
  setScale(s){this.scale=Math.max(.5,Math.min(1,s));this.sceneRenderer.scale=this.scale;}
@@ -80,8 +62,6 @@ export class MobilePostFX {
    this._outW=w;this._outH=h;this._inW=iw;this._inH=ih;
    this.sceneRenderer.setSize(iw,ih);
    if(this.underwater?.setSize)this.underwater.setSize(iw,ih);
-   this.medium.setSize(iw,ih);
-   this.beauty.setSize(iw,ih);
   }
   const cam=this.camera;
   cam.updateMatrixWorld();
@@ -96,10 +76,6 @@ export class MobilePostFX {
   this._hasPrev=true;
  }
  render(){
-  this._mediumPass.render({colorViews:[this.medium.texture],clear:[0,0,0,0]});
-  // Run the existing half-resolution caustic/torch shaft march when near water.
-  this.underwater.renderShafts(this.camera.position.y < (Number.isFinite(this.waterHeight)?this.waterHeight:0)+LENS_REACH+1);
-  this._beautyPass.render({colorViews:[this.beauty.texture],clear:[0,0,0,0]});
   const out=this.outputTexture?this.outputTexture.view({dimension:'2d',mipLevelCount:1}):
    GPU.context.getCurrentTexture().createView();
   this._finalPass.render({colorViews:[out],clear:[0,0,0,1]});
@@ -107,5 +83,5 @@ export class MobilePostFX {
  endFrame(){}
  setBloom(value){this.params.bloom.value=value;}
  internalSize(){return {x:this._inW,y:this._inH};}
- passes(){return [['mobile underwater medium',this._mediumPass],['mobile underwater composite',this._beautyPass],['mobile ACES finish',this._finalPass]];}
+ passes(){return [['mobile ACES finish',this._finalPass]];}
 }
