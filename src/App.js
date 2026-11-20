@@ -496,6 +496,17 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// ---- compile pipelines asynchronously (keeps the page responsive), then prime a few
 		// frames behind the loading screen so any remaining first-use stalls happen there
 		// stage weights: in the browser the pipeline compile below takes far longer than everything before it
+		// iPhone full-coast mode can accumulate initialization compute work while
+		// allocating the whole scene. Submit that independent work BEFORE requesting
+		// the expensive render pipeline set. This does not disable any effects.
+		// ?startupFlush=0 retains the earlier ordering for controlled comparison.
+		if ( mobileLite && !window.__bermudaHighSeaOnly && qs.get('startupFlush') !== '0' ) {
+			gpuStage('Mobile bootstrap: submitting initialization compute');
+			if (GPU.encoder) GPU.submit();
+			await withDeadline(GPU.whenIdle(), 8000, 'Mobile bootstrap GPU queue');
+			if (GPU.fatalError) throw GPU.fatalError;
+			gpuStage('Mobile bootstrap: GPU queue completed');
+		}
 		await progress( 0.36, 'Compiling shaders…', 0.95 );
 		gpuStage('Precompile shaders');
 		if (!mobileLite) await this.precompile();
