@@ -57,15 +57,12 @@ if ( mobileFastStart ) {
 		url.searchParams.set('G','12');
 		url.searchParams.set('scale','0.70');
 	} else {
-		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
-		url.searchParams.set( 'G', '12' );
-		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.85' : '1' );
-		// Use the standard sky/cloud path rather than forcing the experimental panorama-only shader.
-		url.searchParams.delete( 'cloudtest' );
-		url.searchParams.set( 'oldClouds', '1' ); // Restore blue-sky legacy clouds shown in accepted iPhone reference.
-		url.searchParams.set( 'envtest', 'full' ); // Allow live environment reflections with complete atmosphere; progressive cubemap priming remains enabled.
-		url.searchParams.delete( 'noHaze' ); // Restore full atmospheric and aerial perspective.
-		url.searchParams.delete( 'freezeFFT' );
+		// High-quality effects are the default. Do not erase explicitly supplied
+		// diagnostic options (?noClouds=1, ?envtest=skip, ?cloudtest=panorama, etc.).
+		if (!url.searchParams.has('G')) url.searchParams.set('G','12');
+		if (!url.searchParams.has('scale')) url.searchParams.set('scale',mobileRetryLevel > 0 ? '0.85' : '1');
+		if (!url.searchParams.has('oldClouds') && !url.searchParams.has('cloudtest')) url.searchParams.set('oldClouds','1');
+		if (!url.searchParams.has('envtest')) url.searchParams.set('envtest','full');
 		// Preserve explicitly selected stability exclusions. The production
 		// mobile profile also applies these below, without needing a shared link.
 	}
