@@ -5,6 +5,7 @@ const main = read('../src/main.js');
 const app = read('../src/App.js');
 const gate = read('../src/mobile/WorldRenderGate.js');
 const clouds = read('../src/sky/Clouds.js');
+const shader = read('../src/engine/gpu/Shader.js');
 // The address bar must never be rewritten for internal mobile graphics settings.
 assert.doesNotMatch(main, /history\.replaceState\(/);
 assert.match(main, /window\.__bermudaBootSearch = url\.search/);
@@ -22,4 +23,7 @@ assert.match(app, /new MobilePostFX\(/);
 // Mobile raymarch work is bounded while the complete clouds converge over time.
 assert.match(clouds, /const mobileCloudBudget =/);
 assert.match(clouds, /k < mobileCloudBudget\(\)/);
+// WGSL bindings unreachable from both entry points must not consume texture slots.
+assert.match(shader, /stageOf\[ k \] = 'unused'/);
+assert.match(shader, /st === 'unused' \) l\.visibility = 0/);
 console.log('Clean mobile URL, coastal defaults, and GPU-loss race assertions passed');
