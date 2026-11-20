@@ -87,7 +87,10 @@ export class App {
 			exposure: 0.55,
 			renderScale: 1, // internal resolution (the temporal upscaler reconstructs the output), Performance tab
 		};
-		this.qs = new URLSearchParams( location.search );
+		// Mobile render settings are internal state, not public address-bar parameters.
+		// A visitor's explicit query is retained as the base for the effective profile.
+		this.qs = new URLSearchParams( typeof window !== 'undefined' && window.__bermudaBootSearch != null
+			? window.__bermudaBootSearch : location.search );
 
 	}
 
