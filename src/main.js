@@ -22,7 +22,8 @@ const mobileFastStart = mobileDevice && ! forceDesktop;
 window.__bermudaPublicUrl = location.href;
 // Low-memory recovery path, opt-in so desktop and full graphics are unchanged.
 const mobileRecovery = mobileFastStart && new URLSearchParams(location.search).get('recovery') === '1' && new URLSearchParams(location.search).get('highSeaOnly') !== '1';
-const highSeaOnly = mobileFastStart && new URLSearchParams(location.search).get('highSeaOnly') !== '0';
+// Restore all coastal graphics by default. ?highSeaOnly=1 is an explicit diagnostic fallback.
+const highSeaOnly = mobileFastStart && new URLSearchParams(location.search).get('highSeaOnly') === '1';
 window.__bermudaHighSeaOnly = highSeaOnly;
 // Explicit recovery mode only; normal mobile keeps the coastal effects.
 const mobileLowGPU = mobileRecovery; // Reduced GPU effects are explicit recovery-only, not production defaults.
@@ -42,11 +43,7 @@ if ( mobileFastStart ) {
 }
 window.__bermudaMobileOutputScale = highSeaOnly ? 1 : (mobileRecovery ? 0.64 : (mobileRetryLevel > 0 ? 0.85 : 1));
 
-if ( mobileDevice ) {
-	const clean = new URL( location.href );
-	for ( const key of [ 'gpuRecovery', 'gpuSafe', 'recoveryReason', 'noSim', 'G' ] ) clean.searchParams.delete( key );
-	if ( clean.href !== location.href ) history.replaceState( null, '', clean );
-}
+// Preserve the exact URL supplied by the visitor. Internal render flags never enter the address bar.
 
 if ( mobileFastStart ) {
 
@@ -60,15 +57,12 @@ if ( mobileFastStart ) {
 		url.searchParams.set('G','12');
 		url.searchParams.set('scale','0.70');
 	} else {
-		for ( const key of [ 'noClouds', 'noHaze', 'noCaustics', 'noSim' ] ) url.searchParams.delete( key );
-		url.searchParams.set( 'G', '12' );
-		url.searchParams.set( 'scale', mobileRetryLevel > 0 ? '0.85' : '1' );
-		// Use the standard sky/cloud path rather than forcing the experimental panorama-only shader.
-		url.searchParams.delete( 'cloudtest' );
-		url.searchParams.set( 'oldClouds', '1' ); // Restore blue-sky legacy clouds shown in accepted iPhone reference.
-		url.searchParams.set( 'envtest', 'full' ); // Allow live environment reflections with complete atmosphere; progressive cubemap priming remains enabled.
-		url.searchParams.delete( 'noHaze' ); // Restore full atmospheric and aerial perspective.
-		url.searchParams.delete( 'freezeFFT' );
+		// High-quality effects are the default. Do not erase explicitly supplied
+		// diagnostic options (?noClouds=1, ?envtest=skip, ?cloudtest=panorama, etc.).
+		if (!url.searchParams.has('G')) url.searchParams.set('G','12');
+		if (!url.searchParams.has('scale')) url.searchParams.set('scale',mobileRetryLevel > 0 ? '0.85' : '1');
+		if (!url.searchParams.has('oldClouds') && !url.searchParams.has('cloudtest')) url.searchParams.set('oldClouds','1');
+		if (!url.searchParams.has('envtest')) url.searchParams.set('envtest','full');
 		// Preserve explicitly selected stability exclusions. The production
 		// mobile profile also applies these below, without needing a shared link.
 	}
@@ -102,8 +96,9 @@ if ( mobileFastStart ) {
 		url.searchParams.delete('noClouds');
 		url.searchParams.delete('noCaustics');
 	}
-	if ( url.href !== location.href ) history.replaceState( null, '', url );
-	// Internal GPU settings remain active during initialization; restore the clean public URL once ready.
+	// The internal renderer receives the effective profile without mutating location.href.
+	// App captures this at construction; the public URL stays clean even if initialization fails.
+	window.__bermudaBootSearch = url.search;
 
 
 }
@@ -241,9 +236,7 @@ app.init( ( p, text, until ) => {
 		// Waiting for the loader to leave also prevents the finishing tap from
 		// accidentally entering gameplay through the newly exposed overlay.
 		await ui.hideLoader();
-		// Hide internal mobile GPU overrides only after initialization and verification.
-		// Preserve any query parameters the visitor supplied explicitly.
-		if (mobileFastStart) history.replaceState(null, '', window.__bermudaPublicUrl || (location.origin + location.pathname));
+		// The address bar was never modified; explicit diagnostic parameters remain intact.
 		ui.showStartOverlay( () => {
 			if ( started ) return;
 			started = true;
