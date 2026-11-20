@@ -322,6 +322,7 @@ export function getBindGroupLayout( entries, label ) {
 // A composed set of group-1 bindings: layout + a bind group rebuilt when a resource changes.
 export class BindingSet {
 
+	// stageOf: { name: 'vertex' | 'fragment' | 'unused' } for render resources;
 	// stageOf: { name: 'vertex' | 'fragment' } for render bindings only one stage reads (keeps the
 	// per-stage uniform buffer / texture counts down); demote: uniform blocks bound as read-only storage
 	constructor( specs, stage, label = 'bindings', stageOf = null, demote = null ) {
@@ -337,6 +338,9 @@ export class BindingSet {
 			const st = stageOf[ this.names[ i ] ];
 			if ( st === 'fragment' && ( l.visibility & GPUShaderStage.FRAGMENT ) ) l.visibility = GPUShaderStage.FRAGMENT;
 			if ( st === 'vertex' && ( l.visibility & GPUShaderStage.VERTEX ) ) l.visibility = GPUShaderStage.VERTEX;
+			// An unreachable module binding is retained for WGSL source compatibility,
+			// but contributes to no shader-stage resource limit.
+			if ( st === 'unused' ) l.visibility = 0;
 
 		}
 
@@ -542,7 +546,10 @@ export function composeShader( { modules = [], bindings = {}, code = '', defines
 		stageOf = {};
 		for ( const k in specs ) {
 
-			if ( ! usedV.has( k ) && ( ! usedF || usedF.has( k ) ) ) stageOf[ k ] = 'fragment';
+			// A module may introduce textures used by no reachable entry-point function.
+			// They must not consume sampled-texture slots on 16-slot WebGPU adapters.
+			if ( ! usedV.has( k ) && ( ! usedF || !usedF.has( k ) ) ) stageOf[ k ] = 'unused';
+			else if ( ! usedV.has( k ) && ( ! usedF || usedF.has( k ) ) ) stageOf[ k ] = 'fragment';
 			else if ( usedF && ! usedF.has( k ) && usedV.has( k ) ) stageOf[ k ] = 'vertex';
 
 		}
