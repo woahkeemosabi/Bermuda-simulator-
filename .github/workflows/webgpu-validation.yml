@@ -24,6 +24,7 @@ jobs:
           node test/game-logic.mjs
           node test/first-boat-mode.mjs
           node test/fish-catch-recovery.mjs
+          node test/dock-bites.mjs
       - name: World, loading and mobile readiness contracts
         run: |
           node test/bermuda-layout.mjs
