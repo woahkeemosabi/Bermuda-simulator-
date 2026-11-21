@@ -1,5 +1,6 @@
 import { Vector3, Color } from '../engine/index.js';
 import { WORLD } from '../world/WorldLayout.js';
+import { WATERFRONT_DECK } from '../world/bermuda/HarbourLayout.js';
 import { FISH } from './FishTable.js';
 import { habitatAt, pickSpecies, rollWeight, biteDelay } from './Bites.js';
 import { CatchMinigame } from './CatchMinigame.js';
@@ -508,7 +509,13 @@ export class Game {
 	// ---- bites
 	habitat() {
 
-		return this.habitatAtPoint( this.rod.bobber.x, this.rod.bobber.z, this.rod.depth );
+		const b = this.rod.bobber;
+		// Fish habitats depend on the mean water column (WORLD sea level = 0),
+		// not the asynchronous GPU water-height readback. On iPhone that readback
+		// may not produce an initial sample, leaving rod.depth at zero forever.
+		const floor = this.app.terrainData.heightAt( b.x, b.z );
+		const depth = Number.isFinite( floor ) ? Math.max( 0, -floor ) : 0;
+		return this.habitatAtPoint( b.x, b.z, depth );
 
 	}
 
@@ -521,7 +528,12 @@ export class Game {
 		const rect = ( x0, x1, z0, z1 ) => Math.hypot( Math.max( x0 - b.x, 0, b.x - x1 ), Math.max( z0 - b.z, 0, b.z - z1 ) );
 		const walk = rect( P.x - P.width / 2, P.x + P.width / 2, P.zStart, P.zEnd );
 		const head = rect( P.x - P.headWidth / 2, P.x + P.headWidth / 2, P.zEnd - P.headDepth, P.zEnd );
-		return habitatAt( { depth, reefDist, pierDist: Math.min( walk, head ) } );
+		// The playable Bermuda dock is at x≈-65, separate from Tidewater's
+		// legacy pier at x=55. Include the actual harbour geometry for pier fish.
+		const D = WATERFRONT_DECK;
+		const bermudaDock = rect( D.x - D.width / 2, D.x + D.width / 2,
+			D.z - D.depth / 2, D.z + D.depth / 2 );
+		return habitatAt( { depth, reefDist, pierDist: Math.min( walk, head, bermudaDock ) } );
 
 	}
 
@@ -540,7 +552,11 @@ export class Game {
 
 		}
 
-		this.bite = { phase: 'wait', t: biteDelay( this.habitat(), this.hour ) };
+		const delay = biteDelay( this.habitat(), this.hour );
+		// Never lock a cast into an infinite timer; allow a fresh depth sample or
+		// habitat recovery without making the player retrieve an apparently good cast.
+		this.bite = { phase: 'wait', t: Number.isFinite( delay ) ? delay : 8 };
+		if ( !Number.isFinite( delay ) ) this.toast( 'Water too shallow · cast farther out', 2200 );
 
 	}
 
@@ -592,7 +608,8 @@ export class Game {
 		} else if ( b.phase === 'take' ) {
 
 			this.toast( 'It took the bait and ran', 1800 );
-			this.bite = { phase: 'wait', t: biteDelay( this.habitat(), this.hour ) };
+			const nextDelay = biteDelay( this.habitat(), this.hour );
+			this.bite = { phase: 'wait', t: Number.isFinite( nextDelay ) ? nextDelay : 8 };
 
 		}
 
