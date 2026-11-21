@@ -608,7 +608,8 @@ export class Game {
 		} else if ( b.phase === 'take' ) {
 
 			this.toast( 'It took the bait and ran', 1800 );
-			this.bite = { phase: 'wait', t: biteDelay( this.habitat(), this.hour ) };
+			const nextDelay = biteDelay( this.habitat(), this.hour );
+			this.bite = { phase: 'wait', t: Number.isFinite( nextDelay ) ? nextDelay : 8 };
 
 		}
 
