@@ -132,6 +132,9 @@ gpuStage('UI initialization');
 const ui = new UI();
 applyBermudaBranding( mobileDevice );
 const app = new App();
+// The 60-second preload clock starts when initialization begins, not after
+// all cloud/shader work has finished. Explore still requires verified GPU frames.
+const mobilePreloadStartedAt = performance.now();
 applyBermudaBootLook( app );
 window.__ui = ui;
 
@@ -214,10 +217,11 @@ app.init( ( p, text, until ) => {
 			await verifyMobileWorldNoReadback( app, attempt => ui.setLoading(
 				Math.min(.975+attempt*.003,.99), 'Verifying GPU frames…', .995 ) );
 		}
-		// Hold the initialized world behind the loader for a full 60 seconds.
-		// No app.start(), gameplay RAF, or additional render submissions during this gate.
+		// The full 60-second preload includes cloud generation and shader preparation.
+		// Never unlock Explore before 3 completed GPU frames, even if verification
+		// itself takes longer than the preload clock.
 		const holdMs = 60000;
-		const holdStart = performance.now();
+		const holdStart = mobilePreloadStartedAt;
 		const loader = document.getElementById('loader');
 		const countdown = document.createElement('div');
 		countdown.id = 'bermuda-explore-countdown';
