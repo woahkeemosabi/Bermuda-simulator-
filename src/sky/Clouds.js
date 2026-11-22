@@ -62,7 +62,10 @@ const MS_GAIN = 2.6; // energy of the diffusion (multiply scattered) sunlight te
 
 // 4x4 ordered-dither sequence: one pixel of every block per frame
 const ORDER = [ 0, 10, 2, 8, 5, 15, 7, 13, 1, 11, 3, 9, 4, 14, 6, 12 ];
-const REBUILD_SLOTS = 4; // slots traced per frame right after a camera cut (sharp again after 16 / 4 frames)
+const REBUILD_SLOTS = 4; // desktop camera-cut rebuild slots per frame
+// Safari/iPhone rebuilds the same full-resolution cloud history in smaller GPU batches.
+const mobileRebuildSlots = () => typeof navigator !== 'undefined' &&
+ /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 2 : REBUILD_SLOTS;
 // history resolution relative to the (dynamic) render resolution: like sky-pro-webgpu's High quality (0.5),
 // the clouds are reconstructed at reduced width and height and one pixel of every 4x4 block is marched per
 // frame; the saved rays buy finer steps and fuller lighting
@@ -1286,7 +1289,7 @@ ${ MAIN } {
 		} else if ( this._rebuild < 16 ) {
 
 			// after a cut: several slots per frame, until every pixel has a sample of its own
-			for ( let k = 0; k < REBUILD_SLOTS && this._rebuild < 16; k ++ ) {
+			for ( let k = 0; k < mobileRebuildSlots() && this._rebuild < 16; k ++ ) {
 
 				if ( k > 0 ) this._holdCamera();
 				this.rebuildK.value = this._rebuild;
