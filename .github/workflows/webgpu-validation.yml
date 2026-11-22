@@ -18,7 +18,9 @@ jobs:
           cache: npm
       - run: npm ci
       - name: WebGPU lifecycle, readiness, pacing and resource unit tests
-        run: node test/webgpu-recovery.mjs
+        run: |
+          node test/webgpu-recovery.mjs
+          node test/mobile-staged-startup.mjs
       - name: Gameplay, persistence and fishing protections
         run: |
           node test/game-logic.mjs
