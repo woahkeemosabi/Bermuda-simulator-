@@ -163,7 +163,10 @@ export class App {
 			} else {
 				window.__bermudaCloudExperiment = 'full-clouds';
 			}
-			if ( this.clouds.ready ) await this.clouds.ready;
+			if ( this.clouds.ready ) {
+				await progress( .055, 'Generating cloud textures in batches…' );
+				await this.clouds.ready;
+			}
 			this.sky.clouds = this.clouds;
 
 		}
