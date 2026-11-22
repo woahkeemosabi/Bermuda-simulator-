@@ -3,6 +3,8 @@ import { ComputeKernel } from '../engine/gpu/Compute.js';
 import { Texture } from '../engine/gpu/Texture.js';
 import { generateMipmaps } from '../engine/gpu/Mipmaps.js';
 import { GPU } from '../engine/gpu/GPU.js';
+import { withDeadline } from '../engine/gpu/PipelineCompiler.js';
+import { gpuStage } from '../mobile/GpuAudit.js';
 import { FrameUniforms, G } from '../engine/render/Frame.js';
 import { commonModule } from '../engine/render/wgsl/common.js';
 import { Vector2, Vector3, MathUtils } from '../engine/math/index.js';
@@ -340,7 +342,12 @@ export class Clouds {
 		this._makeTargets();
 		this._buildModules();
 		this._buildKernels();
-		this._generateNoise();
+		// On iPhone, high-resolution cloud noise must not be encoded as one giant
+		// first-frame batch. App.init awaits ready before constructing the rest of
+		// the world, while desktop retains the original synchronous encode.
+		const onMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+		if (onMobile) this.ready = this._generateNoiseMobile();
+		else this._generateNoise();
 
 		this.frame = 0;
 		this.panoWarm = 1;
@@ -376,6 +383,37 @@ export class Clouds {
 		// fibre seeds and flow direction (r = seeds, g = flow angle)
 		this.auxTex = new Texture( { label: 'cloudFibreFlow', width: FIB_RES, height: FIB_RES, format: 'rgba16float', usage: [ 'sample', 'storage' ] } );
 
+	}
+
+	// Cloud noise uses six independent compute families, plus a mipmap chain.
+	// Serial submission prevents Safari's WebGPU process from receiving all of
+	// them in a single queued command buffer before the first gameplay frame.
+	async _generateNoiseMobile() {
+		const k = this._noiseKernels;
+		const jobs = [
+			['synoptic', () => k.syn.dispatch( [ SYN_RES / 8, SYN_RES / 8, 1 ] )],
+			['fibre flow', () => k.aux.dispatch( [ FIB_RES / 8, FIB_RES / 8, 1 ] )],
+			['fibres and mipmaps', () => {
+				k.fib.dispatch( [ FIB_RES / 8, FIB_RES / 8, 1 ] );
+				generateMipmaps( this.fibTex );
+			}],
+			['cloud shape volume', () => k.shape.dispatch( [ SHAPE_RES / 4, SHAPE_RES / 4, SHAPE_RES / 4 ] )],
+			['cloud detail volume', () => k.detail.dispatch( [ DETAIL_RES / 4, DETAIL_RES / 4, 1 ] )],
+			['weather map', () => k.weather.dispatch( [ WEATHER_RES / 8, WEATHER_RES / 8, 1 ] )],
+		];
+		// For the 3D detail volume, restore its z dimension when dispatching.
+		jobs[4][1] = () => k.detail.dispatch( [ DETAIL_RES / 4, DETAIL_RES / 4, DETAIL_RES / 4 ] );
+		gpuStage('Cloud noise: compiling generation pipelines');
+		await withDeadline(GPU.pipelinesReady(),30000,'Cloud noise shaders');
+		for (const [name,dispatch] of jobs) {
+			if(GPU.fatalError) throw GPU.fatalError;
+			gpuStage('Cloud noise: '+name);
+			dispatch();
+			GPU.submit();
+			await withDeadline(GPU.whenIdle(),20000,'Cloud noise '+name);
+			if(GPU.fatalError) throw GPU.fatalError;
+			await new Promise(resolve=>setTimeout(resolve,0));
+		}
 	}
 
 	_generateNoise() {
