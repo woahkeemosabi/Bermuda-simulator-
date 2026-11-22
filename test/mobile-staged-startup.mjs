@@ -4,6 +4,7 @@ const source=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const app=source('../src/App.js'), main=source('../src/main.js');
 const gate=source('../src/mobile/WorldRenderGate.js'), audit=source('../src/mobile/GpuAudit.js');
 const clouds=source('../src/sky/Clouds.js');
+const shader=source('../src/engine/gpu/Shader.js');
 // The iPhone startup must flush constructor-time compute before allocating and
 // compiling the post/shadow/refraction/water shader families, not only in
 // optional full-coast or recovery modes.
@@ -39,4 +40,6 @@ assert.match(audit,/GPU adapter shader budgets/);
 assert.match(audit,/Pipelines /);
 assert.match(clouds,/const mobileRebuildSlots =/);
 assert.match(clouds,/k < mobileRebuildSlots\(\)/);
+assert.match(shader,/stageOf\[ k \] = 'unused'/);
+assert.match(shader,/st === 'unused' \) l\.visibility = 0/);
 console.log('Mobile first-submit staged shader startup, device-loss abort and diagnostics PASS');
