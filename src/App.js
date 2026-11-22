@@ -519,30 +519,68 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 	// screen). The precompile frame visits every mesh of every pass, hidden or out of view, and the
 	// pipelines compile in parallel in the background (GPU.renderPipeline); the refraction pass and
 	// the hull mask are forced on so their variants are built too.
-	async precompile() {
+	async precompile(onMobileStage = () => {}) {
         if (this.mobileLite) {
-            if(!this.post._built){this.post._build();this.post._outW=0;}
-            if(!this.query.kernel)this.query._build();
-            if(!this.spray.updateKernel)this.spray._buildUpdate();
+            // Do not compile the entire mobile world while eight or more constructor-time
+            // compute passes remain in an unsubmitted encoder. Safari previously lost its
+            // device at frame 0 / submits 0 before the 60-second loader even began.
+            const checkDevice = () => { if (GPU.fatalError) throw GPU.fatalError; };
+            const stage = async (label, progress, create = () => {}) => {
+                checkDevice();
+                gpuStage('Mobile startup: '+label);
+                onMobileStage(label, progress);
+                create();
+                await withDeadline(GPU.pipelinesReady(),60000,'Mobile shader stage '+label);
+                checkDevice();
+                // Give Safari a scheduling turn before generating the next shader family.
+                await new Promise(resolve => setTimeout(resolve,0));
+                checkDevice();
+            };
+            gpuStage('Mobile startup: submitting initial compute');
+            onMobileStage('Submitting initial ocean and texture work…',0);
+            checkDevice();
+            if (GPU.encoder) {
+                GPU.submit();
+                await withDeadline(GPU.whenIdle(),8000,'Mobile initial compute submit');
+                checkDevice();
+            }
+            await stage('Post-processing and compute foundations',0.2,() => {
+                if(!this.post._built){this.post._build();this.post._outW=0;}
+                if(!this.query.kernel)this.query._build();
+                if(!this.spray.updateKernel)this.spray._buildUpdate();
+            });
             const mr=this.engine.meshRenderer;
             this.oceanLOD.update(this.camera);this.terrain.update(this.camera);this.rocks.update(this.camera);
             mr.precompiling=true;
             const refr=this.refraction.enabled;
             try {
-                this.post.beginFrame();
-                this.shadows.update(this.camera,G.sunDir.value);
-                this.shadows.render(this.scene,mr,this.shadows.cascades.map((_,i)=>i));
-                this.refraction.enabled=true;this.refraction.render(G.seaLevel.value);
-                for(const hull of [0,1]) {
-                    this.waterMaterial.hullOverride=hull;this.waterMaterial.__pkFrame=-1;
-                    this.sceneRenderer.preparePipelines();
+                await stage('Preparing screen targets',0.36,() => this.post.beginFrame());
+                await stage('Shadow pipelines',0.48,() => {
+                    this.shadows.update(this.camera,G.sunDir.value);
+                    this.shadows.render(this.scene,mr,this.shadows.cascades.map((_,i)=>i));
+                });
+                await stage('Refraction pipelines',0.64,() => {
+                    this.refraction.enabled=true;
+                    this.refraction.render(G.seaLevel.value);
+                });
+                for (const hull of [0,1]) {
+                    await stage('Coastal water and terrain '+(hull+1)+'/2',0.78+hull*0.12,() => {
+                        this.waterMaterial.hullOverride=hull;
+                        this.waterMaterial.__pkFrame=-1;
+                        this.sceneRenderer.preparePipelines();
+                    });
                 }
-            } finally {mr.precompiling=false;this.refraction.enabled=refr;this.waterMaterial.hullOverride=null;this.waterMaterial.__pkFrame=-1;}
-            await withDeadline(GPU.pipelinesReady(),120000,'Shader compilation');
-            GPU.submit();
-            await withDeadline(GPU.whenIdle(),8000,'Initial GPU uploads');
-            if(GPU.fatalError)throw GPU.fatalError;
+            } finally {
+                mr.precompiling=false;
+                this.refraction.enabled=refr;
+                this.waterMaterial.hullOverride=null;
+                this.waterMaterial.__pkFrame=-1;
+            }
+            gpuStage('Mobile startup: vegetation upload');
+            onMobileStage('Finishing vegetation resources',0.98);
+            checkDevice();
             await this.vegetation?.prepareGPU(step=>gpuStage('Vegetation atlas tile '+step));
+            checkDevice();
             return;
         }
 
