@@ -398,11 +398,9 @@ export class Clouds {
 				generateMipmaps( this.fibTex );
 			}],
 			['cloud shape volume', () => k.shape.dispatch( [ SHAPE_RES / 4, SHAPE_RES / 4, SHAPE_RES / 4 ] )],
-			['cloud detail volume', () => k.detail.dispatch( [ DETAIL_RES / 4, DETAIL_RES / 4, 1 ] )],
+			['cloud detail volume', () => k.detail.dispatch( [ DETAIL_RES / 4, DETAIL_RES / 4, DETAIL_RES / 4 ] )],
 			['weather map', () => k.weather.dispatch( [ WEATHER_RES / 8, WEATHER_RES / 8, 1 ] )],
 		];
-		// For the 3D detail volume, restore its z dimension when dispatching.
-		jobs[4][1] = () => k.detail.dispatch( [ DETAIL_RES / 4, DETAIL_RES / 4, DETAIL_RES / 4 ] );
 		gpuStage('Cloud noise: compiling generation pipelines');
 		await withDeadline(GPU.pipelinesReady(),30000,'Cloud noise shaders');
 		for (const [name,dispatch] of jobs) {
