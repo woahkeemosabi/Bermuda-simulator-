@@ -32,6 +32,8 @@ assert.match(app,/await withDeadline\(GPU\.pipelinesReady\(\),60000,'Mobile shad
 assert.match(app,/await new Promise\(resolve => setTimeout\(resolve,0\)\)/);
 assert.match(main,/app\.precompile\(\(label, fraction\) =>/);
 assert.match(main,/const holdMs = 60000/);
+assert.match(main,/const mobilePreloadStartedAt = performance\.now\(\)/);
+assert.match(main,/const holdStart = mobilePreloadStartedAt/);
 assert.ok(main.indexOf('await app.precompile')<main.indexOf('const holdMs = 60000'),
  'World verification must precede the 60s gameplay unlock gate');
 assert.match(gate,/Promise\.race\(\[promise,lost\]\)/);
