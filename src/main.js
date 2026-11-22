@@ -201,7 +201,10 @@ app.init( ( p, text, until ) => {
 
 		ui.setLoading( .97, 'Validating the 3D world…', .995 );
 		gpuStage('World verification');
-        await app.precompile();
+        await app.precompile((label, fraction) => {
+            ui.setLoading(.97 + Math.min(1, Math.max(0, fraction)) * .018,
+                'Preparing 3D world · '+label, .995);
+        });
 		if (mobileRecovery || app.qs.has('renderTest')) {
 			// Controlled render-pass diagnostics bypass HDR GPU readback verification.
 			// The standard production path verifies completed GPU frames without pixel readback.
