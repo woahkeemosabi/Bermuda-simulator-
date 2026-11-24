@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CoastalCadence } from '../src/mobile/CoastalProfile.js';
+import { Atmosphere } from '../src/sky/Atmosphere.js';
 
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 const app = read('../src/App.js'), atmosphere = read('../src/sky/Atmosphere.js');
@@ -11,6 +12,39 @@ assert.match(app, /this\.atmosphere\.mobileMode = mobileLite\s*\?/);
 assert.doesNotMatch(app, /\(window\.__bermudaHighSeaOnly && mobileLite\)\s*\?\s*'full'/);
 assert.match(atmosphere, /this\.mobileMode === 'staged' && this\._svValid/);
 assert.match(atmosphere, /this\._mobileSkyTimer = 5/);
+
+// Exercise the *actual* atmosphere update implementation with stubbed GPU
+// dispatchers, not just static source text. This reproduces a moving sun for
+// 1,600 frames (the failure happened at 1,672) without allocating GPU textures.
+const counts = {trans:0,multi:0,sky:0,irr:0};
+const sky = Object.create(Atmosphere.prototype);
+Object.assign(sky,{
+ mobileMode:'staged', mobileInitStage:0, needsStatic:true, _svValid:false,
+ _mobileSkyTimer:0, mobileHoldAfterPrime:false, _irrTimer:0,
+ _irrPending:false, skyViewDispatchCount:0,
+ viewHeight:{value:0},
+ params:{u32:new Uint32Array([0,0]),_pack(){}},
+ transmittanceKernel:{dispatch(){counts.trans++;}},
+ multiScatKernel:{dispatch(){counts.multi++;}},
+ skyViewKernel:{dispatch(){counts.sky++;}},
+ irradianceKernel:{dispatch(){counts.irr++;}},
+ readback:{request(){return false;}},
+ irrBuffer:{}
+});
+for(let i=0;i<3;i++) sky.update(0,1.8);
+assert.equal(sky.mobileInitStage,3);
+assert.equal(sky._svValid,true);
+assert.deepEqual([counts.trans,counts.multi,counts.sky],[1,1,1]);
+let queryOverlaps=0;
+for(let i=0;i<1600;i++){
+ sky.params.u32[0] = i+1; // changes every frame as the in-game sun does
+ sky.update(0.02,1.8);
+ if(sky.mobileSkyViewDispatched)queryOverlaps++;
+}
+assert.ok(counts.sky>=6 && counts.sky<=8,
+ 'Staged sky must refresh at most once per 5 seconds, not each frame: '+counts.sky);
+assert.equal(queryOverlaps,counts.sky-1);
+assert.ok(queryOverlaps<10,'SkyView/water-query overlap must be rare');
 
 // The startup LUTs must be primed in their dependency order, each through a
 // separate acknowledged queue submission, BEFORE verifying any world frames.
