@@ -67,6 +67,8 @@ assert.doesNotMatch(app, /window\.__bermudaHighSeaOnly\s*\|\|\s*!cadence\s*\|\|\
 assert.match(app, /cadence\.allowWhen\('clouds',250,dt,cloudPhaseAllowed\)/);
 assert.match(app, /const cloudPhaseAllowed = mobileAux\(0\)/);
 assert.match(app, /this\.clouds\.update\(this\.mobileLite && cadence \? cadence\.usedDelta\.clouds : dt/);
+assert.match(app, /\(!this\.mobileLite \|\| !updateClouds\) \) this\.environment\.update\( dt \)/);
+assert.match(app, /cloudPhaseAllowed = mobileAux\(0\) && !this\.atmosphere\.mobileSkyViewDispatched/);
 
 // Simulate 1600 mobile frames under a 20 ms per frame clock. Cloud compute
 // should execute ~4x/sec, not 1600x, while conserving animation time.
