@@ -25,7 +25,15 @@ try {
   mark(mode+': navigation completed; waiting on readiness gate');
   await page.waitForFunction(()=>window.__bermudaWorldGate?.status==='ready'||window.__bermudaWorldGate?.status==='failed'||window.__bermudaGpuLost,{},{timeout:240000});
   mark(mode+': readiness gate settled');
-  const gate=await page.evaluate(()=>window.__bermudaWorldGate);report.runs.push({mode,startupMs:Date.now()-started,gate});
+  const gate=await page.evaluate(()=>window.__bermudaWorldGate);
+  const gpu=await page.evaluate(()=>({
+    audit:window.__bermudaGpuAudit,
+    compiler:window.__app?.gpu?.compiler?.diagnostics?.(),
+    report:window.__app ? window.__bermudaGpuAudit?.stage : null,
+    resourceBytes:window.__app?.gpu?.resources?.textures?.bytes,
+  }));
+  report.runs.push({mode,startupMs:Date.now()-started,gate,gpu});
+  if(gate?.status!=='ready') console.error('[browser-recovery] GPU failure diagnostics',JSON.stringify(gpu).slice(0,5000));
   assert.equal(gate?.status,'ready',JSON.stringify(gate));
   mark(mode+': start overlay click');
   await page.locator('.tw-start-cta').click();
