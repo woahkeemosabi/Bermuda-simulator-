@@ -310,6 +310,16 @@ export function getBindGroupLayout( entries, label ) {
 	let l = _layoutCache.get( key );
 	if ( ! l ) {
 
+		// Validate adapter limits in JavaScript before forwarding impossible
+		// layouts to WebKit's native GPU process. Safari has previously reset
+		// the device rather than returning a useful error for oversized shaders.
+		const textureLimit = GPU.limits?.maxSampledTexturesPerShaderStage;
+		if ( textureLimit !== undefined ) for ( const [ stage, bit ] of [ [ 'vertex', GPUShaderStage.VERTEX ], [ 'fragment', GPUShaderStage.FRAGMENT ], [ 'compute', GPUShaderStage.COMPUTE ] ] ) {
+			const over = entries.filter( e => e.texture && ( e.visibility & bit ) );
+			if ( over.length > textureLimit ) throw new Error(
+				'WebGPU shader '+label+' requires '+over.length+'/'+textureLimit+
+				' sampled textures in '+stage+' stage; bindings '+over.map( e => e.binding ).join( ',' ) );
+		}
 		l = GPU.device.createBindGroupLayout( { label, entries } );
 		_layoutCache.set( key, l );
 
