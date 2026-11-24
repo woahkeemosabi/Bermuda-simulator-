@@ -139,6 +139,7 @@ export class SceneRenderer {
 		// 1. opaques + background
 		mr.render( scene, {
 			...common, label: 'opaque', layerMask: 1 << LAYERS.OPAQUE,
+			items: this.diagnosticSkyOnly ? {opaque:[],transparent:[]} : undefined,
 			clearColors: [ this.clearColor, [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ] ], clearDepth: 0,
 			after: this.background ? ( rp ) => this.background.draw( rp ) : null,
 		} );

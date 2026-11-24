@@ -82,7 +82,7 @@ export const GPU = {
 		this._pending = this.compiler.pending;
 		this.queue = device.queue;
         this.resources=installLedger(device);
-        this.submissions=new SubmissionManager(this.queue,{maxInFlight:mobileAdapter?1:Infinity,
+        this.submissions=new SubmissionManager(this.queue,{maxInFlight:mobileAdapter?1:Infinity,timeoutMs:mobileAdapter?18000:6500,
             onComplete:({frame,latencyMs})=>{this.queueLatencyMs=latencyMs;gpuQueueAck(frame);},
             onFailure:error=>{this.fatalError=error;this.compiler.cancel(error);gpuQueueStall(error.message);this.abortFrame(error);if(typeof window!=='undefined')window.__bermudaOnGPUFailure?.(error.message);}});
         if(typeof document!=='undefined'){

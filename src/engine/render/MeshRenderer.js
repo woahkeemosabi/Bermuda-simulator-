@@ -421,16 +421,20 @@ export class MeshRenderer {
 
 		// precompile: every mesh of the pass, hidden or not (builds all pipelines behind the loading screen)
 		const all = this.precompiling;
+		// Scene-only mobile profiles must not precompile graphics deliberately
+		// hidden for the entire game (village props, decorative stalls, etc.).
+		// Still discover every *visible* object's shader, including offscreen LODs.
+		const includeHidden = all && !this.skipHiddenWhenPrecompiling;
 		const visit = ( o ) => {
 
-			if ( ! o.visible && ! all ) return;
+			if ( ! o.visible && ! includeHidden ) return;
 			if ( o.isMesh && o.material && o.geometry && ( o.layers.mask & layerMask ) !== 0 && ( ! filter || filter( o ) ) && ( kind !== 'depth' || o.castShadow ) ) {
 
 				if ( all || ! cull || ! camera || o.frustumCulled === false || this._inFrustum( o ) ) {
 
 					// ported systems use this for their own LOD / culling (called per pass, as three does)
 					if ( o.onBeforeRender ) o.onBeforeRender( null, null, camera, o.geometry, o.material, null );
-					if ( o.visible || all ) this._addItems( o, opaque, transparent );
+					if ( o.visible || includeHidden ) this._addItems( o, opaque, transparent );
 
 				}
 
@@ -478,7 +482,7 @@ export class MeshRenderer {
 		const z = _v.setFromMatrixPosition( o.matrixWorld ).distanceToSquared( _camPos );
 		const push = ( material, start, count ) => {
 
-			if ( ! material || ( ! material.visible && ! this.precompiling ) ) return;
+			if ( ! material || ( ! material.visible && ( !this.precompiling || this.skipHiddenWhenPrecompiling ) ) ) return;
 			const item = { object: o, geometry: geo, material, start, count, z, renderOrder: o.renderOrder || 0, pipeKey: material.id };
 			( material.transparent ? transparent : opaque ).push( item );
 

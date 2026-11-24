@@ -163,7 +163,10 @@ export class App {
 			} else {
 				window.__bermudaCloudExperiment = 'full-clouds';
 			}
-			if ( this.clouds.ready ) await this.clouds.ready;
+			if ( this.clouds.ready ) {
+				await progress( .055, 'Generating cloud textures in batches…' );
+				await this.clouds.ready;
+			}
 			this.sky.clouds = this.clouds;
 
 		}
@@ -307,8 +310,9 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		if (!window.__bermudaHighSeaOnly) installGroundBounce( { terrain: this.terrainGPU, clouds: this.clouds } );
 		this.sceneRenderer = new SceneRenderer( engine.meshRenderer, scene, camera );
 		const renderTest = mobileLite ? qs.get('renderTest') : null;
-		this.sceneRenderer.diagnosticOpaqueOnly = renderTest === 'opaque' || renderTest === 'opaque-noshadows';
-		if (renderTest === 'opaque-noshadows') this.shadows.enabled = false;
+		this.sceneRenderer.diagnosticOpaqueOnly = ['opaque','opaque-noshadows','sky-only'].includes(renderTest);
+		this.sceneRenderer.diagnosticSkyOnly = renderTest === 'sky-only';
+		if (['opaque-noshadows','sky-only','postonly','clearonly'].includes(renderTest)) this.shadows.enabled = false;
 		if (typeof window !== 'undefined') window.__bermudaRenderExperiment = renderTest || 'full';
 		// the water's refraction source: the scene below the water only, half resolution
 		this.refraction = new RefractionPass( { meshRenderer: engine.meshRenderer, scene, camera, sceneRenderer: this.sceneRenderer, scale: 0.5 } );
@@ -329,7 +333,8 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// the sea is not drawn inside the boat (its hull volume masks the surface)
 		this.sceneRenderer.addHullMask( this.boat.createHullVolumeGeometry(), this.boat.group );
 		this.waterMaterial = new WaterMaterial( {
-			surface: this.surface, sky: this.sky, sceneCopy: this.sceneRenderer.opaqueCopy, sceneDepthHalf: this.sceneRenderer.opaqueDepthHalf.texture, refraction: this.refraction,
+			surface: this.surface, sky: this.sky, environment: this.environment,
+			sceneCopy: this.sceneRenderer.opaqueCopy, sceneDepthHalf: this.sceneRenderer.opaqueDepthHalf.texture, refraction: this.refraction,
 			hullMask: this.sceneRenderer.hullMaskRT.texture, hullMaskActive: this.sceneRenderer.hullMaskActive,
 		} );
 		this.waterMaterial.clouds = this.clouds;
@@ -393,7 +398,11 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		// interactive wake around the boat (Kelvin pattern, bow/stern waves, prop wash foam)
 		this.wake = new WakeSim( renderer, { terrainGPU: this.terrainGPU, boat: this.boatCtl, colliders: this.colliders } );
-		this.surface.wake = this.recoveryMode ? null : this.wake;
+		// The mobile engine also renders an inexpensive separate boat wake.
+		// On 16-texture adapters, avoid binding the three GPU-wake textures to
+		// an already complex ocean/refraction shader. Keep its CPU wake visual.
+		const limitedWaterBindings = mobileLite && ( GPU.limits?.maxSampledTexturesPerShaderStage ?? 16 ) <= 16;
+		this.surface.wake = (this.recoveryMode || limitedWaterBindings) ? null : this.wake;
 		// A tiny CPU wake remains available on iPhone when the GPU Kelvin wake is disabled by the memory profile.
 		this.mobileWake = new MobileWake( { scene, boat: this.boatCtl } );
 		this.player = new Player( { camera, input: this.input, terrain: this.terrainData, colliders: this.colliders, query: this.query, boat: this.boatCtl, reef: this.reef } );
@@ -519,30 +528,83 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 	// screen). The precompile frame visits every mesh of every pass, hidden or out of view, and the
 	// pipelines compile in parallel in the background (GPU.renderPipeline); the refraction pass and
 	// the hull mask are forced on so their variants are built too.
-	async precompile() {
+	async precompile(onMobileStage = () => {}) {
         if (this.mobileLite) {
-            if(!this.post._built){this.post._build();this.post._outW=0;}
-            if(!this.query.kernel)this.query._build();
-            if(!this.spray.updateKernel)this.spray._buildUpdate();
+            // Do not compile the entire mobile world while eight or more constructor-time
+            // compute passes remain in an unsubmitted encoder. Safari previously lost its
+            // device at frame 0 / submits 0 before the 60-second loader even began.
+            const checkDevice = () => { if (GPU.fatalError) throw GPU.fatalError; };
+            const stage = async (label, progress, create = () => {}) => {
+                checkDevice();
+                gpuStage('Mobile startup: '+label);
+                onMobileStage(label, progress);
+                create();
+                await withDeadline(GPU.pipelinesReady(),60000,'Mobile shader stage '+label);
+                checkDevice();
+                // Give Safari a scheduling turn before generating the next shader family.
+                await new Promise(resolve => setTimeout(resolve,0));
+                checkDevice();
+            };
+            gpuStage('Mobile startup: submitting initial compute');
+            onMobileStage('Submitting initial ocean and texture work…',0);
+            checkDevice();
+            if (GPU.encoder) {
+                GPU.submit();
+                await withDeadline(GPU.whenIdle(),8000,'Mobile initial compute submit');
+                checkDevice();
+            }
+            await stage('Post-processing and compute foundations',0.2,() => {
+                if(!this.post._built){this.post._build();this.post._outW=0;}
+                if(!this.query.kernel)this.query._build();
+                if(!this.spray.updateKernel)this.spray._buildUpdate();
+            });
             const mr=this.engine.meshRenderer;
             this.oceanLOD.update(this.camera);this.terrain.update(this.camera);this.rocks.update(this.camera);
             mr.precompiling=true;
+            mr.skipHiddenWhenPrecompiling=!!window.__bermudaHighSeaOnly;
             const refr=this.refraction.enabled;
             try {
-                this.post.beginFrame();
-                this.shadows.update(this.camera,G.sunDir.value);
-                this.shadows.render(this.scene,mr,this.shadows.cascades.map((_,i)=>i));
-                this.refraction.enabled=true;this.refraction.render(G.seaLevel.value);
-                for(const hull of [0,1]) {
-                    this.waterMaterial.hullOverride=hull;this.waterMaterial.__pkFrame=-1;
-                    this.sceneRenderer.preparePipelines();
+                await stage('Preparing screen targets',0.36,() => this.post.beginFrame());
+                await stage('Shadow pipelines',0.48,() => {
+                    this.shadows.update(this.camera,G.sunDir.value);
+                    this.shadows.render(this.scene,mr,this.shadows.cascades.map((_,i)=>i));
+                });
+                await stage('Refraction pipelines',0.64,() => {
+                    this.refraction.enabled=true;
+                    this.refraction.render(G.seaLevel.value);
+                });
+                for (const hull of [0,1]) {
+                    await stage('Coastal water and terrain '+(hull+1)+'/2',0.78+hull*0.12,() => {
+                        this.waterMaterial.hullOverride=hull;
+                        this.waterMaterial.__pkFrame=-1;
+                        this.sceneRenderer.preparePipelines();
+                    });
                 }
-            } finally {mr.precompiling=false;this.refraction.enabled=refr;this.waterMaterial.hullOverride=null;this.waterMaterial.__pkFrame=-1;}
-            await withDeadline(GPU.pipelinesReady(),120000,'Shader compilation');
-            GPU.submit();
-            await withDeadline(GPU.whenIdle(),8000,'Initial GPU uploads');
-            if(GPU.fatalError)throw GPU.fatalError;
+            } finally {
+                mr.precompiling=false;
+                mr.skipHiddenWhenPrecompiling=false;
+                this.refraction.enabled=refr;
+                this.waterMaterial.hullOverride=null;
+                this.waterMaterial.__pkFrame=-1;
+            }
+            // Stage the expensive first cloud panorama / SDF work by itself,
+            // not together with FFT, caustics, water, shadows and eight draws.
+            // Cloud view history is deliberately held until three full scene
+            // frames have completed, then warmed with small cloud-only submits.
+            if (this.clouds instanceof Clouds) {
+                this.clouds.startupTraceHold=true;
+                await stage('Cloud panorama and shadow preparation',0.95,() => this.clouds.update(0,this.camera));
+                if (GPU.encoder) {
+                    GPU.submit();
+                    await withDeadline(GPU.whenIdle(),15000,'Mobile cloud panorama upload');
+                    checkDevice();
+                }
+            }
+            gpuStage('Mobile startup: vegetation upload');
+            onMobileStage('Finishing vegetation resources',0.98);
+            checkDevice();
             await this.vegetation?.prepareGPU(step=>gpuStage('Vegetation atlas tile '+step));
+            checkDevice();
             return;
         }
 
@@ -588,6 +650,63 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		await GPU.pipelinesReady();
 		await GPU.queue.onSubmittedWorkDone();
 
+	}
+
+	// Every first-frame compute family (FFT, caustics, shore, underwater,
+	// breakers and atmosphere) is primed as a separate acknowledged GPU batch.
+	// It was unsafe to submit all 16 kernels plus 8 render passes in one iPhone
+	// frame; the browser destroyed the device after queue submission.
+	async primeMobileSimulation(onProgress = () => {}) {
+		if(!this.mobileLite) return;
+		const prime=async(label,run)=>{
+			if(GPU.fatalError) throw GPU.fatalError;
+			gpuStage('Mobile startup: priming '+label);
+			onProgress(label);
+			run();
+			await withDeadline(GPU.pipelinesReady(),30000,'Prime '+label+' pipelines');
+			if(GPU.encoder) {
+				GPU.submit();
+				await withDeadline(GPU.whenIdle(),20000,'Prime '+label+' GPU work');
+			}
+			if(GPU.fatalError) throw GPU.fatalError;
+			await new Promise(resolve=>setTimeout(resolve,0));
+		};
+		await prime('atmosphere',()=>this.atmosphere.update(0,this.camera.position.y));
+		await prime('FFT ocean',()=>this.fft.update(0));
+		await prime('caustics',()=>this.caustics?.update());
+		await prime('shore simulation',()=>this.shoreSim?.update());
+		await prime('underwater light maps',()=>this.underwaterLighting.update(this.camera));
+		await prime('surf crests',()=>this.breakers.update(this.camera));
+		this._fftInitialized=true;
+		this._causticsPrimed=true;
+		this._shoreSimPrimed=true;
+		this._underwaterMapPrimed=true;
+		// Three verification frames use already finished textures. Subsequent
+		// gameplay frames resume FFT continuously; auxiliary passes are paced.
+		this._mobileSimulationVerifiedFrameSkips=3;
+	}
+
+	// Fill the complete high-resolution view cloud history during the loader,
+	// after the three scene-frame verification gate. Each update records one
+	// history slot only, submitted/acknowledged independently without drawing
+	// the island world again. No permanent panorama-only cloud downgrade.
+	async primeMobileCloudHistory(onProgress = () => {}) {
+		const clouds = this.clouds;
+		if (!this.mobileLite || !clouds?.startupTraceHold) return;
+		clouds.startupTraceHold = false;
+		for (let n=0;n<16 && clouds._rebuild<16;n++) {
+			if (GPU.fatalError) throw GPU.fatalError;
+			gpuStage('Mobile startup: cloud view slot '+(n+1)+'/16');
+			onProgress(n+1,16);
+			clouds.update(0,this.camera);
+			await withDeadline(GPU.pipelinesReady(),30000,'Mobile cloud view shader');
+			if(GPU.encoder) {
+				GPU.submit();
+				await withDeadline(GPU.whenIdle(),15000,'Mobile cloud view slot '+(n+1));
+			}
+			if(GPU.fatalError) throw GPU.fatalError;
+			await new Promise(resolve=>setTimeout(resolve,0));
+		}
 	}
 
 	// ---------------------------------------------------------------- sun / sky
@@ -804,6 +923,14 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		gpuStage('Frame begin', GPU.frame + 1);
 		GPU.beginFrame();
+		// The first three verified iPhone frames use completed, separately primed
+		// simulation textures. Never batch initialization with eight scene passes.
+		const renderIsolation = this.qs.has('renderTest'); // QA-only: isolate graphics from all background compute.
+		const simPreprimed = this.mobileLite && (this._mobileSimulationVerifiedFrameSkips||0)>0;
+		if (simPreprimed) this._mobileSimulationVerifiedFrameSkips--;
+		// Keep FFT at full gameplay frequency while staging costly auxiliary
+		// simulations across successive frames (rather than all in one submit).
+		const mobileAux = n => !this.mobileLite || GPU.frame%3===n;
 		FrameUniforms.fields.frameIndex.value = GPU.frame;
 		const s = this.settings;
 		this.updateFPS( dt );
@@ -831,20 +958,21 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		}
 		this.boatCtl.update( dt );
 		this.boatSpray.update( dt );
-		this.wake.update( dt );
+		if (!renderIsolation) this.wake.update( dt );
 		if ( this.mobileWake ) this.mobileWake.update( dt );
 		if ( this.freeCam ) this.fly.update( dt );
 		else this.player.update( dt );
 		this.game.update( dt );
 		this.updateSun();
 
-		this.atmosphere.update( dt, this.camera.position.y );
+		if (!simPreprimed && !renderIsolation) this.atmosphere.update( dt, this.camera.position.y );
+		else this.atmosphere.mobileSkyViewDispatched=false;
 		this.applyAtmosphereReadback();
 
 		// ---- water simulation
 		gpuStage('FFT and ocean simulation', GPU.frame);
 		// Keep FFT displacement textures valid, but compute them only once in low-GPU mode.
-		if ( !this.qs.has('freezeFFT') || !this._fftInitialized ) {
+		if ( !renderIsolation && !simPreprimed && ( !this.qs.has('freezeFFT') || !this._fftInitialized ) ) {
 			this.fft.update( dt );
 			this._fftInitialized = true;
 		}
@@ -856,7 +984,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// subsequent frames continue water physics and camera-state readback.
 		if ( this.mobileLite && this.atmosphere.mobileSkyViewDispatched ) {
 			this.mobileSkyViewWaterQuerySkips = ( this.mobileSkyViewWaterQuerySkips || 0 ) + 1;
-		} else {
+		} else if(!renderIsolation) {
 			this.query.update();
 		}
 		if ( this.query.cpuValid ) {
@@ -871,38 +999,38 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		// Restore the historical steady coastal cadence; initialized textures persist.
 		const cadence = this.coastalCadence;
-		if ( this.caustics && (!cadence || cadence.allow('caustics',67)) ) {
+		if ( !renderIsolation && !simPreprimed && mobileAux(1) && this.caustics && (!cadence || cadence.allow('caustics',67)) ) {
 			this.caustics.update();
 			this._causticsPrimed = true;
 		}
 		// drawn while any part of the view can be under water (the specks above the surface are dropped)
-		this.marineSnow.update( this.camera, this.camera.position.y < ( this.cameraWaterHeight ?? 0 ) + LENS_REACH );
-		this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );
-		if ( this.shoreSim && (!cadence || cadence.allow('shore',67)) ) {
+		if (!renderIsolation) this.marineSnow.update( this.camera, this.camera.position.y < ( this.cameraWaterHeight ?? 0 ) + LENS_REACH );
+		if (!renderIsolation) this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );
+		if ( !renderIsolation && !simPreprimed && mobileAux(2) && this.shoreSim && (!cadence || cadence.allow('shore',67)) ) {
 			this.shoreSim.update();
 			this._shoreSimPrimed = true;
 		}
 		// Only dispatch the underwater light-map kernels during the first mobile frame.
 		// This gate remains effective even if another system replaces the lighting updater.
-		if ( !this.qs.has('freezeFFT') || !this._underwaterMapPrimed ) {
+		if ( !renderIsolation && !simPreprimed && mobileAux(0) && ( !this.qs.has('freezeFFT') || !this._underwaterMapPrimed ) ) {
 			this.underwaterLighting.update( this.camera );
 			this._underwaterMapPrimed = true;
 		}
-		this.breakers.update( this.camera );
+		if (!renderIsolation && !simPreprimed && mobileAux(1)) this.breakers.update( this.camera );
 		// Explicitly bypass spray dispatch in mobile low-GPU mode, even if a later system
 		// reassigns spray.update after initialization.
-		if ( !this.qs.has('noSpray') && !this.qs.has('freezeFFT') ) {
+		if ( !renderIsolation && !this.qs.has('noSpray') && !this.qs.has('freezeFFT') ) {
 			this.spray.update();
 			this._sprayPrimed = true;
 		}
-		if ( this.clouds && (window.__bermudaHighSeaOnly || !cadence || cadence.allow('clouds',100,dt)) ) this.clouds.update( window.__bermudaHighSeaOnly ? dt : (cadence ? cadence.usedDelta.clouds : dt), this.camera );
+		if ( !renderIsolation && this.clouds && (window.__bermudaHighSeaOnly || !cadence || cadence.allow('clouds',100,dt)) ) this.clouds.update( window.__bermudaHighSeaOnly ? dt : (cadence ? cadence.usedDelta.clouds : dt), this.camera );
 		// Mobile WebGPU: don't bake reflection faces while the atmosphere LUTs
 		// are still initializing. This keeps the original reflections and ocean,
 		// but avoids pairing Atmosphere MultiScat with Env Face on startup.
 		const atmosphereReadyForReflections = !this.mobileLite ||
 			( (this.atmosphere.mobileMode !== 'staged' || this.atmosphere.mobileInitStage >= 3) &&
 			  this.atmosphere._svValid && !this.atmosphere.mobileSkyViewDispatched );
-		if ( atmosphereReadyForReflections ) this.environment.update( dt );
+		if ( !renderIsolation && atmosphereReadyForReflections ) this.environment.update( dt );
 
 		// ---- world
 		gpuStage('Island world preparation', GPU.frame);
@@ -944,11 +1072,23 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		}
 		this.post.beginFrame();
 		this.underwater.updateCamera( this.camera );
-		this.shadows.render( this.scene, this.engine.meshRenderer, this.shadows.update( this.camera, G.sunDir.value ) );
-		this.sceneRenderer.render();
+		// QA isolation can draw just the mobile final pass or only the sky
+		// without changing the normal game renderer.
+		if (!['postonly','clearonly'].includes(this.qs.get('renderTest'))) {
+			this.shadows.render( this.scene, this.engine.meshRenderer, this.shadows.update( this.camera, G.sunDir.value ) );
+			this.sceneRenderer.render();
+		}
 		if ( this.post.flare ) this.post.flare.kernel.dispatch( 1 );
 		gpuStage('Post/presentation', GPU.frame);
-		this.post.render();
+		if (this.qs.get('renderTest') === 'clearonly') {
+			// QA-only diagnostic: present a canvas clear with ZERO fragment
+			// pipelines, samplers or scene textures.
+			const rp=GPU.getEncoder().beginRenderPass({
+				label:'Bermuda QA canvas clear only',
+				colorAttachments:[{view:GPU.context.getCurrentTexture().createView(),loadOp:'clear',storeOp:'store',clearValue:[0.025,0.065,0.11,1]}]
+			});
+			rp.end();
+		} else this.post.render();
 		this.post.endFrame();
 		GPU.submit();
 		this.profiler.update( dt );

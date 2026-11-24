@@ -6,6 +6,11 @@ on:
     branches: ['repair/production-recovery-*']
 permissions:
   contents: read
+# New fixes supersede old PR revisions. Running a dozen outdated software GPU
+# jobs simultaneously delayed startup diagnosis and wasted CI resources.
+concurrency:
+  group: webgpu-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   source-and-build:
     runs-on: ubuntu-latest
@@ -18,7 +23,9 @@ jobs:
           cache: npm
       - run: npm ci
       - name: WebGPU lifecycle, readiness, pacing and resource unit tests
-        run: node test/webgpu-recovery.mjs
+        run: |
+          node test/webgpu-recovery.mjs
+          node test/mobile-staged-startup.mjs
       - name: Gameplay, persistence and fishing protections
         run: |
           node test/game-logic.mjs
@@ -88,12 +95,19 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
+      # Linux Chromium needs a real X display plus Vulkan compositing for
+      # WebGPU swapchain images. Without it even a plain canvas clear can
+      # destroy Dawn's native Instance on headless SwiftShader.
+      - name: Prepare Vulkan compositor display
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb xauth libvulkan1
       - name: Fresh and cached mobile-browser startup, frames and loss handling
         run: |
           npm run dev > /tmp/vite.log 2>&1 &
           for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:5189/ >/dev/null && break; sleep 1; done
-          node test/browser-recovery.mjs
+          xvfb-run -a node test/browser-recovery.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

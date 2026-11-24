@@ -1,4 +1,4 @@
-import { Material, ShaderModule, G } from '../engine/webgpu.js';
+import { Material, ShaderModule, G, GPU } from '../engine/webgpu.js';
 import { commonModule } from '../engine/render/wgsl/common.js';
 import { whaleWaterModule } from './WhaleWater.js';
 import { REFRACTION_GUARD } from './RefractionPass.js';
@@ -53,7 +53,7 @@ export const viewPositionFromViewZ = ( uv, viewZ ) => `viewPositionFromViewZ( ${
 // shader: previous world position = current, staticVelocity), r.mask = ( seenFromBelow, 1, 0, 1 ).
 export class WaterMaterial extends Material {
 
-	constructor( { surface, sky, sceneCopy, sceneDepthHalf = null, refraction = null, reflection = null, hullMask = null, hullMaskActive = null } ) {
+	constructor( { surface, sky, environment = null, sceneCopy, sceneDepthHalf = null, refraction = null, reflection = null, hullMask = null, hullMaskActive = null } ) {
 
 		super( {
 			name: 'water',
@@ -86,6 +86,7 @@ export class WaterMaterial extends Material {
 		// (`surface` is the Material's surface snippet here: the WaterSurface is `waterSurface`)
 		this.waterSurface = surface;
 		this.sky = sky;
+		this.environment = environment;
 		this.reflection = reflection;
 		this.clouds = null; // set by the app before the first frame
 		this.cheap = false;
@@ -159,13 +160,46 @@ export class WaterMaterial extends Material {
 		const CL = !! ( this.clouds && this.clouds.module );
 		const HULL = !! ( this.hullMaskTexture && this.hullMaskActive );
 		const REFL = !! ( this.reflection && this.reflection.module );
-
-		this.modules = [ commonModule, waterFresnelModule, waterHelpersModule, whaleWaterModule, S.module, sky && sky.module, CL && this.clouds.module,
-			SIM && S.shoreSim.module, REFL && this.reflection.module, this.cameraWaterHeightNode && this.cameraWaterHeightNode.module ].filter( Boolean );
+		// WebGPU guarantees only 16 sampled textures per shader stage. Preserve
+		// FFT, surf, shoreline simulation, refraction and cloud shadows on such
+		// adapters, but sample sky/cloud radiance from the existing progressively
+		// baked environment cubemap instead of binding five sky/cloud LUTs.
+		// The normal full-quality per-ray sky shader is retained on larger GPUs.
+		const compactSky = !!this.environment && ( GPU.limits?.maxSampledTexturesPerShaderStage ?? 16 ) <= 16;
+		if ( compactSky ) {
+			this.skyCubeModule = new ShaderModule( {
+				name: 'mobileWaterSkyCube',
+				deps: [ commonModule ],
+				bindings: { waterSkyCube: { texture: () => this.environment.texture, viewDimension: 'cube' } },
+				code: /* wgsl */`
+fn skyReflectionRadiance( dir: vec3f ) -> vec3f {
+	return textureSampleLevel( waterSkyCube, smpLinearClamp, normalize( dir ), 0.0 ).rgb;
+}
+fn skyRadianceWithClouds( dir: vec3f, withSun: bool ) -> vec3f {
+	let L = skyReflectionRadiance( dir );
+	let sunCos = dot( normalize( dir ), normalize( frame.sunDir ) );
+	let sun = frame.sunColor * smoothstep( 0.99995, 0.999997, sunCos ) * 6.0;
+	return L + select( vec3f( 0.0 ), sun, withSun );
+}
+`,
+			} );
+		}
+		// Compact cubemap reflections already include the cloud layer. Keep
+		// direct per-texel cloud shadows on capable GPUs, but avoid the extra
+		// cloud-shadow texture in the 16-slot ocean fragment shader.
+		const directCloudShadow = CL && !compactSky;
+		this.modules = [ commonModule, waterFresnelModule, waterHelpersModule, whaleWaterModule, S.module,
+			compactSky ? this.skyCubeModule : sky && sky.module,
+			directCloudShadow && this.clouds.module,
+			SIM && S.shoreSim.module, REFL && this.reflection.module,
+			this.cameraWaterHeightNode && this.cameraWaterHeightNode.module ].filter( Boolean );
 		this.bindings.waterSceneColor = { texture: this.sceneColorTexture };
 		this.bindings.waterSceneDepth = { texture: this.sceneDepthTexture, sampleType: 'unfilterable-float' };
-		if ( this.sceneDepthHalfTexture ) this.bindings.waterSceneDepthHalf = { texture: this.sceneDepthHalfTexture };
-		this.setDefine( 'WATER_DEPTH_HALF', this.sceneDepthHalfTexture ? 1 : 0 );
+		// SSR can use the full-resolution opaque depth already bound below. Avoid
+		// allocating a redundant fragment texture binding on 16-texture adapters.
+		const depthHalf = !!this.sceneDepthHalfTexture && !compactSky;
+		if ( depthHalf ) this.bindings.waterSceneDepthHalf = { texture: this.sceneDepthHalfTexture };
+		this.setDefine( 'WATER_DEPTH_HALF', depthHalf ? 1 : 0 );
 		const REFR = !! this.refraction;
 		if ( REFR ) {
 
@@ -191,7 +225,7 @@ export class WaterMaterial extends Material {
 	o.vShoreFoam = r.shoreFoam;
 	o.vSurfMask = r.surfMask;
 `;
-		this.output = this.cheap ? 'r.color = vec4f( 0.02, 0.05, 0.1, 1.0 ); r.mask = vec4f( 0.0, 1.0, 0.0, 1.0 );' : this._shadeWGSL( { T, SH, SIM, SF, CL, HULL, REFL } );
+		this.output = this.cheap ? 'r.color = vec4f( 0.02, 0.05, 0.1, 1.0 ); r.mask = vec4f( 0.0, 1.0, 0.0, 1.0 );' : this._shadeWGSL( { T, SH, SIM, SF, CL: directCloudShadow, HULL, REFL } );
 		this.needsUpdate = true;
 
 	}

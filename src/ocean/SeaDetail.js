@@ -1,6 +1,6 @@
 import { Vector2 } from '../engine/math/index.js';
 import { toHalfFloat } from '../engine/math/DataUtils.js';
-import { Texture, UniformBlock, ShaderModule, commonModule } from '../engine/webgpu.js';
+import { Texture, UniformBlock, ShaderModule, commonModule, GPU } from '../engine/webgpu.js';
 import { G } from '../engine/render/Frame.js';
 import { mulberry32 } from '../util/Noise.js';
 
@@ -81,6 +81,50 @@ fn seaDetailSample( xz: vec2f ) -> SeaDetailSample {
 `,
 		} );
 
+	}
+
+	// An adapter with the WebGPU baseline 16 sampled-texture budget cannot
+	// bind the sea-detail noise map alongside FFT, shore, refraction, SSR and
+	// boat masking. Retain wind-aligned gusts, slicks and windrows using an
+	// analytic-noise shader on those adapters instead of disabling sea detail.
+	// Higher-capability devices continue to sample the original noise texture.
+	get compatibleModule() {
+		const limited = ( GPU.limits?.maxSampledTexturesPerShaderStage ?? 16 ) <= 16;
+		if ( ! limited ) return this.module;
+		if ( ! this._compactModule ) this._compactModule = new ShaderModule( {
+			name: 'seaDetailProceduralMobile',
+			deps: [ commonModule ],
+			uniforms: this.uniforms,
+			code: /* wgsl */`
+struct SeaDetailSample { rough: f32, gust: f32, slick: f32, streak: f32 };
+
+// Smooth analytic noise replaces one sampled texture binding on baseline GPUs.
+fn seaDetailCheapNoise( p: vec2f ) -> f32 {
+	let a = sin( p.x * 23.7 + p.y * 11.3 + sin( p.y * 6.1 ) );
+	let b = sin( p.x * 9.7 - p.y * 18.9 + sin( p.x * 7.3 ) );
+	return clamp( 0.5 + 0.25 * a + 0.25 * b, 0.0, 1.0 );
+}
+fn seaDetailSample( xz: vec2f ) -> SeaDetailSample {
+	let p = xz - seaDetailParams.offset;
+	let g1 = seaDetailCheapNoise( p / 620.0 );
+	let g2 = seaDetailCheapNoise( p / 230.0 + vec2f( frame.time * 0.0009, 0.37 ) );
+	let gust = sat( ( g1 * 0.62 + g2 * 0.38 - 0.5 ) * 2.4 * seaDetailParams.gustAmount + 0.5 );
+	let w = frame.windDir;
+	let along = dot( xz, w );
+	let across = dot( xz, vec2f( -w.y, w.x ) ) + ( g2 - 0.5 ) * 26.0;
+	let sl = seaDetailCheapNoise( vec2f( along / 1100.0, across / 70.0 ) );
+	let calmWind = smoothstep( 13.0, 4.0, frame.windSpeed );
+	let slick = smoothstep( 0.64, 0.76, sl ) * ( 1.0 - gust * 0.8 ) * calmWind * seaDetailParams.slickAmount;
+	let st = seaDetailCheapNoise( vec2f( along / 380.0, across / 11.0 ) + vec2f( 0.13, 0.71 ) );
+	let breakUp = seaDetailCheapNoise( vec2f( along / 140.0, across / 40.0 ) + vec2f( 0.51, 0.29 ) );
+	let freshWind = smoothstep( 6.0, 12.0, frame.windSpeed );
+	let streak = smoothstep( 0.68, 0.82, st ) * smoothstep( 0.4, 0.62, breakUp ) * freshWind * seaDetailParams.streakAmount;
+	let rough = mix( 0.5, 1.5, gust ) * ( 1.0 - slick * 0.8 ) * ( 1.0 - streak / max( seaDetailParams.streakAmount, 1e-3 ) * 0.45 );
+	return SeaDetailSample( rough, gust, slick, streak );
+}
+`,
+		} );
+		return this._compactModule;
 	}
 
 	update( dt ) {

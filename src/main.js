@@ -132,6 +132,9 @@ gpuStage('UI initialization');
 const ui = new UI();
 applyBermudaBranding( mobileDevice );
 const app = new App();
+// The 60-second preload clock starts when initialization begins, not after
+// all cloud/shader work has finished. Explore still requires verified GPU frames.
+const mobilePreloadStartedAt = performance.now();
 applyBermudaBootLook( app );
 window.__ui = ui;
 
@@ -201,7 +204,14 @@ app.init( ( p, text, until ) => {
 
 		ui.setLoading( .97, 'Validating the 3D world…', .995 );
 		gpuStage('World verification');
-        await app.precompile();
+        await app.precompile((label, fraction) => {
+            ui.setLoading(.97 + Math.min(1, Math.max(0, fraction)) * .018,
+                'Preparing 3D world · '+label, .995);
+        });
+        // Bring up each expensive ocean simulation in a separate queue-ack'd
+        // submission before the first scene frame rather than resetting Safari.
+        await app.primeMobileSimulation(label => ui.setLoading(
+            .991, 'Initializing '+label+'…', .995));
 		if (mobileRecovery || app.qs.has('renderTest')) {
 			// Controlled render-pass diagnostics bypass HDR GPU readback verification.
 			// The standard production path verifies completed GPU frames without pixel readback.
@@ -211,10 +221,17 @@ app.init( ( p, text, until ) => {
 			await verifyMobileWorldNoReadback( app, attempt => ui.setLoading(
 				Math.min(.975+attempt*.003,.99), 'Verifying GPU frames…', .995 ) );
 		}
-		// Hold the initialized world behind the loader for a full 60 seconds.
-		// No app.start(), gameplay RAF, or additional render submissions during this gate.
+		// Once actual world frames have been verified, warm full-resolution
+		// cloud history in small cloud-only submits. Preserve the final sky quality
+		// without including the expensive view reconstruction in frame one.
+		await app.primeMobileCloudHistory((step,total) => ui.setLoading(
+			.992, 'Warming detailed clouds '+step+'/'+total, .995 ));
+		if(GPU.fatalError) throw GPU.fatalError;
+		// The full 60-second preload includes cloud generation and shader preparation.
+		// Never unlock Explore before 3 completed GPU frames, even if verification
+		// itself takes longer than the preload clock.
 		const holdMs = 60000;
-		const holdStart = performance.now();
+		const holdStart = mobilePreloadStartedAt;
 		const loader = document.getElementById('loader');
 		const countdown = document.createElement('div');
 		countdown.id = 'bermuda-explore-countdown';

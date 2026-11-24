@@ -304,12 +304,22 @@ const GROUP_CACHE = 4;
 
 const _layoutCache = new Map();
 
-export function getBindGroupLayout( entries, label ) {
+export function getBindGroupLayout( entries, label, bindingNames = [] ) {
 
 	const key = JSON.stringify( entries );
 	let l = _layoutCache.get( key );
 	if ( ! l ) {
 
+		// Validate adapter limits in JavaScript before forwarding impossible
+		// layouts to WebKit's native GPU process. Safari has previously reset
+		// the device rather than returning a useful error for oversized shaders.
+		const textureLimit = GPU.limits?.maxSampledTexturesPerShaderStage;
+		if ( textureLimit !== undefined ) for ( const [ stage, bit ] of [ [ 'vertex', GPUShaderStage.VERTEX ], [ 'fragment', GPUShaderStage.FRAGMENT ], [ 'compute', GPUShaderStage.COMPUTE ] ] ) {
+			const over = entries.filter( e => e.texture && ( e.visibility & bit ) );
+			if ( over.length > textureLimit ) throw new Error(
+				'WebGPU shader '+label+' requires '+over.length+'/'+textureLimit+
+				' sampled textures in '+stage+' stage; bindings '+over.map( e => bindingNames[ e.binding ] || e.binding ).join( ',' ) );
+		}
 		l = GPU.device.createBindGroupLayout( { label, entries } );
 		_layoutCache.set( key, l );
 
@@ -322,6 +332,8 @@ export function getBindGroupLayout( entries, label ) {
 // A composed set of group-1 bindings: layout + a bind group rebuilt when a resource changes.
 export class BindingSet {
 
+	// stageOf: { name: 'vertex' | 'fragment' | 'unused' } for render bindings.
+	// Bindings unreachable from either entry point are still declared but have no stage visibility.
 	// stageOf: { name: 'vertex' | 'fragment' } for render bindings only one stage reads (keeps the
 	// per-stage uniform buffer / texture counts down); demote: uniform blocks bound as read-only storage
 	constructor( specs, stage, label = 'bindings', stageOf = null, demote = null ) {
@@ -337,6 +349,7 @@ export class BindingSet {
 			const st = stageOf[ this.names[ i ] ];
 			if ( st === 'fragment' && ( l.visibility & GPUShaderStage.FRAGMENT ) ) l.visibility = GPUShaderStage.FRAGMENT;
 			if ( st === 'vertex' && ( l.visibility & GPUShaderStage.VERTEX ) ) l.visibility = GPUShaderStage.VERTEX;
+			if ( st === 'unused' ) l.visibility = 0;
 
 		}
 
@@ -349,7 +362,7 @@ export class BindingSet {
 
 		}
 
-		this.layout = getBindGroupLayout( this.described.map( ( d, i ) => ( { binding: i, ...d.layout } ) ), label );
+		this.layout = getBindGroupLayout( this.described.map( ( d, i ) => ( { binding: i, ...d.layout } ) ), label, this.names );
 		this.group = null;
 		const n = this.names.length;
 		this._specs = this.names.map( ( k ) => specs[ k ] );
@@ -542,7 +555,10 @@ export function composeShader( { modules = [], bindings = {}, code = '', defines
 		stageOf = {};
 		for ( const k in specs ) {
 
-			if ( ! usedV.has( k ) && ( ! usedF || usedF.has( k ) ) ) stageOf[ k ] = 'fragment';
+			// Do not count unused shared-module textures against Safari's per-stage limits.
+			// Keep their group bindings for reflection and unaffected shader variants.
+			if ( ! usedV.has( k ) && ( ! usedF || !usedF.has( k ) ) ) stageOf[ k ] = 'unused';
+			else if ( ! usedV.has( k ) && ( ! usedF || usedF.has( k ) ) ) stageOf[ k ] = 'fragment';
 			else if ( usedF && ! usedF.has( k ) && usedV.has( k ) ) stageOf[ k ] = 'vertex';
 
 		}
@@ -553,7 +569,7 @@ export function composeShader( { modules = [], bindings = {}, code = '', defines
 		const limits = GPU.limits || {};
 		const maxU = ( limits.maxUniformBuffersPerShaderStage || 12 ) - 2;
 		const maxS = { vertex: limits.maxStorageBuffersInVertexStage ?? 4, fragment: limits.maxStorageBuffersInFragmentStage ?? limits.maxStorageBuffersPerShaderStage ?? 8 };
-		const inStage = ( k, st ) => ! stageOf[ k ] || stageOf[ k ] === st;
+		const inStage = ( k, st ) => stageOf[ k ] !== 'unused' && ( !stageOf[ k ] || stageOf[ k ] === st );
 		for ( const st of [ 'fragment', 'vertex' ] ) {
 
 			const uniforms = Object.keys( specs ).filter( ( k ) => specs[ k ].uniform && inStage( k, st ) && ! demote.has( k ) );

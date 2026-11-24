@@ -8,6 +8,13 @@ import { assessFramePixels } from './FrameHealth.js';
 const POINTS=[[.24,.25],[.50,.25],[.76,.25],[.24,.57],[.50,.57],[.76,.57],[.24,.80],[.50,.80],[.76,.80]];
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const message=e=>String(e?.message||e);
+// Device-loss is an explicit terminal event, not a shader-validation timeout.
+async function waitForLiveGPU(promise, timeoutMs, label) {
+ const lost=GPU.device.lost.then(info=>{
+  throw GPU.fatalError||new Error('WebGPU device lost ('+(info?.reason||'unknown')+'): '+(info?.message||'Browser supplied no details'));
+ });
+ return withDeadline(Promise.race([promise,lost]),timeoutMs,label);
+}
 
 export function validateSpawn(app){
  const p=app?.player,t=app?.terrainData,c=app?.colliders;
@@ -77,14 +84,18 @@ async function captureSceneFrame(app,timeoutMs){
   buffer.destroy();
  }
 }
-export async function verifyMobileWorld(app,onProgress=()=>{},{timeoutMs=8000,readback=true}={}){
+// The first full WebGPU scene on a software/baseline mobile adapter may
+// legitimately take more than eight seconds while shader resource heaps warm.
+// The GPU queue still acknowledges successful completion; don't label it a
+// crash just before its acknowledgement arrives. Device-loss races remain live.
+export async function verifyMobileWorld(app,onProgress=()=>{},{timeoutMs=20000,readback=true}={}){
  if(!app?.terrain?.mesh||!app.ocean||!app.post||!app.sceneRenderer?.sceneRT)
   throw new Error('Terrain, ocean or WebGPU render target missing.');
  validateSpawn(app);
  const status=window.__bermudaWorldGate={status:'checking',tries:0,last:null};
  try {
   return await verifyCompletedFrames({
-   prepare:()=>withDeadline(GPU.pipelinesReady(),120000,'Shader compilation'),
+   prepare:()=>waitForLiveGPU(GPU.pipelinesReady(),120000,'Shader compilation'),
    onProgress,
    frame:async()=>{
    if(GPU.fatalError)throw GPU.fatalError;
@@ -95,12 +106,12 @@ export async function verifyMobileWorld(app,onProgress=()=>{},{timeoutMs=8000,re
     else {
      const sequence=GPU.submissions.sequence;app.frame(1/60);
      if(GPU.submissions.sequence!==sequence+1)throw new Error('Startup frame was not submitted');
-     await withDeadline(GPU.whenIdle(),timeoutMs,'GPU startup frame');
+     await waitForLiveGPU(GPU.whenIdle(),timeoutMs,'GPU startup frame');
      if(GPU.fatalError)throw GPU.fatalError;
      data={valid:true,queueCompleted:true,source:'queue-completion; pixels not inspected'};
     }
    } catch(e){GPU.abortFrame(e);frameError=e;}
-   const errors=await withDeadline(Promise.all([GPU.device.popErrorScope(),GPU.device.popErrorScope()]),timeoutMs,'GPU validation');
+   const errors=await waitForLiveGPU(Promise.all([GPU.device.popErrorScope(),GPU.device.popErrorScope()]),timeoutMs,'GPU validation');
    if(frameError)throw frameError;
    const error=errors.find(Boolean);if(error)throw new Error(error.message);
    return data;
