@@ -1060,7 +1060,11 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		const atmosphereReadyForReflections = !this.mobileLite ||
 			( (this.atmosphere.mobileMode !== 'staged' || this.atmosphere.mobileInitStage >= 3) &&
 			  this.atmosphere._svValid && !this.atmosphere.mobileSkyViewDispatched );
-		if ( !renderIsolation && atmosphereReadyForReflections ) this.environment.update( dt );
+		// Reflection cubemap faces still refresh live, one step at a time.
+		// Never combine a reflection bake with a full volumetric cloud pass
+		// on mobile. This is a scheduling change, not a reflection downgrade.
+		if ( !renderIsolation && atmosphereReadyForReflections &&
+			(!this.mobileLite || !updateClouds) ) this.environment.update( dt );
 
 		// ---- world
 		gpuStage('Island world preparation', GPU.frame);
