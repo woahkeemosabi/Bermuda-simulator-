@@ -555,6 +555,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
             const mr=this.engine.meshRenderer;
             this.oceanLOD.update(this.camera);this.terrain.update(this.camera);this.rocks.update(this.camera);
             mr.precompiling=true;
+            mr.skipHiddenWhenPrecompiling=!!window.__bermudaHighSeaOnly;
             const refr=this.refraction.enabled;
             try {
                 await stage('Preparing screen targets',0.36,() => this.post.beginFrame());
@@ -575,6 +576,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
                 }
             } finally {
                 mr.precompiling=false;
+                mr.skipHiddenWhenPrecompiling=false;
                 this.refraction.enabled=refr;
                 this.waterMaterial.hullOverride=null;
                 this.waterMaterial.__pkFrame=-1;
