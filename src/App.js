@@ -586,6 +586,19 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
                 this.waterMaterial.hullOverride=null;
                 this.waterMaterial.__pkFrame=-1;
             }
+            // Stage the expensive first cloud panorama / SDF work by itself,
+            // not together with FFT, caustics, water, shadows and eight draws.
+            // Cloud view history is deliberately held until three full scene
+            // frames have completed, then warmed with small cloud-only submits.
+            if (this.clouds instanceof Clouds) {
+                this.clouds.startupTraceHold=true;
+                await stage('Cloud panorama and shadow preparation',0.95,() => this.clouds.update(0,this.camera));
+                if (GPU.encoder) {
+                    GPU.submit();
+                    await withDeadline(GPU.whenIdle(),15000,'Mobile cloud panorama upload');
+                    checkDevice();
+                }
+            }
             gpuStage('Mobile startup: vegetation upload');
             onMobileStage('Finishing vegetation resources',0.98);
             checkDevice();
@@ -636,6 +649,29 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		await GPU.pipelinesReady();
 		await GPU.queue.onSubmittedWorkDone();
 
+	}
+
+	// Fill the complete high-resolution view cloud history during the loader,
+	// after the three scene-frame verification gate. Each update records one
+	// history slot only, submitted/acknowledged independently without drawing
+	// the island world again. No permanent panorama-only cloud downgrade.
+	async primeMobileCloudHistory(onProgress = () => {}) {
+		const clouds = this.clouds;
+		if (!this.mobileLite || !clouds?.startupTraceHold) return;
+		clouds.startupTraceHold = false;
+		for (let n=0;n<16 && clouds._rebuild<16;n++) {
+			if (GPU.fatalError) throw GPU.fatalError;
+			gpuStage('Mobile startup: cloud view slot '+(n+1)+'/16');
+			onProgress(n+1,16);
+			clouds.update(0,this.camera);
+			await withDeadline(GPU.pipelinesReady(),30000,'Mobile cloud view shader');
+			if(GPU.encoder) {
+				GPU.submit();
+				await withDeadline(GPU.whenIdle(),15000,'Mobile cloud view slot '+(n+1));
+			}
+			if(GPU.fatalError) throw GPU.fatalError;
+			await new Promise(resolve=>setTimeout(resolve,0));
+		}
 	}
 
 	// ---------------------------------------------------------------- sun / sky
