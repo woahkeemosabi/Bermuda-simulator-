@@ -71,7 +71,8 @@ assert.match(water,/compactSky = !!this\.environment/);
 assert.match(water,/maxSampledTexturesPerShaderStage \?\? 16 \) <= 16/);
 assert.match(water,/name: 'mobileWaterSkyCube'/);
 assert.match(water,/fn skyReflectionRadiance\( dir: vec3f \)/);
-assert.match(water,/compactSky \? this\.clouds\.shadowModule : this\.clouds\.module/);
+assert.match(water,/const directCloudShadow = CL && !compactSky/);
+assert.match(water,/CL: directCloudShadow, HULL, REFL/);
 assert.match(water,/const depthHalf = !!this\.sceneDepthHalfTexture && !compactSky/);
 assert.match(water,/compactSky \? this\.skyCubeModule : sky && sky\.module/);
 
