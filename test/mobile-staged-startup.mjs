@@ -29,7 +29,7 @@ for (const label of order) {
  assert.ok(index>last,'Mobile GPU stage is missing/out of order: '+label);
  last=index;
 }
-assert.ok(!mobile.slice(0,mobile.indexOf('Mobile startup: vegetation upload')).includes('__bermudaHighSeaOnly'),
+assert.ok(!mobile.slice(0,mobile.indexOf('GPU.submit();')).includes('__bermudaHighSeaOnly'),
  'The initial submit must apply to both iPhone mobile modes');
 assert.match(app,/await withDeadline\(GPU\.pipelinesReady\(\),60000,'Mobile shader stage '/);
 assert.match(app,/await new Promise\(resolve => setTimeout\(resolve,0\)\)/);
