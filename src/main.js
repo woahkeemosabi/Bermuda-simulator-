@@ -217,6 +217,12 @@ app.init( ( p, text, until ) => {
 			await verifyMobileWorldNoReadback( app, attempt => ui.setLoading(
 				Math.min(.975+attempt*.003,.99), 'Verifying GPU frames…', .995 ) );
 		}
+		// Once actual world frames have been verified, warm full-resolution
+		// cloud history in small cloud-only submits. Preserve the final sky quality
+		// without including the expensive view reconstruction in frame one.
+		await app.primeMobileCloudHistory((step,total) => ui.setLoading(
+			.992, 'Warming detailed clouds '+step+'/'+total, .995 ));
+		if(GPU.fatalError) throw GPU.fatalError;
 		// The full 60-second preload includes cloud generation and shader preparation.
 		// Never unlock Explore before 3 completed GPU frames, even if verification
 		// itself takes longer than the preload clock.
