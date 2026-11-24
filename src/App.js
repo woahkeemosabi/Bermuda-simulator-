@@ -924,6 +924,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		GPU.beginFrame();
 		// The first three verified iPhone frames use completed, separately primed
 		// simulation textures. Never batch initialization with eight scene passes.
+		const renderIsolation = this.qs.has('renderTest'); // QA-only: isolate graphics from all background compute.
 		const simPreprimed = this.mobileLite && (this._mobileSimulationVerifiedFrameSkips||0)>0;
 		if (simPreprimed) this._mobileSimulationVerifiedFrameSkips--;
 		// Keep FFT at full gameplay frequency while staging costly auxiliary
@@ -956,21 +957,21 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		}
 		this.boatCtl.update( dt );
 		this.boatSpray.update( dt );
-		this.wake.update( dt );
+		if (!renderIsolation) this.wake.update( dt );
 		if ( this.mobileWake ) this.mobileWake.update( dt );
 		if ( this.freeCam ) this.fly.update( dt );
 		else this.player.update( dt );
 		this.game.update( dt );
 		this.updateSun();
 
-		if (!simPreprimed) this.atmosphere.update( dt, this.camera.position.y );
+		if (!simPreprimed && !renderIsolation) this.atmosphere.update( dt, this.camera.position.y );
 		else this.atmosphere.mobileSkyViewDispatched=false;
 		this.applyAtmosphereReadback();
 
 		// ---- water simulation
 		gpuStage('FFT and ocean simulation', GPU.frame);
 		// Keep FFT displacement textures valid, but compute them only once in low-GPU mode.
-		if ( !simPreprimed && ( !this.qs.has('freezeFFT') || !this._fftInitialized ) ) {
+		if ( !renderIsolation && !simPreprimed && ( !this.qs.has('freezeFFT') || !this._fftInitialized ) ) {
 			this.fft.update( dt );
 			this._fftInitialized = true;
 		}
@@ -982,7 +983,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// subsequent frames continue water physics and camera-state readback.
 		if ( this.mobileLite && this.atmosphere.mobileSkyViewDispatched ) {
 			this.mobileSkyViewWaterQuerySkips = ( this.mobileSkyViewWaterQuerySkips || 0 ) + 1;
-		} else {
+		} else if(!renderIsolation) {
 			this.query.update();
 		}
 		if ( this.query.cpuValid ) {
@@ -997,38 +998,38 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		// Restore the historical steady coastal cadence; initialized textures persist.
 		const cadence = this.coastalCadence;
-		if ( !simPreprimed && mobileAux(1) && this.caustics && (!cadence || cadence.allow('caustics',67)) ) {
+		if ( !renderIsolation && !simPreprimed && mobileAux(1) && this.caustics && (!cadence || cadence.allow('caustics',67)) ) {
 			this.caustics.update();
 			this._causticsPrimed = true;
 		}
 		// drawn while any part of the view can be under water (the specks above the surface are dropped)
-		this.marineSnow.update( this.camera, this.camera.position.y < ( this.cameraWaterHeight ?? 0 ) + LENS_REACH );
-		this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );
-		if ( !simPreprimed && mobileAux(2) && this.shoreSim && (!cadence || cadence.allow('shore',67)) ) {
+		if (!renderIsolation) this.marineSnow.update( this.camera, this.camera.position.y < ( this.cameraWaterHeight ?? 0 ) + LENS_REACH );
+		if (!renderIsolation) this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );
+		if ( !renderIsolation && !simPreprimed && mobileAux(2) && this.shoreSim && (!cadence || cadence.allow('shore',67)) ) {
 			this.shoreSim.update();
 			this._shoreSimPrimed = true;
 		}
 		// Only dispatch the underwater light-map kernels during the first mobile frame.
 		// This gate remains effective even if another system replaces the lighting updater.
-		if ( !simPreprimed && mobileAux(0) && ( !this.qs.has('freezeFFT') || !this._underwaterMapPrimed ) ) {
+		if ( !renderIsolation && !simPreprimed && mobileAux(0) && ( !this.qs.has('freezeFFT') || !this._underwaterMapPrimed ) ) {
 			this.underwaterLighting.update( this.camera );
 			this._underwaterMapPrimed = true;
 		}
-		if (!simPreprimed && mobileAux(1)) this.breakers.update( this.camera );
+		if (!renderIsolation && !simPreprimed && mobileAux(1)) this.breakers.update( this.camera );
 		// Explicitly bypass spray dispatch in mobile low-GPU mode, even if a later system
 		// reassigns spray.update after initialization.
-		if ( !this.qs.has('noSpray') && !this.qs.has('freezeFFT') ) {
+		if ( !renderIsolation && !this.qs.has('noSpray') && !this.qs.has('freezeFFT') ) {
 			this.spray.update();
 			this._sprayPrimed = true;
 		}
-		if ( this.clouds && (window.__bermudaHighSeaOnly || !cadence || cadence.allow('clouds',100,dt)) ) this.clouds.update( window.__bermudaHighSeaOnly ? dt : (cadence ? cadence.usedDelta.clouds : dt), this.camera );
+		if ( !renderIsolation && this.clouds && (window.__bermudaHighSeaOnly || !cadence || cadence.allow('clouds',100,dt)) ) this.clouds.update( window.__bermudaHighSeaOnly ? dt : (cadence ? cadence.usedDelta.clouds : dt), this.camera );
 		// Mobile WebGPU: don't bake reflection faces while the atmosphere LUTs
 		// are still initializing. This keeps the original reflections and ocean,
 		// but avoids pairing Atmosphere MultiScat with Env Face on startup.
 		const atmosphereReadyForReflections = !this.mobileLite ||
 			( (this.atmosphere.mobileMode !== 'staged' || this.atmosphere.mobileInitStage >= 3) &&
 			  this.atmosphere._svValid && !this.atmosphere.mobileSkyViewDispatched );
-		if ( atmosphereReadyForReflections ) this.environment.update( dt );
+		if ( !renderIsolation && atmosphereReadyForReflections ) this.environment.update( dt );
 
 		// ---- world
 		gpuStage('Island world preparation', GPU.frame);
