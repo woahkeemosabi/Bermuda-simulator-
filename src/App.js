@@ -651,6 +651,40 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 	}
 
+	// Every first-frame compute family (FFT, caustics, shore, underwater,
+	// breakers and atmosphere) is primed as a separate acknowledged GPU batch.
+	// It was unsafe to submit all 16 kernels plus 8 render passes in one iPhone
+	// frame; the browser destroyed the device after queue submission.
+	async primeMobileSimulation(onProgress = () => {}) {
+		if(!this.mobileLite) return;
+		const prime=async(label,run)=>{
+			if(GPU.fatalError) throw GPU.fatalError;
+			gpuStage('Mobile startup: priming '+label);
+			onProgress(label);
+			run();
+			await withDeadline(GPU.pipelinesReady(),30000,'Prime '+label+' pipelines');
+			if(GPU.encoder) {
+				GPU.submit();
+				await withDeadline(GPU.whenIdle(),20000,'Prime '+label+' GPU work');
+			}
+			if(GPU.fatalError) throw GPU.fatalError;
+			await new Promise(resolve=>setTimeout(resolve,0));
+		};
+		await prime('atmosphere',()=>this.atmosphere.update(0,this.camera.position.y));
+		await prime('FFT ocean',()=>this.fft.update(0));
+		await prime('caustics',()=>this.caustics?.update());
+		await prime('shore simulation',()=>this.shoreSim?.update());
+		await prime('underwater light maps',()=>this.underwaterLighting.update(this.camera));
+		await prime('surf crests',()=>this.breakers.update(this.camera));
+		this._fftInitialized=true;
+		this._causticsPrimed=true;
+		this._shoreSimPrimed=true;
+		this._underwaterMapPrimed=true;
+		// Three verification frames use already finished textures. Subsequent
+		// gameplay frames resume FFT continuously; auxiliary passes are paced.
+		this._mobileSimulationVerifiedFrameSkips=3;
+	}
+
 	// Fill the complete high-resolution view cloud history during the loader,
 	// after the three scene-frame verification gate. Each update records one
 	// history slot only, submitted/acknowledged independently without drawing
