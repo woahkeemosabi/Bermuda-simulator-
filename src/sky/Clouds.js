@@ -67,7 +67,7 @@ const ORDER = [ 0, 10, 2, 8, 5, 15, 7, 13, 1, 11, 3, 9, 4, 14, 6, 12 ];
 const REBUILD_SLOTS = 4; // desktop camera-cut rebuild slots per frame
 // Safari/iPhone rebuilds the same full-resolution cloud history in smaller GPU batches.
 const mobileRebuildSlots = () => typeof navigator !== 'undefined' &&
- /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 2 : REBUILD_SLOTS;
+ /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 1 : REBUILD_SLOTS;
 // history resolution relative to the (dynamic) render resolution: like sky-pro-webgpu's High quality (0.5),
 // the clouds are reconstructed at reduced width and height and one pixel of every 4x4 block is marched per
 // frame; the saved rays buy finer steps and fuller lighting
@@ -1316,7 +1316,13 @@ ${ MAIN } {
 
 		};
 
-		if ( G.cameraUnderwater.value > 0.5 ) {
+		if ( this.startupTraceHold ) {
+			// First verified world frames and the separate preprime use only the
+			// complete panorama and shadow maps. The high-resolution history is
+			// filled in cloud-only GPU submissions during the 60-second preload.
+			shadowAndPano();
+
+		} else if ( G.cameraUnderwater.value > 0.5 ) {
 
 			// the sky is only seen through Snell's window (panorama): no view clouds
 			shadowAndPano();
