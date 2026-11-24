@@ -7,6 +7,7 @@ const clouds=source('../src/sky/Clouds.js');
 const shader=source('../src/engine/gpu/Shader.js');
 const chandlery=source('../src/game/Chandlery.js');
 const meshRenderer=source('../src/engine/render/MeshRenderer.js');
+const village=source('../src/world/Village.js');
 // The iPhone startup must flush constructor-time compute before allocating and
 // compiling the post/shadow/refraction/water shader families, not only in
 // optional full-coast or recovery modes.
@@ -57,6 +58,13 @@ assert.match(app,/mr\.skipHiddenWhenPrecompiling=!!window\.__bermudaHighSeaOnly/
 assert.match(app,/mr\.skipHiddenWhenPrecompiling=false/);
 assert.match(meshRenderer,/const includeHidden = all && !this\.skipHiddenWhenPrecompiling/);
 assert.match(meshRenderer,/if \( ! o\.visible && ! includeHidden \) return/);
+assert.match(village,/this\._textures = null/);
+assert.match(village,/this\._materials = null/);
+assert.match(village,/get textures\(\)/);
+assert.match(village,/get materials\(\)/);
+assert.ok(village.indexOf('new VillageTextures()') > village.indexOf('get textures()'),
+ 'A scene with zero village geometry must not allocate its texture atlas in the constructor');
+
 assert.ok(chandlery.indexOf('limitedGPU') < chandlery.indexOf('loadStallAssets().then'),
  'Do not load an unsupported scanned-stall shader on low-texture adapters');
 
