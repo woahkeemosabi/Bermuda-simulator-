@@ -63,7 +63,7 @@ try {
  // renderTest modes never change the public game or a player's save data.
  if(browser && /readiness gate settled/.test(stage)) {
   report.isolation=[];
-  for(const variant of ['postonly','sky-only']) {
+  for(const variant of ['clearonly','postonly']) {
    const probe={variant};
    let ctx;
    try {
