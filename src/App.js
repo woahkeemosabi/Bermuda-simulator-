@@ -332,7 +332,8 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// the sea is not drawn inside the boat (its hull volume masks the surface)
 		this.sceneRenderer.addHullMask( this.boat.createHullVolumeGeometry(), this.boat.group );
 		this.waterMaterial = new WaterMaterial( {
-			surface: this.surface, sky: this.sky, sceneCopy: this.sceneRenderer.opaqueCopy, sceneDepthHalf: this.sceneRenderer.opaqueDepthHalf.texture, refraction: this.refraction,
+			surface: this.surface, sky: this.sky, environment: this.environment,
+			sceneCopy: this.sceneRenderer.opaqueCopy, sceneDepthHalf: this.sceneRenderer.opaqueDepthHalf.texture, refraction: this.refraction,
 			hullMask: this.sceneRenderer.hullMaskRT.texture, hullMaskActive: this.sceneRenderer.hullMaskActive,
 		} );
 		this.waterMaterial.clouds = this.clouds;
@@ -396,7 +397,11 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		// interactive wake around the boat (Kelvin pattern, bow/stern waves, prop wash foam)
 		this.wake = new WakeSim( renderer, { terrainGPU: this.terrainGPU, boat: this.boatCtl, colliders: this.colliders } );
-		this.surface.wake = this.recoveryMode ? null : this.wake;
+		// The mobile engine also renders an inexpensive separate boat wake.
+		// On 16-texture adapters, avoid binding the three GPU-wake textures to
+		// an already complex ocean/refraction shader. Keep its CPU wake visual.
+		const limitedWaterBindings = mobileLite && ( GPU.limits?.maxSampledTexturesPerShaderStage ?? 16 ) <= 16;
+		this.surface.wake = (this.recoveryMode || limitedWaterBindings) ? null : this.wake;
 		// A tiny CPU wake remains available on iPhone when the GPU Kelvin wake is disabled by the memory profile.
 		this.mobileWake = new MobileWake( { scene, boat: this.boatCtl } );
 		this.player = new Player( { camera, input: this.input, terrain: this.terrainData, colliders: this.colliders, query: this.query, boat: this.boatCtl, reef: this.reef } );
