@@ -84,7 +84,11 @@ async function captureSceneFrame(app,timeoutMs){
   buffer.destroy();
  }
 }
-export async function verifyMobileWorld(app,onProgress=()=>{},{timeoutMs=8000,readback=true}={}){
+// The first full WebGPU scene on a software/baseline mobile adapter may
+// legitimately take more than eight seconds while shader resource heaps warm.
+// The GPU queue still acknowledges successful completion; don't label it a
+// crash just before its acknowledgement arrives. Device-loss races remain live.
+export async function verifyMobileWorld(app,onProgress=()=>{},{timeoutMs=20000,readback=true}={}){
  if(!app?.terrain?.mesh||!app.ocean||!app.post||!app.sceneRenderer?.sceneRT)
   throw new Error('Terrain, ocean or WebGPU render target missing.');
  validateSpawn(app);
