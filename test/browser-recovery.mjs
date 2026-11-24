@@ -70,7 +70,7 @@ try {
     ctx=await browser.newContext({viewport:{width:462,height:817},isMobile:true,hasTouch:true,deviceScaleFactor:1,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'});
     const p=await ctx.newPage();
     await p.goto('http://127.0.0.1:5189/?noAudio=1&renderTest='+variant);
-    await p.waitForFunction(()=>!!window.__bermudaGpuLost||window.__bermudaWorldGate?.status==='render-test-no-readback',{},{timeout:90000});
+    await p.waitForFunction(()=>!!window.__bermudaGpuLost||(!!document.getElementById('bermuda-explore-countdown') && (window.__app?.gpu?.submissions?.pending?.size||0)===0),{},{timeout:90000});
     probe.result=await p.evaluate(async()=>{
      const app=window.__app;if(!app)return {error:'app unavailable'};
      try {
