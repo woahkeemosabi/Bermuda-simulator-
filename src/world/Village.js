@@ -21,8 +21,11 @@ export class Village {
 		this.path = null;
 		this.pierInfo = null;
 
-		this.textures = new VillageTextures();
-		this.materials = createVillageMaterials( this.textures );
+		// This compatibility village has no geometry. Do not allocate and bake
+		// the old Tidewater texture atlas while loading Bermuda's live ocean.
+		// Lazily construct legacy materials only if a consumer explicitly needs them.
+		this._textures = null;
+		this._materials = null;
 
 		this.B = null;
 		this.harbor = null;
@@ -30,6 +33,13 @@ export class Village {
 		this.inst = null;
 		scene.add( this.group );
 
+	}
+
+	get textures() {
+		return this._textures || ( this._textures = new VillageTextures() );
+	}
+	get materials() {
+		return this._materials || ( this._materials = createVillageMaterials( this.textures ) );
 	}
 
 	getFootprints() { return this.footprints; }
