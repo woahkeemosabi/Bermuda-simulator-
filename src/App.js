@@ -132,11 +132,14 @@ export class App {
 		// ---------------------------------------------------------------- sky
 		await progress( 0.04, 'Building the atmosphere…' );
 		this.atmosphere = new Atmosphere( renderer );
-		// Keep the original sky shader. Spread its LUT initialization across mobile frames.
-		// Diagnostic A/B: ?atmotest=skip, trans, full; default mobile: staged.
-		this.atmosphere.mobileMode = (window.__bermudaHighSeaOnly && mobileLite)
-			? 'full' // Sea-only needs a complete sky-view LUT before presenting ocean frames.
-			: (mobileLite ? (['full','skip','trans'].includes(qs.get('atmotest')) ? qs.get('atmotest') : 'staged') : 'full');
+		// All iPhone scenes, including sea-only, must use staged atmosphere.
+		// The former sea-only override forced 'full', rebuilding SkyView almost
+		// every frame as the sun moved (1670 dispatches / 1672 frames on device).
+		// Keep the same atmosphere shading; prime its LUTs separately during load.
+		// Explicit atmotest=full/skip/trans remains a diagnostic escape hatch.
+		this.atmosphere.mobileMode = mobileLite
+			? (['full','skip','trans'].includes(qs.get('atmotest')) ? qs.get('atmotest') : 'staged')
+			: 'full';
 		// Diagnostic only: keep the completed sky-view texture instead of repeatedly
 		// recomputing it while preserving the atmosphere's rendering shader.
 		this.atmosphere.mobileHoldAfterPrime = mobileLite && qs.get('atmotest') === 'hold';
@@ -671,7 +674,19 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			if(GPU.fatalError) throw GPU.fatalError;
 			await new Promise(resolve=>setTimeout(resolve,0));
 		};
-		await prime('atmosphere',()=>this.atmosphere.update(0,this.camera.position.y));
+		// Do not expose incomplete LUTs to the first rendered frame. Run the
+		// dependent transmittance -> multiscattering -> SkyView stages as three
+		// independent GPU submissions, with the correct startup sun position.
+		this.updateSun();
+		if(this.atmosphere.mobileMode === 'staged') {
+			await prime('atmosphere transmittance',()=>this.atmosphere.update(0,this.camera.position.y));
+			await prime('atmosphere multiple scattering',()=>this.atmosphere.update(0,this.camera.position.y));
+			await prime('atmosphere SkyView',()=>this.atmosphere.update(0,this.camera.position.y));
+			if(!this.atmosphere._svValid || this.atmosphere.mobileInitStage < 3)
+				throw new Error('Mobile atmosphere LUTs did not finish staged GPU initialization');
+		} else {
+			await prime('atmosphere',()=>this.atmosphere.update(0,this.camera.position.y));
+		}
 		await prime('FFT ocean',()=>this.fft.update(0));
 		await prime('caustics',()=>this.caustics?.update());
 		await prime('shore simulation',()=>this.shoreSim?.update());
@@ -1023,7 +1038,16 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			this.spray.update();
 			this._sprayPrimed = true;
 		}
-		if ( !renderIsolation && this.clouds && (window.__bermudaHighSeaOnly || !cadence || cadence.allow('clouds',100,dt)) ) this.clouds.update( window.__bermudaHighSeaOnly ? dt : (cadence ? cadence.usedDelta.clouds : dt), this.camera );
+		// On the old iPhone sea-only profile, the HighSea condition bypassed
+		// CoastalCadence and queued up to eight cloud kernels EVERY frame,
+		// alongside FFT, caustics, refraction and scene rendering. Keep full
+		// volumetric clouds and their accumulated wind time, but refresh their
+		// expensive history/shadow/panorama passes at a bounded mobile cadence.
+		// Phase 0 keeps cloud compute off caustic (1) and shore/surf (2) frames.
+		const updateClouds = !renderIsolation && this.clouds && (
+			!this.mobileLite || (mobileAux(0) && (!cadence || cadence.allow('clouds',250,dt)))
+		);
+		if (updateClouds) this.clouds.update(this.mobileLite && cadence ? cadence.usedDelta.clouds : dt,this.camera);
 		// Mobile WebGPU: don't bake reflection faces while the atmosphere LUTs
 		// are still initializing. This keeps the original reflections and ocean,
 		// but avoids pairing Atmosphere MultiScat with Env Face on startup.
