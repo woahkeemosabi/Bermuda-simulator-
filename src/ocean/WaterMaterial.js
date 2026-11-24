@@ -184,9 +184,13 @@ fn skyRadianceWithClouds( dir: vec3f, withSun: bool ) -> vec3f {
 `,
 			} );
 		}
+		// Compact cubemap reflections already include the cloud layer. Keep
+		// direct per-texel cloud shadows on capable GPUs, but avoid the extra
+		// cloud-shadow texture in the 16-slot ocean fragment shader.
+		const directCloudShadow = CL && !compactSky;
 		this.modules = [ commonModule, waterFresnelModule, waterHelpersModule, whaleWaterModule, S.module,
 			compactSky ? this.skyCubeModule : sky && sky.module,
-			CL && (compactSky ? this.clouds.shadowModule : this.clouds.module),
+			directCloudShadow && this.clouds.module,
 			SIM && S.shoreSim.module, REFL && this.reflection.module,
 			this.cameraWaterHeightNode && this.cameraWaterHeightNode.module ].filter( Boolean );
 		this.bindings.waterSceneColor = { texture: this.sceneColorTexture };
@@ -221,7 +225,7 @@ fn skyRadianceWithClouds( dir: vec3f, withSun: bool ) -> vec3f {
 	o.vShoreFoam = r.shoreFoam;
 	o.vSurfMask = r.surfMask;
 `;
-		this.output = this.cheap ? 'r.color = vec4f( 0.02, 0.05, 0.1, 1.0 ); r.mask = vec4f( 0.0, 1.0, 0.0, 1.0 );' : this._shadeWGSL( { T, SH, SIM, SF, CL, HULL, REFL } );
+		this.output = this.cheap ? 'r.color = vec4f( 0.02, 0.05, 0.1, 1.0 ); r.mask = vec4f( 0.0, 1.0, 0.0, 1.0 );' : this._shadeWGSL( { T, SH, SIM, SF, CL: directCloudShadow, HULL, REFL } );
 		this.needsUpdate = true;
 
 	}
