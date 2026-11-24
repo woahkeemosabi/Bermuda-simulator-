@@ -52,6 +52,17 @@ assert.match(clouds,/if \( this\.startupTraceHold \) \{/);
 assert.match(app,/this\.clouds\.startupTraceHold=true/);
 assert.match(app,/Mobile cloud panorama upload/);
 assert.match(app,/async primeMobileCloudHistory\(/);
+assert.match(app,/async primeMobileSimulation\(/);
+assert.match(app,/Prime '\+label\+' GPU work/);
+assert.match(app,/this\._mobileSimulationVerifiedFrameSkips=3/);
+assert.match(app,/const simPreprimed = this\.mobileLite/);
+assert.match(app,/const mobileAux = n => !this\.mobileLite \|\| GPU\.frame%3===n/);
+assert.match(app,/!simPreprimed && mobileAux\(1\) && this\.caustics/);
+assert.match(app,/!simPreprimed && mobileAux\(2\) && this\.shoreSim/);
+assert.match(app,/!simPreprimed && mobileAux\(0\)/);
+assert.match(main,/await app\.primeMobileSimulation\(/);
+assert.ok(main.indexOf('await app.primeMobileSimulation')<main.indexOf('await verifyMobileWorldNoReadback'));
+
 assert.match(app,/clouds\.startupTraceHold = false/);
 assert.match(app,/Mobile cloud view slot/);
 assert.match(main,/await app\.primeMobileCloudHistory\(/);
