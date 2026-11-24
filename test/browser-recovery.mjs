@@ -18,6 +18,34 @@ try {
  page.on('crash',()=>console.error('[browser-recovery] Chromium page crashed'));
  page.on('console',msg=>{if(msg.type()==='error'){report.errors.push(msg.text());console.error('[browser-recovery] browser console error:',msg.text().slice(0,1000));}});
  mark('browser page created');
+ // Control: does the software WebGPU browser itself survive a bare canvas
+ // swapchain clear without importing any Bermuda game code or resources?
+ // A failing control means the runner/browser, not the ocean shaders, is broken.
+ const smokePage=await context.newPage();
+ const smokeHtml = `<!doctype html><meta charset="utf-8"><canvas id="gpu" width="96" height="96"></canvas><script>
+ (async()=>{ try {
+ const adapter=await navigator.gpu.requestAdapter({powerPreference:'low-power'});
+ if(!adapter) throw Error('No software WebGPU adapter');
+ const device=await adapter.requestDevice();
+ device.lost.then(info=>{window.gpuSmoke={ok:false,reason:info.reason,message:info.message}});
+ const canvas=document.getElementById('gpu');
+ const ctx=canvas.getContext('webgpu');
+ ctx.configure({device,format:navigator.gpu.getPreferredCanvasFormat(),alphaMode:'opaque',usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_DST});
+ const enc=device.createCommandEncoder();
+ const pass=enc.beginRenderPass({colorAttachments:[{view:ctx.getCurrentTexture().createView(),loadOp:'clear',storeOp:'store',clearValue:[0.1,0.3,0.5,1]}]});
+ pass.end();device.queue.submit([enc.finish()]);
+ await device.queue.onSubmittedWorkDone();
+ await new Promise(resolve=>setTimeout(resolve,350));
+ if(!window.gpuSmoke)window.gpuSmoke={ok:true,adapterTextureLimit:device.limits.maxSampledTexturesPerShaderStage};
+ }catch(e){window.gpuSmoke={ok:false,error:String(e)}} })()
+ <\/script>`;
+ await smokePage.route('**/__gpu-smoke',route=>route.fulfill({status:200,contentType:'text/html',body:smokeHtml}));
+ await smokePage.goto('http://127.0.0.1:5189/__gpu-smoke');
+ await smokePage.waitForFunction(()=>!!window.gpuSmoke,{},{timeout:15000});
+ report.baselineGpuSmoke=await smokePage.evaluate(()=>window.gpuSmoke);
+ console.log('[browser-recovery] bare GPU control',JSON.stringify(report.baselineGpuSmoke));
+ await smokePage.close();
+ assert.equal(report.baselineGpuSmoke.ok,true,'Software browser cannot present a basic WebGPU canvas; mobile app cannot be meaningfully tested');
  const url=process.env.TEST_URL||'http://127.0.0.1:5189/?noAudio=1';
  for(const mode of ['fresh','cached']) {
   mark(mode+': navigation started');
@@ -31,6 +59,10 @@ try {
     compiler:window.__app?.gpu?.compiler?.diagnostics?.(),
     report:window.__app ? window.__bermudaGpuAudit?.stage : null,
     resourceBytes:window.__app?.gpu?.resources?.textures?.bytes,
+    topGpuTextures:Object.entries(window.__app?.gpu?.resources?.byLabel||{})
+      .filter(([k])=>k.startsWith('textures:'))
+      .sort((a,b)=>(b[1]?.bytes||0)-(a[1]?.bytes||0))
+      .slice(0,22).map(([name,x])=>({name,bytes:x.bytes,live:x.live})),
   }));
   report.runs.push({mode,startupMs:Date.now()-started,gate,gpu});
   if(gate?.status!=='ready') console.error('[browser-recovery] GPU failure diagnostics',JSON.stringify(gpu).slice(0,5000));
