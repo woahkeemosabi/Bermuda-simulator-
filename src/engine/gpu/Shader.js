@@ -304,7 +304,7 @@ const GROUP_CACHE = 4;
 
 const _layoutCache = new Map();
 
-export function getBindGroupLayout( entries, label ) {
+export function getBindGroupLayout( entries, label, bindingNames = [] ) {
 
 	const key = JSON.stringify( entries );
 	let l = _layoutCache.get( key );
@@ -318,7 +318,7 @@ export function getBindGroupLayout( entries, label ) {
 			const over = entries.filter( e => e.texture && ( e.visibility & bit ) );
 			if ( over.length > textureLimit ) throw new Error(
 				'WebGPU shader '+label+' requires '+over.length+'/'+textureLimit+
-				' sampled textures in '+stage+' stage; bindings '+over.map( e => e.binding ).join( ',' ) );
+				' sampled textures in '+stage+' stage; bindings '+over.map( e => bindingNames[ e.binding ] || e.binding ).join( ',' ) );
 		}
 		l = GPU.device.createBindGroupLayout( { label, entries } );
 		_layoutCache.set( key, l );
@@ -362,7 +362,7 @@ export class BindingSet {
 
 		}
 
-		this.layout = getBindGroupLayout( this.described.map( ( d, i ) => ( { binding: i, ...d.layout } ) ), label );
+		this.layout = getBindGroupLayout( this.described.map( ( d, i ) => ( { binding: i, ...d.layout } ) ), label, this.names );
 		this.group = null;
 		const n = this.names.length;
 		this._specs = this.names.map( ( k ) => specs[ k ] );
