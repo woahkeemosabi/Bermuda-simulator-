@@ -4,6 +4,7 @@ import { prepare, mergePrepared, box, cylinder, sphere, rod, torus, mat4 } from 
 import { createPropMaterial, PAT } from './GameMaterials.js';
 import { Vendor } from './Vendor.js';
 import { loadStallAssets, KitBuilder, LAYER, ATLAS, place, Shapes } from './StallKit.js';
+import { GPU } from '../engine/gpu/GPU.js';
 
 // Exact Tidewater chandlery presentation, relocated into Bermuda. This is the original scanned
 // open-air work table/display system, not the replacement enclosed storefront.
@@ -20,7 +21,25 @@ export class Chandlery {
 		this.group.position.set( CHANDLERY.x, y, CHANDLERY.z );
 		this.group.rotation.y = CHANDLERY.yaw;
 		scene.add( this.group );
-		this.ready = loadStallAssets().then( ( a ) => {
+		// The scanned stall material requires as many as 23 fragment-stage textures
+		// after global water/cloud/lighting hooks are attached. An adapter limited to
+		// 16 cannot create that bind-group layout: the validation error can destroy
+		// Safari's device before the first playable frame.
+		//
+		// Sea-only mobile gameplay intentionally hides this shop, so do not allocate
+		// or compile its invisible assets. For restricted full-world adapters use
+		// the existing Tidewater procedural table rather than an invalid pipeline.
+		const hiddenInSeaOnly = !!globalThis.__bermudaHighSeaOnly;
+		const limitedGPU = ( GPU.limits?.maxSampledTexturesPerShaderStage ?? 16 ) < 24;
+		if ( hiddenInSeaOnly ) {
+			this.ready = Promise.resolve();
+		} else if ( limitedGPU ) {
+			const mesh = new Mesh( buildTable(), this.material );
+			mesh.name = 'ChandleryTidewaterCompatible';
+			mesh.castShadow = true;
+			this.group.add( mesh );
+			this.ready = Promise.resolve();
+		} else this.ready = loadStallAssets().then( ( a ) => {
 
 			const mesh = new Mesh( buildChandleryKit( a ), a.material );
 			mesh.name = 'ChandleryStall';
