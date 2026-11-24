@@ -1044,9 +1044,10 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		// volumetric clouds and their accumulated wind time, but refresh their
 		// expensive history/shadow/panorama passes at a bounded mobile cadence.
 		// Phase 0 keeps cloud compute off caustic (1) and shore/surf (2) frames.
-		const updateClouds = !renderIsolation && this.clouds && (
-			!this.mobileLite || (mobileAux(0) && (!cadence || cadence.allow('clouds',250,dt)))
-		);
+		const cloudPhaseAllowed = mobileAux(0);
+		const mobileCloudDue = this.mobileLite
+			? (!cadence || cadence.allowWhen('clouds',250,dt,cloudPhaseAllowed)) : true;
+		const updateClouds = !renderIsolation && this.clouds && mobileCloudDue;
 		if (updateClouds) this.clouds.update(this.mobileLite && cadence ? cadence.usedDelta.clouds : dt,this.camera);
 		// Mobile WebGPU: don't bake reflection faces while the atmosphere LUTs
 		// are still initializing. This keeps the original reflections and ocean,
