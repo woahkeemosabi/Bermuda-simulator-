@@ -104,6 +104,8 @@ export function gpuReport(app,attempt=0){
   'SkyView dispatches '+(app?.atmosphere?.skyViewDispatchCount??'unknown')+
    ' | Hold after prime '+(app?.atmosphere?.mobileHoldAfterPrime?'YES':'NO')+
    ' | Water query overlap skipped '+(app?.mobileSkyViewWaterQuerySkips??0),
+  'Full cloud compute updates '+(app?.mobileCloudDispatchCount??0)+
+   ' | Cloud work phase '+(app?.mobileLite?'staggered 250ms':'desktop'),
   'Render isolation '+(typeof window!=='undefined'?(window.__bermudaRenderExperiment||'full'):'not browser'),
   'Reflection experiment '+(typeof window!=='undefined'?(window.__bermudaEnvExperiment||'unknown'):'not browser')+
   ' | Refreshes '+(app?.environment?.refreshCount??'unavailable')+
