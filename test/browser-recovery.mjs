@@ -11,7 +11,7 @@ const heartbeat=setInterval(()=>console.log('[browser-recovery] running:',stage)
 heartbeat.unref?.();
 try {
  mark('launching Chromium');
- browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+ browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--ignore-gpu-blocklist','--enable-gpu','--enable-features=Vulkan','--use-vulkan=swiftshader','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  const context=await browser.newContext({viewport:{width:462,height:817},isMobile:true,hasTouch:true,deviceScaleFactor:1,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'});
  page=await context.newPage();
  page.on('pageerror',e=>{report.errors.push(e.message);console.error('[browser-recovery] pageerror',e.message);});
