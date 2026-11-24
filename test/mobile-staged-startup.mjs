@@ -8,6 +8,7 @@ const shader=source('../src/engine/gpu/Shader.js');
 const chandlery=source('../src/game/Chandlery.js');
 const meshRenderer=source('../src/engine/render/MeshRenderer.js');
 const village=source('../src/world/Village.js');
+const gpu=source('../src/engine/gpu/GPU.js');
 const water=source('../src/ocean/WaterMaterial.js');
 const seaDetail=source('../src/ocean/SeaDetail.js');
 const waterSurface=source('../src/ocean/WaterSurface.js');
@@ -44,6 +45,8 @@ assert.ok(main.indexOf('await app.precompile')<main.indexOf('const holdMs = 6000
  'World verification must precede the 60s gameplay unlock gate');
 assert.match(gate,/Promise\.race\(\[promise,lost\]\)/);
 assert.match(gate,/GPU\.device\.lost\.then/);
+assert.match(gate,/timeoutMs=20000/);
+assert.match(gpu,/timeoutMs:mobileAdapter\?18000:6500/);
 assert.match(audit,/GPU adapter shader budgets/);
 assert.match(audit,/Pipelines /);
 assert.match(clouds,/const mobileRebuildSlots =/);
