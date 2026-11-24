@@ -208,6 +208,10 @@ app.init( ( p, text, until ) => {
             ui.setLoading(.97 + Math.min(1, Math.max(0, fraction)) * .018,
                 'Preparing 3D world · '+label, .995);
         });
+        // Bring up each expensive ocean simulation in a separate queue-ack'd
+        // submission before the first scene frame rather than resetting Safari.
+        await app.primeMobileSimulation(label => ui.setLoading(
+            .991, 'Initializing '+label+'…', .995));
 		if (mobileRecovery || app.qs.has('renderTest')) {
 			// Controlled render-pass diagnostics bypass HDR GPU readback verification.
 			// The standard production path verifies completed GPU frames without pixel readback.
