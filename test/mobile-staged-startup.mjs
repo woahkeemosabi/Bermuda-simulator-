@@ -48,6 +48,17 @@ assert.match(audit,/GPU adapter shader budgets/);
 assert.match(audit,/Pipelines /);
 assert.match(clouds,/const mobileRebuildSlots =/);
 assert.match(clouds,/k < mobileRebuildSlots\(\)/);
+assert.match(clouds,/if \( this\.startupTraceHold \) \{/);
+assert.match(app,/this\.clouds\.startupTraceHold=true/);
+assert.match(app,/Mobile cloud panorama upload/);
+assert.match(app,/async primeMobileCloudHistory\(/);
+assert.match(app,/clouds\.startupTraceHold = false/);
+assert.match(app,/Mobile cloud view slot/);
+assert.match(main,/await app\.primeMobileCloudHistory\(/);
+assert.ok(main.indexOf('await verifyMobileWorldNoReadback')<main.indexOf('await app.primeMobileCloudHistory'),
+ 'Prepare full cloud view history only after first three valid scene frames');
+assert.ok(main.indexOf('await app.primeMobileCloudHistory')<main.indexOf('const holdMs = 60000'),
+ 'Complete staged cloud readiness before Explore unlock');
 assert.match(clouds,/this\.ready = this\._generateNoiseMobile\(\)/);
 assert.match(clouds,/for \(const \[name,dispatch\] of jobs\)/);
 assert.match(clouds,/GPU\.submit\(\);\s*await withDeadline\(GPU\.whenIdle\(\),20000,'Cloud noise '/);
