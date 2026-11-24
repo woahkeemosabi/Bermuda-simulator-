@@ -54,6 +54,37 @@ try {
  await page.locator('#bm-loader-retry').waitFor({state:'visible'});
  assert.deepEqual(await page.evaluate(()=>({...localStorage})),before);
  report.deviceLossStops=true;report.passed=true;
-} catch(e){report.failure=String(e?.stack||e);console.error('[browser-recovery] FAILED at '+stage,report.failure);if(page)await page.screenshot({path:`${out}/failure.png`,timeout:10000}).catch(()=>{});}
+} catch(e){
+ report.failure=String(e?.stack||e);
+ console.error('[browser-recovery] FAILED at '+stage,report.failure);
+ if(page)await page.screenshot({path:`${out}/failure.png`,timeout:10000}).catch(()=>{});
+ // Determine whether the software GPU is failing on the actual island pass,
+ // shadow cascades, or the refraction/water/final combination. These QA-only
+ // renderTest modes never change the public game or a player's save data.
+ if(browser && /readiness gate settled/.test(stage)) {
+  report.isolation=[];
+  for(const variant of ['opaque-noshadows','opaque']) {
+   const probe={variant};
+   let ctx;
+   try {
+    ctx=await browser.newContext({viewport:{width:462,height:817},isMobile:true,hasTouch:true,deviceScaleFactor:1,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'});
+    const p=await ctx.newPage();
+    await p.goto('http://127.0.0.1:5189/?noAudio=1&renderTest='+variant);
+    await p.waitForFunction(()=>!!window.__bermudaGpuLost||window.__bermudaWorldGate?.status==='render-test-no-readback',{},{timeout:90000});
+    probe.result=await p.evaluate(async()=>{
+     const app=window.__app;if(!app)return {error:'app unavailable'};
+     try {
+      app.frame(1/60);
+      await Promise.race([app.gpu.whenIdle(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('queue stalled')),12000))]);
+      return {completed:!app.gpu.fatalError,stage:window.__bermudaGpuAudit?.stage,audit:window.__bermudaGpuAudit,loss:window.__bermudaGpuLost||null};
+     }catch(e){return {error:String(e),stage:window.__bermudaGpuAudit?.stage,audit:window.__bermudaGpuAudit,loss:window.__bermudaGpuLost||null};}
+    });
+   }catch(error){probe.error=String(error);}
+   finally{await ctx?.close().catch(()=>{});}
+   report.isolation.push(probe);
+   console.error('[browser-recovery] render isolation',JSON.stringify(probe).slice(0,2800));
+  }
+ }
+}
 finally {clearInterval(heartbeat);mark('writing evidence and closing browser');writeFileSync(`${out}/browser.json`,JSON.stringify(report,null,2));await browser?.close();}
 if(!report.passed)process.exitCode=1;
