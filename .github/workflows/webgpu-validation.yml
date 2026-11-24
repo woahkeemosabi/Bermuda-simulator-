@@ -26,6 +26,7 @@ jobs:
         run: |
           node test/webgpu-recovery.mjs
           node test/mobile-staged-startup.mjs
+          node test/iphone-sustained-cadence.mjs
       - name: Gameplay, persistence and fishing protections
         run: |
           node test/game-logic.mjs
