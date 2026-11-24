@@ -5,6 +5,7 @@ const app=source('../src/App.js'), main=source('../src/main.js');
 const gate=source('../src/mobile/WorldRenderGate.js'), audit=source('../src/mobile/GpuAudit.js');
 const clouds=source('../src/sky/Clouds.js');
 const shader=source('../src/engine/gpu/Shader.js');
+const chandlery=source('../src/game/Chandlery.js');
 // The iPhone startup must flush constructor-time compute before allocating and
 // compiling the post/shadow/refraction/water shader families, not only in
 // optional full-coast or recovery modes.
@@ -48,4 +49,10 @@ assert.match(clouds,/GPU\.submit\(\);\s*await withDeadline\(GPU\.whenIdle\(\),20
 assert.match(app,/Generating cloud textures in batches/);
 assert.match(shader,/stageOf\[ k \] = 'unused'/);
 assert.match(shader,/st === 'unused' \) l\.visibility = 0/);
+assert.match(chandlery,/hiddenInSeaOnly = !!globalThis\.__bermudaHighSeaOnly/);
+assert.match(chandlery,/maxSampledTexturesPerShaderStage \?\? 16 \) < 24/);
+assert.match(chandlery,/if \( hiddenInSeaOnly \) \{\s*this\.ready = Promise\.resolve\(\)/);
+assert.ok(chandlery.indexOf('limitedGPU') < chandlery.indexOf('loadStallAssets().then'),
+ 'Do not load an unsupported scanned-stall shader on low-texture adapters');
+
 console.log('Mobile first-submit staged shader startup, device-loss abort and diagnostics PASS');
