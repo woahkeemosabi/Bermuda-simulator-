@@ -95,7 +95,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
       - name: Fresh and cached mobile-browser startup, frames and loss handling
         run: |
           npm run dev > /tmp/vite.log 2>&1 &
