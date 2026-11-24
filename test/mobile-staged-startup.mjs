@@ -51,6 +51,8 @@ assert.match(clouds,/for \(const \[name,dispatch\] of jobs\)/);
 assert.match(clouds,/GPU\.submit\(\);\s*await withDeadline\(GPU\.whenIdle\(\),20000,'Cloud noise '/);
 assert.match(app,/Generating cloud textures in batches/);
 assert.match(shader,/stageOf\[ k \] = 'unused'/);
+assert.match(shader,/const textureLimit = GPU\.limits\?\.maxSampledTexturesPerShaderStage/);
+assert.match(shader,/requires '\+over\.length\+'\/'\+textureLimit/);
 assert.match(shader,/st === 'unused' \) l\.visibility = 0/);
 assert.match(chandlery,/hiddenInSeaOnly = !!globalThis\.__bermudaHighSeaOnly/);
 assert.match(chandlery,/maxSampledTexturesPerShaderStage \?\? 16 \) < 24/);
