@@ -8,6 +8,7 @@ const shader=source('../src/engine/gpu/Shader.js');
 const chandlery=source('../src/game/Chandlery.js');
 const meshRenderer=source('../src/engine/render/MeshRenderer.js');
 const village=source('../src/world/Village.js');
+const water=source('../src/ocean/WaterMaterial.js');
 // The iPhone startup must flush constructor-time compute before allocating and
 // compiling the post/shadow/refraction/water shader families, not only in
 // optional full-coast or recovery modes.
@@ -62,6 +63,16 @@ assert.match(village,/this\._textures = null/);
 assert.match(village,/this\._materials = null/);
 assert.match(village,/get textures\(\)/);
 assert.match(village,/get materials\(\)/);
+assert.match(app,/environment: this\.environment/);
+assert.match(app,/this\.recoveryMode \|\| limitedWaterBindings/);
+assert.match(water,/compactSky = !!this\.environment/);
+assert.match(water,/maxSampledTexturesPerShaderStage \?\? 16 \) <= 16/);
+assert.match(water,/name: 'mobileWaterSkyCube'/);
+assert.match(water,/fn skyReflectionRadiance\( dir: vec3f \)/);
+assert.match(water,/compactSky \? this\.clouds\.shadowModule : this\.clouds\.module/);
+assert.match(water,/const depthHalf = !!this\.sceneDepthHalfTexture && !compactSky/);
+assert.match(water,/compactSky \? this\.skyCubeModule : sky && sky\.module/);
+
 assert.ok(village.indexOf('new VillageTextures()') > village.indexOf('get textures()'),
  'A scene with zero village geometry must not allocate its texture atlas in the constructor');
 
