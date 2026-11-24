@@ -922,6 +922,13 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		gpuStage('Frame begin', GPU.frame + 1);
 		GPU.beginFrame();
+		// The first three verified iPhone frames use completed, separately primed
+		// simulation textures. Never batch initialization with eight scene passes.
+		const simPreprimed = this.mobileLite && (this._mobileSimulationVerifiedFrameSkips||0)>0;
+		if (simPreprimed) this._mobileSimulationVerifiedFrameSkips--;
+		// Keep FFT at full gameplay frequency while staging costly auxiliary
+		// simulations across successive frames (rather than all in one submit).
+		const mobileAux = n => !this.mobileLite || GPU.frame%3===n;
 		FrameUniforms.fields.frameIndex.value = GPU.frame;
 		const s = this.settings;
 		this.updateFPS( dt );
@@ -956,13 +963,14 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.game.update( dt );
 		this.updateSun();
 
-		this.atmosphere.update( dt, this.camera.position.y );
+		if (!simPreprimed) this.atmosphere.update( dt, this.camera.position.y );
+		else this.atmosphere.mobileSkyViewDispatched=false;
 		this.applyAtmosphereReadback();
 
 		// ---- water simulation
 		gpuStage('FFT and ocean simulation', GPU.frame);
 		// Keep FFT displacement textures valid, but compute them only once in low-GPU mode.
-		if ( !this.qs.has('freezeFFT') || !this._fftInitialized ) {
+		if ( !simPreprimed && ( !this.qs.has('freezeFFT') || !this._fftInitialized ) ) {
 			this.fft.update( dt );
 			this._fftInitialized = true;
 		}
@@ -989,24 +997,24 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 
 		// Restore the historical steady coastal cadence; initialized textures persist.
 		const cadence = this.coastalCadence;
-		if ( this.caustics && (!cadence || cadence.allow('caustics',67)) ) {
+		if ( !simPreprimed && mobileAux(1) && this.caustics && (!cadence || cadence.allow('caustics',67)) ) {
 			this.caustics.update();
 			this._causticsPrimed = true;
 		}
 		// drawn while any part of the view can be under water (the specks above the surface are dropped)
 		this.marineSnow.update( this.camera, this.camera.position.y < ( this.cameraWaterHeight ?? 0 ) + LENS_REACH );
 		this.airMotes.update( dt, this.camera, this.cameraWaterHeight ?? 0 );
-		if ( this.shoreSim && (!cadence || cadence.allow('shore',67)) ) {
+		if ( !simPreprimed && mobileAux(2) && this.shoreSim && (!cadence || cadence.allow('shore',67)) ) {
 			this.shoreSim.update();
 			this._shoreSimPrimed = true;
 		}
 		// Only dispatch the underwater light-map kernels during the first mobile frame.
 		// This gate remains effective even if another system replaces the lighting updater.
-		if ( !this.qs.has('freezeFFT') || !this._underwaterMapPrimed ) {
+		if ( !simPreprimed && mobileAux(0) && ( !this.qs.has('freezeFFT') || !this._underwaterMapPrimed ) ) {
 			this.underwaterLighting.update( this.camera );
 			this._underwaterMapPrimed = true;
 		}
-		this.breakers.update( this.camera );
+		if (!simPreprimed && mobileAux(1)) this.breakers.update( this.camera );
 		// Explicitly bypass spray dispatch in mobile low-GPU mode, even if a later system
 		// reassigns spray.update after initialization.
 		if ( !this.qs.has('noSpray') && !this.qs.has('freezeFFT') ) {
