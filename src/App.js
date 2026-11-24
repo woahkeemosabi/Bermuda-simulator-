@@ -312,7 +312,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		const renderTest = mobileLite ? qs.get('renderTest') : null;
 		this.sceneRenderer.diagnosticOpaqueOnly = ['opaque','opaque-noshadows','sky-only'].includes(renderTest);
 		this.sceneRenderer.diagnosticSkyOnly = renderTest === 'sky-only';
-		if (['opaque-noshadows','sky-only','postonly'].includes(renderTest)) this.shadows.enabled = false;
+		if (['opaque-noshadows','sky-only','postonly','clearonly'].includes(renderTest)) this.shadows.enabled = false;
 		if (typeof window !== 'undefined') window.__bermudaRenderExperiment = renderTest || 'full';
 		// the water's refraction source: the scene below the water only, half resolution
 		this.refraction = new RefractionPass( { meshRenderer: engine.meshRenderer, scene, camera, sceneRenderer: this.sceneRenderer, scale: 0.5 } );
@@ -1074,13 +1074,21 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 		this.underwater.updateCamera( this.camera );
 		// QA isolation can draw just the mobile final pass or only the sky
 		// without changing the normal game renderer.
-		if (this.qs.get('renderTest') !== 'postonly') {
+		if (!['postonly','clearonly'].includes(this.qs.get('renderTest'))) {
 			this.shadows.render( this.scene, this.engine.meshRenderer, this.shadows.update( this.camera, G.sunDir.value ) );
 			this.sceneRenderer.render();
 		}
 		if ( this.post.flare ) this.post.flare.kernel.dispatch( 1 );
 		gpuStage('Post/presentation', GPU.frame);
-		this.post.render();
+		if (this.qs.get('renderTest') === 'clearonly') {
+			// QA-only diagnostic: present a canvas clear with ZERO fragment
+			// pipelines, samplers or scene textures.
+			const rp=GPU.getEncoder().beginRenderPass({
+				label:'Bermuda QA canvas clear only',
+				colorAttachments:[{view:GPU.context.getCurrentTexture().createView(),loadOp:'clear',storeOp:'store',clearValue:[0.025,0.065,0.11,1]}]
+			});
+			rp.end();
+		} else this.post.render();
 		this.post.endFrame();
 		GPU.submit();
 		this.profiler.update( dt );
